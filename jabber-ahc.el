@@ -125,7 +125,7 @@ access allowed.  nil means open for everyone."
 (defun jabber-ahc-get-list (jc to)
   "Request list of ad-hoc commands.  (JEP-0050)"
   (interactive (list (jabber-read-account)
-		     (jabber-read-jid-completing "Request command list from: " nil nil nil 'full t)))
+		     (jabber-read-jid-completing "Request command list from: " nil nil nil nil nil)))
   (jabber-get-disco-items jc to "http://jabber.org/protocol/commands"))
 
 (add-to-list 'jabber-jid-service-menu
@@ -133,7 +133,7 @@ access allowed.  nil means open for everyone."
 (defun jabber-ahc-execute-command (jc to node)
   "Execute ad-hoc command.  (JEP-0050)"
   (interactive (list (jabber-read-account)
-		     (jabber-read-jid-completing "Execute command of: " nil nil nil 'full t)
+		     (jabber-read-jid-completing "Execute command of: " nil nil nil nil nil)
 		     (jabber-read-node "Node of command: ")))
   (jabber-send-iq jc to
 		  "set"
