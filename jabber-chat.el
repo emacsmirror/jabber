@@ -221,14 +221,9 @@ Either a string or a buffer is returned, so use `get-buffer' or
 		(cons ?j (jabber-jid-user chat-with))
 		(cons ?r (or (jabber-jid-resource chat-with) "")))))
 
-(defun jabber-chat-create-buffer (jc chat-with incoming-message-p)
+(defun jabber-chat-create-buffer (jc chat-with)
   "Prepare a buffer for chatting with CHAT-WITH.
-This function is idempotent.
-If INCOMING-MESSAGE-P is non-nil and history is handled by the
-server (using XMPP XEP-0313 MAM, which is controlled via
-`jabber-history-mam'), the first message from the archive request
-is ignored as it is the same as the incoming message (this
-prevents duplicate messages in the buffer)."
+This function is idempotent."
   (with-current-buffer (get-buffer-create (jabber-chat-get-buffer chat-with))
     (unless (eq major-mode 'jabber-chat-mode)
       (jabber-chat-mode jc #'jabber-chat-pp)
@@ -239,16 +234,10 @@ prevents duplicate messages in the buffer)."
       (setq header-line-format jabber-chat-header-line-format)
 
       (make-local-variable 'jabber-chat-earliest-backlog)
-      (when jabber-history-mam
-        (make-local-variable 'jabber-mam-results)
-        (make-local-variable 'jabber-mam-done)
-        (make-local-variable 'jabber-mam-last-id)
-        (make-local-variable 'jabber-mam-lock))
 
       ;; insert backlog
       (when (null jabber-chat-earliest-backlog)
-        (let ((backlog-entries (jabber-history-backlog chat-with nil
-                                                       incoming-message-p)))
+	(let ((backlog-entries (jabber-history-backlog chat-with)))
 	  (if (null backlog-entries)
 	      (setq jabber-chat-earliest-backlog (jabber-float-time))
 	    (setq jabber-chat-earliest-backlog
@@ -306,58 +295,38 @@ prevents duplicate messages in the buffer)."
 
 (add-to-list 'jabber-message-chain 'jabber-process-chat)
 
-(defun jabber-get-forwarded-message (xml-data)
-  (let* ((sent (car (jabber-xml-get-children xml-data 'sent)))
-         (forwarded (car (jabber-xml-get-children sent 'forwarded)))
-         (forwarded-message (car (jabber-xml-get-children forwarded 'message))))
-    (when forwarded-message
-      forwarded-message)))
-
 (defun jabber-process-chat (jc xml-data)
   "If XML-DATA is a one-to-one chat message, handle it as such."
   ;; For now, everything that is not a public MUC message is
   ;; potentially a 1to1 chat message.
   (when (not (jabber-muc-message-p xml-data))
     ;; Note that we handle private MUC messages here.
-    (cl-destructuring-bind (xml-data chat-buffer)
-        (if (car (jabber-xml-get-children xml-data 'sent))
-            (let* ((fwd-msg (jabber-get-forwarded-message xml-data))
-                   (to (jabber-xml-get-attribute fwd-msg 'to)))
-              (list fwd-msg
-                    (jabber-chat-create-buffer jc to)))
-          (list xml-data nil))
-      (let ((from (jabber-xml-get-attribute xml-data 'from))
-	    (error-p (jabber-xml-get-children xml-data 'error))
-	    (body-text (car (jabber-xml-node-children
-			     (car (jabber-xml-get-children
-				   xml-data 'body))))))
-        ;; First check if we would output anything for this stanza.
-        (when (or error-p
-		  (run-hook-with-args-until-success 'jabber-chat-printers
-                                                    xml-data
-                                                    :foreign :printp))
-          ;; If so, create chat buffer, if necessary...
-	  (with-current-buffer (if (jabber-muc-sender-p from)
-				   (jabber-muc-private-create-buffer
-				    jc
-				    (jabber-jid-user from)
-				    (jabber-jid-resource from))
-			         (or chat-buffer
-                                     (jabber-chat-create-buffer jc from)))
-            ;; ...add the message to the ewoc...
-	    (let ((node (ewoc-enter-last jabber-chat-ewoc
-                                         (list (if error-p :error :foreign)
-                                               xml-data
-                                               :time
-                                               (current-time)))))
-	      (jabber-maybe-print-rare-time node))
+    (let ((from (jabber-xml-get-attribute xml-data 'from))
+	  (error-p (jabber-xml-get-children xml-data 'error))
+	  (body-text (car (jabber-xml-node-children
+			   (car (jabber-xml-get-children
+				 xml-data 'body))))))
+      ;; First check if we would output anything for this stanza.
+      (when (or error-p
+		(run-hook-with-args-until-success 'jabber-chat-printers xml-data :foreign :printp))
+	;; If so, create chat buffer, if necessary...
+	(with-current-buffer (if (jabber-muc-sender-p from)
+				 (jabber-muc-private-create-buffer
+				  jc
+				  (jabber-jid-user from)
+				  (jabber-jid-resource from))
+			       (jabber-chat-create-buffer jc from))
+	  ;; ...add the message to the ewoc...
+	  (let ((node
+		 (ewoc-enter-last jabber-chat-ewoc (list (if error-p :error :foreign) xml-data :time (current-time)))))
+	    (jabber-maybe-print-rare-time node))
 
-            ;; ...and call alert hooks.
-	    (dolist (hook '(jabber-message-hooks jabber-alert-message-hooks))
-	      (run-hook-with-args hook
-				  from (current-buffer) body-text
-				  (funcall jabber-alert-message-function
-					   from (current-buffer) body-text)))))))))
+	  ;; ...and call alert hooks.
+	  (dolist (hook '(jabber-message-hooks jabber-alert-message-hooks))
+	    (run-hook-with-args hook
+				from (current-buffer) body-text
+				(funcall jabber-alert-message-function 
+					 from (current-buffer) body-text))))))))
 
 (defun jabber-chat-send (jc body)
   "Send BODY through connection JC, and display it in chat buffer."
@@ -691,7 +660,7 @@ Returns the chat buffer."
 		       (jabber-read-account nil jid)))
 		 (list 
 		  account jid current-prefix-arg)))
-  (let ((buffer (jabber-chat-create-buffer jc jid nil)))
+  (let ((buffer (jabber-chat-create-buffer jc jid)))
     (if other-window
 	(switch-to-buffer-other-window buffer)
       (switch-to-buffer buffer))))
