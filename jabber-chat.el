@@ -295,7 +295,7 @@ prevents duplicate messages in the buffer)."
 	 (jabber-backlog-days nil)
 	 (jabber-backlog-number (if (= how-many 0) t how-many))
 	 (backlog-entries (jabber-history-backlog
-			   jabber-chatting-with jabber-chat-earliest-backlog)))
+			   (or jabber-chatting-with jabber-group) jabber-chat-earliest-backlog)))
     (when backlog-entries
       (setq jabber-chat-earliest-backlog 
 	    (jabber-float-time (jabber-parse-time
