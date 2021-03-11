@@ -1,4 +1,4 @@
-;; jabber.el - a minimal jabber client
+;;; jabber.el --- a minimal jabber client
 
 ;; Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
 ;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
@@ -21,6 +21,15 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program; if not, write to the Free Software
 ;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+;;; Commentary:
+;;
+
+;;; History:
+;;
+
+;;; Code:
+
 (require 'cl)
 (require 'password-cache)
 (condition-case nil
@@ -764,6 +773,7 @@ applied to the node and not to the data itself."
 	 (progn
 	   (setf (cdr prev) (if tail (funcall fn tail) nil))
 	   result)))))
+
 (eval-when-compile (require 'cl))
 
 ;;;###autoload
@@ -945,6 +955,7 @@ With prefix argument, remove it."
   "Popup combined menu"
   (interactive)
   (jabber-popup-menu (append jabber-jid-chat-menu jabber-jid-info-menu jabber-jid-roster-menu jabber-jid-muc-menu)))
+
 (require 'xml)
 (eval-when-compile
   (require 'cl))
@@ -1208,6 +1219,7 @@ any string   character data of this node"
 			    (remove (assoc prefix prefixes) prefixes)
 			  prefixes)))))))
   prefixes)
+
 ;; A collection of functions, that hide the details of transmitting to
 ;; and fro a Jabber Server
 
@@ -1586,6 +1598,7 @@ Use `*jabber-virtual-server-function*' as send function."
 
 (defun jabber-virtual-send (connection string)
   (funcall *jabber-virtual-server-function* connection string))
+
 (require 'cl)
 
 ;;; This file uses sasl.el from FLIM or Gnus.  If it can't be found,
@@ -1599,7 +1612,6 @@ Use `*jabber-virtual-server-function*' as send function."
 ;;; or anything the Gnus people decide to use.
 
 ;;; See XMPP-CORE and XMPP-IM for details about the protocol.
-
 (defun jabber-sasl-start-auth (jc stream-features)
   ;; Find a suitable common mechanism.
   (let* ((mechanism-elements (car (jabber-xml-get-children stream-features 'mechanisms)))
@@ -1718,6 +1730,7 @@ Call REMEMBER with the password.  REMEMBER is expected to return it as well."
 		    (error-message-string e))
 	   (fsm-send jc :authentication-failure))))))
     (list client step passphrase)))
+
 ;; button.el was introduced in Emacs 22
 (condition-case e
     (require 'button)
@@ -1754,9 +1767,9 @@ Call REMEMBER with the password.  REMEMBER is expected to return it as well."
 
 ;;;###autoload
 (define-key ctl-x-map "\C-j" jabber-global-keymap)
+
 (require 'ewoc)
 (require 'sgml-mode) ;we base on this mode to hightlight XML
-
 (defcustom jabber-console-name-format "*-jabber-console-%s-*"
   "Format for console buffer name. %s mean connection jid."
   :type 'string
@@ -1868,6 +1881,7 @@ what kind of chat buffer is being created.")
 		(when (< 1  jabber-console-truncate-lines)
 		  (let ((jabber-log-lines-to-keep jabber-console-truncate-lines))
 			(jabber-truncate-top buffer jabber-console-ewoc)))))))
+
 (require 'cl)
 
 (eval-and-compile
@@ -2838,6 +2852,7 @@ Return an fsm result list if it is."
     (unless connection
       (error "%s has no connection" (jabber-connection-jid jc)))
     (funcall send-function connection string)))
+
 ;; In Emacs 24, sha1 is built in, so this require is only needed for
 ;; earlier versions.  It's supposed to be a noop in Emacs 24, but
 ;; sometimes, for some people, it isn't, and fails with
@@ -2894,9 +2909,9 @@ CLOSURE-DATA should be the password on success and nil on failure."
     ;; Logon failure
     (jabber-report-success jc xml-data "Logon")
     (fsm-send jc :authentication-failure)))
+
 (require 'format-spec)
 (require 'cl)				;for `find'
-
 (defgroup jabber-roster nil "roster display options"
   :group 'jabber)
 
@@ -3756,6 +3771,7 @@ If optional PREV is non-nil, return position of previous property appearence."
                                    ,roll-groups)
                           'jabber-report-success "Roster groups saved"
                           'jabber-report-success "Failed to save roster groups"))))
+
 (defvar *jabber-open-info-queries* nil
   "an alist of open query id and their callback functions")
 
@@ -3940,6 +3956,7 @@ See section 9.3 of XMPP Core."
     (dolist (hook '(jabber-info-message-hooks jabber-alert-info-message-hooks))
       (run-hook-with-args hook 'browse (current-buffer)
                           text))))
+
 (require 'cl)
 
 (defgroup jabber-alerts nil "auditory and visual alerts for jabber events"
@@ -4427,6 +4444,7 @@ of `jabber-autoanswer-alist'"
           (jabber-chat-send jabber-buffer-connection message)))
     ))
 (pushnew 'jabber-autoanswer-answer-muc (get 'jabber-alert-muc-hooks 'custom-options))
+
 (defgroup jabber-history nil "Customization options for Emacs
 Jabber history files."
   :group 'jabber)
@@ -4724,6 +4742,7 @@ applies, though."
 	  (let ((history-file (jabber-history-filename current-jid)))
 	    (write-region jid-start (point-max) history-file t 'quiet))))))
   (message "Done.  Please change `jabber-use-global-history' now."))
+
 (defvar jabber-point-insert nil
   "Position where the message being composed starts")
 
@@ -4836,6 +4855,7 @@ window or at `fill-column', whichever is shorter."
 		(fill-paragraph nil)
 		(goto-char (marker-position goback)))))
 	  (forward-line 1))))))
+
 (require 'ewoc)
 (eval-when-compile (require 'cl))
 
@@ -5511,6 +5531,7 @@ With a prefix argument, open buffer in other window."
     (if (and jid-at-point account)
 	(jabber-chat-with account jid-at-point other-window)
       (error "No contact at point"))))
+
 (defvar jabber-presence-element-functions nil
   "List of functions returning extra elements for <presence/> stanzas.
 Each function takes one argument, the connection, and returns a
@@ -6043,6 +6064,7 @@ Signal an error if there is no JID at point."
 		       g))
 	 (get jid 'groups))
 	:test 'string=)))))
+
 ;;; Respond to disco requests
 
 (defvar jabber-advertised-features
@@ -6666,6 +6688,7 @@ the right node."
 ;;;###autoload
 (eval-after-load "jabber-presence"
   '(add-to-list 'jabber-presence-element-functions #'jabber-caps-presence-element))
+
 (require 'cl)
 
 (jabber-disco-advertise-feature "http://jabber.org/protocol/feature-neg")
@@ -6765,6 +6788,7 @@ protocols."
 		;; no match
 		(jabber-signal-error "modify" 'not-acceptable var)))))
 	alist)))
+
 (require 'widget)
 (require 'wid-edit)
 
@@ -7101,6 +7125,7 @@ Return nil if no form type is specified."
 		 (string= (jabber-xml-get-attribute field 'type) "hidden"))
 	(throw 'found-formtype (car (jabber-xml-node-children
 				     (car (jabber-xml-get-children field 'value)))))))))
+
 (require 'cl)
 
 (defvar jabber-bookmarks (make-hash-table :test 'equal)
@@ -7323,6 +7348,7 @@ on success or failure, respectively."
 	  (push (cons 'conference entry) value))))
     (widget-value-set (cdr (assq 'bookmarks jabber-widget-alist)) value)
     (widget-setup)))
+
 (eval-when-compile (require 'cl))	;for ignore-errors
 ;; we need hexrgb-hsv-to-hex:
 (eval-and-compile
@@ -7382,6 +7408,7 @@ on success or failure, respectively."
         (unless jabber-muc-participant-colors )
         (push (cons nick (jabber-muc-nick-gen-color nick)) jabber-muc-participant-colors)
         (cdr (assoc nick jabber-muc-participant-colors))))))
+
 ;; we need jabber-bookmarks for jabber-muc-autojoin (via
 ;; jabber-get-bookmarks and jabber-parse-conference-bookmark):
 
@@ -8521,6 +8548,7 @@ Return nil if X-MUC is nil."
 			 (insert ".")
 			 (buffer-string))
 		       :time (current-time))))))))))))
+
 ;;; User customizations here:
 (defcustom jabber-muc-completion-delimiter ": "
   "String to add to end of completion line."
@@ -8681,6 +8709,7 @@ OLD is last tried nickname."
 (add-hook 'jabber-muc-hooks 'jabber-muc-track-message-time)
 (fset 'jabber-muc-completion (make-hippie-expand-function '(try-expand-jabber-muc)))
 (define-key jabber-chat-mode-map [?\t] 'jabber-muc-completion)
+
 (add-to-list 'jabber-jid-service-menu
 	     (cons "Register with service" 'jabber-get-register))
 (defun jabber-get-register (jc to)
@@ -8797,6 +8826,7 @@ CLOSURE-DATA is either 'success or 'error."
 			      (remove))
 		      #'jabber-report-success "Unregistration"
 		      #'jabber-report-success "Unregistration")))
+
 (add-to-list 'jabber-jid-service-menu
 	     (cons "Search directory" 'jabber-get-search))
 (defun jabber-get-search (jc to)
@@ -8886,6 +8916,7 @@ CLOSURE-DATA is either 'success or 'error."
 		(put-text-property start-of-line (point)
 				   'jabber-jid jid))
 	    (insert "\n"))))))
+
 ;; jabber.el can perform browse requests, but will not answer them.
 
 (add-to-list 'jabber-jid-info-menu
@@ -8957,6 +8988,7 @@ CLOSURE-DATA is either 'success or 'error."
 	;; XXX: Is this kind of recursion really needed?
 	(if (listp (car (jabber-xml-node-children item)))
 	    (jabber-process-browse jc item))))))
+
 (require 'jabber-ourversion)
 
 (defcustom jabber-version-show t
@@ -9014,6 +9046,7 @@ determined from the incoming packet passed in XML-DATA."
 			    (os () ,os))
 		    nil nil nil nil
 		    id)))
+
 (defvar jabber-ahc-sessionid nil
   "session id of Ad-Hoc Command session")
 
@@ -9217,6 +9250,7 @@ access allowed.  nil means open for everyone."
 
 		  #'jabber-process-data #'jabber-ahc-display
 		  #'jabber-process-data "Command execution failed"))
+
 (defconst jabber-ahc-presence-node "http://jabber.org/protocol/rc#set-status"
   "Node used by jabber-ahc-presence")
 
@@ -9297,6 +9331,7 @@ access allowed.  nil means open for everyone."
 		 (node . ,jabber-ahc-presence-node)
 		 (status . "completed"))
 		(note ((type . "info")) "Presence has been changed."))))))
+
 (eval-when-compile (require 'cl))
 
 (defgroup jabber-mode-line nil
@@ -9369,6 +9404,51 @@ and offline contacts, respectively."
 		  'jabber-mode-line-presence-update)
 	(add-hook 'jabber-presence-hooks
 		  'jabber-mode-line-count-contacts))))
+
+(defun jabber-presence-watch (who oldstatus newstatus
+				  statustext proposed-alert)
+  "Checks if one of your extra-important buddies comes online and
+sends a message if that happens. The buddies are stored in
+`jabber-watch-alist' and are added and removed by calling
+`jabber-watch-add' and `jabber-watch-remove.'"
+  ;; check that buddy was previously offline and now online
+  (if (and (null oldstatus)
+           (not (null newstatus)))
+      (let ((entry (assq who jabber-watch-alist)))
+	(when entry
+	  ;; Give an intrusive message.  With a window system,
+	  ;; that's easy.
+	  (if window-system
+	      (message-box "%s%s" proposed-alert
+			   (if (cdr entry) (format ": %s" (cdr entry)) ""))
+	    ;; Without a window system, yes-or-no-p should be
+	    ;; sufficient.
+	    (while (not
+		    (yes-or-no-p (format "%s%s  Got that? " proposed-alert
+					 (if (cdr entry) (format ": %s" (cdr entry)) ""))))))))))
+
+(defun jabber-watch-add (buddy &optional comment)
+  (interactive (list (jabber-read-jid-completing "Add buddy to watch list: ")
+		     (read-string "Comment: ")))
+  (unless (memq 'jabber-presence-watch jabber-presence-hooks)
+    (error "jabber-presence-watch is not in jabber-presence-hooks"))
+  (add-to-list 'jabber-watch-alist (cons
+				    (jabber-jid-symbol buddy)
+				    (and (not (zerop (length comment)))
+					 comment))))
+
+(defun jabber-watch-remove (buddy)
+  (interactive
+   (list (jabber-read-jid-completing "Remove buddy from watch list: "
+				     (or (mapcar 'car jabber-watch-alist)
+					 (error "Watch list is empty"))
+				     t)))
+  (setq jabber-watch-alist
+        (delq (assq (jabber-jid-symbol buddy) jabber-watch-alist)
+	      jabber-watch-alist)))
+#+END_QUOTE
+*** activity
+#+BEGIN_SRC emacs-lisp
 ;; Allows tracking messages from buddies using the global mode line
 ;; See (info "(jabber)Tracking activity")
 
@@ -9777,6 +9857,7 @@ With a numeric arg, enable this display if arg is positive."
 
 ;; XXX: define-minor-mode should probably do this for us, but it doesn't.
 (if jabber-activity-mode (jabber-activity-mode 1))
+
 (require 'cl)
 
 (defgroup jabber-events nil
@@ -9998,6 +10079,7 @@ and it hasn't been sent before."
 	      (setq jabber-events-composing-p
 		    (not (null (jabber-xml-get-children x 'composing))))
 	      (jabber-events-update-message)))))))))
+
 ;; TODO
 ;; - Currently only active/composing notifications are /sent/ though all 5
 ;;   notifications are handled on receipt.
@@ -10152,6 +10234,7 @@ It can be sent and cancelled several times.")
 (add-to-list 'jabber-message-chain 'jabber-handle-incoming-message-chatstates t)
 
 (jabber-disco-advertise-feature "http://jabber.org/protocol/chatstates")
+
 ;; There are several methods for transporting avatars in Jabber
 ;; (JEP-0008, JEP-0084, JEP-0153).  They all have in common that they
 ;; identify avatars by their SHA1 checksum, and (at least partially)
@@ -10360,6 +10443,7 @@ available."
       (plist-put spec :width jabber-avatar-max-width)
       (plist-put spec :height jabber-avatar-max-height))
     image))
+
 ;; There are great variations in Jabber vcard implementations.  This
 ;; one adds some spice to the mix, while trying to follow the JEP
 ;; closely.
@@ -10877,6 +10961,7 @@ The top node should be the `vCard' node."
       (jabber-vcard-avatars-update-current
        jabber-buffer-connection
        (and jabber-vcard-photo (avatar-sha1-sum jabber-vcard-photo))))))
+
 (defcustom jabber-vcard-avatars-retrieve (and (fboundp 'display-images-p)
 					      (display-images-p))
   "Automatically download vCard avatars?"
@@ -10982,6 +11067,7 @@ Keys are full JIDs.")
 	   ;; that is, we haven't yet checked what avatar we have.
 	   ,(when hash
 	      `(photo () ,hash)))))))
+
 (eval-when-compile (require 'cl))
 (require 'time-date)
 
@@ -11167,6 +11253,7 @@ The method for finding the terminal only works on GNU/Linux."
         (if (null idle-time)
             0
           (float-time idle-time)))))
+
 (require 'time-date)
 
 (add-to-list 'jabber-jid-info-menu (cons "Request time" 'jabber-get-time))
@@ -11336,6 +11423,7 @@ determined from the incoming packet passed in XML-DATA."
 					 (floor (jabber-autoaway-get-idle-time))))))
                     nil nil nil nil
                     id)))
+
 (require 'cl)
 
 (defvar jabber-log-lines-to-keep 1000
@@ -11384,6 +11472,7 @@ Note that this might interfer with
 `jabber-chat-display-more-backlog': you ask for more history, you
 get it, and then it just gets deleted."
   (jabber-truncate-top buffer))
+
 (defun jabber-carbon-success (jc xml-data context)
   (when (equal "result" (jabber-xml-get-attribute xml-data 'type))
     (message "Carbons feature successfully enabled")))
@@ -11402,6 +11491,7 @@ get it, and then it just gets deleted."
                   `(enable ((xmlns . "urn:xmpp:carbons:2")))
                   #'jabber-carbon-success "Carbons feature enablement"
                   #'jabber-carbon-failure "Carbons feature enablement"))
+
 (defvar jabber-si-stream-methods nil
   "Supported SI stream methods.
 
@@ -11438,6 +11528,7 @@ the stream.  It takes these arguments:
  * A string containing the received data, or nil on EOF
 
 If it returns nil, the stream should be closed.")
+
 (defun jabber-si-initiate (jc jid profile-namespace profile-data profile-function &optional mime-type)
   "Try to initiate a stream to JID.
 PROFILE-NAMESPACE is, well, the namespace of the profile to use.
@@ -11479,6 +11570,7 @@ Returns the SID."
     ;; Our work is done.  Hand it over to the stream method.
     (let ((stream-negotiate (nth 1 method-data)))
       (funcall stream-negotiate jc from sid profile-function))))
+
 (jabber-disco-advertise-feature "http://jabber.org/protocol/si")
 
 ;; Now, stream methods push data to profiles.  It could be the other
@@ -11540,6 +11632,7 @@ Each entry is a list, containing:
 			nil nil nil nil
 			id)
 	))))
+
 (defcustom jabber-ft-md5sum-program (or (when (executable-find "md5")
 					  (list (executable-find "md5") "-n"))
 					(when (executable-find "md5sum")
@@ -11562,6 +11655,7 @@ Return nil if no MD5 summing program is available."
       (goto-char (point-min))
       (forward-word 1)
       (buffer-substring (point-min) (point)))))
+
 (eval-when-compile (require 'cl))
 
 (defun jabber-ft-send (jc jid filename desc)
@@ -11602,6 +11696,7 @@ Return nil if no MD5 summing program is available."
       (message "File transfer completed")))
   ;; File transfer is monodirectional, so ignore received data.
   #'ignore)
+
 (defvar jabber-ft-sessions nil
   "Alist, where keys are (sid jid), and values are buffers of the files.")
 
@@ -11705,6 +11800,7 @@ Return nil if no MD5 summing program is available."
 	  (message "%s downloaded" (file-name-nondirectory buffer-file-name)))
 	(kill-buffer buffer)
 	nil))))
+
 (eval-when-compile (require 'cl))
 
 (defvar jabber-socks5-pending-sessions nil
@@ -12351,6 +12447,7 @@ This function simply starts a state machine."
 ;; 	   (lexical-let ((proxy-connection proxy-connection))
 ;; 	     (lambda (data)
 ;; 	       (process-send-string proxy-connection data)))))
+
 ;;; load Unicode tables if this needed
 (when (and (featurep 'xemacs) (not (emacs-version>= 21 5 5)))
     (require 'un-define))
@@ -12542,3 +12639,8 @@ Contents of process buffers might be useful for debugging."
   "open jabber.el manual"
   (interactive)
   (info "jabber"))
+
+(provide 'jabber)
+
+;;; jabber.el ends here
+
