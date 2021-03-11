@@ -1,6 +1,6 @@
 #+PROPERTY: header-args :tangle yes
 * jabber.el
-** readme
+** README
 This is jabber.el 0.8.92, an XMPP client for Emacs.  XMPP (also known as 'Jabber') is an instant messaging system; see http://xmpp.org for more information.
 
 Home page:    http://emacs-jabber.sourceforge.net
@@ -116,8 +116,9 @@ The sed script emits anything between lines matching the exact strings "#+BEGIN_
 ;; along with this program; if not, write to the Free Software
 ;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #+END_SRC
-** dependencies
-** util
+** Dependencies
+** Code
+*** util
 #+BEGIN_SRC emacs-lisp
 (require 'cl)
 (require 'password-cache)
@@ -863,7 +864,7 @@ applied to the node and not to the data itself."
 	   (setf (cdr prev) (if tail (funcall fn tail) nil))
 	   result)))))
 #+END_SRC
-** menu
+*** menu
 #+BEGIN_SRC emacs-lisp
 (eval-when-compile (require 'cl))
 
@@ -1047,7 +1048,7 @@ With prefix argument, remove it."
   (interactive)
   (jabber-popup-menu (append jabber-jid-chat-menu jabber-jid-info-menu jabber-jid-roster-menu jabber-jid-muc-menu)))
 #+END_SRC
-** xml
+*** xml
 #+BEGIN_SRC emacs-lisp
 (require 'xml)
 (eval-when-compile
@@ -1313,7 +1314,7 @@ any string   character data of this node"
 			  prefixes)))))))
   prefixes)
 #+END_SRC
-** conn
+*** conn
 #+BEGIN_SRC emacs-lisp
 ;; A collection of functions, that hide the details of transmitting to
 ;; and fro a Jabber Server
@@ -1694,7 +1695,7 @@ Use `*jabber-virtual-server-function*' as send function."
 (defun jabber-virtual-send (connection string)
   (funcall *jabber-virtual-server-function* connection string))
 #+END_SRC
-** sasl
+*** sasl
 #+BEGIN_SRC emacs-lisp
 (require 'cl)
 
@@ -1829,7 +1830,7 @@ Call REMEMBER with the password.  REMEMBER is expected to return it as well."
 	   (fsm-send jc :authentication-failure))))))
     (list client step passphrase)))
 #+END_SRC
-** keymap
+*** keymap
 #+BEGIN_SRC emacs-lisp
 ;; button.el was introduced in Emacs 22
 (condition-case e
@@ -1868,7 +1869,7 @@ Call REMEMBER with the password.  REMEMBER is expected to return it as well."
 ;;;###autoload
 (define-key ctl-x-map "\C-j" jabber-global-keymap)
 #+END_SRC
-** console
+*** console
 #+BEGIN_SRC emacs-lisp
 (require 'ewoc)
 (require 'sgml-mode) ;we base on this mode to hightlight XML
@@ -1985,7 +1986,7 @@ what kind of chat buffer is being created.")
 		  (let ((jabber-log-lines-to-keep jabber-console-truncate-lines))
 			(jabber-truncate-top buffer jabber-console-ewoc)))))))
 #+END_SRC
-** core
+*** core
 #+BEGIN_SRC emacs-lisp
 (require 'cl)
 
@@ -2958,7 +2959,7 @@ Return an fsm result list if it is."
       (error "%s has no connection" (jabber-connection-jid jc)))
     (funcall send-function connection string)))
 #+END_SRC
-** logon
+*** logon
 #+BEGIN_SRC emacs-lisp
 ;; In Emacs 24, sha1 is built in, so this require is only needed for
 ;; earlier versions.  It's supposed to be a noop in Emacs 24, but
@@ -3017,7 +3018,7 @@ CLOSURE-DATA should be the password on success and nil on failure."
     (jabber-report-success jc xml-data "Logon")
     (fsm-send jc :authentication-failure)))
 #+END_SRC
-** roster
+*** roster
 #+BEGIN_SRC emacs-lisp
 (require 'format-spec)
 (require 'cl)				;for `find'
@@ -3882,7 +3883,7 @@ If optional PREV is non-nil, return position of previous property appearence."
                           'jabber-report-success "Roster groups saved"
                           'jabber-report-success "Failed to save roster groups"))))
 #+END_SRC
-** iq
+*** iq
 #+BEGIN_SRC emacs-lisp
 (defvar *jabber-open-info-queries* nil
   "an alist of open query id and their callback functions")
@@ -4069,7 +4070,7 @@ See section 9.3 of XMPP Core."
       (run-hook-with-args hook 'browse (current-buffer)
                           text))))
 #+END_SRC
-** alert
+*** alert
 #+BEGIN_SRC emacs-lisp
 (require 'cl)
 
@@ -4559,7 +4560,7 @@ of `jabber-autoanswer-alist'"
     ))
 (pushnew 'jabber-autoanswer-answer-muc (get 'jabber-alert-muc-hooks 'custom-options))
 #+END_SRC
-** history
+*** history
 #+BEGIN_SRC emacs-lisp
 (defgroup jabber-history nil "Customization options for Emacs
 Jabber history files."
@@ -4859,7 +4860,7 @@ applies, though."
 	    (write-region jid-start (point-max) history-file t 'quiet))))))
   (message "Done.  Please change `jabber-use-global-history' now."))
 #+END_SRC
-** chat buffer
+*** chat buffer
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-point-insert nil
   "Position where the message being composed starts")
@@ -4974,7 +4975,7 @@ window or at `fill-column', whichever is shorter."
 		(goto-char (marker-position goback)))))
 	  (forward-line 1))))))
 #+END_SRC
-** chat
+*** chat
 #+BEGIN_SRC emacs-lisp
 (require 'ewoc)
 (eval-when-compile (require 'cl))
@@ -5652,7 +5653,7 @@ With a prefix argument, open buffer in other window."
 	(jabber-chat-with account jid-at-point other-window)
       (error "No contact at point"))))
 #+END_SRC
-** presence
+*** presence
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-presence-element-functions nil
   "List of functions returning extra elements for <presence/> stanzas.
@@ -6187,7 +6188,7 @@ Signal an error if there is no JID at point."
 	 (get jid 'groups))
 	:test 'string=)))))
 #+END_SRC
-** disco
+*** disco
 #+BEGIN_SRC emacs-lisp
 ;;; Respond to disco requests
 
@@ -6813,7 +6814,7 @@ the right node."
 (eval-after-load "jabber-presence"
   '(add-to-list 'jabber-presence-element-functions #'jabber-caps-presence-element))
 #+END_SRC
-** feature negotiation
+*** feature negotiation
 #+BEGIN_SRC emacs-lisp
 (require 'cl)
 
@@ -6915,7 +6916,7 @@ protocols."
 		(jabber-signal-error "modify" 'not-acceptable var)))))
 	alist)))
 #+END_SRC
-** widget
+*** widget
 #+BEGIN_SRC emacs-lisp
 (require 'widget)
 (require 'wid-edit)
@@ -7254,7 +7255,7 @@ Return nil if no form type is specified."
 	(throw 'found-formtype (car (jabber-xml-node-children
 				     (car (jabber-xml-get-children field 'value)))))))))
 #+END_SRC
-** bookmarks
+*** bookmarks
 #+BEGIN_SRC emacs-lisp
 (require 'cl)
 
@@ -7479,7 +7480,7 @@ on success or failure, respectively."
     (widget-value-set (cdr (assq 'bookmarks jabber-widget-alist)) value)
     (widget-setup)))
 #+END_SRC
-** muc-nick-coloring
+*** muc-nick-coloring
 #+BEGIN_SRC emacs-lisp
 (eval-when-compile (require 'cl))	;for ignore-errors
 ;; we need hexrgb-hsv-to-hex:
@@ -7541,7 +7542,7 @@ on success or failure, respectively."
         (push (cons nick (jabber-muc-nick-gen-color nick)) jabber-muc-participant-colors)
         (cdr (assoc nick jabber-muc-participant-colors))))))
 #+END_SRC
-** muc
+*** muc
 #+BEGIN_SRC emacs-lisp
 ;; we need jabber-bookmarks for jabber-muc-autojoin (via
 ;; jabber-get-bookmarks and jabber-parse-conference-bookmark):
@@ -8683,7 +8684,7 @@ Return nil if X-MUC is nil."
 			 (buffer-string))
 		       :time (current-time))))))))))))
 #+END_SRC
-** muc-nick-completion
+*** muc-nick-completion
 #+BEGIN_SRC emacs-lisp
 ;;; User customizations here:
 (defcustom jabber-muc-completion-delimiter ": "
@@ -8846,7 +8847,7 @@ OLD is last tried nickname."
 (fset 'jabber-muc-completion (make-hippie-expand-function '(try-expand-jabber-muc)))
 (define-key jabber-chat-mode-map [?\t] 'jabber-muc-completion)
 #+END_SRC
-** register
+*** register
 #+BEGIN_SRC emacs-lisp
 (add-to-list 'jabber-jid-service-menu
 	     (cons "Register with service" 'jabber-get-register))
@@ -8965,7 +8966,7 @@ CLOSURE-DATA is either 'success or 'error."
 		      #'jabber-report-success "Unregistration"
 		      #'jabber-report-success "Unregistration")))
 #+END_SRC
-** search
+*** search
 #+BEGIN_SRC emacs-lisp
 (add-to-list 'jabber-jid-service-menu
 	     (cons "Search directory" 'jabber-get-search))
@@ -9057,7 +9058,7 @@ CLOSURE-DATA is either 'success or 'error."
 				   'jabber-jid jid))
 	    (insert "\n"))))))
 #+END_SRC
-** browse
+*** browse
 #+BEGIN_SRC emacs-lisp
 ;; jabber.el can perform browse requests, but will not answer them.
 
@@ -9131,7 +9132,7 @@ CLOSURE-DATA is either 'success or 'error."
 	(if (listp (car (jabber-xml-node-children item)))
 	    (jabber-process-browse jc item))))))
 #+END_SRC
-** version
+*** version
 #+BEGIN_SRC emacs-lisp
 (require 'jabber-ourversion)
 
@@ -9191,7 +9192,7 @@ determined from the incoming packet passed in XML-DATA."
 		    nil nil nil nil
 		    id)))
 #+END_SRC
-** ahc - ad hoc commands
+*** ahc - ad hoc commands
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-ahc-sessionid nil
   "session id of Ad-Hoc Command session")
@@ -9397,7 +9398,7 @@ access allowed.  nil means open for everyone."
 		  #'jabber-process-data #'jabber-ahc-display
 		  #'jabber-process-data "Command execution failed"))
 #+END_SRC
-** ahc-presence
+*** ahc-presence
 #+BEGIN_SRC emacs-lisp
 (defconst jabber-ahc-presence-node "http://jabber.org/protocol/rc#set-status"
   "Node used by jabber-ahc-presence")
@@ -9480,7 +9481,7 @@ access allowed.  nil means open for everyone."
 		 (status . "completed"))
 		(note ((type . "info")) "Presence has been changed."))))))
 #+END_SRC
-** mode line
+*** mode line
 #+BEGIN_SRC emacs-lisp
 (eval-when-compile (require 'cl))
 
@@ -9555,7 +9556,7 @@ and offline contacts, respectively."
 	(add-hook 'jabber-presence-hooks
 		  'jabber-mode-line-count-contacts))))
 #+END_SRC
-** watch
+*** watch
 #+BEGIN_QUOTE
 (defcustom jabber-watch-alist nil
   "Alist of buddies for which an extra notification should be sent
@@ -9607,7 +9608,7 @@ sends a message if that happens. The buddies are stored in
         (delq (assq (jabber-jid-symbol buddy) jabber-watch-alist)
 	      jabber-watch-alist)))
 #+END_QUOTE
-** activity
+*** activity
 #+BEGIN_SRC emacs-lisp
 ;; Allows tracking messages from buddies using the global mode line
 ;; See (info "(jabber)Tracking activity")
@@ -10018,7 +10019,7 @@ With a numeric arg, enable this display if arg is positive."
 ;; XXX: define-minor-mode should probably do this for us, but it doesn't.
 (if jabber-activity-mode (jabber-activity-mode 1))
 #+END_SRC
-** events
+*** events
 #+BEGIN_SRC emacs-lisp
 (require 'cl)
 
@@ -10242,7 +10243,7 @@ and it hasn't been sent before."
 		    (not (null (jabber-xml-get-children x 'composing))))
 	      (jabber-events-update-message)))))))))
 #+END_SRC
-** chatstates
+*** chatstates
 #+BEGIN_SRC emacs-lisp
 ;; TODO
 ;; - Currently only active/composing notifications are /sent/ though all 5
@@ -10399,7 +10400,7 @@ It can be sent and cancelled several times.")
 
 (jabber-disco-advertise-feature "http://jabber.org/protocol/chatstates")
 #+END_SRC
-** avatar
+*** avatar
 #+BEGIN_SRC emacs-lisp
 ;; There are several methods for transporting avatars in Jabber
 ;; (JEP-0008, JEP-0084, JEP-0153).  They all have in common that they
@@ -10610,7 +10611,7 @@ available."
       (plist-put spec :height jabber-avatar-max-height))
     image))
 #+END_SRC
-** vcard
+*** vcard
 #+BEGIN_SRC emacs-lisp
 ;; There are great variations in Jabber vcard implementations.  This
 ;; one adds some spice to the mix, while trying to follow the JEP
@@ -11130,7 +11131,7 @@ The top node should be the `vCard' node."
        jabber-buffer-connection
        (and jabber-vcard-photo (avatar-sha1-sum jabber-vcard-photo))))))
 #+END_SRC
-** vcard-avatars
+*** vcard-avatars
 #+BEGIN_SRC emacs-lisp
 (defcustom jabber-vcard-avatars-retrieve (and (fboundp 'display-images-p)
 					      (display-images-p))
@@ -11238,7 +11239,7 @@ Keys are full JIDs.")
 	   ,(when hash
 	      `(photo () ,hash)))))))
 #+END_SRC
-** autoaway
+*** autoaway
 #+BEGIN_SRC emacs-lisp
 (eval-when-compile (require 'cl))
 (require 'time-date)
@@ -11426,7 +11427,7 @@ The method for finding the terminal only works on GNU/Linux."
             0
           (float-time idle-time)))))
 #+END_SRC
-** time
+*** time
 #+BEGIN_SRC emacs-lisp
 (require 'time-date)
 
@@ -11598,7 +11599,7 @@ determined from the incoming packet passed in XML-DATA."
                     nil nil nil nil
                     id)))
 #+END_SRC
-** truncate
+*** truncate
 #+BEGIN_SRC emacs-lisp
 (require 'cl)
 
@@ -11649,7 +11650,7 @@ Note that this might interfer with
 get it, and then it just gets deleted."
   (jabber-truncate-top buffer))
 #+END_SRC
-** carbons
+*** carbons
 #+BEGIN_SRC emacs-lisp
 (defun jabber-carbon-success (jc xml-data context)
   (when (equal "result" (jabber-xml-get-attribute xml-data 'type))
@@ -11670,8 +11671,8 @@ get it, and then it just gets deleted."
                   #'jabber-carbon-success "Carbons feature enablement"
                   #'jabber-carbon-failure "Carbons feature enablement"))
 #+END_SRC
-** stream initiation (SI)
-*** common
+*** stream initiation (SI)
+**** common
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-si-stream-methods nil
   "Supported SI stream methods.
@@ -11710,7 +11711,7 @@ the stream.  It takes these arguments:
 
 If it returns nil, the stream should be closed.")
 #+END_SRC
-*** client
+**** client
 #+BEGIN_SRC emacs-lisp
 (defun jabber-si-initiate (jc jid profile-namespace profile-data profile-function &optional mime-type)
   "Try to initiate a stream to JID.
@@ -11754,7 +11755,7 @@ Returns the SID."
     (let ((stream-negotiate (nth 1 method-data)))
       (funcall stream-negotiate jc from sid profile-function))))
 #+END_SRC
-*** server
+**** server
 #+BEGIN_SRC emacs-lisp
 (jabber-disco-advertise-feature "http://jabber.org/protocol/si")
 
@@ -11818,8 +11819,8 @@ Each entry is a list, containing:
 			id)
 	))))
 #+END_SRC
-** file transfer
-*** common
+*** file transfer
+**** common
 #+BEGIN_SRC emacs-lisp
 (defcustom jabber-ft-md5sum-program (or (when (executable-find "md5")
 					  (list (executable-find "md5") "-n"))
@@ -11844,7 +11845,7 @@ Return nil if no MD5 summing program is available."
       (forward-word 1)
       (buffer-substring (point-min) (point)))))
 #+END_SRC
-*** client
+**** client
 #+BEGIN_SRC emacs-lisp
 (eval-when-compile (require 'cl))
 
@@ -11887,7 +11888,7 @@ Return nil if no MD5 summing program is available."
   ;; File transfer is monodirectional, so ignore received data.
   #'ignore)
 #+END_SRC
-*** server
+**** server
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-ft-sessions nil
   "Alist, where keys are (sid jid), and values are buffers of the files.")
@@ -11993,7 +11994,7 @@ Return nil if no MD5 summing program is available."
 	(kill-buffer buffer)
 	nil))))
 #+END_SRC
-** socks5
+*** socks5
 #+BEGIN_SRC emacs-lisp
 (eval-when-compile (require 'cl))
 
@@ -12642,7 +12643,7 @@ This function simply starts a state machine."
 ;; 	     (lambda (data)
 ;; 	       (process-send-string proxy-connection data)))))
 #+END_SRC
-** jabber
+*** jabber
 #+BEGIN_SRC emacs-lisp
 ;;; load Unicode tables if this needed
 (when (and (featurep 'xemacs) (not (emacs-version>= 21 5 5)))
