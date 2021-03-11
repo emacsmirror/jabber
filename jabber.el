@@ -6065,8 +6065,6 @@ Signal an error if there is no JID at point."
 	 (get jid 'groups))
 	:test 'string=)))))
 
-;;; Respond to disco requests
-
 (defvar jabber-advertised-features
   (list "http://jabber.org/protocol/disco#info")
   "Features advertised on service discovery requests
@@ -6168,8 +6166,6 @@ See JEP-0030."
 	   `(feature ((var . ,featurename))))
        jabber-advertised-features)))
 
-;;; Interactive disco requests
-
 (add-to-list 'jabber-jid-info-menu
 	     (cons "Send items disco query" 'jabber-get-disco-items))
 (defun jabber-get-disco-items (jc to &optional node)
@@ -6246,9 +6242,6 @@ See JEP-0030."
 	      'jabber-account jc
 	      'jabber-node node))))
       (insert "No items found.\n"))))
-
-;;; Caching API for disco requests
-
 ;; Keys are ("jid" . "node"), where "node" is nil if appropriate.
 ;; Values are (identities features), where each identity is ["name"
 ;; "category" "type"], and each feature is a string.
@@ -6363,8 +6356,6 @@ invalidate cache and get fresh data."
 (defun jabber-disco-get-items-immediately (jid node)
   (gethash (cons jid node) jabber-disco-items-cache))
 
-;;; Publish
-
 (defun jabber-disco-publish (jc node item-name item-jid item-node)
   "Publish the given item under disco node NODE."
   (jabber-send-iq jc nil
@@ -6392,8 +6383,6 @@ invalidate cache and get fresh data."
 				     `((node . ,item-node))))))
 		  'jabber-report-success "Disco removal"
 		  'jabber-report-success "Disco removal"))
-
-;;; Entity Capabilities (XEP-0115)
 
 ;;;###autoload
 (eval-after-load "jabber-core"
@@ -6531,8 +6520,6 @@ Return (IDENTITIES FEATURES), or nil if not in cache."
 	  ;; No, forget about it for now.
 	  (remhash key jabber-caps-cache))))))
 
-;;; Entity Capabilities utility functions
-
 (defun jabber-caps-ver-string (query hash)
   ;; XEP-0115, section 5.1
   ;; 1. Initialize an empty string S.
@@ -6634,8 +6621,6 @@ Return (IDENTITIES FEATURES), or nil if not in cache."
 			(let ((a-xml:lang (jabber-xml-get-attribute a 'xml:lang))
 			      (b-xml:lang (jabber-xml-get-attribute b 'xml:lang)))
 			  (string< a-xml:lang b-xml:lang)))))))))
-
-;;; Sending Entity Capabilities
 
 (defvar jabber-caps-default-hash-function "sha-1"
   "Hash function to use when sending caps in presence stanzas.
@@ -9344,7 +9329,9 @@ access allowed.  nil means open for everyone."
   :type 'boolean)
 
 (defvar jabber-mode-line-string nil)
+
 (defvar jabber-mode-line-presence nil)
+
 (defvar jabber-mode-line-contacts nil)
 
 (defadvice jabber-send-presence (after jsp-update-mode-line
@@ -9754,7 +9741,6 @@ when there are unread messages which otherwise would be lost, if
     t))
 
 ;;; Interactive functions
-
 (defvar jabber-activity-last-buffer nil
   "Last non-Jabber buffer used.")
 
@@ -10137,10 +10123,6 @@ nil - don't send states")
     (setq jabber-chatstates-composing-sent nil)
     `((active ((xmlns . ,jabber-chatstates-xmlns))))))
 
-;;; OUTGOING
-;;; Code for handling requests for chat state notifications and providing
-;;; them, modulo user preferences.
-
 (defvar jabber-chatstates-composing-sent nil
   "Has composing notification been sent?
 It can be sent and cancelled several times.")
@@ -10187,8 +10169,6 @@ It can be sent and cancelled several times.")
          (,state ((xmlns . ,jabber-chatstates-xmlns)))))
       (when (setq jabber-chatstates-composing-sent composing-now)
         (jabber-chatstates-kick-timer)))))
-
-;;; COMMON
 
 (defun jabber-handle-incoming-message-chatstates (jc xml-data)
   (when (get-buffer (jabber-chat-get-buffer (jabber-xml-get-attribute xml-data 'from)))
@@ -10483,7 +10463,6 @@ available."
 ;;   The cdr is the address as a string.
 
 ;;; Code:
-
 (defvar jabber-vcard-photo nil
   "The avatar structure for the photo in the vCard edit buffer.")
 (make-variable-buffer-local 'jabber-vcard-photo)
@@ -12451,11 +12430,9 @@ This function simply starts a state machine."
 ;;; load Unicode tables if this needed
 (when (and (featurep 'xemacs) (not (emacs-version>= 21 5 5)))
     (require 'un-define))
-
 ;;; these customize fields should come first
 (defgroup jabber nil "Jabber instant messaging"
   :group 'applications)
-
 ;;;###autoload
 (defcustom jabber-account-list nil
   "List of Jabber accounts.
@@ -12552,7 +12529,6 @@ configure a Google Talk account like this:
 (require 'jabber-awesome)
 (require 'jabber-libnotify)
 (require 'jabber-notifications)
-
 ;;;###autoload
 (defvar *jabber-current-status* nil
   "the users current presence status")

@@ -137,7 +137,7 @@ jabber.el is an Org literate program.
   (error nil))
 
 #+END_SRC
-
+**** jabber-jid-history                                         :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-jid-history nil
   "History of entered JIDs")
@@ -849,7 +849,7 @@ See secton 9.3, Stanza Errors, of XMPP Core, and JEP-0086, Legacy Errors."
 	(throw 'condition (jabber-xml-node-name child))))))
 
 #+END_SRC
-
+**** jabber-stream-error-messages                               :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-stream-error-messages
   (list
@@ -1054,7 +1054,7 @@ applied to the node and not to the data itself."
 (eval-when-compile (require 'cl))
 
 #+END_SRC
-
+**** jabber-menu                                                :variable:
 #+BEGIN_SRC emacs-lisp
 ;;;###autoload
 (defvar jabber-menu
@@ -1192,37 +1192,37 @@ With prefix argument, remove it."
                       (bound-and-true-p jabber-connections))))))
 
 #+END_SRC
-
+**** jabber-jid-chat-menu                                       :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-jid-chat-menu nil
   "Menu items for chat menu")
 
 #+END_SRC
-
+**** jabber-jid-info-menu                                       :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-jid-info-menu nil
   "Menu item for info menu")
 
 #+END_SRC
-
+**** jabber-jid-roster-menu                                     :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-jid-roster-menu nil
   "Menu items for roster menu")
 
 #+END_SRC
-
+**** jabber-jid-muc-menu                                        :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-jid-muc-menu nil
   "Menu items for MUC menu")
 
 #+END_SRC
-
+**** jabber-jid-service-menu                                    :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-jid-service-menu nil
   "Menu items for service menu")
 
 #+END_SRC
-
+**** jabber-popup-menu                                          :variable:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-popup-menu (which-menu)
   "Popup specified menu"
@@ -1234,7 +1234,7 @@ With prefix argument, remove it."
 	(call-interactively choice))))
 
 #+END_SRC
-
+**** jabber-popup-chat-menu                                     :variable:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-popup-chat-menu ()
   "Popup chat menu"
@@ -1242,7 +1242,7 @@ With prefix argument, remove it."
   (jabber-popup-menu jabber-jid-chat-menu))
 
 #+END_SRC
-
+**** jabber-popup-info-menu                                     :variable:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-popup-info-menu ()
   "Popup info menu"
@@ -1250,7 +1250,7 @@ With prefix argument, remove it."
   (jabber-popup-menu jabber-jid-info-menu))
 
 #+END_SRC
-
+**** jabber-popup-roster-menu                                   :variable:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-popup-roster-menu ()
   "Popup roster menu"
@@ -1258,7 +1258,7 @@ With prefix argument, remove it."
   (jabber-popup-menu jabber-jid-roster-menu))
 
 #+END_SRC
-
+**** jabber-popup-muc-menu                                      :variable:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-popup-muc-menu ()
   "Popup MUC menu"
@@ -1266,7 +1266,7 @@ With prefix argument, remove it."
   (jabber-popup-menu jabber-jid-muc-menu))
 
 #+END_SRC
-
+**** jabber-popup-service-menu                                  :variable:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-popup-service-menu ()
   "Popup service menu"
@@ -1274,7 +1274,7 @@ With prefix argument, remove it."
   (jabber-popup-menu jabber-jid-service-menu))
 
 #+END_SRC
-
+**** jabber-popup-combined-menu                                 :variable:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-popup-combined-menu ()
   "Popup combined menu"
@@ -1681,7 +1681,7 @@ or later."
   :group 'jabber-conn)
 
 #+END_SRC
-
+**** jabber-connect-methods                                     :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-connect-methods
   `((network jabber-network-connect jabber-network-send)
@@ -1700,7 +1700,7 @@ Second item is the connect function.
 Third item is the send function.")
 
 #+END_SRC
-
+**** jabber-get-connect-function                                :variable:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-get-connect-function (type)
   "Get the connect function associated with TYPE.
@@ -2013,7 +2013,7 @@ On failure, signal error."
     (error "Command rejected by server"))))
 
 #+END_SRC
-
+**** *jabber-virtual-server-function*                           :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar *jabber-virtual-server-function* nil
   "Function to use for sending stanzas on a virtual connection.
@@ -2191,7 +2191,7 @@ Call REMEMBER with the password.  REMEMBER is expected to return it as well."
   (error nil))
 
 #+END_SRC
-
+**** jabber-common-keymap                                       :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-common-keymap
   (let ((map (make-sparse-keymap)))
@@ -2208,7 +2208,7 @@ Call REMEMBER with the password.  REMEMBER is expected to return it as well."
     map))
 
 #+END_SRC
-
+**** jabber-global-keymap                                       :variable:
 #+BEGIN_SRC emacs-lisp
 ;;;###autoload
 (defvar jabber-global-keymap
@@ -2254,19 +2254,19 @@ Not truncate if set to 0"
   :group 'jabber-debug)
 
 #+END_SRC
-
+**** jabber-point-insert                                        :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-point-insert nil
   "Position where the message being composed starts")
 
 #+END_SRC
-
+**** jabber-send-function                                       :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-send-function nil
   "Function for sending a message from a chat buffer.")
 
 #+END_SRC
-
+**** jabber-console-mode-hook                                   :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-console-mode-hook nil
   "Hook called at the end of `jabber-console-mode'.
@@ -2274,13 +2274,13 @@ Note that functions in this hook have no way of knowing
 what kind of chat buffer is being created.")
 
 #+END_SRC
-
+**** jabber-console-ewoc                                        :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-console-ewoc nil
   "The ewoc showing the XML elements of this stream buffer.")
 
 #+END_SRC
-
+**** jabber-console-mode-map                                    :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-console-mode-map
   (let ((map (make-sparse-keymap)))
@@ -2410,49 +2410,49 @@ what kind of chat buffer is being created.")
        "fsm not found in `load-path' or jabber-fallback-lib/ directory.")))
 
 #+END_SRC
-
+**** jabber-connections                                         :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-connections nil
   "List of jabber-connection FSMs.")
 
 #+END_SRC
-
+**** *jabber-roster*                                            :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar *jabber-roster* nil
   "the roster list")
 
 #+END_SRC
-
+**** jabber-jid-obarray                                         :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-jid-obarray (make-vector 127 0)
   "obarray for keeping JIDs")
 
 #+END_SRC
-
+**** *jabber-disconnecting*                                     :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar *jabber-disconnecting* nil
   "boolean - are we in the process of disconnecting by free will")
 
 #+END_SRC
-
+**** jabber-message-chain                                       :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-message-chain nil
   "Incoming messages are sent to these functions, in order.")
 
 #+END_SRC
-
+**** jabber-iq-chain                                            :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-iq-chain nil
   "Incoming infoqueries are sent to these functions, in order.")
 
 #+END_SRC
-
+**** jabber-presence-chain                                      :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-presence-chain nil
   "Incoming presence notifications are sent to these functions, in order.")
 
 #+END_SRC
-
+**** jabber-namespace-prefixes                                  :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-namespace-prefixes nil
   "XML namespace prefixes used for the current connection.")
@@ -2536,7 +2536,7 @@ indefinitely.  See `password-cache' and `password-cache-expiry'."
   :group 'jabber-core)
 
 #+END_SRC
-
+**** jabber-process-buffer                                      :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-process-buffer " *-jabber-process-*"
   "The name of the process buffer")
@@ -2562,13 +2562,13 @@ problems."
   (featurep 'sasl))
 
 #+END_SRC
-
+**** jabber-account-history                                     :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-account-history ()
   "Keeps track of previously used jabber accounts")
 
 #+END_SRC
-
+**** jabber-connection-type-history                             :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-connection-type-history ()
   "Keeps track of previously used connection types")
@@ -3222,7 +3222,7 @@ With double prefix argument, specify more connection details."
   (list (plist-put state-data :ever-session-established t) nil))
 
 #+END_SRC
-
+**** jabber-pending-presence-timeout                            :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-pending-presence-timeout 0.5
   "Wait this long before doing presence packet batch processing.")
@@ -3864,13 +3864,13 @@ Trailing newlines are always removed, regardless of this variable."
   :group 'jabber-roster)
 
 #+END_SRC
-
+**** jabber-roster-debug                                        :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-roster-debug nil
   "debug roster draw")
 
 #+END_SRC
-
+**** jabber-roster-mode-map                                     :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-roster-mode-map
   (let ((map (make-sparse-keymap)))
@@ -4191,7 +4191,7 @@ See `jabber-sort-order' for order used."
     status))
 
 #+END_SRC
-
+**** jabber-roster-ewoc                                         :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-roster-ewoc nil
   "Ewoc displaying the roster.
@@ -4636,24 +4636,25 @@ If optional PREV is non-nil, return position of previous property appearence."
 
 #+END_SRC
 *** iq
+**** *jabber-open-info-queries*                                 :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar *jabber-open-info-queries* nil
   "an alist of open query id and their callback functions")
 
 #+END_SRC
-
+**** jabber-iq-get-xmlns-alist                                  :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-iq-get-xmlns-alist nil
   "Mapping from XML namespace to handler for IQ GET requests.")
 
 #+END_SRC
-
+**** jabber-iq-set-xmlns-alist                                  :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-iq-set-xmlns-alist nil
   "Mapping from XML namespace to handler for IQ SET requests.")
 
 #+END_SRC
-
+**** jabber-browse-mode-map                                     :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-browse-mode-map
   (let ((map (make-sparse-keymap)))
@@ -4897,7 +4898,7 @@ other uses, see `jabber-message-hooks'."
   :group 'jabber-alerts)
 
 #+END_SRC
-
+**** jabber-message-hooks                                       :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-message-hooks nil
   "Internal hooks run when a new message arrives.
@@ -4944,7 +4945,7 @@ not have to call it themselves."
   :group 'jabber-alerts)
 
 #+END_SRC
-
+**** jabber-muc-hooks                                           :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-muc-hooks '()
   "Internal hooks run when a new MUC message arrives.
@@ -4992,7 +4993,7 @@ one of \"subscribe\", \"unsubscribe\", \"subscribed\" and
   :group 'jabber-alerts)
 
 #+END_SRC
-
+**** jabber-presence-hooks                                      :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-presence-hooks '(jabber-presence-watch)
   "Internal hooks run when a user's presence changes.
@@ -5037,7 +5038,7 @@ Third argument is PROPOSED-ALERT, containing the string returned by
   :group 'jabber-alerts)
 
 #+END_SRC
-
+**** jabber-info-message-hooks                                  :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-info-message-hooks '()
   "Internal hooks run when an info request is completed.
@@ -5585,7 +5586,7 @@ number after the last rotation."
   :group 'jabber-history)
 
 #+END_SRC
-
+**** jabber-history-inhibit-received-message-functions          :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-history-inhibit-received-message-functions nil
   "Functions determining whether to log an incoming message stanza.
@@ -5865,18 +5866,19 @@ applies, though."
 
 #+END_SRC
 *** chat buffer
+**** jabber-point-insert                                        :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-point-insert nil
   "Position where the message being composed starts")
 
 #+END_SRC
-
+**** jabber-send-function                                       :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-send-function nil
   "Function for sending a message from a chat buffer.")
 
 #+END_SRC
-
+**** jabber-chat-mode-hook                                      :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-chat-mode-hook nil
   "Hook called at the end of `jabber-chat-mode'.
@@ -5894,11 +5896,14 @@ window or at `fill-column', whichever is shorter."
   :type 'boolean)
 
 #+END_SRC
-
+**** jabber-chat-ewoc                                           :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-chat-ewoc nil
   "The ewoc showing the messages of this chat buffer.")
 
+#+END_SRC
+**** jabber-buffer-connection                                   :variable:
+#+BEGIN_SRC emacs-lisp
 ;;;###autoload
 (defvar jabber-buffer-connection nil
   "The connection used by this buffer.")
@@ -5954,7 +5959,7 @@ window or at `fill-column', whichever is shorter."
   'jabber-chat-mode-flyspell-verify)
 
 #+END_SRC
-
+**** jabber-chat-mode-map                                       :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-chat-mode-map
   (let ((map (make-sparse-keymap)))
@@ -6208,12 +6213,15 @@ These fields are available:
   "Face used for error messages"
   :group 'jabber-chat)
 
+#+END_SRC
+**** jabber-chatting-with                                       :variable:
+#+BEGIN_SRC emacs-lisp
 ;;;###autoload
 (defvar jabber-chatting-with nil
   "JID of the person you are chatting with")
 
 #+END_SRC
-
+**** jabber-chat-printers                                       :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-chat-printers '(jabber-chat-print-subject
 			       jabber-chat-print-body
@@ -6228,7 +6236,7 @@ MODE       :insert or :printp.  For :insert, insert text at point.
            For :printp, return non-nil if function would insert text.")
 
 #+END_SRC
-
+**** jabber-body-printers                                       :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-body-printers '(jabber-chat-normal-body)
   "List of functions that may be able to print a body for a message.
@@ -6246,7 +6254,7 @@ Add a function to the beginning of this list if the tag it handles
 replaces the contents of the <body/> tag.")
 
 #+END_SRC
-
+**** jabber-chat-send-hooks                                     :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-chat-send-hooks nil
   "List of functions called when a chat message is sent.
@@ -6257,7 +6265,7 @@ The functions should return a list of XML nodes they want to be
 added to the outgoing message.")
 
 #+END_SRC
-
+**** jabber-chat-earliest-backlog                               :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-chat-earliest-backlog nil
   "Float-time of earliest backlog entry inserted into buffer.
@@ -6825,6 +6833,7 @@ With a prefix argument, open buffer in other window."
 
 #+END_SRC
 *** presence
+**** jabber-presence-element-functions                          :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-presence-element-functions nil
   "List of functions returning extra elements for <presence/> stanzas.
@@ -6833,7 +6842,7 @@ possibly empty list of extra child element of the <presence/>
 stanza.")
 
 #+END_SRC
-
+**** jabber-presence-history                                    :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-presence-history ()
   "Keeps track of previously used presence status types")
@@ -7309,7 +7318,7 @@ text, if specified"
 			  (list `(status () ,request))))))
 
 #+END_SRC
-
+**** jabber-roster-group-history                                :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-roster-group-history nil
   "History of entered roster groups")
@@ -7427,9 +7436,9 @@ Signal an error if there is no JID at point."
 
 #+END_SRC
 *** disco
+**** Respond to disco requests
+***** jabber-advertised-features                               :variable:
 #+BEGIN_SRC emacs-lisp
-;;; Respond to disco requests
-
 (defvar jabber-advertised-features
   (list "http://jabber.org/protocol/disco#info")
   "Features advertised on service discovery requests
@@ -7438,7 +7447,7 @@ Don't add your feature to this list directly.  Instead, call
 `jabber-disco-advertise-feature'.")
 
 #+END_SRC
-
+***** jabber-disco-items-nodes                                 :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-disco-items-nodes
   (list
@@ -7461,7 +7470,7 @@ JID, and returns non-nil if access is granted.  If the second item is
 nil, access is always granted.")
 
 #+END_SRC
-
+***** jabber-disco-info-nodes                                  :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-disco-info-nodes
   (list
@@ -7543,8 +7552,9 @@ See JEP-0030."
 	   `(feature ((var . ,featurename))))
        jabber-advertised-features)))
 
-;;; Interactive disco requests
-
+#+END_SRC
+**** Interactive disco requests
+#+BEGIN_SRC emacs-lisp
 (add-to-list 'jabber-jid-info-menu
 	     (cons "Send items disco query" 'jabber-get-disco-items))
 (defun jabber-get-disco-items (jc to &optional node)
@@ -7630,14 +7640,19 @@ See JEP-0030."
 	      'jabber-account jc
 	      'jabber-node node))))
       (insert "No items found.\n"))))
+#+END_SRC
 
-;;; Caching API for disco requests
-
+**** Caching API for disco requests
+***** jabber-disco-info-cache                                  :variable:
+#+BEGIN_SRC emacs-lisp
 ;; Keys are ("jid" . "node"), where "node" is nil if appropriate.
 ;; Values are (identities features), where each identity is ["name"
 ;; "category" "type"], and each feature is a string.
 (defvar jabber-disco-info-cache (make-hash-table :test 'equal))
 
+#+END_SRC
+***** jabber-disco-items-cache                                 :variable:
+#+BEGIN_SRC emacs-lisp
 ;; Keys are ("jid" . "node").  Values are (items), where each
 ;; item is ["name" "jid" "node"] (some values may be nil).
 (defvar jabber-disco-items-cache (make-hash-table :test 'equal))
@@ -7768,8 +7783,10 @@ invalidate cache and get fresh data."
 (defun jabber-disco-get-items-immediately (jid node)
   (gethash (cons jid node) jabber-disco-items-cache))
 
-;;; Publish
+#+END_SRC
+**** Publish
 
+#+BEGIN_SRC emacs-lisp
 (defun jabber-disco-publish (jc node item-name item-jid item-node)
   "Publish the given item under disco node NODE."
   (jabber-send-iq jc nil
@@ -7801,14 +7818,17 @@ invalidate cache and get fresh data."
 		  'jabber-report-success "Disco removal"
 		  'jabber-report-success "Disco removal"))
 
-;;; Entity Capabilities (XEP-0115)
+#+END_SRC
 
+**** Entity Capabilities (XEP-0115)
+
+#+BEGIN_SRC emacs-lisp
 ;;;###autoload
 (eval-after-load "jabber-core"
   '(add-to-list 'jabber-presence-chain #'jabber-process-caps))
 
 #+END_SRC
-
+***** jabber-caps-cache                                        :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-caps-cache (make-hash-table :test 'equal))
 
@@ -7848,6 +7868,9 @@ Return (IDENTITIES FEATURES), or nil if not in cache."
 	(when (and (consp cache-entry) (not (floatp (car cache-entry))))
 	  cache-entry)))))
 
+#+END_SRC
+
+#+BEGIN_SRC emacs-lisp
 ;;;###autoload
 (defun jabber-process-caps (jc xml-data)
   "Look for entity capabilities in presence stanzas."
@@ -7960,8 +7983,11 @@ Return (IDENTITIES FEATURES), or nil if not in cache."
 	  ;; No, forget about it for now.
 	  (remhash key jabber-caps-cache))))))
 
-;;; Entity Capabilities utility functions
+#+END_SRC
 
+**** Entity Capabilities utility functions
+
+#+BEGIN_SRC emacs-lisp
 (defun jabber-caps-ver-string (query hash)
   ;; XEP-0115, section 5.1
   ;; 1. Initialize an empty string S.
@@ -8070,14 +8096,17 @@ Return (IDENTITIES FEATURES), or nil if not in cache."
 			      (b-xml:lang (jabber-xml-get-attribute b 'xml:lang)))
 			  (string< a-xml:lang b-xml:lang)))))))))
 
-;;; Sending Entity Capabilities
+#+END_SRC
 
+**** Sending Entity Capabilities
+***** jabber-caps-default-hash-function                        :variable:
+#+BEGIN_SRC emacs-lisp
 (defvar jabber-caps-default-hash-function "sha-1"
   "Hash function to use when sending caps in presence stanzas.
 The value should be a key in `jabber-caps-hash-names'.")
 
 #+END_SRC
-
+***** jabber-caps-current-hash                                 :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-caps-current-hash nil
   "The current disco hash we're sending out in presence stanzas.")
@@ -8087,6 +8116,9 @@ The value should be a key in `jabber-caps-hash-names'.")
 #+BEGIN_SRC emacs-lisp
 (defconst jabber-caps-node "http://emacs-jabber.sourceforge.net")
 
+#+END_SRC
+
+#+BEGIN_SRC emacs-lisp
 ;;;###autoload
 (defun jabber-disco-advertise-feature (feature)
   (unless (member feature jabber-advertised-features)
@@ -8118,6 +8150,9 @@ the right node."
 	  jabber-disco-info-nodes)
     (setq jabber-caps-current-hash new-hash)))
 
+#+END_SRC
+
+#+BEGIN_SRC emacs-lisp
 ;;;###autoload
 (defun jabber-caps-presence-element (_jc)
   (unless jabber-caps-current-hash
@@ -8255,13 +8290,13 @@ protocols."
 (require 'wid-edit)
 
 #+END_SRC
-
+**** jabber-widget-alist                                        :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-widget-alist nil
   "Alist of widgets currently used")
 
 #+END_SRC
-
+**** jabber-form-type                                           :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-form-type nil
   "Type of form.  One of:
@@ -8269,7 +8304,7 @@ protocols."
 'register, as used in jabber:iq:register and jabber:iq:search")
 
 #+END_SRC
-
+**** jabber-submit-to                                           :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-submit-to nil
   "JID of the entity to which form data is to be sent")
@@ -8639,7 +8674,7 @@ Return nil if no form type is specified."
 (require 'cl)
 
 #+END_SRC
-
+**** jabber-bookmarks                                           :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-bookmarks (make-hash-table :test 'equal)
   "Mapping from full JIDs to bookmarks.
@@ -8969,6 +9004,9 @@ on success or failure, respectively."
 
 (require 'cl)
 
+#+END_SRC
+**** *jabber-active-groupchats*                                 :variable:
+#+BEGIN_SRC emacs-lisp
 ;;;###autoload
 (defvar *jabber-active-groupchats* nil
   "alist of groupchats and nicknames
@@ -8976,7 +9014,7 @@ Keys are strings, the bare JID of the room.
 Values are strings.")
 
 #+END_SRC
-
+**** jabber-pending-groupchats                                  :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-pending-groupchats (make-hash-table)
   "Hash table of groupchats and nicknames.
@@ -8985,7 +9023,7 @@ This table records the last nickname used to join the particular
 chat room.  Items are thus never removed.")
 
 #+END_SRC
-
+**** jabber-muc-participants                                    :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-muc-participants nil
   "alist of groupchats and participants
@@ -8993,31 +9031,31 @@ Keys are strings, the bare JID of the room.
 Values are lists of nickname strings.")
 
 #+END_SRC
-
+**** jabber-group                                               :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-group nil
   "the groupchat you are participating in")
 
 #+END_SRC
-
+**** jabber-muc-topic                                           :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-muc-topic ""
   "The topic of the current MUC room.")
 
 #+END_SRC
-
+**** jabber-role-history                                        :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-role-history ()
   "Keeps track of previously used roles")
 
 #+END_SRC
-
+**** jabber-affiliation-history                                 :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-affiliation-history ()
   "Keeps track of previously used affiliations")
 
 #+END_SRC
-
+**** jabber-muc-nickname-history                                :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-muc-nickname-history ()
   "Keeps track of previously referred-to nicknames")
@@ -9152,6 +9190,9 @@ The format is that of `mode-line-format' and `header-line-format'."
   :type 'sexp
   :group 'jabber-chat)
 
+#+END_SRC
+**** jabber-muc-printers                                        :variable:
+#+BEGIN_SRC emacs-lisp
 ;;;###autoload
 (defvar jabber-muc-printers '()
   "List of functions that may be able to print part of a MUC message.
@@ -10386,7 +10427,7 @@ Return nil if X-MUC is nil."
 (require 'hippie-exp)
 
 #+END_SRC
-
+**** *jabber-muc-participant-last-speaking*                     :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar *jabber-muc-participant-last-speaking* nil
   "Global alist in form (group . ((member . time-of-last-speaking) ...) ...).")
@@ -10922,18 +10963,19 @@ determined from the incoming packet passed in XML-DATA."
 
 #+END_SRC
 *** ahc - ad hoc commands
+**** jabber-ahc-sessionid                                       :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-ahc-sessionid nil
   "session id of Ad-Hoc Command session")
 
 #+END_SRC
-
+**** jabber-ahc-node                                            :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-ahc-node nil
   "node to send commands to")
 
 #+END_SRC
-
+**** jabber-ahc-commands                                        :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-ahc-commands nil
   "Commands provided
@@ -11262,10 +11304,18 @@ access allowed.  nil means open for everyone."
   :type 'boolean)
 
 #+END_SRC
-
+**** jabber-mode-line-string                                    :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-mode-line-string nil)
+
+#+END_SRC
+**** jabber-mode-line-presence                                  :variable:
+#+BEGIN_SRC emacs-lisp
 (defvar jabber-mode-line-presence nil)
+
+#+END_SRC
+**** jabber-mode-line-contacts                                  :variable:
+#+BEGIN_SRC emacs-lisp
 (defvar jabber-mode-line-contacts nil)
 
 #+END_SRC
@@ -11546,37 +11596,37 @@ there are unread messages which otherwise would be lost."
   :group 'jabber-activity)
 
 #+END_SRC
-
+**** jabber-activity-jids                                       :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-activity-jids nil
   "A list of JIDs which have caused activity")
 
 #+END_SRC
-
+**** jabber-activity-personal-jids                              :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-activity-personal-jids nil
   "Subset of `jabber-activity-jids' for JIDs with \"personal\" activity.")
 
 #+END_SRC
-
+**** jabber-activity-name-alist                                 :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-activity-name-alist nil
   "Alist of mode line names for bare JIDs")
 
 #+END_SRC
-
+**** jabber-activity-mode-string                                :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-activity-mode-string ""
   "The mode string for jabber activity")
 
 #+END_SRC
-
+**** jabber-activity-count-string                               :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-activity-count-string "0"
   "Number of active JIDs as a string.")
 
 #+END_SRC
-
+**** jabber-activity-update-hook                                :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-activity-update-hook nil
   "Hook called when `jabber-activity-jids' changes.
@@ -11794,7 +11844,9 @@ when there are unread messages which otherwise would be lost, if
     t))
 
 ;;; Interactive functions
-
+#+END_SRC
+**** jabber-activity-last-buffer                                :variable:
+#+BEGIN_SRC emacs-lisp
 (defvar jabber-activity-last-buffer nil
   "Last non-Jabber buffer used.")
 
@@ -11819,10 +11871,13 @@ buffer exists, switch back to the last non Jabber chat buffer used."
 	(message "No new activity"))))
 
 #+END_SRC
-
+**** jabber-activity-idle-timer                                 :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-activity-idle-timer nil "Idle timer used for activity cleaning")
 
+#+END_SRC
+
+#+BEGIN_SRC emacs-lisp
 ;;;###autoload
 (define-minor-mode jabber-activity-mode
   "Toggle display of activity in hidden jabber buffers in the mode line.
@@ -11932,14 +11987,14 @@ With a numeric arg, enable this display if arg is positive."
   :group 'jabber-events)
 
 #+END_SRC
-
+**** jabber-events-composing-p                                  :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-events-composing-p nil
   "Is the other person composing a message?")
 (make-variable-buffer-local 'jabber-events-composing-p)
 
 #+END_SRC
-
+**** jabber-events-arrived                                      :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-events-arrived nil
   "In what way has the message reached the recipient?
@@ -11950,7 +12005,7 @@ probably reading the message).")
 (make-variable-buffer-local 'jabber-events-arrived)
 
 #+END_SRC
-
+**** jabber-events-message                                      :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-events-message ""
   "Human-readable presentation of event information")
@@ -12004,35 +12059,35 @@ probably reading the message).")
   :type 'boolean)
 
 #+END_SRC
-
+**** jabber-events-requested                                    :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-events-requested ()
   "List of events requested")
 (make-variable-buffer-local 'jabber-events-requested)
 
 #+END_SRC
-
+**** jabber-events-last-id                                      :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-events-last-id nil
   "Id of last message received, or nil if none.")
 (make-variable-buffer-local 'jabber-events-last-id)
 
 #+END_SRC
-
+**** jabber-events-delivery-confirmed                           :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-events-delivery-confirmed nil
   "Has delivery confirmation been sent?")
 (make-variable-buffer-local 'jabber-events-delivery-confirmed)
 
 #+END_SRC
-
+**** jabber-events-display-confirmed                            :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-events-display-confirmed nil
   "Has display confirmation been sent?")
 (make-variable-buffer-local 'jabber-events-display-confirmed)
 
 #+END_SRC
-
+**** jabber-events-composing-sent                               :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-events-composing-sent nil
   "Has composing notification been sent?
@@ -12211,7 +12266,7 @@ and it hasn't been sent before."
   :type 'boolean)
 
 #+END_SRC
-
+**** jabber-chatstates-requested                                :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-chatstates-requested 'first-time
   "Whether or not chat states notification was requested.
@@ -12222,14 +12277,14 @@ nil - don't send states")
 (make-variable-buffer-local 'jabber-chatstates-requested)
 
 #+END_SRC
-
+**** jabber-chatstates-last-state                               :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-chatstates-last-state nil
   "The last seen chat state.")
 (make-variable-buffer-local 'jabber-chatstates-last-state)
 
 #+END_SRC
-
+**** jabber-chatstates-message                                  :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-chatstates-message ""
   "Human-readable presentation of chat state information")
@@ -12261,17 +12316,19 @@ nil - don't send states")
     (setq jabber-chatstates-composing-sent nil)
     `((active ((xmlns . ,jabber-chatstates-xmlns))))))
 
-;;; OUTGOING
-;;; Code for handling requests for chat state notifications and providing
-;;; them, modulo user preferences.
+#+END_SRC
 
+**** Outgoing
+Code for handling requests for chat state notifications and providing them, modulo user preferences.
+***** jabber-chatstates-composing-sent                         :variable:
+#+BEGIN_SRC emacs-lisp
 (defvar jabber-chatstates-composing-sent nil
   "Has composing notification been sent?
 It can be sent and cancelled several times.")
 (make-variable-buffer-local 'jabber-chatstates-composing-sent)
 
 #+END_SRC
-
+***** jabber-chatstates-paused-timer                           :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-chatstates-paused-timer nil
   "Timer that counts down from 'composing state to 'paused.")
@@ -12327,8 +12384,10 @@ It can be sent and cancelled several times.")
       (when (setq jabber-chatstates-composing-sent composing-now)
         (jabber-chatstates-kick-timer)))))
 
-;;; COMMON
+#+END_SRC
+**** Common
 
+#+BEGIN_SRC emacs-lisp
 (defun jabber-handle-incoming-message-chatstates (jc xml-data)
   (when (get-buffer (jabber-chat-get-buffer (jabber-xml-get-attribute xml-data 'from)))
     (with-current-buffer (jabber-chat-get-buffer (jabber-xml-get-attribute xml-data 'from))
@@ -12667,7 +12726,9 @@ available."
 ;;   The cdr is the address as a string.
 
 ;;; Code:
-
+#+END_SRC
+**** jabber-vcard-photo                                         :variable:
+#+BEGIN_SRC emacs-lisp
 (defvar jabber-vcard-photo nil
   "The avatar structure for the photo in the vCard edit buffer.")
 (make-variable-buffer-local 'jabber-vcard-photo)
@@ -13206,7 +13267,7 @@ The top node should be the `vCard' node."
   :type 'boolean)
 
 #+END_SRC
-
+**** jabber-vcard-avatars-current-hash                          :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-vcard-avatars-current-hash
   (make-hash-table :test 'equal)
@@ -13427,12 +13488,12 @@ information about priority."
   :type 'boolean)
 
 #+END_SRC
-
+**** jabber-autoaway-timer                                      :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-autoaway-timer nil)
 
 #+END_SRC
-
+**** jabber-autoaway-last-idle-time                             :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-autoaway-last-idle-time nil
   "Seconds of idle time the last time we checked.
@@ -13791,7 +13852,7 @@ determined from the incoming packet passed in XML-DATA."
 (require 'cl)
 
 #+END_SRC
-
+**** jabber-log-lines-to-keep                                   :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-log-lines-to-keep 1000
   "Maximum number of lines in chat buffer")
@@ -13880,6 +13941,7 @@ get it, and then it just gets deleted."
 #+END_SRC
 *** stream initiation (SI)
 **** common
+**** jabber-si-stream-methods                                   :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-si-stream-methods nil
   "Supported SI stream methods.
@@ -13971,6 +14033,9 @@ Returns the SID."
 #+BEGIN_SRC emacs-lisp
 (jabber-disco-advertise-feature "http://jabber.org/protocol/si")
 
+#+END_SRC
+**** jabber-si-profiles                                         :variable:
+#+BEGIN_SRC emacs-lisp
 ;; Now, stream methods push data to profiles.  It could be the other
 ;; way around; not sure which is better.
 (defvar jabber-si-profiles nil
@@ -14116,18 +14181,19 @@ Return nil if no MD5 summing program is available."
 
 #+END_SRC
 **** server
+***** jabber-ft-sessions                                       :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-ft-sessions nil
   "Alist, where keys are (sid jid), and values are buffers of the files.")
 
 #+END_SRC
-
+***** jabber-ft-size                                           :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-ft-size nil
   "Size of the file that is being downloaded")
 
 #+END_SRC
-
+***** jabber-ft-md5-hash                                       :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-ft-md5-hash nil
   "MD5 hash of the file that is being downloaded")
@@ -14248,7 +14314,7 @@ Return nil if no MD5 summing program is available."
 (eval-when-compile (require 'cl))
 
 #+END_SRC
-
+**** jabber-socks5-pending-sessions                             :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-socks5-pending-sessions nil
   "List of pending sessions.
@@ -14259,7 +14325,7 @@ Each entry is a list, containing:
  * State machine managing the session")
 
 #+END_SRC
-
+**** jabber-socks5-active-sessions                              :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-socks5-active-sessions nil
   "List of active sessions.
@@ -14282,7 +14348,7 @@ Put preferred ones first."
   )
 
 #+END_SRC
-
+**** jabber-socks5-proxies-data                                 :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-socks5-proxies-data nil
   "Alist containing information about proxies.
@@ -14997,11 +15063,15 @@ This function simply starts a state machine."
 ;;; load Unicode tables if this needed
 (when (and (featurep 'xemacs) (not (emacs-version>= 21 5 5)))
     (require 'un-define))
+#+END_SRC
 
+#+BEGIN_SRC emacs-lisp
 ;;; these customize fields should come first
 (defgroup jabber nil "Jabber instant messaging"
   :group 'applications)
+#+END_SRC
 
+#+BEGIN_SRC emacs-lisp
 ;;;###autoload
 (defcustom jabber-account-list nil
   "List of Jabber accounts.
@@ -15107,21 +15177,29 @@ configure a Google Talk account like this:
 (require 'jabber-awesome)
 (require 'jabber-libnotify)
 (require 'jabber-notifications)
-
+#+END_SRC
+**** *jabber-current-status*                                    :variable:
+#+BEGIN_SRC emacs-lisp
 ;;;###autoload
 (defvar *jabber-current-status* nil
   "the users current presence status")
 
+#+END_SRC
+**** *jabber-current-show*                                      :variable:
+#+BEGIN_SRC emacs-lisp
 ;;;###autoload
 (defvar *jabber-current-show* nil
   "the users current presence show")
 
+#+END_SRC
+**** *jabber-current-priority*                                  :variable:
+#+BEGIN_SRC emacs-lisp
 ;;;###autoload
 (defvar *jabber-current-priority* nil
   "the user's current priority")
 
 #+END_SRC
-
+**** *jabber-status-history*                                    :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar *jabber-status-history* nil
   "history of status messages")
