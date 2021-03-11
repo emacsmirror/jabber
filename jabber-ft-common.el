@@ -19,28 +19,6 @@
 ;; the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 ;; Boston, MA 02110-1301, USA.
 
-(defcustom jabber-ft-md5sum-program (or (when (executable-find "md5")
-					  (list (executable-find "md5") "-n"))
-					(when (executable-find "md5sum")
-					  (list (executable-find "md5sum"))))
-  "The program to use to calculate MD5 sums of files.
-The first item should be the name of the program, and the remaing
-items the arguments.  The file name is appended as the last
-argument."
-  :type '(repeat string)
-  :group 'jabber)
-
-(defun jabber-ft-get-md5 (file-name)
-  "Get MD5 sum of FILE-NAME, and return as hex string.
-Return nil if no MD5 summing program is available."
-  (when jabber-ft-md5sum-program
-    (with-temp-buffer
-      (apply 'call-process (car jabber-ft-md5sum-program) nil t nil
-	     (append (cdr jabber-ft-md5sum-program) (list file-name)))
-      ;; Output is "hexsum filename"
-      (goto-char (point-min))
-      (forward-word 1)
-      (buffer-substring (point-min) (point)))))
 
 (provide 'jabber-ft-common)
 ;; arch-tag: 1ce4cce0-8360-11da-a5ba-000a95c2fcd0

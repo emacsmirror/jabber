@@ -19,51 +19,6 @@
 ;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 (require 'jabber-iq)
-(require 'jabber-feature-neg)
-
-(require 'jabber-si-common)
-
-(defun jabber-si-initiate (jc jid profile-namespace profile-data profile-function &optional mime-type)
-  "Try to initiate a stream to JID.
-PROFILE-NAMESPACE is, well, the namespace of the profile to use.
-PROFILE-DATA is the XML data to send within the SI request.
-PROFILE-FUNCTION is the \"connection established\" function.
-See `jabber-si-stream-methods'.
-MIME-TYPE is the MIME type to specify.
-Returns the SID."
-
-  (let ((sid (apply 'format "emacs-sid-%d.%d.%d" (current-time))))
-    (jabber-send-iq jc jid "set"
-		    `(si ((xmlns . "http://jabber.org/protocol/si")
-			  (id . ,sid)
-			  ,(if mime-type
-			       (cons 'mime-type mime-type))
-			  (profile . ,profile-namespace))
-			 ,profile-data
-			 (feature ((xmlns . "http://jabber.org/protocol/feature-neg"))
-				  ,(jabber-fn-encode (list
-						      (cons "stream-method"
-							    (mapcar 'car jabber-si-stream-methods)))
-						     'request)))
-		    #'jabber-si-initiate-process (cons profile-function sid)
-		    ;; XXX: use other function here?
-		    #'jabber-report-success "Stream initiation")
-    sid))
-
-(defun jabber-si-initiate-process (jc xml-data closure-data)
-  "Act on response to our SI query."
-
-  (let* ((profile-function (car closure-data))
-	 (sid (cdr closure-data))
-	 (from (jabber-xml-get-attribute xml-data 'from))
-	 (query (jabber-iq-query xml-data))
-	 (feature-node (car (jabber-xml-get-children query 'feature)))
-	 (feature-alist (jabber-fn-parse feature-node 'response))
-	 (chosen-method (cadr (assoc "stream-method" feature-alist)))
-	 (method-data (assoc chosen-method jabber-si-stream-methods)))
-    ;; Our work is done.  Hand it over to the stream method.
-    (let ((stream-negotiate (nth 1 method-data)))
-      (funcall stream-negotiate jc from sid profile-function))))
 
 (provide 'jabber-si-client)
 
