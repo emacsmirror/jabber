@@ -908,22 +908,22 @@ With prefix argument, remove it."
                       (bound-and-true-p jabber-connections))))))
 
 (defvar jabber-jid-chat-menu nil
-  "Menu items for chat menu")
+  "Menu items for chat menu.")
 
 (defvar jabber-jid-info-menu nil
-  "Menu item for info menu")
+  "Menu item for info menu.")
 
 (defvar jabber-jid-roster-menu nil
-  "Menu items for roster menu")
+  "Menu items for roster menu.")
 
 (defvar jabber-jid-muc-menu nil
-  "Menu items for MUC menu")
+  "Menu items for MUC menu.")
 
 (defvar jabber-jid-service-menu nil
-  "Menu items for service menu")
+  "Menu items for service menu.")
 
 (defun jabber-popup-menu (which-menu)
-  "Popup specified menu"
+  "Popup specified menu."
   (let* ((mouse-event (and (listp last-input-event) last-input-event))
 	 (choice (widget-choose "Actions" which-menu mouse-event)))
     (if mouse-event
@@ -932,32 +932,32 @@ With prefix argument, remove it."
 	(call-interactively choice))))
 
 (defun jabber-popup-chat-menu ()
-  "Popup chat menu"
+  "Popup chat menu."
   (interactive)
   (jabber-popup-menu jabber-jid-chat-menu))
 
 (defun jabber-popup-info-menu ()
-  "Popup info menu"
+  "Popup info menu."
   (interactive)
   (jabber-popup-menu jabber-jid-info-menu))
 
 (defun jabber-popup-roster-menu ()
-  "Popup roster menu"
+  "Popup roster menu."
   (interactive)
   (jabber-popup-menu jabber-jid-roster-menu))
 
 (defun jabber-popup-muc-menu ()
-  "Popup MUC menu"
+  "Popup MUC menu."
   (interactive)
   (jabber-popup-menu jabber-jid-muc-menu))
 
 (defun jabber-popup-service-menu ()
-  "Popup service menu"
+  "Popup service menu."
   (interactive)
   (jabber-popup-menu jabber-jid-service-menu))
 
 (defun jabber-popup-combined-menu ()
-  "Popup combined menu"
+  "Popup combined menu."
   (interactive)
   (jabber-popup-menu (append jabber-jid-chat-menu jabber-jid-info-menu jabber-jid-roster-menu jabber-jid-muc-menu)))
 
@@ -11135,7 +11135,7 @@ The method for finding the terminal only works on GNU/Linux."
 (add-to-list 'jabber-jid-info-menu (cons "Request time" 'jabber-get-time))
 
 (defun jabber-get-time (jc to)
-  "Request time"
+  "Request time."
   (interactive (list (jabber-read-account)
                      (jabber-read-jid-completing "Request time of: "
                                                  nil nil nil 'full t)))
@@ -11149,7 +11149,7 @@ The method for finding the terminal only works on GNU/Linux."
                       (jabber-get-legacy-time jc from)))))
 
 (defun jabber-get-legacy-time (jc to)
-  "Request legacy time"
+  "Request legacy time."
   (interactive (list (jabber-read-account)
                      (jabber-read-jid-completing "Request time of: "
                                                  nil nil nil 'full t)))
@@ -11299,7 +11299,7 @@ determined from the incoming packet passed in XML-DATA."
 (require 'cl)
 
 (defvar jabber-log-lines-to-keep 1000
-  "Maximum number of lines in chat buffer")
+  "Maximum number of lines in chat buffer.")
 
 (defun jabber-truncate-top (buffer &optional ewoc)
   "Clean old history from a chat BUFFER.
@@ -11355,7 +11355,7 @@ get it, and then it just gets deleted."
 (add-to-list 'jabber-jid-service-menu
              (cons "Enable Carbons" 'jabber-enable-carbons))
 (defun jabber-enable-carbons (jc)
-  "Send request to enable XEP-0280 Message Carbons"
+  "Send request to enable XEP-0280 Message Carbons."
   (interactive (list (jabber-read-account)))
   (jabber-send-iq jc
                   nil
@@ -12388,7 +12388,7 @@ configure a Google Talk account like this:
   :group 'jabber)
 
 (defcustom jabber-default-show ""
-  "default show state"
+  "Default show state."
   :type '(choice (const :tag "Online" "")
 		 (const :tag "Chatty" "chat")
 		 (const :tag "Away" "away")
@@ -12397,12 +12397,12 @@ configure a Google Talk account like this:
   :group 'jabber)
 
 (defcustom jabber-default-status ""
-  "default status string"
+  "Default status string."
   :type 'string
   :group 'jabber)
 
 (defcustom jabber-default-priority 10
-  "default priority"
+  "Default priority."
   :type 'integer
   :group 'jabber)
 
@@ -12422,42 +12422,43 @@ configure a Google Talk account like this:
 (require 'jabber-notifications)
 ;;;###autoload
 (defvar *jabber-current-status* nil
-  "the users current presence status")
+  "The users current presence status.")
 
 ;;;###autoload
 (defvar *jabber-current-show* nil
-  "the users current presence show")
+  "The users current presence show.")
 
 ;;;###autoload
 (defvar *jabber-current-priority* nil
-  "the user's current priority")
+  "The user's current priority.")
 
 (defvar *jabber-status-history* nil
-  "history of status messages")
+  "History of status messages.")
 
-(defgroup jabber-faces nil "faces for displaying jabber instant messaging"
+(defgroup jabber-faces nil "Faces for displaying jabber instant messaging."
   :group 'jabber)
 
 (defface jabber-title-small
   '((t (:weight bold :width semi-expanded :height 1.0 :inherit variable-pitch)))
-  "face for small titles"
+  "Face for small titles."
   :group 'jabber-faces)
 
 (defface jabber-title-medium
   '((t (:weight bold :width expanded :height 2.0 :inherit variable-pitch)))
-  "face for medium titles"
+  "Face for medium titles."
   :group 'jabber-faces)
 
 (defface jabber-title-large
   '((t (:weight bold :width ultra-expanded :height 3.0 :inherit variable-pitch)))
-  "face for large titles"
+  "Face for large titles."
   :group 'jabber-faces)
 
 (defgroup jabber-debug nil "debugging options"
   :group 'jabber)
 
 (defcustom jabber-debug-log-xml nil
-  "Set to non-nil to log all XML i/o in *-jabber-console-JID-* buffer. Set to string to also dump XML i/o in specified file."
+  "Set to non-nil to log all XML i/o in *-jabber-console-JID-* buffer.
+Set to string to also dump XML i/o in specified file."
   :type '(choice (const :tag "Do not dump XML i/o" nil)
                  (const :tag "Dump XML i/o in console" t)
                  (string :tag "Dump XML i/o in console and this file"))
@@ -12483,7 +12484,7 @@ Contents of process buffers might be useful for debugging."
    ("chat" . jabber-roster-user-chatty)
    ("error" . jabber-roster-user-error)
    (nil . jabber-roster-user-offline))
- "Mapping from presence types to faces")
+ "Mapping from presence types to faces.")
 
 (defconst jabber-presence-strings
   `(("" . ,(jabber-propertize "Online" 'face 'jabber-roster-user-online))
@@ -12493,17 +12494,17 @@ Contents of process buffers might be useful for debugging."
     ("chat" . ,(jabber-propertize "Chatty" 'face 'jabber-roster-user-chatty))
     ("error" . ,(jabber-propertize "Error" 'face 'jabber-roster-user-error))
     (nil . ,(jabber-propertize "Offline" 'face 'jabber-roster-user-offline)))
-  "Mapping from presence types to readable, colorized strings")
+  "Mapping from presence types to readable, colorized strings.")
 
 ;;;###autoload
 (defun jabber-customize ()
-  "customize jabber options"
+  "Customize jabber options."
   (interactive)
   (customize-group 'jabber))
 
 ;;;###autoload
 (defun jabber-info ()
-  "open jabber.el manual"
+  "Open jabber.el manual."
   (interactive)
   (info "jabber"))
 

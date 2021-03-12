@@ -1207,37 +1207,37 @@ With prefix argument, remove it."
 **** jabber-jid-chat-menu                                       :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-jid-chat-menu nil
-  "Menu items for chat menu")
+  "Menu items for chat menu.")
 
 #+END_SRC
 **** jabber-jid-info-menu                                       :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-jid-info-menu nil
-  "Menu item for info menu")
+  "Menu item for info menu.")
 
 #+END_SRC
 **** jabber-jid-roster-menu                                     :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-jid-roster-menu nil
-  "Menu items for roster menu")
+  "Menu items for roster menu.")
 
 #+END_SRC
 **** jabber-jid-muc-menu                                        :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-jid-muc-menu nil
-  "Menu items for MUC menu")
+  "Menu items for MUC menu.")
 
 #+END_SRC
 **** jabber-jid-service-menu                                    :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-jid-service-menu nil
-  "Menu items for service menu")
+  "Menu items for service menu.")
 
 #+END_SRC
 **** jabber-popup-menu                                          :function:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-popup-menu (which-menu)
-  "Popup specified menu"
+  "Popup specified menu."
   (let* ((mouse-event (and (listp last-input-event) last-input-event))
 	 (choice (widget-choose "Actions" which-menu mouse-event)))
     (if mouse-event
@@ -1249,7 +1249,7 @@ With prefix argument, remove it."
 **** jabber-popup-chat-menu                                      :command:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-popup-chat-menu ()
-  "Popup chat menu"
+  "Popup chat menu."
   (interactive)
   (jabber-popup-menu jabber-jid-chat-menu))
 
@@ -1257,7 +1257,7 @@ With prefix argument, remove it."
 **** jabber-popup-info-menu                                      :command:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-popup-info-menu ()
-  "Popup info menu"
+  "Popup info menu."
   (interactive)
   (jabber-popup-menu jabber-jid-info-menu))
 
@@ -1265,7 +1265,7 @@ With prefix argument, remove it."
 **** jabber-popup-roster-menu                                    :command:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-popup-roster-menu ()
-  "Popup roster menu"
+  "Popup roster menu."
   (interactive)
   (jabber-popup-menu jabber-jid-roster-menu))
 
@@ -1273,7 +1273,7 @@ With prefix argument, remove it."
 **** jabber-popup-muc-menu                                       :command:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-popup-muc-menu ()
-  "Popup MUC menu"
+  "Popup MUC menu."
   (interactive)
   (jabber-popup-menu jabber-jid-muc-menu))
 
@@ -1281,7 +1281,7 @@ With prefix argument, remove it."
 **** jabber-popup-service-menu                                   :command:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-popup-service-menu ()
-  "Popup service menu"
+  "Popup service menu."
   (interactive)
   (jabber-popup-menu jabber-jid-service-menu))
 
@@ -1289,7 +1289,7 @@ With prefix argument, remove it."
 **** jabber-popup-combined-menu                                  :command:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-popup-combined-menu ()
-  "Popup combined menu"
+  "Popup combined menu."
   (interactive)
   (jabber-popup-menu (append jabber-jid-chat-menu jabber-jid-info-menu jabber-jid-roster-menu jabber-jid-muc-menu)))
 
@@ -13737,7 +13737,7 @@ The method for finding the terminal only works on GNU/Linux."
 **** jabber-get-time                                             :command:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-get-time (jc to)
-  "Request time"
+  "Request time."
   (interactive (list (jabber-read-account)
                      (jabber-read-jid-completing "Request time of: "
                                                  nil nil nil 'full t)))
@@ -13754,7 +13754,7 @@ The method for finding the terminal only works on GNU/Linux."
 **** jabber-get-legacy-time                                      :command:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-get-legacy-time (jc to)
-  "Request legacy time"
+  "Request legacy time."
   (interactive (list (jabber-read-account)
                      (jabber-read-jid-completing "Request time of: "
                                                  nil nil nil 'full t)))
@@ -13944,7 +13944,7 @@ determined from the incoming packet passed in XML-DATA."
 **** jabber-log-lines-to-keep                                   :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-log-lines-to-keep 1000
-  "Maximum number of lines in chat buffer")
+  "Maximum number of lines in chat buffer.")
 
 #+END_SRC
 **** jabber-truncate-top                                         :command:
@@ -14018,7 +14018,7 @@ get it, and then it just gets deleted."
 (add-to-list 'jabber-jid-service-menu
              (cons "Enable Carbons" 'jabber-enable-carbons))
 (defun jabber-enable-carbons (jc)
-  "Send request to enable XEP-0280 Message Carbons"
+  "Send request to enable XEP-0280 Message Carbons."
   (interactive (list (jabber-read-account)))
   (jabber-send-iq jc
                   nil
@@ -15233,7 +15233,7 @@ configure a Google Talk account like this:
 **** jabber-default-show                                 :custom:variable:
 #+BEGIN_SRC emacs-lisp
 (defcustom jabber-default-show ""
-  "default show state"
+  "Default show state."
   :type '(choice (const :tag "Online" "")
 		 (const :tag "Chatty" "chat")
 		 (const :tag "Away" "away")
@@ -15245,7 +15245,7 @@ configure a Google Talk account like this:
 **** jabber-default-status                               :custom:variable:
 #+BEGIN_SRC emacs-lisp
 (defcustom jabber-default-status ""
-  "default status string"
+  "Default status string."
   :type 'string
   :group 'jabber)
 
@@ -15253,7 +15253,7 @@ configure a Google Talk account like this:
 **** jabber-default-priority                             :custom:variable:
 #+BEGIN_SRC emacs-lisp
 (defcustom jabber-default-priority 10
-  "default priority"
+  "Default priority."
   :type 'integer
   :group 'jabber)
 
@@ -15276,32 +15276,32 @@ configure a Google Talk account like this:
 #+BEGIN_SRC emacs-lisp
 ;;;###autoload
 (defvar *jabber-current-status* nil
-  "the users current presence status")
+  "The users current presence status.")
 
 #+END_SRC
 **** *jabber-current-show*                                      :variable:
 #+BEGIN_SRC emacs-lisp
 ;;;###autoload
 (defvar *jabber-current-show* nil
-  "the users current presence show")
+  "The users current presence show.")
 
 #+END_SRC
 **** *jabber-current-priority*                                  :variable:
 #+BEGIN_SRC emacs-lisp
 ;;;###autoload
 (defvar *jabber-current-priority* nil
-  "the user's current priority")
+  "The user's current priority.")
 
 #+END_SRC
 **** *jabber-status-history*                                    :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar *jabber-status-history* nil
-  "history of status messages")
+  "History of status messages.")
 
 #+END_SRC
 **** jabber-faces                                           :custom:group:
 #+BEGIN_SRC emacs-lisp
-(defgroup jabber-faces nil "faces for displaying jabber instant messaging"
+(defgroup jabber-faces nil "Faces for displaying jabber instant messaging."
   :group 'jabber)
 
 #+END_SRC
@@ -15309,7 +15309,7 @@ configure a Google Talk account like this:
 #+BEGIN_SRC emacs-lisp
 (defface jabber-title-small
   '((t (:weight bold :width semi-expanded :height 1.0 :inherit variable-pitch)))
-  "face for small titles"
+  "Face for small titles."
   :group 'jabber-faces)
 
 #+END_SRC
@@ -15317,7 +15317,7 @@ configure a Google Talk account like this:
 #+BEGIN_SRC emacs-lisp
 (defface jabber-title-medium
   '((t (:weight bold :width expanded :height 2.0 :inherit variable-pitch)))
-  "face for medium titles"
+  "Face for medium titles."
   :group 'jabber-faces)
 
 #+END_SRC
@@ -15325,7 +15325,7 @@ configure a Google Talk account like this:
 #+BEGIN_SRC emacs-lisp
 (defface jabber-title-large
   '((t (:weight bold :width ultra-expanded :height 3.0 :inherit variable-pitch)))
-  "face for large titles"
+  "Face for large titles."
   :group 'jabber-faces)
 
 #+END_SRC
@@ -15338,7 +15338,8 @@ configure a Google Talk account like this:
 **** jabber-debug-log-xml                                :custom:variable:
 #+BEGIN_SRC emacs-lisp
 (defcustom jabber-debug-log-xml nil
-  "Set to non-nil to log all XML i/o in *-jabber-console-JID-* buffer. Set to string to also dump XML i/o in specified file."
+  "Set to non-nil to log all XML i/o in *-jabber-console-JID-* buffer.
+Set to string to also dump XML i/o in specified file."
   :type '(choice (const :tag "Do not dump XML i/o" nil)
                  (const :tag "Dump XML i/o in console" t)
                  (string :tag "Dump XML i/o in console and this file"))
@@ -15373,7 +15374,7 @@ Contents of process buffers might be useful for debugging."
    ("chat" . jabber-roster-user-chatty)
    ("error" . jabber-roster-user-error)
    (nil . jabber-roster-user-offline))
- "Mapping from presence types to faces")
+ "Mapping from presence types to faces.")
 
 #+END_SRC
 **** jabber-presence-strings                                    :constant:
@@ -15386,14 +15387,14 @@ Contents of process buffers might be useful for debugging."
     ("chat" . ,(jabber-propertize "Chatty" 'face 'jabber-roster-user-chatty))
     ("error" . ,(jabber-propertize "Error" 'face 'jabber-roster-user-error))
     (nil . ,(jabber-propertize "Offline" 'face 'jabber-roster-user-offline)))
-  "Mapping from presence types to readable, colorized strings")
+  "Mapping from presence types to readable, colorized strings.")
 
 #+END_SRC
 **** jabber-customize                                            :command:
 #+BEGIN_SRC emacs-lisp
 ;;;###autoload
 (defun jabber-customize ()
-  "customize jabber options"
+  "Customize jabber options."
   (interactive)
   (customize-group 'jabber))
 
@@ -15402,7 +15403,7 @@ Contents of process buffers might be useful for debugging."
 #+BEGIN_SRC emacs-lisp
 ;;;###autoload
 (defun jabber-info ()
-  "open jabber.el manual"
+  "Open jabber.el manual."
   (interactive)
   (info "jabber"))
 
