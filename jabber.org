@@ -1624,7 +1624,7 @@ any string   character data of this node"
        "srv not found in `load-path' or jabber-fallback-lib/ directory.")))
 
 #+END_SRC
-
+**** jabber-conn                                            :custom:group:
 #+BEGIN_SRC emacs-lisp
 (defgroup jabber-conn nil "Jabber Connection Settings"
   :group 'jabber)
@@ -2461,7 +2461,7 @@ what kind of chat buffer is being created.")
 (make-variable-buffer-local 'jabber-namespace-prefixes)
 
 #+END_SRC
-
+**** jabber-core                                            :custom:group:
 #+BEGIN_SRC emacs-lisp
 (defgroup jabber-core nil "customize core functionality"
   :group 'jabber)
@@ -3615,7 +3615,7 @@ CLOSURE-DATA should be the password on success and nil on failure."
 (require 'format-spec)
 (require 'cl)				;for `find'
 #+END_SRC
-
+**** jabber-roster                                          :custom:group:
 #+BEGIN_SRC emacs-lisp
 (defgroup jabber-roster nil "roster display options"
   :group 'jabber)
@@ -4673,7 +4673,7 @@ If optional PREV is non-nil, return position of previous property appearence."
   :type 'hook)
 
 #+END_SRC
-
+**** jabber-browse                                          :custom:group:
 #+BEGIN_SRC emacs-lisp
 (defgroup jabber-browse nil "browse display options"
   :group 'jabber)
@@ -4870,7 +4870,7 @@ See section 9.3 of XMPP Core."
 (require 'cl)
 
 #+END_SRC
-
+**** jabber-alerts                                          :custom:group:
 #+BEGIN_SRC emacs-lisp
 (defgroup jabber-alerts nil "auditory and visual alerts for jabber events"
   :group 'jabber)
@@ -5507,6 +5507,7 @@ of `jabber-autoanswer-alist'"
 
 #+END_SRC
 *** history
+**** jabber-history                                         :custom:group:
 #+BEGIN_SRC emacs-lisp
 (defgroup jabber-history nil "Customization options for Emacs
 Jabber history files."
@@ -6020,7 +6021,7 @@ window or at `fill-column', whichever is shorter."
 (eval-when-compile (require 'cl))
 
 #+END_SRC
-
+**** jabber-chat                                            :custom:group:
 #+BEGIN_SRC emacs-lisp
 (defgroup jabber-chat nil "chat display options"
   :group 'jabber)
@@ -11360,7 +11361,7 @@ access allowed.  nil means open for everyone."
 (eval-when-compile (require 'cl))
 
 #+END_SRC
-
+**** jabber-mode-line                                       :custom:group:
 #+BEGIN_SRC emacs-lisp
 (defgroup jabber-mode-line nil
   "Display Jabber status in mode line"
@@ -11537,7 +11538,7 @@ Allows tracking messages from buddies using the global mode line. See (info "(ja
 (require 'cl)
 
 #+END_SRC
-
+**** jabber-activity                                        :custom:group:
 #+BEGIN_SRC emacs-lisp
 (defgroup jabber-activity nil
   "activity tracking options"
@@ -12034,7 +12035,7 @@ With a numeric arg, enable this display if arg is positive."
 (require 'cl)
 
 #+END_SRC
-
+**** jabber-events                                          :custom:group:
 #+BEGIN_SRC emacs-lisp
 (defgroup jabber-events nil
   "Message events and notifications."
@@ -12318,7 +12319,7 @@ Add function last in chain, so a chat buffer is already created.
 (require 'cl)
 
 #+END_SRC
-
+**** jabber-chatstates                                      :custom:group:
 #+BEGIN_SRC emacs-lisp
 (defgroup jabber-chatstates nil
   "Chat state notifications."
@@ -12523,6 +12524,9 @@ A contact with an avatar has the image in the avatar property of the JID symbol.
 
 ;;;; Variables
 
+#+END_SRC
+**** jabber-avatar                                          :custom:group:
+#+BEGIN_SRC emacs-lisp
 (defgroup jabber-avatar nil
   "Avatar related settings"
   :group 'jabber)
@@ -13460,7 +13464,7 @@ Keys are full JIDs.")
 (require 'time-date)
 
 #+END_SRC
-
+**** jabber-autoaway                                        :custom:group:
 #+BEGIN_SRC emacs-lisp
 (defgroup jabber-autoaway nil
   "Change status to away after idleness"
@@ -15143,7 +15147,7 @@ This function simply starts a state machine."
 (when (and (featurep 'xemacs) (not (emacs-version>= 21 5 5)))
     (require 'un-define))
 #+END_SRC
-
+**** jabber                                                 :custom:group:
 #+BEGIN_SRC emacs-lisp
 ;;; these customize fields should come first
 (defgroup jabber nil "Jabber instant messaging"
@@ -15284,7 +15288,7 @@ configure a Google Talk account like this:
   "history of status messages")
 
 #+END_SRC
-
+**** jabber-faces                                           :custom:group:
 #+BEGIN_SRC emacs-lisp
 (defgroup jabber-faces nil "faces for displaying jabber instant messaging"
   :group 'jabber)
@@ -15314,7 +15318,7 @@ configure a Google Talk account like this:
   :group 'jabber-faces)
 
 #+END_SRC
-
+**** jabber-debug                                           :custom:group:
 #+BEGIN_SRC emacs-lisp
 (defgroup jabber-debug nil "debugging options"
   :group 'jabber)
