@@ -96,6 +96,7 @@ The sed script has the advantage that one can break a source block to insert Org
 *** TODO
 1. [ ] (maybe) make dependencies optional and tangle them to separate files, reducing load time for users.
 2. [ ] contemplate [[https://github.com/melpa/melpa/issues/7408][distribution strategies]]
+3. [ ] make headings for remaining definitions
 ** Library headers and commentary
 #+BEGIN_SRC emacs-lisp
 ;;; jabber.el --- a minimal jabber client
@@ -2354,7 +2355,7 @@ what kind of chat buffer is being created.")
            "\n" jabber-debug-log-xml 'xml-print xml-list))))))
 
 #+END_SRC
-
+**** jabber-console-mode                                      :major:mode:
 #+BEGIN_SRC emacs-lisp
 (define-derived-mode jabber-console-mode sgml-mode "Jabber Console"
   "Major mode for debug XMPP protocol"
@@ -2710,7 +2711,7 @@ With double prefix argument, specify more connection details."
 	  jabber-connections)))
 
 #+END_SRC
-
+**** jabber-connection                                               :fsm:
 #+BEGIN_SRC emacs-lisp
 (define-state-machine jabber-connection
   :start ((username server resource registerp password network-server port connection-type)
@@ -11440,7 +11441,7 @@ access allowed.  nil means open for everyone."
 		   (mapcar 'cdr count))))))
 
 #+END_SRC
-
+**** jabber-mode-line-mode                                    :minor:mode:
 #+BEGIN_SRC emacs-lisp
 (define-minor-mode jabber-mode-line-mode
   "Toggle display of Jabber status in mode lines.
@@ -11954,7 +11955,7 @@ buffer exists, switch back to the last non Jabber chat buffer used."
 (defvar jabber-activity-idle-timer nil "Idle timer used for activity cleaning")
 
 #+END_SRC
-
+***** jabber-activity-mode                                   :minor:mode:
 #+BEGIN_SRC emacs-lisp
 ;;;###autoload
 (define-minor-mode jabber-activity-mode
