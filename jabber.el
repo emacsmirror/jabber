@@ -7345,10 +7345,6 @@ on success or failure, respectively."
       (error
        "hexrgb not found in `load-path' or jabber-fallback-lib/ directory.")))
 
-;;;;##########################################################################
-;;;;  User Options, Variables
-;;;;##########################################################################
-
 (defcustom jabber-muc-participant-colors nil
   "Alist of used colors. Format is (nick . color). Color may be
   in #RGB or textual (like red or blue) notation. Colors will be
@@ -8531,7 +8527,6 @@ Return nil if X-MUC is nil."
 			 (buffer-string))
 		       :time (current-time))))))))))))
 
-;;; User customizations here:
 (defcustom jabber-muc-completion-delimiter ": "
   "String to add to end of completion line."
   :type 'string
@@ -9821,10 +9816,6 @@ With a numeric arg, enable this display if arg is positive."
   "Message events and notifications."
   :group 'jabber)
 
-;;; INCOMING
-;;; Code for requesting event notifications from others and handling
-;;; them.
-
 (defcustom jabber-events-request-these '(offline
 					 delivered
 					 displayed
@@ -9867,10 +9858,6 @@ probably reading the message).")
   (jabber-events-update-message)
   `((x ((xmlns . "jabber:x:event"))
        ,@(mapcar #'list jabber-events-request-these))))
-
-;;; OUTGOING
-;;; Code for handling requests for event notifications and providing
-;;; them, modulo user preferences.
 
 (defcustom jabber-events-confirm-delivered t
   "Send delivery confirmation if requested?"
@@ -9949,9 +9936,6 @@ and it hasn't been sent before."
 	    (id () ,jabber-events-last-id))))
       (setq jabber-events-composing-sent composing-now))))
 
-;;; COMMON
-
-;; Add function last in chain, so a chat buffer is already created.
 (add-to-list 'jabber-message-chain 'jabber-handle-incoming-message-events t)
 
 (defun jabber-handle-incoming-message-events (jc xml-data)
