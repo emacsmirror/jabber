@@ -145,7 +145,7 @@ The sed script has the advantage that one can break a source block to insert Org
   "History of entered JIDs")
 
 #+END_SRC
-
+**** jabber-replace-in-string                            :inline:function:
 #+BEGIN_SRC emacs-lisp
 ;; Define `jabber-replace-in-string' somehow.
 (cond
@@ -196,7 +196,7 @@ properties to add to the result."
     `(and (boundp (quote ,var)) ,var)))
 
 #+END_SRC
-
+**** jabber-read-with-input-method                       :inline:function:
 #+BEGIN_SRC emacs-lisp
 ;;; more XEmacs compatibility
 ;;; Preserve input method when entering a minibuffer
@@ -208,7 +208,7 @@ properties to add to the result."
     (read-string prompt initial-contents history default-value t)))
 
 #+END_SRC
-
+**** delete-and-extract-region                           :inline:function:
 #+BEGIN_SRC emacs-lisp
 (unless (fboundp 'delete-and-extract-region)
   (defsubst delete-and-extract-region (start end)
@@ -217,7 +217,7 @@ properties to add to the result."
       (delete-region start end))))
 
 #+END_SRC
-
+**** access-file                                         :inline:function:
 #+BEGIN_SRC emacs-lisp
 (unless (fboundp 'access-file)
   (defsubst access-file (filename error-message)
@@ -1426,7 +1426,7 @@ element, return `nil'."
        (xml-parse-region (point-min) (point))))
 
 #+END_SRC
-
+**** jabber-xml-node-name                                :inline:function:
 #+BEGIN_SRC emacs-lisp
 (defsubst jabber-xml-node-name (node)
   "Return the tag associated with NODE.
@@ -1434,7 +1434,7 @@ The tag is a lower-case symbol."
   (if (listp node) (car node)))
 
 #+END_SRC
-
+**** jabber-xml-node-attributes                          :inline:function:
 #+BEGIN_SRC emacs-lisp
 (defsubst jabber-xml-node-attributes (node)
   "Return the list of attributes of NODE.
@@ -1442,7 +1442,7 @@ The list can be nil."
   (if (listp node) (nth 1 node)))
 
 #+END_SRC
-
+**** jabber-xml-node-children                            :inline:function:
 #+BEGIN_SRC emacs-lisp
 (defsubst jabber-xml-node-children (node)
   "Return the list of children of NODE.
@@ -1467,7 +1467,7 @@ CHILD-NAME should be a lower case symbol."
     (nreverse match)))
 
 #+END_SRC
-
+**** jabber-xml-get-attribute                            :inline:function:
 #+BEGIN_SRC emacs-lisp
 ;; `xml-get-attribute' returns "" if the attribute is not found, which
 ;; is not very useful.  Therefore, we use `xml-get-attribute-or-nil'
@@ -1487,7 +1487,7 @@ Return nil if the attribute was not found."
 	  (and (> (length result) 0) result))))))
 
 #+END_SRC
-
+**** jabber-xml-get-xmlns                                :inline:function:
 #+BEGIN_SRC emacs-lisp
 (defsubst jabber-xml-get-xmlns (node)
   "Get \"xmlns\" attribute of NODE, or nil if not present."
@@ -2557,7 +2557,7 @@ problems."
   :group 'jabber-core)
 
 #+END_SRC
-
+**** jabber-have-sasl-p                                  :inline:function:
 #+BEGIN_SRC emacs-lisp
 (defsubst jabber-have-sasl-p ()
   "Return non-nil if SASL functions are available."
@@ -2835,7 +2835,7 @@ With double prefix argument, specify more connection details."
      :defer)))
 
 #+END_SRC
-
+**** jabber-fsm-handle-sentinel                          :inline:function:
 #+BEGIN_SRC emacs-lisp
 (defsubst jabber-fsm-handle-sentinel (state-data event)
   "Handle sentinel event for jabber fsm."
