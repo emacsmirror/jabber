@@ -37,7 +37,7 @@
   (error nil))
 
 (defvar jabber-jid-history nil
-  "History of entered JIDs")
+  "History of entered JIDs.")
 
 ;; Define `jabber-replace-in-string' somehow.
 (cond
@@ -127,7 +127,8 @@ properties to add to the result."
 	  jabber-connections)))
 
 (defun jabber-concat-rosters-full ()
-  "Concatenate the rosters of all connected accounts. Show full jids (with resources)"
+  "Concatenate the rosters of all connected accounts.
+Show full JIDs, with resources."
   (let ((jids (apply #'append
                      (mapcar
                       (lambda (jc)
@@ -140,20 +141,20 @@ properties to add to the result."
                    jids))))
 
 (defun jabber-connection-jid (jc)
-  "Return the full JID of the given connection."
+  "Return the full JID of connection JC."
   (let ((sd (fsm-get-state-data jc)))
     (concat (plist-get sd :username) "@"
 	    (plist-get sd :server) "/"
 	    (plist-get sd :resource))))
 
 (defun jabber-connection-bare-jid (jc)
-  "Return the bare JID of the given connection."
+  "Return the bare JID of connection JC."
   (let ((sd (fsm-get-state-data jc)))
     (concat (plist-get sd :username) "@"
 	    (plist-get sd :server))))
 
 (defun jabber-connection-original-jid (jc)
-  "Return the original JID of the given connection.
+  "Return the original JID of connection JC.
 The \"original JID\" is the JID we authenticated with.  The
 server might subsequently assign us a different JID at resource
 binding."
@@ -167,43 +168,45 @@ Return nil if none found."
       (return jc))))
 
 (defun jabber-find-active-connection (dead-jc)
-  "Given a dead connection, find an active connection to the same account.
+  "Find an active connection for dead connection DEAD-JC.
 Return nil if none found."
   (let ((jid (jabber-connection-bare-jid dead-jc)))
     (jabber-find-connection jid)))
 
-(defun jabber-jid-username (string)
-  "return the username portion of a JID, or nil if no username"
-  (when (string-match "\\(.*\\)@.*\\(/.*\\)?" string)
-    (match-string 1 string)))
+(defun jabber-jid-username (jid)
+  "Return the username portion of JID, or nil if none found.
+JID must be a string."
+  (when (string-match "\\(.*\\)@.*\\(/.*\\)?" jid)
+    (match-string 1 jid)))
 
-(defun jabber-jid-user (string)
-  "return the user (username@server) portion of a JID"
+(defun jabber-jid-user (jid)
+  "Return the user portion (username@server) of JID.
+JID must be a string."
   ;;transports don't have @, so don't require it
-  ;;(string-match ".*@[^/]*" string)
-  (string-match "[^/]*" string)
-  (match-string 0 string))
+  ;;(string-match ".*@[^/]*" jid)
+  (string-match "[^/]*" jid)
+  (match-string 0 jid))
 
-(defun jabber-jid-server (string)
-  "Return the server portion of a JID."
-  (string-match "^\\(.*@\\)?\\([^@/]+\\)\\(/.*\\)?$" string)
-  (match-string 2 string))
+(defun jabber-jid-server (jid)
+  "Return the server portion of JID."
+  (string-match "^\\(.*@\\)?\\([^@/]+\\)\\(/.*\\)?$" jid)
+  (match-string 2 jid))
 
 (defun jabber-jid-rostername (string)
-  "return the name of the user, if given in roster, else nil"
+  "Return the name of the user, if given in roster, else nil."
   (let ((user (jabber-jid-symbol string)))
     (if (> (length (get user 'name)) 0)
 	(get user 'name))))
 
 (defun jabber-jid-displayname (string)
-  "return the name of the user, if given in roster, else username@server"
+  "Return the name of the user, if given in roster, else username@server."
   (or (jabber-jid-rostername string)
       (jabber-jid-user (if (symbolp string)
 			   (symbol-name string)
 			 string))))
 
 (defun jabber-jid-bookmarkname (string)
-  "Return the conference name from boomarks or displayname from roster, or JID if none set"
+  "Return the conference name from boomarks or displayname from roster, or JID if none set."
   (or (loop for conference in (first (loop for value being the hash-values of jabber-bookmarks
                                            collect value))
             do (let ((ls (cadr conference)))
@@ -211,18 +214,20 @@ Return nil if none found."
                      (return (cdr (assoc 'name ls))))))
       (jabber-jid-displayname string)))
 
-(defun jabber-jid-resource (string)
-  "return the resource portion of a JID, or nil if there is none."
-  (when (string-match "^\\(\\([^/]*@\\)?[^/]*\\)/\\(.*\\)" string)
-    (match-string 3 string)))
+(defun jabber-jid-resource (jid)
+  "Return the resource portion of a JID, or nil if there is none.
+JID must be a string."
+  (when (string-match "^\\(\\([^/]*@\\)?[^/]*\\)/\\(.*\\)" jid)
+    (match-string 3 jid)))
 
-(defun jabber-jid-symbol (string)
-  "return the symbol for the given JID"
+(defun jabber-jid-symbol (jid)
+  "Return the symbol for the given JID.
+JID must be a string."
   ;; If it's already a symbol, just return it.
-  (if (symbolp string)
-      string
+  (if (symbolp jid)
+      jid
     ;; XXX: "downcase" is poor man's nodeprep.  See XMPP CORE.
-    (intern (downcase (jabber-jid-user string)) jabber-jid-obarray)))
+    (intern (downcase (jabber-jid-user jid)) jabber-jid-obarray)))
 
 (defun jabber-my-jid-p (jc jid)
   "Return non-nil if the specified JID is in jabber-account-list (modulo resource).
@@ -233,7 +238,7 @@ Also return non-nil if JID matches JC, modulo resource."
    (member (jabber-jid-user jid) (mapcar (lambda (x) (jabber-jid-user (car x))) jabber-account-list))))
 
 (defun jabber-read-jid-completing (prompt &optional subset require-match default resource fulljids)
-  "read a jid out of the current roster from the minibuffer.
+  "Read a jid out of the current roster from the minibuffer.
 If SUBSET is non-nil, it should be a list of symbols from which
 the JID is to be selected, instead of using the entire roster.
 If REQUIRE-MATCH is non-nil, the JID must be in the list used.
@@ -2870,7 +2875,7 @@ Return an fsm result list if it is."
 		  #'jabber-report-success "Impossible error - auth field request"))
 
 (defun jabber-do-logon (jc xml-data session-id)
-  "send username and password in logon attempt"
+  "Send username and password in logon attempt."
   (let* ((digest-allowed (jabber-xml-get-children (jabber-iq-query xml-data) 'digest))
 	 (passwd (when
 		     (or digest-allowed

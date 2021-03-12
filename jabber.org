@@ -83,6 +83,9 @@ This release of jabber.el contains support for file transfer.  You may need to c
 *** XMPP URIs
 It is possible to make various web browsers pass links starting with "xmpp:" to jabber.el.  In the ideal case, this works right after running "make install".  Otherwise, see the manual, section "XMPP URIs".
 
+** TODO [0%]
+1. [ ] Satisfy checkdoc
+2. [ ] Use rx where regular expressions get hairy
 ** About this file
 jabber.el is an Org literate program.
 
@@ -142,7 +145,7 @@ The sed script has the advantage that one can break a source block to insert Org
 **** jabber-jid-history                                         :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-jid-history nil
-  "History of entered JIDs")
+  "History of entered JIDs.")
 
 #+END_SRC
 **** jabber-replace-in-string                            :inline:function:
@@ -262,7 +265,8 @@ properties to add to the result."
 **** jabber-concat-rosters-full                                 :function:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-concat-rosters-full ()
-  "Concatenate the rosters of all connected accounts. Show full jids (with resources)"
+  "Concatenate the rosters of all connected accounts.
+Show full JIDs, with resources."
   (let ((jids (apply #'append
                      (mapcar
                       (lambda (jc)
@@ -278,7 +282,7 @@ properties to add to the result."
 **** jabber-connection-jid                                      :function:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-connection-jid (jc)
-  "Return the full JID of the given connection."
+  "Return the full JID of connection JC."
   (let ((sd (fsm-get-state-data jc)))
     (concat (plist-get sd :username) "@"
 	    (plist-get sd :server) "/"
@@ -288,7 +292,7 @@ properties to add to the result."
 **** jabber-connection-bare-jid                                 :function:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-connection-bare-jid (jc)
-  "Return the bare JID of the given connection."
+  "Return the bare JID of connection JC."
   (let ((sd (fsm-get-state-data jc)))
     (concat (plist-get sd :username) "@"
 	    (plist-get sd :server))))
@@ -297,7 +301,7 @@ properties to add to the result."
 **** jabber-connection-original-jid                             :function:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-connection-original-jid (jc)
-  "Return the original JID of the given connection.
+  "Return the original JID of connection JC.
 The \"original JID\" is the JID we authenticated with.  The
 server might subsequently assign us a different JID at resource
 binding."
@@ -317,7 +321,7 @@ Return nil if none found."
 **** jabber-find-active-connection                              :function:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-find-active-connection (dead-jc)
-  "Given a dead connection, find an active connection to the same account.
+  "Find an active connection for dead connection DEAD-JC.
 Return nil if none found."
   (let ((jid (jabber-connection-bare-jid dead-jc)))
     (jabber-find-connection jid)))
@@ -325,34 +329,36 @@ Return nil if none found."
 #+END_SRC
 **** jabber-jid-username                                        :function:
 #+BEGIN_SRC emacs-lisp
-(defun jabber-jid-username (string)
-  "return the username portion of a JID, or nil if no username"
-  (when (string-match "\\(.*\\)@.*\\(/.*\\)?" string)
-    (match-string 1 string)))
+(defun jabber-jid-username (jid)
+  "Return the username portion of JID, or nil if none found.
+JID must be a string."
+  (when (string-match "\\(.*\\)@.*\\(/.*\\)?" jid)
+    (match-string 1 jid)))
 
 #+END_SRC
 **** jabber-jid-user                                            :function:
 #+BEGIN_SRC emacs-lisp
-(defun jabber-jid-user (string)
-  "return the user (username@server) portion of a JID"
+(defun jabber-jid-user (jid)
+  "Return the user portion (username@server) of JID.
+JID must be a string."
   ;;transports don't have @, so don't require it
-  ;;(string-match ".*@[^/]*" string)
-  (string-match "[^/]*" string)
-  (match-string 0 string))
+  ;;(string-match ".*@[^/]*" jid)
+  (string-match "[^/]*" jid)
+  (match-string 0 jid))
 
 #+END_SRC
 **** jabber-jid-server                                          :function:
 #+BEGIN_SRC emacs-lisp
-(defun jabber-jid-server (string)
-  "Return the server portion of a JID."
-  (string-match "^\\(.*@\\)?\\([^@/]+\\)\\(/.*\\)?$" string)
-  (match-string 2 string))
+(defun jabber-jid-server (jid)
+  "Return the server portion of JID."
+  (string-match "^\\(.*@\\)?\\([^@/]+\\)\\(/.*\\)?$" jid)
+  (match-string 2 jid))
 
 #+END_SRC
 **** jabber-jid-rostername                                      :function:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-jid-rostername (string)
-  "return the name of the user, if given in roster, else nil"
+  "Return the name of the user, if given in roster, else nil."
   (let ((user (jabber-jid-symbol string)))
     (if (> (length (get user 'name)) 0)
 	(get user 'name))))
@@ -361,7 +367,7 @@ Return nil if none found."
 **** jabber-jid-displayname                                     :function:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-jid-displayname (string)
-  "return the name of the user, if given in roster, else username@server"
+  "Return the name of the user, if given in roster, else username@server."
   (or (jabber-jid-rostername string)
       (jabber-jid-user (if (symbolp string)
 			   (symbol-name string)
@@ -371,7 +377,7 @@ Return nil if none found."
 **** jabber-jid-bookmarkname                                    :function:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-jid-bookmarkname (string)
-  "Return the conference name from boomarks or displayname from roster, or JID if none set"
+  "Return the conference name from boomarks or displayname from roster, or JID if none set."
   (or (loop for conference in (first (loop for value being the hash-values of jabber-bookmarks
                                            collect value))
             do (let ((ls (cadr conference)))
@@ -382,21 +388,23 @@ Return nil if none found."
 #+END_SRC
 **** jabber-jid-resource                                        :function:
 #+BEGIN_SRC emacs-lisp
-(defun jabber-jid-resource (string)
-  "return the resource portion of a JID, or nil if there is none."
-  (when (string-match "^\\(\\([^/]*@\\)?[^/]*\\)/\\(.*\\)" string)
-    (match-string 3 string)))
+(defun jabber-jid-resource (jid)
+  "Return the resource portion of a JID, or nil if there is none.
+JID must be a string."
+  (when (string-match "^\\(\\([^/]*@\\)?[^/]*\\)/\\(.*\\)" jid)
+    (match-string 3 jid)))
 
 #+END_SRC
 **** jabber-jid-symbol                                          :function:
 #+BEGIN_SRC emacs-lisp
-(defun jabber-jid-symbol (string)
-  "return the symbol for the given JID"
+(defun jabber-jid-symbol (jid)
+  "Return the symbol for the given JID.
+JID must be a string."
   ;; If it's already a symbol, just return it.
-  (if (symbolp string)
-      string
+  (if (symbolp jid)
+      jid
     ;; XXX: "downcase" is poor man's nodeprep.  See XMPP CORE.
-    (intern (downcase (jabber-jid-user string)) jabber-jid-obarray)))
+    (intern (downcase (jabber-jid-user jid)) jabber-jid-obarray)))
 
 #+END_SRC
 **** jabber-my-jid-p                                            :function:
@@ -413,7 +421,7 @@ Also return non-nil if JID matches JC, modulo resource."
 **** jabber-read-jid-completing                                 :function:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-read-jid-completing (prompt &optional subset require-match default resource fulljids)
-  "read a jid out of the current roster from the minibuffer.
+  "Read a jid out of the current roster from the minibuffer.
 If SUBSET is non-nil, it should be a list of symbols from which
 the JID is to be selected, instead of using the entire roster.
 If REQUIRE-MATCH is non-nil, the JID must be in the list used.
@@ -3566,7 +3574,7 @@ Return an fsm result list if it is."
 **** jabber-do-logon                                            :function:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-do-logon (jc xml-data session-id)
-  "send username and password in logon attempt"
+  "Send username and password in logon attempt."
   (let* ((digest-allowed (jabber-xml-get-children (jabber-iq-query xml-data) 'digest))
 	 (passwd (when
 		     (or digest-allowed
