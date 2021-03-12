@@ -760,7 +760,7 @@ the echo area."
 			    "No error message given"))))))))
 
 #+END_SRC
-
+**** jabber-error-messages                                      :constant:
 #+BEGIN_SRC emacs-lisp
 (defconst jabber-error-messages
   (list
@@ -789,7 +789,7 @@ the echo area."
   "String descriptions of XMPP stanza errors")
 
 #+END_SRC
-
+**** jabber-legacy-error-messages                               :constant:
 #+BEGIN_SRC emacs-lisp
 (defconst jabber-legacy-error-messages
   (list
@@ -1643,7 +1643,7 @@ any string   character data of this node"
 		    (executable-find starttls-program))))))
 
 #+END_SRC
-
+**** jabber-default-connection-type                             :constant:
 #+BEGIN_SRC emacs-lisp
 (defconst jabber-default-connection-type
   (cond
@@ -7848,7 +7848,7 @@ invalidate cache and get fresh data."
 (defvar jabber-caps-cache (make-hash-table :test 'equal))
 
 #+END_SRC
-
+**** jabber-caps-hash-names                                     :constant:
 #+BEGIN_SRC emacs-lisp
 (defconst jabber-caps-hash-names
   (if (fboundp 'secure-hash)
@@ -8127,7 +8127,7 @@ The value should be a key in `jabber-caps-hash-names'.")
   "The current disco hash we're sending out in presence stanzas.")
 
 #+END_SRC
-
+**** jabber-caps-node                                           :constant:
 #+BEGIN_SRC emacs-lisp
 (defconst jabber-caps-node "http://emacs-jabber.sourceforge.net")
 
@@ -11266,7 +11266,7 @@ access allowed.  nil means open for everyone."
 
 #+END_SRC
 *** ahc-presence
-
+**** jabber-ahc-presence-node                                   :constant:
 #+BEGIN_SRC emacs-lisp
 (defconst jabber-ahc-presence-node "http://jabber.org/protocol/rc#set-status"
   "Node used by jabber-ahc-presence")
@@ -12317,7 +12317,7 @@ and it hasn't been sent before."
   :group 'jabber)
 
 #+END_SRC
-
+**** jabber-chatstates-xmlns                                    :constant:
 #+BEGIN_SRC emacs-lisp
 (defconst jabber-chatstates-xmlns "http://jabber.org/protocol/chatstates"
   "XML namespace for the chatstates feature.")
@@ -13009,7 +13009,7 @@ The top node should be the `vCard' node."
 		  #'jabber-report-success "Vcard request failed"))
 
 #+END_SRC
-
+**** jabber-vcard-fields                                        :constant:
 #+BEGIN_SRC emacs-lisp
 (defconst jabber-vcard-fields '((FN . "Full name")
 				(NICKNAME . "Nickname")
@@ -13025,7 +13025,7 @@ The top node should be the `vCard' node."
 				(NOTE . "Note")))
 
 #+END_SRC
-
+**** jabber-vcard-name-fields                                   :constant:
 #+BEGIN_SRC emacs-lisp
 (defconst jabber-vcard-name-fields '((PREFIX . "Prefix")
 				     (GIVEN . "Given name")
@@ -13034,7 +13034,7 @@ The top node should be the `vCard' node."
 				     (SUFFIX . "Suffix")))
 
 #+END_SRC
-
+**** jabber-vcard-phone-types                                   :constant:
 #+BEGIN_SRC emacs-lisp
 (defconst jabber-vcard-phone-types '((HOME . "Home")
 				     (WORK . "Work")
@@ -13050,7 +13050,7 @@ The top node should be the `vCard' node."
 				     (PCS . "PCS")))
 
 #+END_SRC
-
+**** jabber-vcard-email-types                                   :constant:
 #+BEGIN_SRC emacs-lisp
 (defconst jabber-vcard-email-types '((HOME . "Home")
 				     (WORK . "Work")
@@ -13059,7 +13059,7 @@ The top node should be the `vCard' node."
 				     (PREF . "Preferred")))
 
 #+END_SRC
-
+**** jabber-vcard-address-types                                 :constant:
 #+BEGIN_SRC emacs-lisp
 (defconst jabber-vcard-address-types '((HOME . "Home")
 				       (WORK . "Work")
@@ -13070,7 +13070,7 @@ The top node should be the `vCard' node."
 				       (PREF . "Preferred")))
 
 #+END_SRC
-
+**** jabber-vcard-address-fields                                :constant:
 #+BEGIN_SRC emacs-lisp
 (defconst jabber-vcard-address-fields '((POBOX . "Post box")
 					(EXTADD . "Ext. address")
@@ -15338,7 +15338,7 @@ Contents of process buffers might be useful for debugging."
   :group 'jabber)
 
 #+END_SRC
-
+**** jabber-presence-faces                                      :constant:
 #+BEGIN_SRC emacs-lisp
 ;;;###autoload
 (defconst jabber-presence-faces
@@ -15352,7 +15352,7 @@ Contents of process buffers might be useful for debugging."
  "Mapping from presence types to faces")
 
 #+END_SRC
-
+**** jabber-presence-strings                                    :constant:
 #+BEGIN_SRC emacs-lisp
 (defconst jabber-presence-strings
   `(("" . ,(jabber-propertize "Online" 'face 'jabber-roster-user-online))
