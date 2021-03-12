@@ -188,7 +188,7 @@ properties to add to the result."
       str)))
 
 #+END_SRC
-
+**** bound-and-true-p                                              :macro:
 #+BEGIN_SRC emacs-lisp
 (unless (fboundp 'bound-and-true-p)
   (defmacro bound-and-true-p (var)
@@ -1530,7 +1530,7 @@ any string   character data of this node"
     node))
 
 #+END_SRC
-
+**** jabber-xml-let-attributes                                     :macro:
 #+BEGIN_SRC emacs-lisp
 (defmacro jabber-xml-let-attributes (attributes xml-data &rest body)
   "Bind variables to the same-name attribute values in XML-DATA."
@@ -5134,7 +5134,7 @@ files."
   :group 'jabber-alerts)
 
 #+END_SRC
-
+**** define-jabber-alert                                           :macro:
 #+BEGIN_SRC emacs-lisp
 (defmacro define-jabber-alert (name docstring function)
   "Define a new family of external alert hooks.
@@ -5440,7 +5440,7 @@ This function uses `jabber-info-message-alist' to find a message."
     (switch-to-buffer buffer)))
 
 #+END_SRC
-
+**** define-personal-jabber-alert                                  :macro:
 #+BEGIN_SRC emacs-lisp
 ;;; Personal alert hooks
 (defmacro define-personal-jabber-alert (name)
@@ -9464,7 +9464,7 @@ in the user entering/staying in the room."
 	(setf (cdr participants) (delq participant (cdr participants)))))))
 
 #+END_SRC
-
+**** jabber-muc-argument-list                                      :macro:
 #+BEGIN_SRC emacs-lisp
 (defmacro jabber-muc-argument-list (&optional args)
   "Prepend connection and group name to ARGS.
