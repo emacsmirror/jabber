@@ -3809,7 +3809,7 @@ Trailing newlines are always removed, regardless of this variable."
   :type 'boolean)
 
 #+END_SRC
-
+**** jabber-roster-user-online                                      :face:
 #+BEGIN_SRC emacs-lisp
 (defface jabber-roster-user-online
   '((t (:foreground "blue" :weight bold :slant normal)))
@@ -3817,7 +3817,7 @@ Trailing newlines are always removed, regardless of this variable."
   :group 'jabber-roster)
 
 #+END_SRC
-
+**** jabber-roster-user-xa                                          :face:
 #+BEGIN_SRC emacs-lisp
 (defface jabber-roster-user-xa
   '((((background dark)) (:foreground "magenta" :weight normal :slant italic))
@@ -3826,7 +3826,7 @@ Trailing newlines are always removed, regardless of this variable."
   :group 'jabber-roster)
 
 #+END_SRC
-
+**** jabber-roster-user-dnd                                         :face:
 #+BEGIN_SRC emacs-lisp
 (defface jabber-roster-user-dnd
   '((t (:foreground "red" :weight normal :slant italic)))
@@ -3834,7 +3834,7 @@ Trailing newlines are always removed, regardless of this variable."
   :group 'jabber-roster)
 
 #+END_SRC
-
+**** jabber-roster-user-away                                        :face:
 #+BEGIN_SRC emacs-lisp
 (defface jabber-roster-user-away
   '((t (:foreground "dark green" :weight normal :slant italic)))
@@ -3842,7 +3842,7 @@ Trailing newlines are always removed, regardless of this variable."
   :group 'jabber-roster)
 
 #+END_SRC
-
+**** jabber-roster-user-chatty                                      :face:
 #+BEGIN_SRC emacs-lisp
 (defface jabber-roster-user-chatty
   '((t (:foreground "dark orange" :weight bold :slant normal)))
@@ -3850,7 +3850,7 @@ Trailing newlines are always removed, regardless of this variable."
   :group 'jabber-roster)
 
 #+END_SRC
-
+**** jabber-roster-user-error                                       :face:
 #+BEGIN_SRC emacs-lisp
 (defface jabber-roster-user-error
   '((t (:foreground "red" :weight light :slant italic)))
@@ -3858,7 +3858,7 @@ Trailing newlines are always removed, regardless of this variable."
   :group 'jabber-roster)
 
 #+END_SRC
-
+**** jabber-roster-user-offline                                     :face:
 #+BEGIN_SRC emacs-lisp
 (defface jabber-roster-user-offline
   '((t (:foreground "dark grey" :weight light :slant italic)))
@@ -6121,7 +6121,7 @@ rare time printed."
   :group 'jabber-chat)
 
 #+END_SRC
-
+**** jabber-rare-time-face                                          :face:
 #+BEGIN_SRC emacs-lisp
 (defface jabber-rare-time-face
   '((t (:foreground "darkgreen" :underline t)))
@@ -6171,7 +6171,7 @@ These fields are available:
   :group 'jabber-chat)
 
 #+END_SRC
-
+**** jabber-chat-prompt-local                                       :face:
 #+BEGIN_SRC emacs-lisp
 (defface jabber-chat-prompt-local
   '((t (:foreground "blue" :weight bold)))
@@ -6179,7 +6179,7 @@ These fields are available:
   :group 'jabber-chat)
 
 #+END_SRC
-
+**** jabber-chat-prompt-foreign                                     :face:
 #+BEGIN_SRC emacs-lisp
 (defface jabber-chat-prompt-foreign
   '((t (:foreground "red" :weight bold)))
@@ -6187,7 +6187,7 @@ These fields are available:
   :group 'jabber-chat)
 
 #+END_SRC
-
+**** jabber-chat-prompt-system                                      :face:
 #+BEGIN_SRC emacs-lisp
 (defface jabber-chat-prompt-system
   '((t (:foreground "green" :weight bold)))
@@ -6195,21 +6195,21 @@ These fields are available:
   :group 'jabber-chat)
 
 #+END_SRC
-
+**** jabber-chat-text-local                                         :face:
 #+BEGIN_SRC emacs-lisp
 (defface jabber-chat-text-local '((t ()))
   "Face used for text you write"
   :group 'jabber-chat)
 
 #+END_SRC
-
+**** jabber-chat-text-foreign                                       :face:
 #+BEGIN_SRC emacs-lisp
 (defface jabber-chat-text-foreign '((t ()))
   "Face used for text others write"
   :group 'jabber-chat)
 
 #+END_SRC
-
+**** jabber-chat-error                                              :face:
 #+BEGIN_SRC emacs-lisp
 (defface jabber-chat-error
   '((t (:foreground "red" :weight bold)))
@@ -11648,7 +11648,7 @@ there are unread messages which otherwise would be lost."
   :group 'jabber-activity)
 
 #+END_SRC
-
+**** jabber-activity-face                                           :face:
 #+BEGIN_SRC emacs-lisp
 (defface jabber-activity-face
   '((t (:foreground "red" :weight bold)))
@@ -11656,7 +11656,7 @@ there are unread messages which otherwise would be lost."
   :group 'jabber-activity)
 
 #+END_SRC
-
+**** jabber-activity-personal-face                                  :face:
 #+BEGIN_SRC emacs-lisp
 (defface jabber-activity-personal-face
   '((t (:foreground "blue" :weight bold)))
@@ -15294,7 +15294,7 @@ configure a Google Talk account like this:
   :group 'jabber)
 
 #+END_SRC
-
+**** jabber-title-small                                             :face:
 #+BEGIN_SRC emacs-lisp
 (defface jabber-title-small
   '((t (:weight bold :width semi-expanded :height 1.0 :inherit variable-pitch)))
@@ -15302,7 +15302,7 @@ configure a Google Talk account like this:
   :group 'jabber-faces)
 
 #+END_SRC
-
+**** jabber-title-medium                                            :face:
 #+BEGIN_SRC emacs-lisp
 (defface jabber-title-medium
   '((t (:weight bold :width expanded :height 2.0 :inherit variable-pitch)))
@@ -15310,7 +15310,7 @@ configure a Google Talk account like this:
   :group 'jabber-faces)
 
 #+END_SRC
-
+**** jabber-title-large                                             :face:
 #+BEGIN_SRC emacs-lisp
 (defface jabber-title-large
   '((t (:weight bold :width ultra-expanded :height 3.0 :inherit variable-pitch)))
