@@ -12481,7 +12481,7 @@ Contents of process buffers might be useful for debugging."
   :group 'jabber-debug)
 
 (defcustom jabber-silent-mode nil
-  "Silent mode switch. Not ask confirmanions for some operations. DANGEROUS!"
+  "If non-nil, do not ask for confirmation for some operations. DANGEROUS!"
   :type 'boolean
   :group 'jabber)
 
