@@ -4369,8 +4369,6 @@ This function is not called directly, but can be used as the value for
   (when proposed-alert
     (switch-to-buffer jabber-roster-buffer)))
 
-;;; Info alert hooks
-
 (defun jabber-info-default-message (infotype buffer)
   "Function for constructing info alert messages.
 
@@ -6830,7 +6828,6 @@ protocols."
 				      prefix))
 	   (message "Making completion list...done")))))
 
-
 (defun jabber-init-widget-buffer (submit-to)
   "Setup buffer-local variables for widgets."
   (make-local-variable 'jabber-widget-alist)
@@ -8902,8 +8899,6 @@ CLOSURE-DATA is either 'success or 'error."
 				   'jabber-jid jid))
 	    (insert "\n"))))))
 
-;; jabber.el can perform browse requests, but will not answer them.
-
 (add-to-list 'jabber-jid-info-menu
 	     (cons "Send browse query" 'jabber-get-browse))
 (defun jabber-get-browse (jc to)
@@ -9129,7 +9124,6 @@ access allowed.  nil means open for everyone."
 	;; No such node
 	(jabber-signal-error "cancel" 'item-not-found)))))
 
-;;; CLIENT
 (add-to-list 'jabber-jid-service-menu
 	     (cons "Request command list" 'jabber-ahc-get-list))
 (defun jabber-ahc-get-list (jc to)
@@ -9433,26 +9427,6 @@ sends a message if that happens. The buddies are stored in
   (setq jabber-watch-alist
         (delq (assq (jabber-jid-symbol buddy) jabber-watch-alist)
 	      jabber-watch-alist)))
-#+END_QUOTE
-*** activity
-#+BEGIN_SRC emacs-lisp
-;; Allows tracking messages from buddies using the global mode line
-;; See (info "(jabber)Tracking activity")
-
-;;; TODO:
-
-;; - Make it possible to enable this mode using M-x customize
-;; - When Emacs is on another desktop, (get-buffer-window buf 'visible)
-;;   returns nil.  We need to know when the user selects the frame again
-;;   so we can remove the string from the mode line.  (Or just run
-;;   jabber-activity-clean often).
-;; - jabber-activity-switch-to needs a keybinding.  In which map?
-;; - Is there any need for having defcustom jabber-activity-make-string?
-;; - When there's activity in a buffer it would be nice with a hook which
-;;   does the opposite of bury-buffer, so switch-to-buffer will show that
-;;   buffer first.
-
-;;; Code:
 
 (require 'cl)
 
@@ -9697,8 +9671,6 @@ Optional PRESENCE mean personal presence request or alert."
   (force-mode-line-update 'all)
   (run-hooks 'jabber-activity-update-hook))
 
-;;; Hooks
-
 (defun jabber-activity-clean ()
   "Remove JIDs where `jabber-activity-show-p' no longer is true"
   (setq jabber-activity-jids (delete-if-not jabber-activity-show-p
@@ -9740,7 +9712,6 @@ when there are unread messages which otherwise would be lost, if
        "You have unread Jabber messages, are you sure you want to quit?"))
     t))
 
-;;; Interactive functions
 (defvar jabber-activity-last-buffer nil
   "Last non-Jabber buffer used.")
 
@@ -10066,10 +10037,6 @@ and it hasn't been sent before."
 		    (not (null (jabber-xml-get-children x 'composing))))
 	      (jabber-events-update-message)))))))))
 
-;; TODO
-;; - Currently only active/composing notifications are /sent/ though all 5
-;;   notifications are handled on receipt.
-
 (require 'cl)
 
 (defgroup jabber-chatstates nil
@@ -10099,10 +10066,6 @@ nil - don't send states")
 (defvar jabber-chatstates-message ""
   "Human-readable presentation of chat state information")
 (make-variable-buffer-local 'jabber-chatstates-message)
-
-;;; INCOMING
-;;; Code for requesting chat state notifications from others and handling
-;;; them.
 
 (defun jabber-chatstates-update-message ()
   (setq jabber-chatstates-message
@@ -10215,17 +10178,6 @@ It can be sent and cancelled several times.")
 
 (jabber-disco-advertise-feature "http://jabber.org/protocol/chatstates")
 
-;; There are several methods for transporting avatars in Jabber
-;; (JEP-0008, JEP-0084, JEP-0153).  They all have in common that they
-;; identify avatars by their SHA1 checksum, and (at least partially)
-;; use Base64-encoded image data.  Thus this library of support
-;; functions for interpreting and caching avatars.
-
-;; A contact with an avatar has the image in the avatar property of
-;; the JID symbol.  Use `jabber-avatar-set' to set it.
-
-;;; Code:
-
 (require 'mailcap)
 (eval-when-compile (require 'cl))
 
@@ -10255,8 +10207,6 @@ It can be sent and cancelled several times.")
   "Maximum height of avatars."
   :group 'jabber-avatar
   :type 'integer)
-
-;;;; Avatar data handling
 
 (defstruct avatar sha1-sum mime-type url base64-data height width bytes)
 
@@ -10346,8 +10296,6 @@ Return AVATAR."
       (setf (avatar-height avatar) (cdr size)))
     avatar))
 
-;;;; Avatar cache
-
 (defun jabber-avatar-find-cached (sha1-sum)
   "Return file name of cached image for avatar identified by SHA1-SUM.
 If there is no cached image, return nil."
@@ -10378,7 +10326,6 @@ If there is no cached image, return nil."
 	  (write-region (point-min) (point-max) filename nil 'silent))))))
 
 ;;;; Set avatar for contact
-
 (defun jabber-avatar-set (jid avatar)
   "Set the avatar of JID to be AVATAR.
 JID is a string containing a bare JID.
@@ -10424,45 +10371,6 @@ available."
       (plist-put spec :height jabber-avatar-max-height))
     image))
 
-;; There are great variations in Jabber vcard implementations.  This
-;; one adds some spice to the mix, while trying to follow the JEP
-;; closely.
-
-;; Fields not implemented: GEO, LOGO, AGENT, ORG, CATEGORIES, SOUND,
-;; CLASS, KEY.
-
-;; The internal data structure used for vCards is an alist.  All
-;; keys are uppercase symbols.
-;;
-;; FN, NICKNAME, BDAY, JABBERID, MAILER, TZ, TITLE, ROLE, NOTE,
-;; PRODID, REV, SORT-STRING, UID, URL, DESC:
-;; Value is a string.
-;;
-;; N:
-;;   Value is an alist, with keys FAMILY, GIVEN, MIDDLE, PREFIX and SUFFIX.
-;;
-;; ADR:
-;;   Value is a list, each element representing a separate address.
-;;   The car of each address is a list of types; possible values are
-;;   HOME, WORK, POSTAL, PARCEL, DOM, INTL, PREF.
-;;   The cdr of each address is an alist, with keys POBOX, EXTADD,
-;;   STREET, LOCALITY, REGION, PCODE, CTRY, and values being strings.
-;;
-;; TEL:
-;;   Value is a list, each element representing a separate phone number.
-;;   The car of each number is a list of types; possible values are
-;;   HOME, WORK, VOICE, FAX, PAGER, MSG, CELL, VIDEO, BBS, MODEM, ISDN,
-;;   PCS, PREF
-;;   The cdr is the phone number as a string.
-;;
-;; EMAIL:
-;;   Value is a list, each element representing a separate e-mail address.
-;;   The car of each address is a list of types; possible values are
-;;   HOME, WORK, INTERNET, PREF, X400.  At least one of INTERNET and
-;;   X400 is always present.
-;;   The cdr is the address as a string.
-
-;;; Code:
 (defvar jabber-vcard-photo nil
   "The avatar structure for the photo in the vCard edit buffer.")
 (make-variable-buffer-local 'jabber-vcard-photo)
@@ -11263,7 +11171,6 @@ The method for finding the terminal only works on GNU/Linux."
                   'jabber-silent-process-data 'jabber-process-legacy-time
                   'jabber-silent-process-data "Time request failed"))
 
-
 ;; called by jabber-process-data
 (defun jabber-process-time (jc xml-data)
   "Handle results from urn:xmpp:time requests."
@@ -11303,9 +11210,6 @@ The method for finding the terminal only works on GNU/Linux."
               (format-time-string "%Y-%m-%d %T" (jabber-parse-legacy-time utc))
               (when tz
                 (concat " " tz))))))))
-
-;; the only difference between these two functions is the
-;; jabber-read-jid-completing call.
 (defun jabber-get-last-online (jc to)
   "Request time since a user was last online, or uptime of a component."
   (interactive (list (jabber-read-account)
@@ -11552,8 +11456,6 @@ Returns the SID."
 
 (jabber-disco-advertise-feature "http://jabber.org/protocol/si")
 
-;; Now, stream methods push data to profiles.  It could be the other
-;; way around; not sure which is better.
 (defvar jabber-si-profiles nil
   "Supported SI profiles.
 
