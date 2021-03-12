@@ -7846,7 +7846,7 @@ invalidate cache and get fresh data."
 
 #+END_SRC
 
-**** entity capabilities (XEP-0115)
+**** Entity Capabilities ([[https://xmpp.org/extensions/xep-0115.html][XEP-0115]])
 
 #+BEGIN_SRC emacs-lisp
 ;;;###autoload
@@ -8195,7 +8195,8 @@ the right node."
   '(add-to-list 'jabber-presence-element-functions #'jabber-caps-presence-element))
 
 #+END_SRC
-*** feature negotiation
+*** Feature Negotiation ([[https://xmpp.org/extensions/xep-0020.html][XEP-0020]])                         :xep_deprecated:
+
 #+BEGIN_SRC emacs-lisp
 (require 'cl)
 
@@ -10885,7 +10886,7 @@ CLOSURE-DATA is either 'success or 'error."
 	    (insert "\n"))))))
 
 #+END_SRC
-*** browse
+*** Jabber Browsing ([[https://xmpp.org/extensions/xep-0011.html][XEP-0011]])                               :xep_obsolete:
 jabber.el can perform browse requests, but will not answer them.
 **** jabber-get-browse                                           :command:
 #+BEGIN_SRC emacs-lisp
@@ -13876,7 +13877,7 @@ The only difference between these this and =jabber-get-idle-time= functions is t
 (jabber-disco-advertise-feature "jabber:iq:time")
 
 #+END_SRC
-**** jabber-return-legacy-time                                  :function:
+**** jabber-return-legacy-time ([[https://xmpp.org/extensions/xep-0090.html][XEP-0090: Legacy Entity Time]])   :function:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-return-legacy-time (jc xml-data)
   "Return client time as defined in XEP-0090.  Sender and ID are
@@ -13900,7 +13901,7 @@ determined from the incoming packet passed in XML-DATA."
 (jabber-disco-advertise-feature "urn:xmpp:time")
 
 #+END_SRC
-**** jabber-return-time                                         :function:
+**** jabber-return-time ([[https://xmpp.org/extensions/xep-0202.html][XEP-0202: Entity Time]])                 :function:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-return-time (jc xml-data)
   "Return client time as defined in XEP-0202.  Sender and ID are
@@ -13999,7 +14000,7 @@ get it, and then it just gets deleted."
   (jabber-truncate-top buffer))
 
 #+END_SRC
-*** carbons
+*** Message Carbons ([[https://xmpp.org/extensions/xep-0280.html][XEP-0280]])
 #+BEGIN_SRC emacs-lisp
 (defun jabber-carbon-success (jc xml-data context)
   (when (equal "result" (jabber-xml-get-attribute xml-data 'type))
@@ -14027,7 +14028,7 @@ get it, and then it just gets deleted."
                   #'jabber-carbon-failure "Carbons feature enablement"))
 
 #+END_SRC
-*** stream initiation (SI)
+*** Stream Initiation (SI) ([[https://xmpp.org/extensions/xep-0095.html][XEP-0095]])                      :xep_deprecated:
 **** common
 ***** jabber-si-stream-methods                                 :variable:
 #+BEGIN_SRC emacs-lisp
@@ -14189,7 +14190,7 @@ Each entry is a list, containing:
 	))))
 
 #+END_SRC
-*** file transfer
+*** SI File Transfer ([[https://xmpp.org/extensions/xep-0096.html][XEP-0096]])                            :xep_deprecated:
 **** common
 
 #+BEGIN_SRC emacs-lisp
@@ -14399,7 +14400,7 @@ Return nil if no MD5 summing program is available."
 	nil))))
 
 #+END_SRC
-*** socks5
+*** SOCKS5 Bytestreams ([[https://xmpp.org/extensions/xep-0065.html][XEP-0065]])
 #+BEGIN_SRC emacs-lisp
 (eval-when-compile (require 'cl))
 
