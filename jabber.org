@@ -2406,6 +2406,12 @@ what kind of chat buffer is being created.")
 
 #+END_SRC
 *** core
+Standards (probably) involved -
+1. [[https://datatracker.ietf.org/doc/rfc6120/][[RFC 6120] Extensible Messaging and Presence Protocol (XMPP): Core]]
+2. [[https://datatracker.ietf.org/doc/rfc7590/][[RFC 7950] Use of Transport Layer Security (TLS) in the Extensible Messaging and Presence Protocol (XMPP)]]
+3. [[https://datatracker.ietf.org/doc/rfc6121/][[RFC 6121] Extensible Messaging and Presence Protocol (XMPP): Instant Messaging and Presence]]
+4. [[https://datatracker.ietf.org/doc/rfc7622/][[RFC 7622] Extensible Messaging and Presence Protocol (XMPP): Address Format]]
+
 #+BEGIN_SRC emacs-lisp
 (require 'cl)
 
@@ -7456,7 +7462,7 @@ Signal an error if there is no JID at point."
 	:test 'string=)))))
 
 #+END_SRC
-*** disco
+*** Service Discovery ([[https://xmpp.org/extensions/xep-0030.html][XEP-0030]])
 **** Respond to disco requests
 ***** jabber-advertised-features                               :variable:
 #+BEGIN_SRC emacs-lisp
@@ -7515,7 +7521,7 @@ JID, and returns non-nil if access is granted.  If the second item is
 nil, access is always granted.")
 
 #+END_SRC
-**** jabber-return-disco-info                                   :function:
+***** jabber-return-disco-info                                 :function:
 #+BEGIN_SRC emacs-lisp
 (add-to-list 'jabber-iq-get-xmlns-alist
 	     (cons "http://jabber.org/protocol/disco#info" 'jabber-return-disco-info))
@@ -7556,7 +7562,7 @@ See JEP-0030."
       (jabber-signal-error "cancel" 'item-not-found))))
 
 #+END_SRC
-**** jabber-disco-return-client-info                            :function:
+***** jabber-disco-return-client-info                          :function:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-disco-return-client-info (&optional jc xml-data)
   `(
@@ -7574,8 +7580,8 @@ See JEP-0030."
        jabber-advertised-features)))
 
 #+END_SRC
-**** interactive disco requests
-**** jabber-get-disco-items                                      :command:
+***** interactive disco requests
+***** jabber-get-disco-items                                    :command:
 #+BEGIN_SRC emacs-lisp
 (add-to-list 'jabber-jid-info-menu
 	     (cons "Send items disco query" 'jabber-get-disco-items))
@@ -7593,7 +7599,7 @@ See JEP-0030."
 		  #'jabber-process-data "Item discovery failed"))
 
 #+END_SRC
-**** jabber-get-disco-info                                       :command:
+***** jabber-get-disco-info                                     :command:
 #+BEGIN_SRC emacs-lisp
 (add-to-list 'jabber-jid-info-menu
 	     (cons "Send info disco query" 'jabber-get-disco-info))
@@ -7611,7 +7617,7 @@ See JEP-0030."
 		  #'jabber-process-data "Info discovery failed"))
 
 #+END_SRC
-**** jabber-process-disco-info                                  :function:
+***** jabber-process-disco-info                                :function:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-process-disco-info (jc xml-data)
   "Handle results from info disco requests."
@@ -7640,7 +7646,7 @@ See JEP-0030."
 		       'jabber-account jc)))
 
 #+END_SRC
-**** jabber-process-disco-items                                 :function:
+***** jabber-process-disco-items                               :function:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-process-disco-items (jc xml-data)
   "Handle results from items disco requests."
@@ -7680,7 +7686,7 @@ See JEP-0030."
 (defvar jabber-disco-items-cache (make-hash-table :test 'equal))
 
 #+END_SRC
-**** jabber-disco-get-info                                      :function:
+***** jabber-disco-get-info                                    :function:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-disco-get-info (jc jid node callback closure-data &optional force)
   "Get disco info for JID and NODE, using connection JC.
@@ -7708,7 +7714,7 @@ invalidate cache and get fresh data."
 		      (cons callback closure-data)))))
 
 #+END_SRC
-**** jabber-disco-got-info                                      :function:
+***** jabber-disco-got-info                                    :function:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-disco-got-info (jc xml-data callback-data)
   (let ((jid (jabber-xml-get-attribute xml-data 'from))
@@ -7720,7 +7726,7 @@ invalidate cache and get fresh data."
       (funcall (car callback-data) jc (cdr callback-data) result))))
 
 #+END_SRC
-**** jabber-disco-parse-info                                    :function:
+***** jabber-disco-parse-info                                  :function:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-disco-parse-info (xml-data)
   "Extract data from an <iq/> stanza containing a disco#info result.
@@ -7738,7 +7744,7 @@ See `jabber-disco-get-info' for a description of the return value."
     (jabber-xml-get-children (jabber-iq-query xml-data) 'feature))))
 
 #+END_SRC
-**** jabber-disco-get-info-immediately                          :function:
+***** jabber-disco-get-info-immediately                        :function:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-disco-get-info-immediately (jid node)
   "Get cached disco info for JID and NODE.
@@ -7752,7 +7758,7 @@ Fill the cache with `jabber-disco-get-info'."
    (and (null node) (jabber-caps-get-cached jid))))
 
 #+END_SRC
-**** jabber-disco-get-items                                     :function:
+***** jabber-disco-get-items                                   :function:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-disco-get-items (jc jid node callback closure-data &optional force)
   "Get disco items for JID and NODE, using connection JC.
@@ -7781,7 +7787,7 @@ invalidate cache and get fresh data."
 		      (cons callback closure-data)))))
 
 #+END_SRC
-**** jabber-disco-got-items                                     :function:
+***** jabber-disco-got-items                                   :function:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-disco-got-items (jc xml-data callback-data)
   (let ((jid (jabber-xml-get-attribute xml-data 'from))
@@ -7800,7 +7806,7 @@ invalidate cache and get fresh data."
       (funcall (car callback-data) jc (cdr callback-data) result))))
 
 #+END_SRC
-**** jabber-disco-get-items-immediately                         :function:
+***** jabber-disco-get-items-immediately                       :function:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-disco-get-items-immediately (jid node)
   (gethash (cons jid node) jabber-disco-items-cache))
@@ -7842,7 +7848,7 @@ invalidate cache and get fresh data."
 
 #+END_SRC
 
-**** Entity Capabilities ([[https://xmpp.org/extensions/xep-0115.html][XEP-0115]])
+*** Entity Capabilities ([[https://xmpp.org/extensions/xep-0115.html][XEP-0115]])
 
 #+BEGIN_SRC emacs-lisp
 ;;;###autoload
@@ -7850,7 +7856,7 @@ invalidate cache and get fresh data."
   '(add-to-list 'jabber-presence-chain #'jabber-process-caps))
 
 #+END_SRC
-***** jabber-caps-cache                                        :variable:
+**** jabber-caps-cache                                          :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-caps-cache (make-hash-table :test 'equal))
 
@@ -8089,7 +8095,7 @@ Return (IDENTITIES FEATURES), or nil if not in cache."
       (base64-encode-string (jabber-caps--secure-hash algorithm s) t))))
 
 #+END_SRC
-**** jabber-caps--secure-hash                                   :function:
+***** jabber-caps--secure-hash                                 :function:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-caps--secure-hash (algorithm string)
   (cond
@@ -8103,7 +8109,7 @@ Return (IDENTITIES FEATURES), or nil if not in cache."
     (error "Cannot use hash algorithm %s!" algorithm))))
 
 #+END_SRC
-**** jabber-caps-identity-<                                     :function:
+***** jabber-caps-identity-<                                   :function:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-caps-identity-< (a b)
   (let ((a-category (jabber-xml-get-attribute a 'category))
@@ -11036,7 +11042,7 @@ determined from the incoming packet passed in XML-DATA."
 		    id)))
 
 #+END_SRC
-*** ahc - ad hoc commands
+*** Ad Hoc Commands ([[https://xmpp.org/extensions/xep-0050.html][XEP-0050]])
 **** jabber-ahc-sessionid                                       :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-ahc-sessionid nil
@@ -11067,8 +11073,10 @@ func	- function taking connection object and entire IQ stanza as
 
 Use the function `jabber-ahc-add' to add a command to this list.")
 
+#+END_SRC
 
-;;; SERVER
+**** server
+#+BEGIN_SRC emacs-lisp
 (add-to-list 'jabber-disco-info-nodes
 	     (list "http://jabber.org/protocol/commands"
 		   '((identity ((category . "automation")
@@ -11080,7 +11088,7 @@ Use the function `jabber-ahc-add' to add a command to this list.")
 		      ((var . "http://jabber.org/protocol/disco#info"))))))
 
 #+END_SRC
-**** jabber-ahc-add                                             :function:
+***** jabber-ahc-add                                           :function:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-ahc-add (node name func acl)
   "Add a command to internal lists.
@@ -11102,7 +11110,7 @@ access allowed.  nil means open for everyone."
 			    (feature ((var . "jabber:x:data")))))))
 
 #+END_SRC
-**** jabber-ahc-disco-items                                     :function:
+***** jabber-ahc-disco-items                                   :function:
 #+BEGIN_SRC emacs-lisp
 (jabber-disco-advertise-feature "http://jabber.org/protocol/commands")
 (add-to-list 'jabber-disco-items-nodes
@@ -11125,7 +11133,7 @@ access allowed.  nil means open for everyone."
 	    jabber-ahc-commands)))
 
 #+END_SRC
-**** jabber-ahc-process                                         :function:
+***** jabber-ahc-process                                       :function:
 #+BEGIN_SRC emacs-lisp
 (add-to-list 'jabber-iq-set-xmlns-alist
 	     (cons "http://jabber.org/protocol/commands" 'jabber-ahc-process))
@@ -11154,7 +11162,7 @@ access allowed.  nil means open for everyone."
 #+END_SRC
 
 **** client
-**** jabber-ahc-get-list                                         :command:
+***** jabber-ahc-get-list                                       :command:
 #+BEGIN_SRC emacs-lisp
 (add-to-list 'jabber-jid-service-menu
 	     (cons "Request command list" 'jabber-ahc-get-list))
@@ -11165,7 +11173,7 @@ access allowed.  nil means open for everyone."
   (jabber-get-disco-items jc to "http://jabber.org/protocol/commands"))
 
 #+END_SRC
-**** jabber-ahc-execute-command                                  :command:
+***** jabber-ahc-execute-command                                :command:
 #+BEGIN_SRC emacs-lisp
 (add-to-list 'jabber-jid-service-menu
 	     (cons "Execute command" 'jabber-ahc-execute-command))
@@ -11183,7 +11191,7 @@ access allowed.  nil means open for everyone."
 		  #'jabber-process-data "Command execution failed"))
 
 #+END_SRC
-**** jabber-ahc-display                                         :function:
+***** jabber-ahc-display                                       :function:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-ahc-display (jc xml-data)
   (let* ((from (jabber-xml-get-attribute xml-data 'from))
@@ -11253,7 +11261,7 @@ access allowed.  nil means open for everyone."
       (widget-minor-mode 1))))
 
 #+END_SRC
-**** jabber-ahc-submit                                          :function:
+***** jabber-ahc-submit                                        :function:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-ahc-submit (action)
   "Submit Ad-Hoc Command."
@@ -12037,7 +12045,7 @@ With a numeric arg, enable this display if arg is positive."
 (if jabber-activity-mode (jabber-activity-mode 1))
 
 #+END_SRC
-*** events
+*** Message Events ([[https://xmpp.org/extensions/xep-0022.html][XEP-0022]])                                :xep_obsolete:
 #+BEGIN_SRC emacs-lisp
 (require 'cl)
 
@@ -12318,7 +12326,7 @@ Add function last in chain, so a chat buffer is already created.
 	      (jabber-events-update-message)))))))))
 
 #+END_SRC
-*** chatstates
+*** Chat State Notifications ([[https://xmpp.org/extensions/xep-0085.html][XEP-0085]])
 **** TODO
 1. [ ] Currently only active/composing notifications are /sent/ though all 5 notifications are handled on receipt.
 
@@ -12770,7 +12778,7 @@ available."
     image))
 
 #+END_SRC
-*** vcard
+*** vCard ([[https://xmpp.org/extensions/xep-0054.html][XEP-0054]])
 There are great variations in Jabber vcard implementations.  This one adds some spice to the mix, while trying to follow the JEP closely.
 
 Fields not implemented: GEO, LOGO, AGENT, ORG, CATEGORIES, SOUND,
@@ -13329,7 +13337,7 @@ The top node should be the `vCard' node."
        (and jabber-vcard-photo (avatar-sha1-sum jabber-vcard-photo))))))
 
 #+END_SRC
-*** vcard-avatars
+*** vCard-Based Avatars ([[https://xmpp.org/extensions/xep-0153.html][XEP-0153]])
 #+BEGIN_SRC emacs-lisp
 (defcustom jabber-vcard-avatars-retrieve (and (fboundp 'display-images-p)
 					      (display-images-p))
@@ -13720,7 +13728,7 @@ The method for finding the terminal only works on GNU/Linux."
           (float-time idle-time)))))
 
 #+END_SRC
-*** time
+*** time ([[https://xmpp.org/extensions/xep-0090.html][XEP-0090: Legacy Entity Time]]) ([[https://xmpp.org/extensions/xep-0202.html][XEP-0202: Entity Time]]) :xep_obsolete:
 #+BEGIN_SRC emacs-lisp
 (require 'time-date)
 
@@ -13873,7 +13881,7 @@ The only difference between these this and =jabber-get-idle-time= functions is t
 (jabber-disco-advertise-feature "jabber:iq:time")
 
 #+END_SRC
-**** jabber-return-legacy-time ([[https://xmpp.org/extensions/xep-0090.html][XEP-0090: Legacy Entity Time]])   :function:
+**** jabber-return-legacy-time                                  :function:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-return-legacy-time (jc xml-data)
   "Return client time as defined in XEP-0090.  Sender and ID are
@@ -13897,7 +13905,7 @@ determined from the incoming packet passed in XML-DATA."
 (jabber-disco-advertise-feature "urn:xmpp:time")
 
 #+END_SRC
-**** jabber-return-time ([[https://xmpp.org/extensions/xep-0202.html][XEP-0202: Entity Time]])                 :function:
+**** jabber-return-time                                         :function:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-return-time (jc xml-data)
   "Return client time as defined in XEP-0202.  Sender and ID are

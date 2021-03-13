@@ -9040,8 +9040,6 @@ func	- function taking connection object and entire IQ stanza as
 
 Use the function `jabber-ahc-add' to add a command to this list.")
 
-
-;;; SERVER
 (add-to-list 'jabber-disco-info-nodes
 	     (list "http://jabber.org/protocol/commands"
 		   '((identity ((category . "automation")
