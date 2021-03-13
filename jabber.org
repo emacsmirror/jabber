@@ -98,8 +98,9 @@ If a source block does not have syntax highlighting, press =M-o M-o= (=font-lock
 *** TODO organizational tasks [0%]
 1. [ ] (maybe) make dependencies optional and tangle them to separate files, reducing load time for users.
 2. [ ] contemplate [[https://github.com/melpa/melpa/issues/7408][distribution strategies]]
-3. [ ] make headings for remaining definitions
+3. [ ] make headings for remaining definitions - some FSM-related definitions remain.
 4. [ ] move tests to this file (probably migrate them to =ert= or =buttercup= first), in sub-headings of their concerned components.
+5. [ ] move dependencies to the Dependencies heading; also make library headers for them
 ** Library headers and commentary
 #+BEGIN_SRC emacs-lisp
 ;;; jabber.el --- a minimal jabber client
@@ -12581,7 +12582,7 @@ A contact with an avatar has the image in the avatar property of the JID symbol.
 
 #+END_SRC
 **** avatar data handling
-
+***** avatar                                                     :struct:
 #+BEGIN_SRC emacs-lisp
 (defstruct avatar sha1-sum mime-type url base64-data height width bytes)
 
@@ -14005,6 +14006,7 @@ get it, and then it just gets deleted."
 
 #+END_SRC
 *** Message Carbons ([[https://xmpp.org/extensions/xep-0280.html][XEP-0280]])
+**** jabber-carbon-success                                      :function:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-carbon-success (jc xml-data context)
   (when (equal "result" (jabber-xml-get-attribute xml-data 'type))
