@@ -93,6 +93,8 @@ jabber.el is an Org literate program.
 
 The sed script has the advantage that one can break a source block to insert Org commentary even within a =defun=, if desired - see =jabber-caps-ver-string= as a potential example. However, doing this may cause other tooling working on the s-expression level to break - =literate-elisp= definitely does.
 
+If a source block does not have syntax highlighting, press =M-o M-o= (=font-lock-fontify-block=) in it.
+
 *** TODO [0%]
 1. [ ] (maybe) make dependencies optional and tangle them to separate files, reducing load time for users.
 2. [ ] contemplate [[https://github.com/melpa/melpa/issues/7408][distribution strategies]]
