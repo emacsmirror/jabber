@@ -83,9 +83,9 @@ This release of jabber.el contains support for file transfer.  You may need to c
 *** XMPP URIs
 It is possible to make various web browsers pass links starting with "xmpp:" to jabber.el.  In the ideal case, this works right after running "make install".  Otherwise, see the manual, section "XMPP URIs".
 
-** TODO [0%]
-1. [ ] Satisfy checkdoc
-2. [ ] Use rx where regular expressions get hairy
+** TODO maintenance [0%]
+1. [ ] Satisfy =M-x checkdoc=
+2. [ ] Use =rx= where regular expressions get hairy
 ** About this file
 jabber.el is an Org literate program.
 
@@ -95,7 +95,7 @@ The sed script has the advantage that one can break a source block to insert Org
 
 If a source block does not have syntax highlighting, press =M-o M-o= (=font-lock-fontify-block=) in it.
 
-*** TODO [0%]
+*** TODO organizational tasks [0%]
 1. [ ] (maybe) make dependencies optional and tangle them to separate files, reducing load time for users.
 2. [ ] contemplate [[https://github.com/melpa/melpa/issues/7408][distribution strategies]]
 3. [ ] make headings for remaining definitions
