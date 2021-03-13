@@ -894,9 +894,6 @@ With prefix argument, remove it."
   (force-mode-line-update))
 (make-obsolete 'jabber-menu "set the variable `jabber-display-menu' instead.")
 
-;; This used to be:
-;; (define-key-after global-map [menu-bar jabber-menu] ...)
-;; but that doesn't work in Emacs 21.
 ;;;###autoload
 (define-key-after (lookup-key global-map [menu-bar])
   [jabber-menu]
@@ -1115,9 +1112,6 @@ CHILD-NAME should be a lower case symbol."
 	      (push child match))))
     (nreverse match)))
 
-;; `xml-get-attribute' returns "" if the attribute is not found, which
-;; is not very useful.  Therefore, we use `xml-get-attribute-or-nil'
-;; if present, or emulate its behavior.
 (eval-and-compile
   (if (fboundp 'xml-get-attribute-or-nil)
       (defsubst jabber-xml-get-attribute (node attribute)
@@ -2859,10 +2853,6 @@ Return an fsm result list if it is."
       (error "%s has no connection" (jabber-connection-jid jc)))
     (funcall send-function connection string)))
 
-;; In Emacs 24, sha1 is built in, so this require is only needed for
-;; earlier versions.  It's supposed to be a noop in Emacs 24, but
-;; sometimes, for some people, it isn't, and fails with
-;; (file-error "Cannot open load file" "sha1").
 (unless (fboundp 'sha1)
   (require 'sha1))
 
