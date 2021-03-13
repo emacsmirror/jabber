@@ -8,7 +8,7 @@ Project page: http://sourceforge.net/projects/emacs-jabber
 Wiki page:    http://www.emacswiki.org/cgi-bin/wiki/JabberEl
 Mailing list: http://lists.sourceforge.net/lists/listinfo/emacs-jabber-general
 and:          http://dir.gmane.org/gmane.emacs.jabber.general
-MUC room:     jabber.el@conference.jabber.se and emacs@conference.jabber.ru (Russian, English)
+Chat:         [[xmpp:emacs@salas.suchat.org?join][xmpp:emacs@salas.suchat.org?join]]
 
 *** GNU Emacs
 jabber.el runs on GNU Emacs 23.1 or later.
