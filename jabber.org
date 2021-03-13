@@ -23,7 +23,7 @@ Many Jabber servers require encrypted connections, and even if yours doesn't it 
 
 : M-: (gnutls-available-p)
 
-If that commands shows `t' in the echo area, then you have working GnuTLS support.  If it shows `nil' or signals an error, then you don't.
+If that commands shows =t= in the echo area, then you have working GnuTLS support.  If it shows =nil= or signals an error, then you don't.
 
 Failing that, jabber.el will use the starttls.el library, which requires that the GnuTLS command line tool "gnutls-cli" is installed.
 
@@ -31,7 +31,7 @@ In Debian-based distributions, "gnutls-cli" is in the "gnutls-bin" package.
 
 The above applies to STARTTLS connections, the most common way to encrypt a Jabber connection and the only one specified in the standards.  STARTTLS connections start out unencrypted, but switch to encrypted after negotiation.  jabber.el also supports connections that are encrypted from start.  For this it uses the tls.el library, which requires either "gnutls-cli" or the OpenSSL command line tool "openssl" to be installed.
 
-To use the latter form of encryption, customize jabber-account-list.
+To use the latter form of encryption, customize =jabber-account-list=.
 
 Note that only the connection from you to the server is encrypted; there is no guarantee of connections from your server to your contacts' server being encrypted.
 
@@ -52,10 +52,10 @@ After installation by either method, add (load "jabber-autoloads") to your .emac
 
 If you are upgrading from 0.7-0.7.x, you need to update your configuration.  See the section "Account settings" in the manual.
 
-**** Special notes for GIT version
-If you are running jabber.el from GIT, you need to generate the jabber-autoloads.el file yourself.  The simplest way to do this is by using the "./configure && make" process.
+**** Special notes for Git version
+If you are running jabber.el from Git, you need to generate the =jabber-autoloads.el= file yourself.  The simplest way to do this is by using the =./configure && make= process.
 
-To generate the configure script, make sure that autoconf and automake are installed and run "autoreconf -i".
+To generate the configure script, make sure that autoconf and automake are installed and run =autoreconf -i=.
 
 *** Usage
 To connect to a Jabber server, type =C-x C-j C-c= (or equivalently =M-x jabber-connect-all=) and enter your JID.  With prefix argument, register a new account.  You can set your JID permanently with =M-x jabber-customize=.
@@ -73,9 +73,9 @@ All available configuration options are described in the manual.  This section o
 
 To change how you are notified about incoming events, type =M-x customize-group RET jabber-alerts=.
 
-To activate logging of all chats, set =jabber-history-enabled= to t.  By default, history will be saved in =~/.jabber_global_message_log=; make sure that this file has appropriate permissions.  Type =M-x customize-group RET jabber-history= for more options.
+To activate logging of all chats, set =jabber-history-enabled= to =t=.  By default, history will be saved in =~/.jabber_global_message_log=; make sure that this file has appropriate permissions.  Type =M-x customize-group RET jabber-history= for more options.
 
-By default, jabber.el will send a confirmation when messages sent to you are delivered and displayed, and also send "contact is typing" notifications.  To change this, type M-x customize-group RET jabber-events, and set the three jabber-events-confirm-* variables to nil.
+By default, jabber.el will send a confirmation when messages sent to you are delivered and displayed, and also send "contact is typing" notifications.  To change this, type =M-x customize-group RET jabber-events=, and set the three =jabber-events-confirm-*= variables to nil.
 
 *** File transfer
 This release of jabber.el contains support for file transfer.  You may need to configure some variables to make it work; see the manual for details.
