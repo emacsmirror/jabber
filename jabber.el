@@ -966,7 +966,7 @@ With prefix argument, remove it."
   (require 'cl))
 
 (defun jabber-escape-xml (str)
-  "escape strings for xml"
+  "Escape strings for XML."
   (if (stringp str)
       (let ((newstr (concat str)))
 	;; Form feeds might appear in code you copy, etc.  Nevertheless,
@@ -998,7 +998,8 @@ With prefix argument, remove it."
     str))
 
 (defun jabber-sexp2xml (sexp)
-  "converts an SEXP in the format (tagname ((attribute-name . attribute-value)...) children...) and converts it to well-formatted xml."
+  "Return SEXP as well-formatted XML.
+SEXP should be in the form (tagname ((attribute-name . attribute-value)...) children...)"
   (cond
    ((stringp sexp)
     (jabber-escape-xml sexp))
@@ -1467,7 +1468,7 @@ connection fails."
 ;; of the link
 ;; TODO: make this configurable
 (defun jabber-ssl-connect (fsm server network-server port)
-  "connect via OpenSSL or GnuTLS to a Jabber Server
+  "Connect via OpenSSL or GnuTLS to a Jabber Server.
 Send a message of the form (:connected CONNECTION) to FSM if
 connection succeeds.  Send a message (:connection-failed ERRORS) if
 connection fails."
@@ -1555,7 +1556,7 @@ connection fails."
 	(fsm-send fsm (list :connection-failed (nreverse errors))))))
 
 (defun jabber-starttls-initiate (fsm)
-  "Initiate a starttls connection"
+  "Initiate a starttls connection."
   (jabber-send-sexp fsm
    '(starttls ((xmlns . "urn:ietf:params:xml:ns:xmpp-tls")))))
 
