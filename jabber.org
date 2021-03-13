@@ -14124,7 +14124,7 @@ Returns the SID."
 (jabber-disco-advertise-feature "http://jabber.org/protocol/si")
 
 #+END_SRC
-**** jabber-si-profiles                                         :variable:
+***** jabber-si-profiles                                       :variable:
 Now, stream methods push data to profiles.  It could be the other way around; not sure which is better.
 
 #+BEGIN_SRC emacs-lisp
@@ -14139,7 +14139,7 @@ Each entry is a list, containing:
  * \"Connection established\" function.  See `jabber-si-stream-methods'.")
 
 #+END_SRC
-**** jabber-si-process                                          :function:
+***** jabber-si-process                                        :function:
 #+BEGIN_SRC emacs-lisp
 (add-to-list 'jabber-iq-set-xmlns-alist
 	     (cons "http://jabber.org/protocol/si" 'jabber-si-process))
