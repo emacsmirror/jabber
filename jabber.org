@@ -99,7 +99,7 @@ If a source block does not have syntax highlighting, press =M-o M-o= (=font-lock
 1. [ ] (maybe) make dependencies optional and tangle them to separate files, reducing load time for users.
 2. [ ] contemplate [[https://github.com/melpa/melpa/issues/7408][distribution strategies]]
 3. [ ] make headings for remaining definitions
-4. [ ] move tests to this file (probably migrate them to =ert=/=buttercup= first), in sub-headings of their concerned components.
+4. [ ] move tests to this file (probably migrate them to =ert= or =buttercup= first), in sub-headings of their concerned components.
 ** Library headers and commentary
 #+BEGIN_SRC emacs-lisp
 ;;; jabber.el --- a minimal jabber client
@@ -1479,7 +1479,7 @@ CHILD-NAME should be a lower case symbol."
 
 #+END_SRC
 **** jabber-xml-get-attribute                            :inline:function:
-`xml-get-attribute' returns "" if the attribute is not found, which is not very useful.  Therefore, we use `xml-get-attribute-or-nil' if present, or emulate its behavior.
+=xml-get-attribute= returns =""= if the attribute is not found, which is not very useful.  Therefore, we use =xml-get-attribute-or-nil= if present, or emulate its behavior.
 #+BEGIN_SRC emacs-lisp
 (eval-and-compile
   (if (fboundp 'xml-get-attribute-or-nil)
