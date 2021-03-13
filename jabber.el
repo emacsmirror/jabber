@@ -10159,8 +10159,6 @@ It can be sent and cancelled several times.")
 (require 'mailcap)
 (eval-when-compile (require 'cl))
 
-;;;; Variables
-
 (defgroup jabber-avatar nil
   "Avatar related settings"
   :group 'jabber)

@@ -9043,7 +9043,7 @@ on success or failure, respectively."
         (cdr (assoc nick jabber-muc-participant-colors))))))
 
 #+END_SRC
-*** muc
+*** Multi-User Chat (MUC) ([[https://xmpp.org/extensions/xep-0045.html][XEP-0045]])
 #+BEGIN_SRC emacs-lisp
 ;; we need jabber-bookmarks for jabber-muc-autojoin (via
 ;; jabber-get-bookmarks and jabber-parse-conference-bookmark):
@@ -10789,7 +10789,7 @@ CLOSURE-DATA is either 'success or 'error."
 		      #'jabber-report-success "Unregistration")))
 
 #+END_SRC
-*** search
+*** Jabber Search ([[https://xmpp.org/extensions/xep-0055.html][XEP-0055]])
 **** jabber-get-search                                           :command:
 #+BEGIN_SRC emacs-lisp
 (add-to-list 'jabber-jid-service-menu
@@ -12530,15 +12530,13 @@ It can be sent and cancelled several times.")
 
 #+END_SRC
 *** avatar
-There are several methods for transporting avatars in Jabber (JEP-0008, JEP-0084, JEP-0153).  They all have in common that they identify avatars by their SHA1 checksum, and (at least partially) use Base64-encoded image data.  Thus this library of support functions for interpreting and caching avatars.
+There are several methods for transporting avatars in Jabber ([[https://xmpp.org/extensions/xep-0008.html][XEP-0008: IQ-Based Avatars]], [[https://xmpp.org/extensions/xep-0084.html][XEP-0084: User Avatar]], [[https://xmpp.org/extensions/xep-0153.html][XEP-0153: vCard-Based Avatars]]).  They all have in common that they identify avatars by their SHA1 checksum, and (at least partially) use Base64-encoded image data.  Thus this library of support functions for interpreting and caching avatars.
 
-A contact with an avatar has the image in the avatar property of the JID symbol.  Use `jabber-avatar-set' to set it.
+A contact with an avatar has the image in the avatar property of the JID symbol.  Use =jabber-avatar-set= to set it.
 
 #+BEGIN_SRC emacs-lisp
 (require 'mailcap)
 (eval-when-compile (require 'cl))
-
-;;;; Variables
 
 #+END_SRC
 **** jabber-avatar                                          :custom:group:
