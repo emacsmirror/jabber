@@ -1076,7 +1076,7 @@ enough for us."
   "Parse the first XML stanza in the current buffer.
 Parse and return the first complete XML element in the buffer,
 leaving point at the end of it.  If there is no complete XML
-element, return `nil'."
+element, return nil."
   (and (catch 'unfinished
 	 (goto-char (point-min))
 	 (jabber-xml-skip-tag-forward)
@@ -9019,13 +9019,13 @@ determined from the incoming packet passed in XML-DATA."
 		    id)))
 
 (defvar jabber-ahc-sessionid nil
-  "session id of Ad-Hoc Command session")
+  "Session ID of Ad-Hoc Command session.")
 
 (defvar jabber-ahc-node nil
-  "node to send commands to")
+  "Node to send commands to.")
 
 (defvar jabber-ahc-commands nil
-  "Commands provided
+  "Commands provided.
 
 This is an alist, where the keys are node names as strings (which
 means that they must not conflict).  The values are plists having
