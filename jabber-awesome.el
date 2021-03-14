@@ -18,7 +18,7 @@
 ;; along with this program; if not, write to the Free Software
 ;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-(eval-when-compile (require 'jabber-alert))
+(eval-when-compile (require 'jabber))
 
 (defcustom jabber-awesome-args ", timeout=5"
   "Additional args to naughty."

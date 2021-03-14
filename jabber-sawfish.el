@@ -18,7 +18,7 @@
 ;; along with this program; if not, write to the Free Software
 ;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-(eval-when-compile (require 'jabber-alert))
+(eval-when-compile (require 'jabber))
 
 (defcustom jabber-sawfish-display-time 3
   "Time in seconds for displaying a jabber message through the
@@ -29,8 +29,8 @@ Sawfish window manager."
 (defun jabber-sawfish-display-message (text &optional title)
   "Displays MESSAGE through the Sawfish window manager."
   (let ((process-connection-type nil))
-    (start-process-shell-command 
-     "jabber-sawfish" nil "echo" 
+    (start-process-shell-command
+     "jabber-sawfish" nil "echo"
      (concat "'(progn (require (quote timers)) (display-message \""
 	     (or title text)
 	     "\")(make-timer (lambda () (display-message nil)) "

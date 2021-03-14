@@ -13153,20 +13153,6 @@ configure a Google Talk account like this:
   :type 'integer
   :group 'jabber)
 
-;;; guess internal dependencies!
-
-;; External notifiers
-(require 'jabber-screen)
-(require 'jabber-tmux)
-(require 'jabber-ratpoison)
-(require 'jabber-sawfish)
-(require 'jabber-festival)
-(require 'jabber-xmessage)
-(require 'jabber-wmii)
-(require 'jabber-osd)
-(require 'jabber-awesome)
-(require 'jabber-libnotify)
-(require 'jabber-notifications)
 ;;;###autoload
 (defvar *jabber-current-status* nil
   "The users current presence status.")
