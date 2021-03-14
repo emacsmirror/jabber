@@ -1,3 +1,4 @@
+#+TODO: TODO WIP EXTEND CLEANUP FIXME REVIEW |
 #+PROPERTY: header-args :tangle yes
 * jabber.el
 ** README
@@ -140,7 +141,14 @@ If a source block does not have syntax highlighting, press =M-o M-o= (=font-lock
 #+END_SRC
 ** Dependencies
 ** Code
-*** util
+*** various utility functions
+:COPYRIGHT:
+Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
+Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+Copyright (C) 2008, 2010 - Terechkov Evgenii - evg@altlinux.org
+Copyright (C) 2010 - Kirill A. Korinskiy - catap@catap.ru
+:END:
+
 #+BEGIN_SRC emacs-lisp
 (require 'cl)
 (require 'password-cache)
@@ -1067,6 +1075,11 @@ applied to the node and not to the data itself."
 
 #+END_SRC
 *** menu
+:COPYRIGHT:
+Copyright (C) 2003, 2004, 2008 - Magnus Henoch - mange@freemail.hu
+Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+:END:
+
 #+BEGIN_SRC emacs-lisp
 (eval-when-compile (require 'cl))
 
@@ -1297,7 +1310,12 @@ This used to be: =(define-key-after global-map [menu-bar jabber-menu] ...)= but 
   (jabber-popup-menu (append jabber-jid-chat-menu jabber-jid-info-menu jabber-jid-roster-menu jabber-jid-muc-menu)))
 
 #+END_SRC
-*** xml
+*** XML functions
+:COPYRIGHT:
+Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
+Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+:END:
+
 #+BEGIN_SRC emacs-lisp
 (require 'xml)
 (eval-when-compile
@@ -1608,11 +1626,17 @@ any string   character data of this node"
   prefixes)
 
 #+END_SRC
-*** conn
-#+BEGIN_SRC emacs-lisp
-;; A collection of functions, that hide the details of transmitting to
-;; and fro a Jabber Server
+*** Network transport functions
+:COPYRIGHT:
+Copyright (C) 2005 - Georg Lehner - jorge@magma.com.ni
+mostly inspired by Gnus.
 
+Copyright (C) 2005 - Carl Henrik Lunde - chlunde+jabber+@ping.uio.no
+(starttls)
+:END:
+A collection of functions, that hide the details of transmitting to and fro a Jabber Server.
+
+#+BEGIN_SRC emacs-lisp
 (eval-when-compile (require 'cl))
 
 ;; Emacs 24 can be linked with GnuTLS
@@ -2053,7 +2077,11 @@ Use `*jabber-virtual-server-function*' as send function."
   (funcall *jabber-virtual-server-function* connection string))
 
 #+END_SRC
-*** sasl
+*** SASL authentication
+:COPYRIGHT:
+Copyright (C) 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
+:END:
+
 #+BEGIN_SRC emacs-lisp
 (require 'cl)
 
@@ -2197,7 +2225,7 @@ Call REMEMBER with the password.  REMEMBER is expected to return it as well."
     (list client step passphrase)))
 
 #+END_SRC
-*** keymap
+*** common keymap for many modes
 #+BEGIN_SRC emacs-lisp
 ;; button.el was introduced in Emacs 22
 (condition-case e
@@ -2246,11 +2274,15 @@ Call REMEMBER with the password.  REMEMBER is expected to return it as well."
 (define-key ctl-x-map "\C-j" jabber-global-keymap)
 
 #+END_SRC
-*** console
+*** XML Console mode
+:COPYRIGHT:
+Copyright (C) 2009, 2010 - Demyan Rogozhin <demyan.rogozhin@gmail.com>
+:END:
 #+BEGIN_SRC emacs-lisp
 (require 'ewoc)
 (require 'sgml-mode) ;we base on this mode to hightlight XML
 #+END_SRC
+
 **** jabber-console-name-format                          :custom:variable:
 #+BEGIN_SRC emacs-lisp
 (defcustom jabber-console-name-format "*-jabber-console-%s-*"
@@ -2409,6 +2441,14 @@ what kind of chat buffer is being created.")
 
 #+END_SRC
 *** core
+:COPYRIGHT:
+Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
+Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+
+SSL-Connection Parts:
+Copyright (C) 2005 - Georg Lehner - jorge@magma.com.ni
+:END:
+
 Standards (probably) involved -
 1. [[https://datatracker.ietf.org/doc/rfc6120/][[RFC 6120] Extensible Messaging and Presence Protocol (XMPP): Core]]
 2. [[https://datatracker.ietf.org/doc/rfc7590/][[RFC 7950] Use of Transport Layer Security (TLS) in the Extensible Messaging and Presence Protocol (XMPP)]]
@@ -3560,6 +3600,11 @@ Return an fsm result list if it is."
 
 #+END_SRC
 *** logon
+:COPYRIGHT:
+Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
+Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+:END:
+
 In Emacs 24, sha1 is built in, so this =require= is only needed for earlier versions.  It's supposed to be a noop in Emacs 24, but sometimes, for some people, it isn't, and fails with =(file-error "Cannot open load file" "sha1")=.
 #+BEGIN_SRC emacs-lisp
 (unless (fboundp 'sha1)
@@ -3625,7 +3670,13 @@ CLOSURE-DATA should be the password on success and nil on failure."
     (fsm-send jc :authentication-failure)))
 
 #+END_SRC
-*** roster
+*** Displaying the roster
+:COPYRIGHT:
+Copyright (C) 2009 - Kirill A. Korinskiy - catap@catap.ru
+Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
+Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+:END:
+
 #+BEGIN_SRC emacs-lisp
 (require 'format-spec)
 (require 'cl)				;for `find'
@@ -4652,7 +4703,284 @@ If optional PREV is non-nil, return position of previous property appearence."
                           'jabber-report-success "Failed to save roster groups"))))
 
 #+END_SRC
-*** iq
+*** export Jabber roster to file
+:COPYRIGHT:
+Copyright (C) 2005, 2007  Magnus Henoch
+Author: Magnus Henoch <mange@freemail.hu>
+:END:
+
+#+BEGIN_SRC emacs-lisp
+(require 'cl)
+
+#+END_SRC
+**** jabber-export-roster-widget                                :variable:
+#+BEGIN_SRC emacs-lisp
+(defvar jabber-export-roster-widget nil)
+
+#+END_SRC
+**** jabber-import-subscription-p-widget                        :variable:
+#+BEGIN_SRC emacs-lisp
+(defvar jabber-import-subscription-p-widget nil)
+
+#+END_SRC
+**** jabber-export-roster                                        :command:
+#+BEGIN_SRC emacs-lisp
+;;;###autoload
+(defun jabber-export-roster (jc)
+  "Export roster for connection JC."
+  (interactive (list (jabber-read-account)))
+  (let ((state-data (fsm-get-state-data jc)))
+    (jabber-export-roster-do-it
+     (jabber-roster-to-sexp (plist-get state-data :roster)))))
+
+#+END_SRC
+**** jabber-export-roster-do-it                                  :command:
+#+BEGIN_SRC emacs-lisp
+(defun jabber-export-roster-do-it (roster)
+  "Create buffer from which ROSTER can be exported to a file."
+  (interactive)
+  (with-current-buffer (get-buffer-create "Export roster")
+    (jabber-init-widget-buffer nil)
+
+    (widget-insert (jabber-propertize "Export roster\n"
+				      'face 'jabber-title-large))
+    (widget-insert "You are about to save your roster to a file.  Here
+you can edit it before saving.  Changes done here will
+not affect your actual roster.
+
+")
+
+    (widget-create 'push-button :notify #'jabber-export-save "Save to file")
+    (widget-insert " ")
+    (widget-create 'push-button :notify #'jabber-export-remove-regexp "Remove by regexp")
+    (widget-insert "\n\n")
+    (make-local-variable 'jabber-export-roster-widget)
+
+    (jabber-export-display roster)
+
+    (widget-setup)
+    (widget-minor-mode 1)
+    (goto-char (point-min))
+    (switch-to-buffer (current-buffer))))
+
+#+END_SRC
+**** jabber-import-roster                                        :command:
+#+BEGIN_SRC emacs-lisp
+;;;###autoload
+(defun jabber-import-roster (jc file)
+  "Create buffer for roster import for connection JC from FILE."
+  (interactive (list (jabber-read-account)
+		     (read-file-name "Import roster from file: ")))
+  (let ((roster
+	 (with-temp-buffer
+	   (let ((coding-system-for-read 'utf-8))
+	     (jabber-roster-xml-to-sexp
+	      (car (xml-parse-file file)))))))
+    (with-current-buffer (get-buffer-create "Import roster")
+      (setq jabber-buffer-connection jc)
+
+      (jabber-init-widget-buffer nil)
+
+      (widget-insert (jabber-propertize "Import roster\n"
+					'face 'jabber-title-large))
+      (widget-insert "You are about to import the contacts below to your roster.
+
+")
+
+      (make-local-variable 'jabber-import-subscription-p-widget)
+      (setq jabber-import-subscription-p-widget
+	    (widget-create 'checkbox))
+      (widget-insert " Adjust subscriptions\n")
+
+      (widget-create 'push-button :notify #'jabber-import-doit "Import to roster")
+      (widget-insert " ")
+      (widget-create 'push-button :notify #'jabber-export-remove-regexp "Remove by regexp")
+      (widget-insert "\n\n")
+      (make-local-variable 'jabber-export-roster-widget)
+
+      (jabber-export-display roster)
+
+      (widget-setup)
+      (widget-minor-mode 1)
+      (goto-char (point-min))
+      (switch-to-buffer (current-buffer)))))
+
+#+END_SRC
+**** jabber-export-remove-regexp                                :function:
+#+BEGIN_SRC emacs-lisp
+(defun jabber-export-remove-regexp (&rest ignore)
+  (let* ((value (widget-value jabber-export-roster-widget))
+	 (length-before (length value))
+	 (regexp (read-string "Remove JIDs matching regexp: ")))
+    (setq value (delete-if
+		 #'(lambda (a)
+		     (string-match regexp (nth 0 a)))
+		 value))
+    (widget-value-set jabber-export-roster-widget value)
+    (widget-setup)
+    (message "%d items removed" (- length-before (length value)))))
+
+#+END_SRC
+**** jabber-export-save                                         :function:
+#+BEGIN_SRC emacs-lisp
+(defun jabber-export-save (&rest ignore)
+  "Export roster to file."
+  (let ((items (mapcar #'jabber-roster-sexp-to-xml (widget-value jabber-export-roster-widget)))
+	(coding-system-for-write 'utf-8))
+    (with-temp-file (read-file-name "Export roster to file: ")
+      (insert "<iq xmlns='jabber:client'><query xmlns='jabber:iq:roster'>\n")
+      (dolist (item items)
+	(insert (jabber-sexp2xml item) "\n"))
+      (insert "</query></iq>\n"))
+    (message "Roster saved")))
+
+#+END_SRC
+**** jabber-import-doit                                         :function:
+#+BEGIN_SRC emacs-lisp
+(defun jabber-import-doit (&rest ignore)
+  "Import roster being edited in widget."
+  (let* ((state-data (fsm-get-state-data jabber-buffer-connection))
+	 (jabber-roster (plist-get state-data :roster))
+	 roster-delta)
+
+    (dolist (n (widget-value jabber-export-roster-widget))
+      (let* ((jid (nth 0 n))
+	     (name (and (not (zerop (length (nth 1 n))))
+			(nth 1 n)))
+	     (subscription (nth 2 n))
+	     (groups (nth 3 n))
+	     (jid-symbol (jabber-jid-symbol jid))
+	     (in-roster-p (memq jid-symbol jabber-roster))
+	     (jid-name (and in-roster-p (get jid-symbol 'name)))
+	     (jid-subscription (and in-roster-p (get jid-symbol 'subscription)))
+	     (jid-groups (and in-roster-p (get jid-symbol 'groups))))
+	;; Do we need to change the roster?
+	(when (or
+	       ;; If the contact is not in the roster already,
+	       (not in-roster-p)
+	       ;; or if the import introduces a name,
+	       (and name (not jid-name))
+	       ;; or changes a name,
+	       (and name jid-name (not (string= name jid-name)))
+	       ;; or introduces new groups.
+	       (set-difference groups jid-groups :test #'string=))
+	  (push (jabber-roster-sexp-to-xml
+		 (list jid (or name jid-name) nil (union groups jid-groups :test #'string=))
+		 t)
+		roster-delta))
+	;; And adujst subscription.
+	(when (widget-value jabber-import-subscription-p-widget)
+	  (let ((want-to (member subscription '("to" "both")))
+		(want-from (member subscription '("from" "both")))
+		(have-to (member jid-subscription '("to" "both")))
+		(have-from (member jid-subscription '("from" "both"))))
+	    (flet ((request-subscription
+		    (type)
+		    (jabber-send-sexp jabber-buffer-connection
+				      `(presence ((to . ,jid)
+						  (type . ,type))))))
+	      (cond
+	       ((and want-to (not have-to))
+		(request-subscription "subscribe"))
+	       ((and have-to (not want-to))
+		(request-subscription "unsubscribe")))
+	      (cond
+	       ((and want-from (not have-from))
+		;; not much to do here
+		)
+	       ((and have-from (not want-from))
+		(request-subscription "unsubscribed"))))))))
+    (when roster-delta
+      (jabber-send-iq jabber-buffer-connection
+		      nil "set"
+		      `(query ((xmlns . "jabber:iq:roster")) ,@roster-delta)
+		      #'jabber-report-success "Roster import"
+		      #'jabber-report-success "Roster import"))))
+
+#+END_SRC
+**** jabber-roster-to-sexp                                      :function:
+#+BEGIN_SRC emacs-lisp
+(defun jabber-roster-to-sexp (roster)
+  "Convert ROSTER to simpler sexp format.
+Return a list, where each item is a vector:
+\[jid name subscription groups]
+where groups is a list of strings."
+  (mapcar
+   #'(lambda (n)
+       (list
+	(symbol-name n)
+	(or (get n 'name) "")
+	(get n 'subscription)
+	(get n 'groups)))
+   roster))
+
+#+END_SRC
+**** jabber-roster-sexp-to-xml                                  :function:
+#+BEGIN_SRC emacs-lisp
+(defun jabber-roster-sexp-to-xml (sexp &optional omit-subscription)
+  "Convert SEXP to XML format.
+Return an XML node."
+  `(item ((jid . ,(nth 0 sexp))
+	  ,@(let ((name (nth 1 sexp)))
+	      (unless (zerop (length name))
+		`((name . ,name))))
+	  ,@(unless omit-subscription
+	      `((subscription . ,(nth 2 sexp)))))
+	 ,@(mapcar
+	    #'(lambda (g)
+		(list 'group nil g))
+	    (nth 3 sexp))))
+
+#+END_SRC
+**** jabber-roster-xml-to-sexp                                  :function:
+#+BEGIN_SRC emacs-lisp
+(defun jabber-roster-xml-to-sexp (xml-data)
+  "Convert XML-DATA to simpler sexp format.
+XML-DATA is an <iq> node with a <query xmlns='jabber:iq:roster'> child.
+See `jabber-roster-to-sexp' for description of output format."
+  (assert (eq (jabber-xml-node-name xml-data) 'iq))
+  (let ((query (car (jabber-xml-get-children xml-data 'query))))
+    (assert query)
+    (mapcar
+     #'(lambda (n)
+	 (list
+	  (jabber-xml-get-attribute n 'jid)
+	  (or (jabber-xml-get-attribute n 'name) "")
+	  (jabber-xml-get-attribute n 'subscription)
+	  (mapcar
+	   #'(lambda (g)
+	       (car (jabber-xml-node-children g)))
+	   (jabber-xml-get-children n 'group))))
+     (jabber-xml-get-children query 'item))))
+
+#+END_SRC
+**** jabber-export-display                                      :function:
+#+BEGIN_SRC emacs-lisp
+(defun jabber-export-display (roster)
+  (setq jabber-export-roster-widget
+	(widget-create
+	 '(repeat
+	   :tag "Roster"
+	   (list :format "%v"
+		   (string :tag "JID")
+		   (string :tag "Name")
+		   (choice :tag "Subscription"
+			   (const "none")
+			   (const "both")
+			   (const "to")
+			   (const "from"))
+		   (repeat :tag "Groups"
+			   (string :tag "Group"))))
+	 :value roster)))
+
+#+END_SRC
+
+*** infoquery (IQ) functions
+:COPYRIGHT:
+Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
+Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+:END:
+
 **** *jabber-open-info-queries*                                 :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar *jabber-open-info-queries* nil
@@ -4880,7 +5208,12 @@ See section 9.3 of XMPP Core."
                           text))))
 
 #+END_SRC
-*** alert
+*** Alert hooks
+:COPYRIGHT:
+Copyright (C) 2003, 2004, 2005, 2007, 2008 - Magnus Henoch - mange@freemail.hu
+Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+:END:
+
 #+BEGIN_SRC emacs-lisp
 (require 'cl)
 
@@ -5521,7 +5854,16 @@ of `jabber-autoanswer-alist'"
 (pushnew 'jabber-autoanswer-answer-muc (get 'jabber-alert-muc-hooks 'custom-options))
 
 #+END_SRC
-*** history
+*** FIXME Recording message history
+:COPYRIGHT:
+Copyright (C) 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
+Copyright (C) 2004 - Mathias Dahl
+:END:
+1. [ ] when rotation is enabled, jabber-history-query won't look for older history files if the current history file doesn't contain enough backlog entries.
+
+**** Log format
+Each message is on one separate line, represented as a vector with five elements.  The first element is time encoded according to JEP-0082.  The second element is direction, "in" or "out". The third element is the sender, "me" or a JID.  The fourth element is the recipient.  The fifth element is the text of the message.
+
 **** jabber-history                                         :custom:group:
 #+BEGIN_SRC emacs-lisp
 (defgroup jabber-history nil "Customization options for Emacs
@@ -5883,7 +6225,11 @@ applies, though."
   (message "Done.  Please change `jabber-use-global-history' now."))
 
 #+END_SRC
-*** chat buffer
+*** Functions common to all chat buffers
+:COPYRIGHT:
+Copyright (C) 2005, 2007, 2008 - Magnus Henoch - mange@freemail.hu
+:END:
+
 **** jabber-point-insert                                        :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-point-insert nil
@@ -6030,7 +6376,79 @@ window or at `fill-column', whichever is shorter."
 	  (forward-line 1))))))
 
 #+END_SRC
-*** chat
+*** Compose a Jabber message in a buffer
+:COPYRIGHT:
+Copyright (C) 2006, 2007  Magnus Henoch
+Author: Magnus Henoch <mange@freemail.hu>
+:END:
+**** jabber-compose                                              :command:
+#+BEGIN_SRC emacs-lisp
+;;;###autoload
+(defun jabber-compose (jc &optional recipient)
+  "Create a buffer for composing a Jabber message."
+  (interactive (list (jabber-read-account)
+		     (jabber-read-jid-completing "To whom? ")))
+
+  (with-current-buffer (get-buffer-create
+			(generate-new-buffer-name
+			 (concat
+			  "Jabber-Compose"
+			  (when recipient
+			    (format "-%s" (jabber-jid-displayname recipient))))))
+    (set (make-local-variable 'jabber-widget-alist) nil)
+    (setq jabber-buffer-connection jc)
+    (use-local-map widget-keymap)
+
+    (insert (jabber-propertize "Compose Jabber message\n" 'face 'jabber-title-large))
+
+    (insert (substitute-command-keys "\\<widget-field-keymap>Completion available with \\[widget-complete].\n"))
+    (push (cons :recipients
+		(widget-create '(repeat :tag "Recipients" jid)
+			       :value (when recipient
+					(list recipient))))
+	  jabber-widget-alist)
+
+    (insert "\nSubject: ")
+    (push (cons :subject
+		(widget-create 'editable-field :value ""))
+	  jabber-widget-alist)
+
+    (insert "\nText:\n")
+    (push (cons :text
+		(widget-create 'text :value ""))
+	  jabber-widget-alist)
+
+    (insert "\n")
+    (widget-create 'push-button :notify #'jabber-compose-send "Send")
+
+    (widget-setup)
+
+    (switch-to-buffer (current-buffer))
+    (goto-char (point-min))))
+
+#+END_SRC
+***** jabber-compose-send                                      :function:
+#+BEGIN_SRC emacs-lisp
+(defun jabber-compose-send (&rest ignore)
+  (let ((recipients (widget-value (cdr (assq :recipients jabber-widget-alist))))
+	(subject (widget-value (cdr (assq :subject jabber-widget-alist))))
+	(text (widget-value (cdr (assq :text jabber-widget-alist)))))
+    (when (null recipients)
+      (error "No recipients specified"))
+
+    (dolist (to recipients)
+      (jabber-send-message jabber-buffer-connection to subject text nil))
+
+    (bury-buffer)
+    (message "Message sent")))
+
+#+END_SRC
+
+*** One-to-one chats
+:COPYRIGHT:
+Copyright (C) 2005, 2007, 2008 - Magnus Henoch - mange@freemail.hu
+:END:
+
 #+BEGIN_SRC emacs-lisp
 (require 'ewoc)
 (eval-when-compile (require 'cl))
@@ -6853,7 +7271,12 @@ With a prefix argument, open buffer in other window."
       (error "No contact at point"))))
 
 #+END_SRC
-*** presence
+*** Roster and presence bookkeeping
+:COPYRIGHT:
+Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
+Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+:END:
+
 **** jabber-presence-element-functions                          :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-presence-element-functions nil
@@ -7466,6 +7889,10 @@ Signal an error if there is no JID at point."
 
 #+END_SRC
 *** Service Discovery ([[https://xmpp.org/extensions/xep-0030.html][XEP-0030]])
+:COPYRIGHT:
+Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
+Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+:END:
 **** Respond to disco requests
 ***** jabber-advertised-features                               :variable:
 #+BEGIN_SRC emacs-lisp
@@ -7851,6 +8278,261 @@ invalidate cache and get fresh data."
 
 #+END_SRC
 
+*** XMPP Ping ([[https://xmpp.org/extensions/xep-0199.html][XEP-0199]])
+:COPYRIGHT:
+Copyright (C) 2009 - Evgenii Terechkov - evg@altlinux.org
+:END:
+
+#+BEGIN_SRC emacs-lisp
+(add-to-list 'jabber-jid-info-menu (cons "Ping" 'jabber-ping))
+
+#+END_SRC
+**** jabber-ping-send                                           :function:
+#+BEGIN_SRC emacs-lisp
+(defun jabber-ping-send (jc to process-func on-success on-error)
+  "Send XEP-0199 ping IQ stanza. JC is connection to use, TO is
+  full JID, PROCESS-FUNC is fucntion to call to process result,
+  ON-SUCCESS and ON-ERROR is arg for this function depending on
+  result."
+  (jabber-send-iq jc to "get"
+                  '(ping ((xmlns . "urn:xmpp:ping")))
+                  process-func on-success
+                  process-func on-error))
+
+#+END_SRC
+**** jabber-ping                                                 :command:
+#+BEGIN_SRC emacs-lisp
+(defun jabber-ping (to)
+  "Ping XMPP entity. TO is full JID. All connected JIDs is used."
+  (interactive (list (jabber-read-jid-completing "Send ping to: " nil nil nil 'full)))
+  (dolist (jc jabber-connections)
+    (jabber-ping-send jc to 'jabber-silent-process-data 'jabber-process-ping "Ping is unsupported")))
+
+#+END_SRC
+**** jabber-process-ping                                        :function:
+#+BEGIN_SRC emacs-lisp
+;; called by jabber-process-data
+(defun jabber-process-ping (jc xml-data)
+  "Handle results from ping requests."
+  (let ((to (jabber-xml-get-attribute xml-data 'from)))
+    (format "%s is alive" to)))
+
+(add-to-list 'jabber-iq-get-xmlns-alist (cons "urn:xmpp:ping" 'jabber-pong))
+(jabber-disco-advertise-feature "urn:xmpp:ping")
+
+#+END_SRC
+**** jabber-pong                                                :function:
+#+BEGIN_SRC emacs-lisp
+(defun jabber-pong (jc xml-data)
+  "Return pong as defined in XEP-0199. Sender and Id are
+determined from the incoming packet passed in XML-DATA."
+  (let ((to (jabber-xml-get-attribute xml-data 'from))
+	(id (jabber-xml-get-attribute xml-data 'id)))
+    (jabber-send-iq jc to "result" nil nil nil nil nil id)))
+
+#+END_SRC
+
+*** keepalive - try to detect a lost connection
+:COPYRIGHT:
+Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
+Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+:END:
+
+Send something to the server and see if it answers.
+
+These keepalive functions send a urn:xmpp:ping request to the server every X minutes, and considers the connection broken if they get no answer within Y seconds.
+**** jabber-keepalive                                       :custom:group:
+#+BEGIN_SRC emacs-lisp
+;;;###autoload
+(defgroup jabber-keepalive nil
+  "Keepalive functions try to detect lost connection"
+  :group 'jabber)
+
+#+END_SRC
+**** jabber-keepalive-interval                           :custom:variable:
+#+BEGIN_SRC emacs-lisp
+(defcustom jabber-keepalive-interval 600
+  "Interval in seconds between connection checks."
+  :type 'integer
+  :group 'jabber-keepalive)
+
+#+END_SRC
+**** jabber-keepalive-timeout                            :custom:variable:
+#+BEGIN_SRC emacs-lisp
+(defcustom jabber-keepalive-timeout 20
+  "Seconds to wait for response from server."
+  :type 'integer
+  :group 'jabber-keepalive)
+
+#+END_SRC
+**** jabber-keepalive-timer                                     :variable:
+#+BEGIN_SRC emacs-lisp
+(defvar jabber-keepalive-timer nil
+  "Timer object for keepalive function")
+
+#+END_SRC
+**** jabber-keepalive-timeout-timer                             :variable:
+#+BEGIN_SRC emacs-lisp
+(defvar jabber-keepalive-timeout-timer nil
+  "Timer object for keepalive timeout function")
+
+#+END_SRC
+**** jabber-keepalive-pending                                   :variable:
+#+BEGIN_SRC emacs-lisp
+(defvar jabber-keepalive-pending nil
+  "List of outstanding keepalive connections")
+
+#+END_SRC
+**** jabber-keepalive-debug                                     :variable:
+#+BEGIN_SRC emacs-lisp
+(defvar jabber-keepalive-debug nil
+  "Log keepalive traffic when non-nil")
+
+#+END_SRC
+**** jabber-keepalive-start                                      :command:
+#+BEGIN_SRC emacs-lisp
+;;;###autoload
+(defun jabber-keepalive-start (&optional jc)
+  "Activate keepalive.
+That is, regularly send a ping request to the server, and
+disconnect if it doesn't answer.  See `jabber-keepalive-interval'
+and `jabber-keepalive-timeout'.
+
+The JC argument makes it possible to add this function to
+`jabber-post-connect-hooks'; it is ignored.  Keepalive is activated
+for all accounts regardless of the argument."
+  (interactive)
+
+  (when jabber-keepalive-timer
+    (jabber-keepalive-stop))
+
+  (setq jabber-keepalive-timer
+	(run-with-timer 5
+			jabber-keepalive-interval
+			'jabber-keepalive-do))
+  (add-hook 'jabber-post-disconnect-hook 'jabber-keepalive-stop))
+
+#+END_SRC
+**** jabber-keepalive-stop                                       :command:
+#+BEGIN_SRC emacs-lisp
+(defun jabber-keepalive-stop ()
+  "Deactivate keepalive"
+  (interactive)
+
+  (when jabber-keepalive-timer
+    (jabber-cancel-timer jabber-keepalive-timer)
+    (setq jabber-keepalive-timer nil)))
+
+#+END_SRC
+**** jabber-keepalive-do                                        :function:
+#+BEGIN_SRC emacs-lisp
+(defun jabber-keepalive-do ()
+  (when jabber-keepalive-debug
+    (message "%s: sending keepalive packet(s)" (current-time-string)))
+  (setq jabber-keepalive-timeout-timer
+	(run-with-timer jabber-keepalive-timeout
+			nil
+			'jabber-keepalive-timeout))
+  (setq jabber-keepalive-pending jabber-connections)
+  (dolist (c jabber-connections)
+    ;; Whether we get an error or not is not interesting.
+    ;; Getting a response at all is.
+    (jabber-ping-send c nil 'jabber-keepalive-got-response nil nil)))
+
+#+END_SRC
+**** jabber-keepalive-got-response                              :function:
+#+BEGIN_SRC emacs-lisp
+(defun jabber-keepalive-got-response (jc &rest args)
+  (when jabber-keepalive-debug
+    (message "%s: got keepalive response from %s"
+	     (current-time-string)
+	     (plist-get (fsm-get-state-data jc) :server)))
+  (setq jabber-keepalive-pending (remq jc jabber-keepalive-pending))
+  (when (and (null jabber-keepalive-pending) (timerp jabber-keepalive-timeout-timer))
+    (jabber-cancel-timer jabber-keepalive-timeout-timer)
+    (setq jabber-keepalive-timeout-timer nil)))
+
+#+END_SRC
+**** jabber-keepalive-timeout                                   :function:
+#+BEGIN_SRC emacs-lisp
+(defun jabber-keepalive-timeout ()
+  (jabber-cancel-timer jabber-keepalive-timer)
+  (setq jabber-keepalive-timer nil)
+
+  (dolist (c jabber-keepalive-pending)
+    (message "%s: keepalive timeout, connection to %s considered lost"
+	     (current-time-string)
+	     (plist-get (fsm-get-state-data c) :server))
+
+    (run-hook-with-args 'jabber-lost-connection-hooks c)
+    (jabber-disconnect-one c nil)))
+
+#+END_SRC
+**** jabber-whitespace-ping-interval                     :custom:variable:
+Whitespace pings - less traffic, no error checking on our side.
+
+Openfire needs something like this, but I couldn't bring myself to enable keepalive by default... Whitespace pings are light and unobtrusive.
+#+BEGIN_SRC emacs-lisp
+(defcustom jabber-whitespace-ping-interval 30
+  "Send a space character to the server with this interval, in seconds.
+
+This is a traditional remedy for a number of problems: to keep NAT
+boxes from considering the connection dead, to have the OS discover
+earlier that the connection is lost, and to placate servers which rely
+on the client doing this, e.g. Openfire.
+
+If you want to verify that the server is able to answer, see
+`jabber-keepalive-start' for another mechanism."
+  :type '(integer :tag "Interval in seconds")
+  :group 'jabber-core)
+
+#+END_SRC
+**** jabber-whitespace-ping-timer                        :custom:variable:
+#+BEGIN_SRC emacs-lisp
+(defvar jabber-whitespace-ping-timer nil
+  "Timer object for whitespace pings")
+
+#+END_SRC
+**** jabber-whitespace-ping-start                                :command:
+#+BEGIN_SRC emacs-lisp
+;;;###autoload
+(defun jabber-whitespace-ping-start (&optional jc)
+  "Start sending whitespace pings at regular intervals.
+See `jabber-whitespace-ping-interval'.
+
+The JC argument is ignored; whitespace pings are enabled for all
+accounts."
+  (interactive)
+
+  (when jabber-whitespace-ping-timer
+    (jabber-whitespace-ping-stop))
+
+  (setq jabber-whitespace-ping-timer
+	(run-with-timer 5
+			jabber-whitespace-ping-interval
+			'jabber-whitespace-ping-do))
+  (add-hook 'jabber-post-disconnect-hook 'jabber-whitespace-ping-stop))
+
+#+END_SRC
+**** jabber-whitespace-ping-stop                                 :command:
+#+BEGIN_SRC emacs-lisp
+(defun jabber-whitespace-ping-stop ()
+  "Deactivate whitespace pings"
+  (interactive)
+
+  (when jabber-whitespace-ping-timer
+    (jabber-cancel-timer jabber-whitespace-ping-timer)
+    (setq jabber-whitespace-ping-timer nil)))
+
+#+END_SRC
+**** jabber-whitespace-ping-do                                  :function:
+#+BEGIN_SRC emacs-lisp
+(defun jabber-whitespace-ping-do ()
+  (dolist (c jabber-connections)
+    (ignore-errors (jabber-send-string c " "))))
+
+#+END_SRC
+
 *** Entity Capabilities ([[https://xmpp.org/extensions/xep-0115.html][XEP-0115]])
 
 #+BEGIN_SRC emacs-lisp
@@ -8201,6 +8883,10 @@ the right node."
 
 #+END_SRC
 *** Feature Negotiation ([[https://xmpp.org/extensions/xep-0020.html][XEP-0020]])                         :xep_deprecated:
+:COPYRIGHT:
+Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+Copyright (C) 2003, 2004 - Magnus Henoch - mange@freemail.hu
+:END:
 
 #+BEGIN_SRC emacs-lisp
 (require 'cl)
@@ -8316,7 +9002,12 @@ protocols."
 	alist)))
 
 #+END_SRC
-*** widget
+*** widget - display various kinds of forms
+:COPYRIGHT:
+Copyright (C) 2003, 2004, 2007 - Magnus Henoch - mange@freemail.hu
+Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+:END:
+
 #+BEGIN_SRC emacs-lisp
 (require 'widget)
 (require 'wid-edit)
@@ -8703,7 +9394,11 @@ Return nil if no form type is specified."
 				     (car (jabber-xml-get-children field 'value)))))))))
 
 #+END_SRC
-*** bookmarks
+*** Bookmarks ([[https://xmpp.org/extensions/xep-0048.html][XEP-0048]])                                   :xep_deprecated:
+:COPYRIGHT:
+Copyright (C) 2007, 2008 - Magnus Henoch - mange@freemail.hu
+:END:
+
 #+BEGIN_SRC emacs-lisp
 (require 'cl)
 
@@ -8966,6 +9661,11 @@ on success or failure, respectively."
 
 #+END_SRC
 *** Private XML Storage ([[https://xmpp.org/extensions/xep-0049.html][XEP-0049]])
+:COPYRIGHT:
+Copyright (C) 2005  Magnus Henoch
+Author: Magnus Henoch <mange@freemail.hu>
+:END:
+
 **** jabber-private-get                                         :function:
 #+BEGIN_SRC emacs-lisp
 ;;;###autoload
@@ -9010,6 +9710,10 @@ ERROR-CLOSURE-DATA are used as in `jabber-send-iq'."
 		  error-callback error-closure-data))
 #+END_SRC
 *** muc-nick-coloring
+:COPYRIGHT:
+Copyright 2009, 2010, 2012, 2013 Terechkov Evgenii - evg@altlinux.org
+:END:
+
 #+BEGIN_SRC emacs-lisp
 (eval-when-compile (require 'cl))	;for ignore-errors
 ;; we need hexrgb-hsv-to-hex:
@@ -9090,6 +9794,12 @@ ERROR-CLOSURE-DATA are used as in `jabber-send-iq'."
 
 #+END_SRC
 *** Multi-User Chat (MUC) ([[https://xmpp.org/extensions/xep-0045.html][XEP-0045]])
+:COPYRIGHT:
+Copyright (C) 2010 - Kirill A. Korinskiy - catap@catap.ru
+Copyright (C) 2003, 2004, 2007, 2008, 2009, 2010 - Magnus Henoch - mange@freemail.hu
+Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+:END:
+
 #+BEGIN_SRC emacs-lisp
 ;; we need jabber-bookmarks for jabber-muc-autojoin (via
 ;; jabber-get-bookmarks and jabber-parse-conference-bookmark):
@@ -10497,6 +11207,12 @@ Return nil if X-MUC is nil."
 
 #+END_SRC
 *** muc-nick-completion
+:COPYRIGHT:
+Copyright (C) 2008 - Terechkov Evgenii - evg@altlinux.org
+Copyright (C) 2007, 2008, 2010 - Kirill A. Korinskiy - catap@catap.ru
+Copyright (C) 2007 - Serguei Jidkov - jsv@e-mail.ru
+:END:
+
 **** jabber-muc-completion-delimiter                     :custom:variable:
 #+BEGIN_SRC emacs-lisp
 (defcustom jabber-muc-completion-delimiter ": "
@@ -10702,7 +11418,12 @@ OLD is last tried nickname."
 (define-key jabber-chat-mode-map [?\t] 'jabber-muc-completion)
 
 #+END_SRC
-*** register
+*** In-Band Registration ([[https://xmpp.org/extensions/xep-0077.html][XEP-0077]])
+:COPYRIGHT:
+Copyright (C) 2003, 2004, 2007 - Magnus Henoch - mange@freemail.hu
+Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+:END:
+
 **** jabber-get-register                                         :command:
 #+BEGIN_SRC emacs-lisp
 (add-to-list 'jabber-jid-service-menu
@@ -10836,6 +11557,11 @@ CLOSURE-DATA is either 'success or 'error."
 
 #+END_SRC
 *** Jabber Search ([[https://xmpp.org/extensions/xep-0055.html][XEP-0055]])
+:COPYRIGHT:
+Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+Copyright (C) 2003, 2004 - Magnus Henoch - mange@freemail.hu
+:END:
+
 **** jabber-get-search                                           :command:
 #+BEGIN_SRC emacs-lisp
 (add-to-list 'jabber-jid-service-menu
@@ -10852,14 +11578,10 @@ CLOSURE-DATA is either 'success or 'error."
 
 #+END_SRC
 **** jabber-submit-search                                       :function:
-#+BEGIN_SRC emacs-lisp
-;; jabber-process-register-or-search logically comes here, rendering
-;; the search form, but since register and search are so similar,
-;; having two functions would be serious code duplication.  See
-;; jabber-register.el.
+=jabber-process-register-or-search= logically comes here, rendering the search form, but since register and search are so similar, having two functions would be serious code duplication.  See [[register]].
 
-;; jabber-submit-search is called when the "submit" button of the
-;; search form is activated.
+=jabber-submit-search= is called when the "submit" button of the search form is activated.
+#+BEGIN_SRC emacs-lisp
 (defun jabber-submit-search (&rest ignore)
   "Submit search.  See `jabber-process-register-or-search'."
 
@@ -10936,6 +11658,11 @@ CLOSURE-DATA is either 'success or 'error."
 
 #+END_SRC
 *** Jabber Browsing ([[https://xmpp.org/extensions/xep-0011.html][XEP-0011]])                               :xep_obsolete:
+:COPYRIGHT:
+Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+Copyright (C) 2003, 2004 - Magnus Henoch - mange@freemail.hu
+:END:
+
 jabber.el can perform browse requests, but will not answer them.
 **** jabber-get-browse                                           :command:
 #+BEGIN_SRC emacs-lisp
@@ -11013,7 +11740,12 @@ jabber.el can perform browse requests, but will not answer them.
 	    (jabber-process-browse jc item))))))
 
 #+END_SRC
-*** version
+*** Version
+:COPYRIGHT:
+Copyright (C) 2003, 2004, 2008 - Magnus Henoch - mange@freemail.hu
+Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+:END:
+
 #+BEGIN_SRC emacs-lisp
 (require 'jabber-ourversion)
 
@@ -11090,6 +11822,10 @@ determined from the incoming packet passed in XML-DATA."
 
 #+END_SRC
 *** Ad Hoc Commands ([[https://xmpp.org/extensions/xep-0050.html][XEP-0050]])
+:COPYRIGHT:
+Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
+Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+:END:
 **** jabber-ahc-sessionid                                       :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-ahc-sessionid nil
@@ -11327,7 +12063,11 @@ access allowed.  nil means open for everyone."
 		  #'jabber-process-data "Command execution failed"))
 
 #+END_SRC
-*** ahc-presence
+*** ahc-presence - provide remote control of presence
+:COPYRIGHT:
+Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
+Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+:END:
 **** jabber-ahc-presence-node                                   :constant:
 #+BEGIN_SRC emacs-lisp
 (defconst jabber-ahc-presence-node "http://jabber.org/protocol/rc#set-status"
@@ -11418,7 +12158,11 @@ access allowed.  nil means open for everyone."
 		(note ((type . "info")) "Presence has been changed."))))))
 
 #+END_SRC
-*** mode line
+*** Mode line
+:COPYRIGHT:
+Copyright (C) 2004 - Magnus Henoch - mange@freemail.hu
+:END:
+
 #+BEGIN_SRC emacs-lisp
 (eval-when-compile (require 'cl))
 
@@ -11523,7 +12267,12 @@ and offline contacts, respectively."
 		  'jabber-mode-line-count-contacts))))
 
 #+END_SRC
-*** watch
+*** watch - get notified when certain persons go online
+:COPYRIGHT:
+Copyright (C) 2004 - Mathias Dahl
+Copyright (C) 2004 - Magnus Henoch - mange@freemail.hu
+:END:
+
 **** jabber-watch-alist                                  :custom:variable:
 #+BEGIN_QUOTE
 (defcustom jabber-watch-alist nil
@@ -11586,8 +12335,11 @@ sends a message if that happens. The buddies are stored in
 	      jabber-watch-alist)))
 
 #+END_SRC
-*** activity
-Allows tracking messages from buddies using the global mode line. See (info "(jabber)Tracking activity")
+*** activity - show Jabber activity in the mode line
+:COPYRIGHT:
+Copyright (C) 2004 Carl Henrik Lunde - <chlunde+jabber+@ping.uio.no>
+:END:
+Allows tracking messages from buddies using the global mode line. See =(info "(jabber)Tracking activity")=
 
 **** TODO
 1. [ ] Make it possible to enable this mode using M-x customize
@@ -11606,12 +12358,10 @@ Allows tracking messages from buddies using the global mode line. See (info "(ja
   "activity tracking options"
   :group 'jabber)
 
-;; All the (featurep 'jabber-activity) is so we don't call a function
-;; with an autoloaded cookie while the file is loading, since that
-;; would lead to endless load recursion.
-
 #+END_SRC
 **** jabber-activity-make-string                         :custom:variable:
+All the =(featurep 'jabber-activity)= is so we don't call a function with an autoloaded cookie while the file is loading, since that would lead to endless load recursion.
+
 #+BEGIN_SRC emacs-lisp
 (defcustom jabber-activity-make-string 'jabber-activity-make-string-default
   "Function to call, for making the string to put in the mode
@@ -12093,6 +12843,10 @@ With a numeric arg, enable this display if arg is positive."
 
 #+END_SRC
 *** Message Events ([[https://xmpp.org/extensions/xep-0022.html][XEP-0022]])                                :xep_obsolete:
+:COPYRIGHT:
+Copyright (C) 2005, 2008  Magnus Henoch
+Author: Magnus Henoch <mange@freemail.hu>
+:END:
 #+BEGIN_SRC emacs-lisp
 (require 'cl)
 
@@ -12374,6 +13128,11 @@ Add function last in chain, so a chat buffer is already created.
 
 #+END_SRC
 *** Chat State Notifications ([[https://xmpp.org/extensions/xep-0085.html][XEP-0085]])
+:COPYRIGHT:
+Author: Ami Fischman <ami@fischman.org>
+(based entirely on jabber-events.el by Magnus Henoch <mange@freemail.hu>)
+:END:
+
 **** TODO
 1. [ ] Currently only active/composing notifications are /sent/ though all 5 notifications are handled on receipt.
 
@@ -12575,7 +13334,13 @@ It can be sent and cancelled several times.")
 (jabber-disco-advertise-feature "http://jabber.org/protocol/chatstates")
 
 #+END_SRC
-*** avatar
+*** Generic functions for avatars
+:COPYRIGHT:
+Copyright (C) 2006, 2007, 2008  Magnus Henoch
+
+Author: Magnus Henoch <mange@freemail.hu>
+:END:
+
 There are several methods for transporting avatars in Jabber ([[https://xmpp.org/extensions/xep-0008.html][XEP-0008: IQ-Based Avatars]], [[https://xmpp.org/extensions/xep-0084.html][XEP-0084: User Avatar]], [[https://xmpp.org/extensions/xep-0153.html][XEP-0153: vCard-Based Avatars]]).  They all have in common that they identify avatars by their SHA1 checksum, and (at least partially) use Base64-encoded image data.  Thus this library of support functions for interpreting and caching avatars.
 
 A contact with an avatar has the image in the avatar property of the JID symbol.  Use =jabber-avatar-set= to set it.
@@ -12824,6 +13589,11 @@ available."
 
 #+END_SRC
 *** vCard ([[https://xmpp.org/extensions/xep-0054.html][XEP-0054]])
+:COPYRIGHT:
+Copyright (C) 2005, 2007  Magnus Henoch
+Author: Magnus Henoch <mange@freemail.hu>
+:END:
+
 There are great variations in Jabber vcard implementations.  This one adds some spice to the mix, while trying to follow the JEP closely.
 
 Fields not implemented: GEO, LOGO, AGENT, ORG, CATEGORIES, SOUND,
@@ -13383,6 +14153,11 @@ The top node should be the `vCard' node."
 
 #+END_SRC
 *** vCard-Based Avatars ([[https://xmpp.org/extensions/xep-0153.html][XEP-0153]])
+:COPYRIGHT:
+Copyright (C) 2006, 2007, 2008  Magnus Henoch
+Author: Magnus Henoch <mange@freemail.hu>
+:END:
+
 #+BEGIN_SRC emacs-lisp
 (defcustom jabber-vcard-avatars-retrieve (and (fboundp 'display-images-p)
 					      (display-images-p))
@@ -13519,6 +14294,14 @@ Keys are full JIDs.")
 
 #+END_SRC
 *** autoaway
+:COPYRIGHT:
+Copyright (C) 2010 - Kirill A. Korinskiy - catap@catap.ru
+Copyright (C) 2010 - Terechkov Evgenii - evg@altlinux.org
+Copyright (C) 2006, 2008  Magnus Henoch
+
+Author: Magnus Henoch <mange@freemail.hu>
+:END:
+
 #+BEGIN_SRC emacs-lisp
 (eval-when-compile (require 'cl))
 (require 'time-date)
@@ -13773,7 +14556,12 @@ The method for finding the terminal only works on GNU/Linux."
           (float-time idle-time)))))
 
 #+END_SRC
-*** time ([[https://xmpp.org/extensions/xep-0090.html][XEP-0090: Legacy Entity Time]]) ([[https://xmpp.org/extensions/xep-0202.html][XEP-0202: Entity Time]]) :xep_obsolete:
+*** Entity Time ([[https://xmpp.org/extensions/xep-0202.html][XEP-0202]]), Legacy Entity Time ([[https://xmpp.org/extensions/xep-0090.html][XEP-0090]])    :xep_obsolete:
+:COPYRIGHT:
+Copyright (C) 2006, 2010 - Kirill A. Kroinskiy - catap@catap.ru
+Copyright (C) 2006 - Magnus Henoch - mange@freemail.hu
+:END:
+
 #+BEGIN_SRC emacs-lisp
 (require 'time-date)
 
@@ -13985,7 +14773,11 @@ determined from the incoming packet passed in XML-DATA."
                     id)))
 
 #+END_SRC
-*** truncate
+*** truncate - cleanup top lines in chatbuffers
+:COPYRIGHT:
+Copyright (C) 2007 - Kirill A. Korinskiy - catap@catap.ru
+:END:
+
 #+BEGIN_SRC emacs-lisp
 (require 'cl)
 
@@ -14080,6 +14872,10 @@ get it, and then it just gets deleted."
 #+END_SRC
 *** Stream Initiation (SI) ([[https://xmpp.org/extensions/xep-0095.html][XEP-0095]])                      :xep_deprecated:
 **** common
+:COPYRIGHT:
+Copyright (C) 2006  Magnus Henoch
+Author: Magnus Henoch <mange@freemail.hu>
+:END:
 ***** jabber-si-stream-methods                                 :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-si-stream-methods nil
@@ -14121,6 +14917,9 @@ If it returns nil, the stream should be closed.")
 
 #+END_SRC
 **** client
+:COPYRIGHT:
+Copyright (C) 2004 - Magnus Henoch - mange@freemail.hu
+:END:
 ***** jabber-si-initiate                                       :function:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-si-initiate (jc jid profile-namespace profile-data profile-function &optional mime-type)
@@ -14170,6 +14969,11 @@ Returns the SID."
 
 #+END_SRC
 **** server
+:COPYRIGHT:
+Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+Copyright (C) 2003, 2004 - Magnus Henoch - mange@freemail.hu
+:END:
+
 #+BEGIN_SRC emacs-lisp
 (jabber-disco-advertise-feature "http://jabber.org/protocol/si")
 
@@ -14242,7 +15046,12 @@ Each entry is a list, containing:
 #+END_SRC
 *** SI File Transfer ([[https://xmpp.org/extensions/xep-0096.html][XEP-0096]])                            :xep_deprecated:
 **** common
+:COPYRIGHT:
+Copyright (C) 2006, 2008  Magnus Henoch
+Author: Magnus Henoch <mange@freemail.hu>
+:END:
 
+***** jabber-ft-md5sum-program                          :custom:variable:
 #+BEGIN_SRC emacs-lisp
 (defcustom jabber-ft-md5sum-program (or (when (executable-find "md5")
 					  (list (executable-find "md5") "-n"))
@@ -14256,7 +15065,7 @@ argument."
   :group 'jabber)
 
 #+END_SRC
-**** jabber-ft-get-md5                                          :function:
+***** jabber-ft-get-md5                                        :function:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-ft-get-md5 (file-name)
   "Get MD5 sum of FILE-NAME, and return as hex string.
@@ -14272,11 +15081,15 @@ Return nil if no MD5 summing program is available."
 
 #+END_SRC
 **** client
+:COPYRIGHT:
+Copyright (C) 2004 - Magnus Henoch - mange@freemail.hu
+:END:
+
 #+BEGIN_SRC emacs-lisp
 (eval-when-compile (require 'cl))
 
 #+END_SRC
-**** jabber-ft-send                                              :command:
+***** jabber-ft-send                                            :command:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-ft-send (jc jid filename desc)
   "Attempt to send FILENAME to JID."
@@ -14306,7 +15119,7 @@ Return nil if no MD5 summing program is available."
 			     jid sid send-data-function filename))))))
 
 #+END_SRC
-**** jabber-ft-do-send                                          :function:
+***** jabber-ft-do-send                                        :function:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-ft-do-send (jid sid send-data-function filename)
   (if (stringp send-data-function)
@@ -14322,6 +15135,11 @@ Return nil if no MD5 summing program is available."
 
 #+END_SRC
 **** server
+:COPYRIGHT:
+Copyright (C) 2003, 2004, 2007 - Magnus Henoch - mange@freemail.hu
+Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+:END:
+
 ***** jabber-ft-sessions                                       :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-ft-sessions nil
@@ -14353,7 +15171,7 @@ Return nil if no MD5 summing program is available."
 		   'jabber-ft-server-connected))
 
 #+END_SRC
-**** jabber-ft-accept                                           :function:
+***** jabber-ft-accept                                         :function:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-ft-accept (jc xml-data)
   "Receive IQ stanza containing file transfer request, ask user"
@@ -14409,7 +15227,7 @@ Return nil if no MD5 summing program is available."
     nil))
 
 #+END_SRC
-**** jabber-ft-server-connected                                 :function:
+***** jabber-ft-server-connected                               :function:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-ft-server-connected (jc jid sid send-data-function)
   ;; We don't really care about the send-data-function.  But if it's
@@ -14420,7 +15238,7 @@ Return nil if no MD5 summing program is available."
     'jabber-ft-data))
 
 #+END_SRC
-**** jabber-ft-data                                             :function:
+***** jabber-ft-data                                           :function:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-ft-data (jc jid sid data)
   "Receive chunk of transferred file."
@@ -14451,6 +15269,11 @@ Return nil if no MD5 summing program is available."
 
 #+END_SRC
 *** SOCKS5 Bytestreams ([[https://xmpp.org/extensions/xep-0065.html][XEP-0065]])
+:COPYRIGHT:
+Copyright (C) 2003, 2004, 2007 - Magnus Henoch - mange@freemail.hu
+Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+:END:
+
 #+BEGIN_SRC emacs-lisp
 (eval-when-compile (require 'cl))
 
@@ -15202,7 +16025,371 @@ This function simply starts a state machine."
 ;; 	       (process-send-string proxy-connection data)))))
 
 #+END_SRC
-*** jabber
+*** In-Band Real Time Text (RTT) ([[https://xmpp.org/extensions/xep-0301.html][XEP-0301]])
+:COPYRIGHT:
+Copyright (C) 2013  Magnus Henoch
+Author: Magnus Henoch <magnus.henoch@gmail.com>
+:END:
+
+(eval-when-compile (require 'cl))
+
+**** Handling incoming events
+#+BEGIN_SRC emacs-lisp
+;;;###autoload
+(eval-after-load "jabber-disco"
+  '(jabber-disco-advertise-feature "urn:xmpp:rtt:0"))
+#+END_SRC
+***** jabber-rtt-ewoc-node                                     :variable:
+#+BEGIN_SRC emacs-lisp
+(defvar jabber-rtt-ewoc-node nil)
+(make-variable-buffer-local 'jabber-rtt-ewoc-node)
+
+#+END_SRC
+***** jabber-rtt-last-seq                                      :variable:
+#+BEGIN_SRC emacs-lisp
+(defvar jabber-rtt-last-seq nil)
+(make-variable-buffer-local 'jabber-rtt-last-seq)
+
+#+END_SRC
+***** jabber-rtt-message                                       :variable:
+#+BEGIN_SRC emacs-lisp
+(defvar jabber-rtt-message nil)
+(make-variable-buffer-local 'jabber-rtt-message)
+
+#+END_SRC
+***** jabber-rtt-pending-events                                :variable:
+#+BEGIN_SRC emacs-lisp
+(defvar jabber-rtt-pending-events nil)
+(make-variable-buffer-local 'jabber-rtt-pending-events)
+
+#+END_SRC
+***** jabber-rtt-timer                                         :variable:
+#+BEGIN_SRC emacs-lisp
+(defvar jabber-rtt-timer nil)
+(make-variable-buffer-local 'jabber-rtt-timer)
+
+#+END_SRC
+***** jabber-rtt-handle-message                                :function:
+Add function last in chain, so a chat buffer is already created.
+#+BEGIN_SRC emacs-lisp
+;;;###autoload
+(eval-after-load "jabber-core"
+  '(add-to-list 'jabber-message-chain #'jabber-rtt-handle-message t))
+
+#+END_SRC
+
+#+BEGIN_SRC emacs-lisp
+;;;###autoload
+(defun jabber-rtt-handle-message (jc xml-data)
+  ;; We could support this for MUC as well, if useful.
+  (when (and (not (jabber-muc-message-p xml-data))
+	     (get-buffer (jabber-chat-get-buffer (jabber-xml-get-attribute xml-data 'from))))
+    (with-current-buffer (jabber-chat-get-buffer (jabber-xml-get-attribute xml-data 'from))
+      (let* ((rtt (jabber-xml-path xml-data '(("urn:xmpp:rtt:0" . "rtt"))))
+	     (body (jabber-xml-path xml-data '(body)))
+	     (seq (when rtt (jabber-xml-get-attribute rtt 'seq)))
+	     (event (when rtt (or (jabber-xml-get-attribute rtt 'event) "edit")))
+	     (actions (when rtt (jabber-xml-node-children rtt)))
+	     (inhibit-read-only t))
+	(cond
+	 ((or body (string= event "cancel"))
+	  ;; A <body/> element supersedes real time text.
+	  (jabber-rtt--reset))
+	 ((member event '("new" "reset"))
+	  (jabber-rtt--reset)
+	  (setq jabber-rtt-ewoc-node
+		(ewoc-enter-last jabber-chat-ewoc (list :notice "[typing...]"))
+		jabber-rtt-last-seq (string-to-number seq)
+		jabber-rtt-message ""
+		jabber-rtt-pending-events nil)
+	  (jabber-rtt--enqueue-actions actions))
+	 ((string= event "edit")
+	  ;; TODO: check whether this works properly in 32-bit Emacs
+	  (cond
+	   ((and jabber-rtt-last-seq
+		 (equal (1+ jabber-rtt-last-seq)
+			(string-to-number seq)))
+	    ;; We are in sync.
+	    (setq jabber-rtt-last-seq (string-to-number seq))
+	    (jabber-rtt--enqueue-actions actions))
+	   (t
+	    ;; TODO: show warning when not in sync
+	    (message "out of sync! %s vs %s"
+		     seq jabber-rtt-last-seq))
+	  ))
+	 ;; TODO: handle event="init"
+	 )))))
+
+#+END_SRC
+***** jabber-rtt--reset                               :internal:function:
+#+BEGIN_SRC emacs-lisp
+(defun jabber-rtt--reset ()
+  (when jabber-rtt-ewoc-node
+    (ewoc-delete jabber-chat-ewoc jabber-rtt-ewoc-node))
+  (when (timerp jabber-rtt-timer)
+    (cancel-timer jabber-rtt-timer))
+  (setq jabber-rtt-ewoc-node nil
+	jabber-rtt-last-seq nil
+	jabber-rtt-message nil
+	jabber-rtt-pending-events nil
+	jabber-rtt-timer nil))
+
+#+END_SRC
+***** jabber-rtt--enqueue-actions                     :internal:function:
+#+BEGIN_SRC emacs-lisp
+(defun jabber-rtt--enqueue-actions (new-actions)
+  (setq jabber-rtt-pending-events
+	;; Ensure that the queue never contains more than 700 ms worth
+	;; of wait events.
+	(jabber-rtt--fix-waits (append jabber-rtt-pending-events new-actions)))
+  (unless jabber-rtt-timer
+    (jabber-rtt--process-actions (current-buffer))))
+
+#+END_SRC
+***** jabber-rtt--process-actions                     :internal:function:
+#+BEGIN_SRC emacs-lisp
+(defun jabber-rtt--process-actions (buffer)
+  (with-current-buffer buffer
+    (setq jabber-rtt-timer nil)
+    (catch 'wait
+      (while jabber-rtt-pending-events
+	(let ((action (pop jabber-rtt-pending-events)))
+	  (case (jabber-xml-node-name action)
+	    ((t)
+	     ;; insert text
+	     (let* ((p (jabber-xml-get-attribute action 'p))
+		    (position (if p (string-to-number p) (length jabber-rtt-message))))
+	       (setq position (max position 0))
+	       (setq position (min position (length jabber-rtt-message)))
+	       (setf (substring jabber-rtt-message position position)
+		     (car (jabber-xml-node-children action)))
+
+	       (ewoc-set-data jabber-rtt-ewoc-node (list :notice (concat "[typing...] " jabber-rtt-message)))
+	       (let ((inhibit-read-only t))
+		 (ewoc-invalidate jabber-chat-ewoc jabber-rtt-ewoc-node))))
+	    ((e)
+	     ;; erase text
+	     (let* ((p (jabber-xml-get-attribute action 'p))
+		    (position (if p (string-to-number p) (length jabber-rtt-message)))
+		    (n (jabber-xml-get-attribute action 'n))
+		    (number (if n (string-to-number n) 1)))
+	       (setq position (max position 0))
+	       (setq position (min position (length jabber-rtt-message)))
+	       (setq number (max number 0))
+	       (setq number (min number position))
+	       ;; Now erase the NUMBER characters before POSITION.
+	       (setf (substring jabber-rtt-message (- position number) position)
+		     "")
+
+	       (ewoc-set-data jabber-rtt-ewoc-node (list :notice (concat "[typing...] " jabber-rtt-message)))
+	       (let ((inhibit-read-only t))
+		 (ewoc-invalidate jabber-chat-ewoc jabber-rtt-ewoc-node))))
+	    ((w)
+	     (setq jabber-rtt-timer
+		   (run-with-timer
+		    (/ (string-to-number (jabber-xml-get-attribute action 'n)) 1000.0)
+		    nil
+		    #'jabber-rtt--process-actions
+		    buffer))
+	     (throw 'wait nil))))))))
+
+#+END_SRC
+***** jabber-rtt--fix-waits                           :internal:function:
+#+BEGIN_SRC emacs-lisp
+(defun jabber-rtt--fix-waits (actions)
+  ;; Ensure that the sum of all wait events is no more than 700 ms.
+  (let ((sum 0))
+    (dolist (action actions)
+      (when (eq (jabber-xml-node-name action) 'w)
+	(let ((n (jabber-xml-get-attribute action 'n)))
+	  (setq n (string-to-number n))
+	  (when (>= n 0)
+	    (setq sum (+ sum n))))))
+
+    (if (<= sum 700)
+	actions
+      (let ((scale (/ 700.0 sum)))
+	(mapcar
+	 (lambda (action)
+	   (if (eq (jabber-xml-node-name action) 'w)
+	       (let ((n (jabber-xml-get-attribute action 'n)))
+		 (setq n (string-to-number n))
+		 (setq n (max n 0))
+		 `(w ((n . ,(number-to-string (* scale n)))) nil))
+	     action))
+	 actions)))))
+
+#+END_SRC
+**** Sending events
+***** jabber-rtt-send-timer                                    :variable:
+#+BEGIN_SRC emacs-lisp
+(defvar jabber-rtt-send-timer nil)
+(make-variable-buffer-local 'jabber-rtt-send-timer)
+
+#+END_SRC
+***** jabber-rtt-send-seq                                      :variable:
+#+BEGIN_SRC emacs-lisp
+(defvar jabber-rtt-send-seq nil)
+(make-variable-buffer-local 'jabber-rtt-send-seq)
+
+#+END_SRC
+***** jabber-rtt-outgoing-events                               :variable:
+#+BEGIN_SRC emacs-lisp
+(defvar jabber-rtt-outgoing-events nil)
+(make-variable-buffer-local 'jabber-rtt-outgoing-events)
+
+#+END_SRC
+***** jabber-rtt-send-last-timestamp                           :variable:
+#+BEGIN_SRC emacs-lisp
+(defvar jabber-rtt-send-last-timestamp nil)
+(make-variable-buffer-local 'jabber-rtt-send-last-timestamp)
+
+#+END_SRC
+***** jabber-rtt-send-mode                                   :minor:mode:
+#+BEGIN_SRC emacs-lisp
+;;;###autoload
+(define-minor-mode jabber-rtt-send-mode
+  "Show text to recipient as it is being typed.
+This lets the recipient see every change made to the message up
+until it's sent.  The recipient's client needs to implement
+XEP-0301, In-Band Real Time Text."
+  nil " Real-Time" nil
+  (if (null jabber-rtt-send-mode)
+      (progn
+	(remove-hook 'after-change-functions #'jabber-rtt--queue-update t)
+	(remove-hook 'jabber-chat-send-hooks #'jabber-rtt--message-sent t)
+	(jabber-rtt--cancel-send))
+    (unless (derived-mode-p 'jabber-chat-mode)
+      (error "Real Time Text only makes sense in chat buffers"))
+    (when (timerp jabber-rtt-send-timer)
+      (cancel-timer jabber-rtt-send-timer))
+    (setq jabber-rtt-send-timer nil
+	  jabber-rtt-send-seq nil
+	  jabber-rtt-outgoing-events nil
+	  jabber-rtt-send-last-timestamp nil)
+    (jabber-rtt--send-current-text nil)
+    (add-hook 'after-change-functions #'jabber-rtt--queue-update nil t)
+    (add-hook 'jabber-chat-send-hooks #'jabber-rtt--message-sent nil t)))
+
+#+END_SRC
+***** jabber-rtt--cancel-send                         :internal:function:
+#+BEGIN_SRC emacs-lisp
+(defun jabber-rtt--cancel-send ()
+  (when (timerp jabber-rtt-send-timer)
+    (cancel-timer jabber-rtt-send-timer))
+  (setq jabber-rtt-send-seq (1+ jabber-rtt-send-seq))
+  (jabber-send-sexp jabber-buffer-connection
+		    `(message ((to . ,jabber-chatting-with)
+			       (type . "chat"))
+			      (rtt ((xmlns . "urn:xmpp:rtt:0")
+				    (seq . ,(number-to-string jabber-rtt-send-seq))
+				    (event . "cancel"))
+				   nil)))
+  (setq jabber-rtt-send-timer nil
+	jabber-rtt-send-seq nil
+	jabber-rtt-outgoing-events nil
+	jabber-rtt-send-last-timestamp nil))
+
+#+END_SRC
+
+***** jabber-rtt--send-current-text                   :internal:function:
+#+BEGIN_SRC emacs-lisp
+(defun jabber-rtt--send-current-text (resetp)
+  (let ((text (buffer-substring-no-properties jabber-point-insert (point-max))))
+    ;; This should give us enough room to avoid wrap-arounds, even
+    ;; with just 28 bits...
+    (setq jabber-rtt-send-seq (random 100000))
+    (jabber-send-sexp jabber-buffer-connection
+		      `(message ((to . ,jabber-chatting-with)
+				 (type . "chat"))
+				(rtt ((xmlns . "urn:xmpp:rtt:0")
+				      (seq . ,(number-to-string jabber-rtt-send-seq))
+				      (event . ,(if resetp "reset" "new")))
+				     (t () ,text))))))
+
+#+END_SRC
+***** jabber-rtt--queue-update                        :internal:function:
+#+BEGIN_SRC emacs-lisp
+(defun jabber-rtt--queue-update (beg end pre-change-length)
+  (unless (or (< beg jabber-point-insert)
+	      (< end jabber-point-insert))
+    (let ((timestamp (current-time)))
+      (when jabber-rtt-send-last-timestamp
+	(let* ((time-difference (time-subtract timestamp jabber-rtt-send-last-timestamp))
+	       (interval (truncate (* 1000 (float-time time-difference)))))
+	  (when (and (> interval 0)
+		     ;; Don't send too long intervals - this should have
+		     ;; been sent by our timer already.
+		     (< interval 1000))
+	    (push `(w ((n . ,(number-to-string interval))) nil)
+		  jabber-rtt-outgoing-events))))
+      (setq jabber-rtt-send-last-timestamp timestamp))
+
+    (when (> pre-change-length 0)
+      ;; Some text was deleted.  Let's check if we can use a shorter
+      ;; tag:
+      (let ((at-end (= end (point-max)))
+	    (erase-one (= pre-change-length 1)))
+	(push `(e (
+		   ,@(unless at-end
+		       `((p . ,(number-to-string
+				(+ beg
+				   (- jabber-point-insert)
+				   pre-change-length)))))
+		   ,@(unless erase-one
+		       `((n . ,(number-to-string pre-change-length))))))
+	      jabber-rtt-outgoing-events)))
+
+    (when (/= beg end)
+      ;; Some text was inserted.
+      (let ((text (buffer-substring-no-properties beg end))
+	    (at-end (= end (point-max))))
+	(push `(t (
+		   ,@(unless at-end
+		       `((p . ,(number-to-string (- beg jabber-point-insert))))))
+		  ,text)
+	      jabber-rtt-outgoing-events)))
+
+    (when (null jabber-rtt-send-timer)
+      (setq jabber-rtt-send-timer
+	    (run-with-timer 0.7 nil #'jabber-rtt--send-queued-events (current-buffer))))))
+
+#+END_SRC
+***** jabber-rtt--send-queued-events                  :internal:function:
+#+BEGIN_SRC emacs-lisp
+(defun jabber-rtt--send-queued-events (buffer)
+  (with-current-buffer buffer
+    (setq jabber-rtt-send-timer nil)
+    (when jabber-rtt-outgoing-events
+      (let ((event (if jabber-rtt-send-seq "edit" "new")))
+	(setq jabber-rtt-send-seq
+	      (if jabber-rtt-send-seq
+		  (1+ jabber-rtt-send-seq)
+		(random 100000)))
+	(jabber-send-sexp jabber-buffer-connection
+			  `(message ((to . ,jabber-chatting-with)
+				     (type . "chat"))
+				    (rtt ((xmlns . "urn:xmpp:rtt:0")
+					  (seq . ,(number-to-string jabber-rtt-send-seq))
+					  (event . ,event))
+					 ,@(nreverse jabber-rtt-outgoing-events))))
+	(setq jabber-rtt-outgoing-events nil)))))
+
+#+END_SRC
+***** jabber-rtt--message-sent                        :internal:function:
+#+BEGIN_SRC emacs-lisp
+(defun jabber-rtt--message-sent (_text _id)
+  ;; We're sending a <body/> element; reset our state
+  (when (timerp jabber-rtt-send-timer)
+    (cancel-timer jabber-rtt-send-timer))
+  (setq jabber-rtt-send-timer nil
+	jabber-rtt-send-seq nil
+	jabber-rtt-outgoing-events nil
+	jabber-rtt-send-last-timestamp nil))
+
+#+END_SRC
+
+*** Jabber
 #+BEGIN_SRC emacs-lisp
 ;;; load Unicode tables if this needed
 (when (and (featurep 'xemacs) (not (emacs-version>= 21 5 5)))

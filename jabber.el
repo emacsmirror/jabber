@@ -1220,9 +1220,6 @@ any string   character data of this node"
 			  prefixes)))))))
   prefixes)
 
-;; A collection of functions, that hide the details of transmitting to
-;; and fro a Jabber Server
-
 (eval-when-compile (require 'cl))
 
 ;; Emacs 24 can be linked with GnuTLS
@@ -3768,6 +3765,233 @@ If optional PREV is non-nil, return position of previous property appearence."
                           'jabber-report-success "Roster groups saved"
                           'jabber-report-success "Failed to save roster groups"))))
 
+(require 'cl)
+
+(defvar jabber-export-roster-widget nil)
+
+(defvar jabber-import-subscription-p-widget nil)
+
+;;;###autoload
+(defun jabber-export-roster (jc)
+  "Export roster for connection JC."
+  (interactive (list (jabber-read-account)))
+  (let ((state-data (fsm-get-state-data jc)))
+    (jabber-export-roster-do-it
+     (jabber-roster-to-sexp (plist-get state-data :roster)))))
+
+(defun jabber-export-roster-do-it (roster)
+  "Create buffer from which ROSTER can be exported to a file."
+  (interactive)
+  (with-current-buffer (get-buffer-create "Export roster")
+    (jabber-init-widget-buffer nil)
+
+    (widget-insert (jabber-propertize "Export roster\n"
+				      'face 'jabber-title-large))
+    (widget-insert "You are about to save your roster to a file.  Here
+you can edit it before saving.  Changes done here will
+not affect your actual roster.
+
+")
+
+    (widget-create 'push-button :notify #'jabber-export-save "Save to file")
+    (widget-insert " ")
+    (widget-create 'push-button :notify #'jabber-export-remove-regexp "Remove by regexp")
+    (widget-insert "\n\n")
+    (make-local-variable 'jabber-export-roster-widget)
+
+    (jabber-export-display roster)
+
+    (widget-setup)
+    (widget-minor-mode 1)
+    (goto-char (point-min))
+    (switch-to-buffer (current-buffer))))
+
+;;;###autoload
+(defun jabber-import-roster (jc file)
+  "Create buffer for roster import for connection JC from FILE."
+  (interactive (list (jabber-read-account)
+		     (read-file-name "Import roster from file: ")))
+  (let ((roster
+	 (with-temp-buffer
+	   (let ((coding-system-for-read 'utf-8))
+	     (jabber-roster-xml-to-sexp
+	      (car (xml-parse-file file)))))))
+    (with-current-buffer (get-buffer-create "Import roster")
+      (setq jabber-buffer-connection jc)
+
+      (jabber-init-widget-buffer nil)
+
+      (widget-insert (jabber-propertize "Import roster\n"
+					'face 'jabber-title-large))
+      (widget-insert "You are about to import the contacts below to your roster.
+
+")
+
+      (make-local-variable 'jabber-import-subscription-p-widget)
+      (setq jabber-import-subscription-p-widget
+	    (widget-create 'checkbox))
+      (widget-insert " Adjust subscriptions\n")
+
+      (widget-create 'push-button :notify #'jabber-import-doit "Import to roster")
+      (widget-insert " ")
+      (widget-create 'push-button :notify #'jabber-export-remove-regexp "Remove by regexp")
+      (widget-insert "\n\n")
+      (make-local-variable 'jabber-export-roster-widget)
+
+      (jabber-export-display roster)
+
+      (widget-setup)
+      (widget-minor-mode 1)
+      (goto-char (point-min))
+      (switch-to-buffer (current-buffer)))))
+
+(defun jabber-export-remove-regexp (&rest ignore)
+  (let* ((value (widget-value jabber-export-roster-widget))
+	 (length-before (length value))
+	 (regexp (read-string "Remove JIDs matching regexp: ")))
+    (setq value (delete-if
+		 #'(lambda (a)
+		     (string-match regexp (nth 0 a)))
+		 value))
+    (widget-value-set jabber-export-roster-widget value)
+    (widget-setup)
+    (message "%d items removed" (- length-before (length value)))))
+
+(defun jabber-export-save (&rest ignore)
+  "Export roster to file."
+  (let ((items (mapcar #'jabber-roster-sexp-to-xml (widget-value jabber-export-roster-widget)))
+	(coding-system-for-write 'utf-8))
+    (with-temp-file (read-file-name "Export roster to file: ")
+      (insert "<iq xmlns='jabber:client'><query xmlns='jabber:iq:roster'>\n")
+      (dolist (item items)
+	(insert (jabber-sexp2xml item) "\n"))
+      (insert "</query></iq>\n"))
+    (message "Roster saved")))
+
+(defun jabber-import-doit (&rest ignore)
+  "Import roster being edited in widget."
+  (let* ((state-data (fsm-get-state-data jabber-buffer-connection))
+	 (jabber-roster (plist-get state-data :roster))
+	 roster-delta)
+
+    (dolist (n (widget-value jabber-export-roster-widget))
+      (let* ((jid (nth 0 n))
+	     (name (and (not (zerop (length (nth 1 n))))
+			(nth 1 n)))
+	     (subscription (nth 2 n))
+	     (groups (nth 3 n))
+	     (jid-symbol (jabber-jid-symbol jid))
+	     (in-roster-p (memq jid-symbol jabber-roster))
+	     (jid-name (and in-roster-p (get jid-symbol 'name)))
+	     (jid-subscription (and in-roster-p (get jid-symbol 'subscription)))
+	     (jid-groups (and in-roster-p (get jid-symbol 'groups))))
+	;; Do we need to change the roster?
+	(when (or
+	       ;; If the contact is not in the roster already,
+	       (not in-roster-p)
+	       ;; or if the import introduces a name,
+	       (and name (not jid-name))
+	       ;; or changes a name,
+	       (and name jid-name (not (string= name jid-name)))
+	       ;; or introduces new groups.
+	       (set-difference groups jid-groups :test #'string=))
+	  (push (jabber-roster-sexp-to-xml
+		 (list jid (or name jid-name) nil (union groups jid-groups :test #'string=))
+		 t)
+		roster-delta))
+	;; And adujst subscription.
+	(when (widget-value jabber-import-subscription-p-widget)
+	  (let ((want-to (member subscription '("to" "both")))
+		(want-from (member subscription '("from" "both")))
+		(have-to (member jid-subscription '("to" "both")))
+		(have-from (member jid-subscription '("from" "both"))))
+	    (flet ((request-subscription
+		    (type)
+		    (jabber-send-sexp jabber-buffer-connection
+				      `(presence ((to . ,jid)
+						  (type . ,type))))))
+	      (cond
+	       ((and want-to (not have-to))
+		(request-subscription "subscribe"))
+	       ((and have-to (not want-to))
+		(request-subscription "unsubscribe")))
+	      (cond
+	       ((and want-from (not have-from))
+		;; not much to do here
+		)
+	       ((and have-from (not want-from))
+		(request-subscription "unsubscribed"))))))))
+    (when roster-delta
+      (jabber-send-iq jabber-buffer-connection
+		      nil "set"
+		      `(query ((xmlns . "jabber:iq:roster")) ,@roster-delta)
+		      #'jabber-report-success "Roster import"
+		      #'jabber-report-success "Roster import"))))
+
+(defun jabber-roster-to-sexp (roster)
+  "Convert ROSTER to simpler sexp format.
+Return a list, where each item is a vector:
+\[jid name subscription groups]
+where groups is a list of strings."
+  (mapcar
+   #'(lambda (n)
+       (list
+	(symbol-name n)
+	(or (get n 'name) "")
+	(get n 'subscription)
+	(get n 'groups)))
+   roster))
+
+(defun jabber-roster-sexp-to-xml (sexp &optional omit-subscription)
+  "Convert SEXP to XML format.
+Return an XML node."
+  `(item ((jid . ,(nth 0 sexp))
+	  ,@(let ((name (nth 1 sexp)))
+	      (unless (zerop (length name))
+		`((name . ,name))))
+	  ,@(unless omit-subscription
+	      `((subscription . ,(nth 2 sexp)))))
+	 ,@(mapcar
+	    #'(lambda (g)
+		(list 'group nil g))
+	    (nth 3 sexp))))
+
+(defun jabber-roster-xml-to-sexp (xml-data)
+  "Convert XML-DATA to simpler sexp format.
+XML-DATA is an <iq> node with a <query xmlns='jabber:iq:roster'> child.
+See `jabber-roster-to-sexp' for description of output format."
+  (assert (eq (jabber-xml-node-name xml-data) 'iq))
+  (let ((query (car (jabber-xml-get-children xml-data 'query))))
+    (assert query)
+    (mapcar
+     #'(lambda (n)
+	 (list
+	  (jabber-xml-get-attribute n 'jid)
+	  (or (jabber-xml-get-attribute n 'name) "")
+	  (jabber-xml-get-attribute n 'subscription)
+	  (mapcar
+	   #'(lambda (g)
+	       (car (jabber-xml-node-children g)))
+	   (jabber-xml-get-children n 'group))))
+     (jabber-xml-get-children query 'item))))
+
+(defun jabber-export-display (roster)
+  (setq jabber-export-roster-widget
+	(widget-create
+	 '(repeat
+	   :tag "Roster"
+	   (list :format "%v"
+		   (string :tag "JID")
+		   (string :tag "Name")
+		   (choice :tag "Subscription"
+			   (const "none")
+			   (const "both")
+			   (const "to")
+			   (const "from"))
+		   (repeat :tag "Groups"
+			   (string :tag "Group"))))
+	 :value roster)))
+
 (defvar *jabber-open-info-queries* nil
   "an alist of open query id and their callback functions")
 
@@ -4849,6 +5073,62 @@ window or at `fill-column', whichever is shorter."
 		(fill-paragraph nil)
 		(goto-char (marker-position goback)))))
 	  (forward-line 1))))))
+
+;;;###autoload
+(defun jabber-compose (jc &optional recipient)
+  "Create a buffer for composing a Jabber message."
+  (interactive (list (jabber-read-account)
+		     (jabber-read-jid-completing "To whom? ")))
+
+  (with-current-buffer (get-buffer-create
+			(generate-new-buffer-name
+			 (concat
+			  "Jabber-Compose"
+			  (when recipient
+			    (format "-%s" (jabber-jid-displayname recipient))))))
+    (set (make-local-variable 'jabber-widget-alist) nil)
+    (setq jabber-buffer-connection jc)
+    (use-local-map widget-keymap)
+
+    (insert (jabber-propertize "Compose Jabber message\n" 'face 'jabber-title-large))
+
+    (insert (substitute-command-keys "\\<widget-field-keymap>Completion available with \\[widget-complete].\n"))
+    (push (cons :recipients
+		(widget-create '(repeat :tag "Recipients" jid)
+			       :value (when recipient
+					(list recipient))))
+	  jabber-widget-alist)
+
+    (insert "\nSubject: ")
+    (push (cons :subject
+		(widget-create 'editable-field :value ""))
+	  jabber-widget-alist)
+
+    (insert "\nText:\n")
+    (push (cons :text
+		(widget-create 'text :value ""))
+	  jabber-widget-alist)
+
+    (insert "\n")
+    (widget-create 'push-button :notify #'jabber-compose-send "Send")
+
+    (widget-setup)
+
+    (switch-to-buffer (current-buffer))
+    (goto-char (point-min))))
+
+(defun jabber-compose-send (&rest ignore)
+  (let ((recipients (widget-value (cdr (assq :recipients jabber-widget-alist))))
+	(subject (widget-value (cdr (assq :subject jabber-widget-alist))))
+	(text (widget-value (cdr (assq :text jabber-widget-alist)))))
+    (when (null recipients)
+      (error "No recipients specified"))
+
+    (dolist (to recipients)
+      (jabber-send-message jabber-buffer-connection to subject text nil))
+
+    (bury-buffer)
+    (message "Message sent")))
 
 (require 'ewoc)
 (eval-when-compile (require 'cl))
@@ -6377,6 +6657,177 @@ invalidate cache and get fresh data."
 				     `((node . ,item-node))))))
 		  'jabber-report-success "Disco removal"
 		  'jabber-report-success "Disco removal"))
+
+(add-to-list 'jabber-jid-info-menu (cons "Ping" 'jabber-ping))
+
+(defun jabber-ping-send (jc to process-func on-success on-error)
+  "Send XEP-0199 ping IQ stanza. JC is connection to use, TO is
+  full JID, PROCESS-FUNC is fucntion to call to process result,
+  ON-SUCCESS and ON-ERROR is arg for this function depending on
+  result."
+  (jabber-send-iq jc to "get"
+                  '(ping ((xmlns . "urn:xmpp:ping")))
+                  process-func on-success
+                  process-func on-error))
+
+(defun jabber-ping (to)
+  "Ping XMPP entity. TO is full JID. All connected JIDs is used."
+  (interactive (list (jabber-read-jid-completing "Send ping to: " nil nil nil 'full)))
+  (dolist (jc jabber-connections)
+    (jabber-ping-send jc to 'jabber-silent-process-data 'jabber-process-ping "Ping is unsupported")))
+
+;; called by jabber-process-data
+(defun jabber-process-ping (jc xml-data)
+  "Handle results from ping requests."
+  (let ((to (jabber-xml-get-attribute xml-data 'from)))
+    (format "%s is alive" to)))
+
+(add-to-list 'jabber-iq-get-xmlns-alist (cons "urn:xmpp:ping" 'jabber-pong))
+(jabber-disco-advertise-feature "urn:xmpp:ping")
+
+(defun jabber-pong (jc xml-data)
+  "Return pong as defined in XEP-0199. Sender and Id are
+determined from the incoming packet passed in XML-DATA."
+  (let ((to (jabber-xml-get-attribute xml-data 'from))
+	(id (jabber-xml-get-attribute xml-data 'id)))
+    (jabber-send-iq jc to "result" nil nil nil nil nil id)))
+
+;;;###autoload
+(defgroup jabber-keepalive nil
+  "Keepalive functions try to detect lost connection"
+  :group 'jabber)
+
+(defcustom jabber-keepalive-interval 600
+  "Interval in seconds between connection checks."
+  :type 'integer
+  :group 'jabber-keepalive)
+
+(defcustom jabber-keepalive-timeout 20
+  "Seconds to wait for response from server."
+  :type 'integer
+  :group 'jabber-keepalive)
+
+(defvar jabber-keepalive-timer nil
+  "Timer object for keepalive function")
+
+(defvar jabber-keepalive-timeout-timer nil
+  "Timer object for keepalive timeout function")
+
+(defvar jabber-keepalive-pending nil
+  "List of outstanding keepalive connections")
+
+(defvar jabber-keepalive-debug nil
+  "Log keepalive traffic when non-nil")
+
+;;;###autoload
+(defun jabber-keepalive-start (&optional jc)
+  "Activate keepalive.
+That is, regularly send a ping request to the server, and
+disconnect if it doesn't answer.  See `jabber-keepalive-interval'
+and `jabber-keepalive-timeout'.
+
+The JC argument makes it possible to add this function to
+`jabber-post-connect-hooks'; it is ignored.  Keepalive is activated
+for all accounts regardless of the argument."
+  (interactive)
+
+  (when jabber-keepalive-timer
+    (jabber-keepalive-stop))
+
+  (setq jabber-keepalive-timer
+	(run-with-timer 5
+			jabber-keepalive-interval
+			'jabber-keepalive-do))
+  (add-hook 'jabber-post-disconnect-hook 'jabber-keepalive-stop))
+
+(defun jabber-keepalive-stop ()
+  "Deactivate keepalive"
+  (interactive)
+
+  (when jabber-keepalive-timer
+    (jabber-cancel-timer jabber-keepalive-timer)
+    (setq jabber-keepalive-timer nil)))
+
+(defun jabber-keepalive-do ()
+  (when jabber-keepalive-debug
+    (message "%s: sending keepalive packet(s)" (current-time-string)))
+  (setq jabber-keepalive-timeout-timer
+	(run-with-timer jabber-keepalive-timeout
+			nil
+			'jabber-keepalive-timeout))
+  (setq jabber-keepalive-pending jabber-connections)
+  (dolist (c jabber-connections)
+    ;; Whether we get an error or not is not interesting.
+    ;; Getting a response at all is.
+    (jabber-ping-send c nil 'jabber-keepalive-got-response nil nil)))
+
+(defun jabber-keepalive-got-response (jc &rest args)
+  (when jabber-keepalive-debug
+    (message "%s: got keepalive response from %s"
+	     (current-time-string)
+	     (plist-get (fsm-get-state-data jc) :server)))
+  (setq jabber-keepalive-pending (remq jc jabber-keepalive-pending))
+  (when (and (null jabber-keepalive-pending) (timerp jabber-keepalive-timeout-timer))
+    (jabber-cancel-timer jabber-keepalive-timeout-timer)
+    (setq jabber-keepalive-timeout-timer nil)))
+
+(defun jabber-keepalive-timeout ()
+  (jabber-cancel-timer jabber-keepalive-timer)
+  (setq jabber-keepalive-timer nil)
+
+  (dolist (c jabber-keepalive-pending)
+    (message "%s: keepalive timeout, connection to %s considered lost"
+	     (current-time-string)
+	     (plist-get (fsm-get-state-data c) :server))
+
+    (run-hook-with-args 'jabber-lost-connection-hooks c)
+    (jabber-disconnect-one c nil)))
+
+(defcustom jabber-whitespace-ping-interval 30
+  "Send a space character to the server with this interval, in seconds.
+
+This is a traditional remedy for a number of problems: to keep NAT
+boxes from considering the connection dead, to have the OS discover
+earlier that the connection is lost, and to placate servers which rely
+on the client doing this, e.g. Openfire.
+
+If you want to verify that the server is able to answer, see
+`jabber-keepalive-start' for another mechanism."
+  :type '(integer :tag "Interval in seconds")
+  :group 'jabber-core)
+
+(defvar jabber-whitespace-ping-timer nil
+  "Timer object for whitespace pings")
+
+;;;###autoload
+(defun jabber-whitespace-ping-start (&optional jc)
+  "Start sending whitespace pings at regular intervals.
+See `jabber-whitespace-ping-interval'.
+
+The JC argument is ignored; whitespace pings are enabled for all
+accounts."
+  (interactive)
+
+  (when jabber-whitespace-ping-timer
+    (jabber-whitespace-ping-stop))
+
+  (setq jabber-whitespace-ping-timer
+	(run-with-timer 5
+			jabber-whitespace-ping-interval
+			'jabber-whitespace-ping-do))
+  (add-hook 'jabber-post-disconnect-hook 'jabber-whitespace-ping-stop))
+
+(defun jabber-whitespace-ping-stop ()
+  "Deactivate whitespace pings"
+  (interactive)
+
+  (when jabber-whitespace-ping-timer
+    (jabber-cancel-timer jabber-whitespace-ping-timer)
+    (setq jabber-whitespace-ping-timer nil)))
+
+(defun jabber-whitespace-ping-do ()
+  (dolist (c jabber-connections)
+    (ignore-errors (jabber-send-string c " "))))
 
 ;;;###autoload
 (eval-after-load "jabber-core"
@@ -8846,13 +9297,6 @@ CLOSURE-DATA is either 'success or 'error."
 		  #'jabber-process-data #'jabber-process-register-or-search
 		  #'jabber-report-success "Search field retrieval"))
 
-;; jabber-process-register-or-search logically comes here, rendering
-;; the search form, but since register and search are so similar,
-;; having two functions would be serious code duplication.  See
-;; jabber-register.el.
-
-;; jabber-submit-search is called when the "submit" button of the
-;; search form is activated.
 (defun jabber-submit-search (&rest ignore)
   "Submit search.  See `jabber-process-register-or-search'."
 
@@ -9456,10 +9900,6 @@ sends a message if that happens. The buddies are stored in
 (defgroup jabber-activity nil
   "activity tracking options"
   :group 'jabber)
-
-;; All the (featurep 'jabber-activity) is so we don't call a function
-;; with an autoloaded cookie while the file is loading, since that
-;; would lead to endless load recursion.
 
 (defcustom jabber-activity-make-string 'jabber-activity-make-string-default
   "Function to call, for making the string to put in the mode
@@ -12338,6 +12778,292 @@ This function simply starts a state machine."
 ;; 	   (lexical-let ((proxy-connection proxy-connection))
 ;; 	     (lambda (data)
 ;; 	       (process-send-string proxy-connection data)))))
+
+;;;###autoload
+(eval-after-load "jabber-disco"
+  '(jabber-disco-advertise-feature "urn:xmpp:rtt:0"))
+(defvar jabber-rtt-ewoc-node nil)
+(make-variable-buffer-local 'jabber-rtt-ewoc-node)
+
+(defvar jabber-rtt-last-seq nil)
+(make-variable-buffer-local 'jabber-rtt-last-seq)
+
+(defvar jabber-rtt-message nil)
+(make-variable-buffer-local 'jabber-rtt-message)
+
+(defvar jabber-rtt-pending-events nil)
+(make-variable-buffer-local 'jabber-rtt-pending-events)
+
+(defvar jabber-rtt-timer nil)
+(make-variable-buffer-local 'jabber-rtt-timer)
+
+;;;###autoload
+(eval-after-load "jabber-core"
+  '(add-to-list 'jabber-message-chain #'jabber-rtt-handle-message t))
+
+;;;###autoload
+(defun jabber-rtt-handle-message (jc xml-data)
+  ;; We could support this for MUC as well, if useful.
+  (when (and (not (jabber-muc-message-p xml-data))
+	     (get-buffer (jabber-chat-get-buffer (jabber-xml-get-attribute xml-data 'from))))
+    (with-current-buffer (jabber-chat-get-buffer (jabber-xml-get-attribute xml-data 'from))
+      (let* ((rtt (jabber-xml-path xml-data '(("urn:xmpp:rtt:0" . "rtt"))))
+	     (body (jabber-xml-path xml-data '(body)))
+	     (seq (when rtt (jabber-xml-get-attribute rtt 'seq)))
+	     (event (when rtt (or (jabber-xml-get-attribute rtt 'event) "edit")))
+	     (actions (when rtt (jabber-xml-node-children rtt)))
+	     (inhibit-read-only t))
+	(cond
+	 ((or body (string= event "cancel"))
+	  ;; A <body/> element supersedes real time text.
+	  (jabber-rtt--reset))
+	 ((member event '("new" "reset"))
+	  (jabber-rtt--reset)
+	  (setq jabber-rtt-ewoc-node
+		(ewoc-enter-last jabber-chat-ewoc (list :notice "[typing...]"))
+		jabber-rtt-last-seq (string-to-number seq)
+		jabber-rtt-message ""
+		jabber-rtt-pending-events nil)
+	  (jabber-rtt--enqueue-actions actions))
+	 ((string= event "edit")
+	  ;; TODO: check whether this works properly in 32-bit Emacs
+	  (cond
+	   ((and jabber-rtt-last-seq
+		 (equal (1+ jabber-rtt-last-seq)
+			(string-to-number seq)))
+	    ;; We are in sync.
+	    (setq jabber-rtt-last-seq (string-to-number seq))
+	    (jabber-rtt--enqueue-actions actions))
+	   (t
+	    ;; TODO: show warning when not in sync
+	    (message "out of sync! %s vs %s"
+		     seq jabber-rtt-last-seq))
+	  ))
+	 ;; TODO: handle event="init"
+	 )))))
+
+(defun jabber-rtt--reset ()
+  (when jabber-rtt-ewoc-node
+    (ewoc-delete jabber-chat-ewoc jabber-rtt-ewoc-node))
+  (when (timerp jabber-rtt-timer)
+    (cancel-timer jabber-rtt-timer))
+  (setq jabber-rtt-ewoc-node nil
+	jabber-rtt-last-seq nil
+	jabber-rtt-message nil
+	jabber-rtt-pending-events nil
+	jabber-rtt-timer nil))
+
+(defun jabber-rtt--enqueue-actions (new-actions)
+  (setq jabber-rtt-pending-events
+	;; Ensure that the queue never contains more than 700 ms worth
+	;; of wait events.
+	(jabber-rtt--fix-waits (append jabber-rtt-pending-events new-actions)))
+  (unless jabber-rtt-timer
+    (jabber-rtt--process-actions (current-buffer))))
+
+(defun jabber-rtt--process-actions (buffer)
+  (with-current-buffer buffer
+    (setq jabber-rtt-timer nil)
+    (catch 'wait
+      (while jabber-rtt-pending-events
+	(let ((action (pop jabber-rtt-pending-events)))
+	  (case (jabber-xml-node-name action)
+	    ((t)
+	     ;; insert text
+	     (let* ((p (jabber-xml-get-attribute action 'p))
+		    (position (if p (string-to-number p) (length jabber-rtt-message))))
+	       (setq position (max position 0))
+	       (setq position (min position (length jabber-rtt-message)))
+	       (setf (substring jabber-rtt-message position position)
+		     (car (jabber-xml-node-children action)))
+
+	       (ewoc-set-data jabber-rtt-ewoc-node (list :notice (concat "[typing...] " jabber-rtt-message)))
+	       (let ((inhibit-read-only t))
+		 (ewoc-invalidate jabber-chat-ewoc jabber-rtt-ewoc-node))))
+	    ((e)
+	     ;; erase text
+	     (let* ((p (jabber-xml-get-attribute action 'p))
+		    (position (if p (string-to-number p) (length jabber-rtt-message)))
+		    (n (jabber-xml-get-attribute action 'n))
+		    (number (if n (string-to-number n) 1)))
+	       (setq position (max position 0))
+	       (setq position (min position (length jabber-rtt-message)))
+	       (setq number (max number 0))
+	       (setq number (min number position))
+	       ;; Now erase the NUMBER characters before POSITION.
+	       (setf (substring jabber-rtt-message (- position number) position)
+		     "")
+
+	       (ewoc-set-data jabber-rtt-ewoc-node (list :notice (concat "[typing...] " jabber-rtt-message)))
+	       (let ((inhibit-read-only t))
+		 (ewoc-invalidate jabber-chat-ewoc jabber-rtt-ewoc-node))))
+	    ((w)
+	     (setq jabber-rtt-timer
+		   (run-with-timer
+		    (/ (string-to-number (jabber-xml-get-attribute action 'n)) 1000.0)
+		    nil
+		    #'jabber-rtt--process-actions
+		    buffer))
+	     (throw 'wait nil))))))))
+
+(defun jabber-rtt--fix-waits (actions)
+  ;; Ensure that the sum of all wait events is no more than 700 ms.
+  (let ((sum 0))
+    (dolist (action actions)
+      (when (eq (jabber-xml-node-name action) 'w)
+	(let ((n (jabber-xml-get-attribute action 'n)))
+	  (setq n (string-to-number n))
+	  (when (>= n 0)
+	    (setq sum (+ sum n))))))
+
+    (if (<= sum 700)
+	actions
+      (let ((scale (/ 700.0 sum)))
+	(mapcar
+	 (lambda (action)
+	   (if (eq (jabber-xml-node-name action) 'w)
+	       (let ((n (jabber-xml-get-attribute action 'n)))
+		 (setq n (string-to-number n))
+		 (setq n (max n 0))
+		 `(w ((n . ,(number-to-string (* scale n)))) nil))
+	     action))
+	 actions)))))
+
+(defvar jabber-rtt-send-timer nil)
+(make-variable-buffer-local 'jabber-rtt-send-timer)
+
+(defvar jabber-rtt-send-seq nil)
+(make-variable-buffer-local 'jabber-rtt-send-seq)
+
+(defvar jabber-rtt-outgoing-events nil)
+(make-variable-buffer-local 'jabber-rtt-outgoing-events)
+
+(defvar jabber-rtt-send-last-timestamp nil)
+(make-variable-buffer-local 'jabber-rtt-send-last-timestamp)
+
+;;;###autoload
+(define-minor-mode jabber-rtt-send-mode
+  "Show text to recipient as it is being typed.
+This lets the recipient see every change made to the message up
+until it's sent.  The recipient's client needs to implement
+XEP-0301, In-Band Real Time Text."
+  nil " Real-Time" nil
+  (if (null jabber-rtt-send-mode)
+      (progn
+	(remove-hook 'after-change-functions #'jabber-rtt--queue-update t)
+	(remove-hook 'jabber-chat-send-hooks #'jabber-rtt--message-sent t)
+	(jabber-rtt--cancel-send))
+    (unless (derived-mode-p 'jabber-chat-mode)
+      (error "Real Time Text only makes sense in chat buffers"))
+    (when (timerp jabber-rtt-send-timer)
+      (cancel-timer jabber-rtt-send-timer))
+    (setq jabber-rtt-send-timer nil
+	  jabber-rtt-send-seq nil
+	  jabber-rtt-outgoing-events nil
+	  jabber-rtt-send-last-timestamp nil)
+    (jabber-rtt--send-current-text nil)
+    (add-hook 'after-change-functions #'jabber-rtt--queue-update nil t)
+    (add-hook 'jabber-chat-send-hooks #'jabber-rtt--message-sent nil t)))
+
+(defun jabber-rtt--cancel-send ()
+  (when (timerp jabber-rtt-send-timer)
+    (cancel-timer jabber-rtt-send-timer))
+  (setq jabber-rtt-send-seq (1+ jabber-rtt-send-seq))
+  (jabber-send-sexp jabber-buffer-connection
+		    `(message ((to . ,jabber-chatting-with)
+			       (type . "chat"))
+			      (rtt ((xmlns . "urn:xmpp:rtt:0")
+				    (seq . ,(number-to-string jabber-rtt-send-seq))
+				    (event . "cancel"))
+				   nil)))
+  (setq jabber-rtt-send-timer nil
+	jabber-rtt-send-seq nil
+	jabber-rtt-outgoing-events nil
+	jabber-rtt-send-last-timestamp nil))
+
+(defun jabber-rtt--send-current-text (resetp)
+  (let ((text (buffer-substring-no-properties jabber-point-insert (point-max))))
+    ;; This should give us enough room to avoid wrap-arounds, even
+    ;; with just 28 bits...
+    (setq jabber-rtt-send-seq (random 100000))
+    (jabber-send-sexp jabber-buffer-connection
+		      `(message ((to . ,jabber-chatting-with)
+				 (type . "chat"))
+				(rtt ((xmlns . "urn:xmpp:rtt:0")
+				      (seq . ,(number-to-string jabber-rtt-send-seq))
+				      (event . ,(if resetp "reset" "new")))
+				     (t () ,text))))))
+
+(defun jabber-rtt--queue-update (beg end pre-change-length)
+  (unless (or (< beg jabber-point-insert)
+	      (< end jabber-point-insert))
+    (let ((timestamp (current-time)))
+      (when jabber-rtt-send-last-timestamp
+	(let* ((time-difference (time-subtract timestamp jabber-rtt-send-last-timestamp))
+	       (interval (truncate (* 1000 (float-time time-difference)))))
+	  (when (and (> interval 0)
+		     ;; Don't send too long intervals - this should have
+		     ;; been sent by our timer already.
+		     (< interval 1000))
+	    (push `(w ((n . ,(number-to-string interval))) nil)
+		  jabber-rtt-outgoing-events))))
+      (setq jabber-rtt-send-last-timestamp timestamp))
+
+    (when (> pre-change-length 0)
+      ;; Some text was deleted.  Let's check if we can use a shorter
+      ;; tag:
+      (let ((at-end (= end (point-max)))
+	    (erase-one (= pre-change-length 1)))
+	(push `(e (
+		   ,@(unless at-end
+		       `((p . ,(number-to-string
+				(+ beg
+				   (- jabber-point-insert)
+				   pre-change-length)))))
+		   ,@(unless erase-one
+		       `((n . ,(number-to-string pre-change-length))))))
+	      jabber-rtt-outgoing-events)))
+
+    (when (/= beg end)
+      ;; Some text was inserted.
+      (let ((text (buffer-substring-no-properties beg end))
+	    (at-end (= end (point-max))))
+	(push `(t (
+		   ,@(unless at-end
+		       `((p . ,(number-to-string (- beg jabber-point-insert))))))
+		  ,text)
+	      jabber-rtt-outgoing-events)))
+
+    (when (null jabber-rtt-send-timer)
+      (setq jabber-rtt-send-timer
+	    (run-with-timer 0.7 nil #'jabber-rtt--send-queued-events (current-buffer))))))
+
+(defun jabber-rtt--send-queued-events (buffer)
+  (with-current-buffer buffer
+    (setq jabber-rtt-send-timer nil)
+    (when jabber-rtt-outgoing-events
+      (let ((event (if jabber-rtt-send-seq "edit" "new")))
+	(setq jabber-rtt-send-seq
+	      (if jabber-rtt-send-seq
+		  (1+ jabber-rtt-send-seq)
+		(random 100000)))
+	(jabber-send-sexp jabber-buffer-connection
+			  `(message ((to . ,jabber-chatting-with)
+				     (type . "chat"))
+				    (rtt ((xmlns . "urn:xmpp:rtt:0")
+					  (seq . ,(number-to-string jabber-rtt-send-seq))
+					  (event . ,event))
+					 ,@(nreverse jabber-rtt-outgoing-events))))
+	(setq jabber-rtt-outgoing-events nil)))))
+
+(defun jabber-rtt--message-sent (_text _id)
+  ;; We're sending a <body/> element; reset our state
+  (when (timerp jabber-rtt-send-timer)
+    (cancel-timer jabber-rtt-send-timer))
+  (setq jabber-rtt-send-timer nil
+	jabber-rtt-send-seq nil
+	jabber-rtt-outgoing-events nil
+	jabber-rtt-send-last-timestamp nil))
 
 ;;; load Unicode tables if this needed
 (when (and (featurep 'xemacs) (not (emacs-version>= 21 5 5)))
