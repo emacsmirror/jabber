@@ -101,6 +101,8 @@ If a source block does not have syntax highlighting, press =M-o M-o= (=font-lock
 3. [ ] make headings for remaining definitions - some FSM-related definitions remain.
 4. [ ] move tests to this file (probably migrate them to =ert= or =buttercup= first), in sub-headings of their concerned components.
 5. [ ] move dependencies to the Dependencies heading; also make library headers for them
+6. [ ] move per-file author information and copyright notice here, and delete the empty .el files
+   * But it will cease to remain applicable as soon as we move anything around...
 ** Library headers and commentary
 #+BEGIN_SRC emacs-lisp
 ;;; jabber.el --- a minimal jabber client
@@ -8962,6 +8964,50 @@ on success or failure, respectively."
     (widget-value-set (cdr (assq 'bookmarks jabber-widget-alist)) value)
     (widget-setup)))
 
+#+END_SRC
+*** Private XML Storage ([[https://xmpp.org/extensions/xep-0049.html][XEP-0049]])
+**** jabber-private-get                                         :function:
+#+BEGIN_SRC emacs-lisp
+;;;###autoload
+(defun jabber-private-get (jc node-name namespace success-callback error-callback)
+  "Retrieve an item from private XML storage.
+The item to retrieve is identified by NODE-NAME (a symbol) and
+NAMESPACE (a string).
+
+On success, SUCCESS-CALLBACK is called with JC and the retrieved
+XML fragment.
+
+On error, ERROR-CALLBACK is called with JC and the entire IQ
+result."
+  (jabber-send-iq jc nil "get"
+		  `(query ((xmlns . "jabber:iq:private"))
+			  (,node-name ((xmlns . ,namespace))))
+		  #'jabber-private-get-1 success-callback
+		  #'(lambda (jc xml-data error-callback)
+		      (funcall error-callback jc xml-data))
+		  error-callback))
+#+END_SRC
+**** jabber-private-get-1                                       :function:
+#+BEGIN_SRC emacs-lisp
+(defun jabber-private-get-1 (jc xml-data success-callback)
+  (funcall success-callback jc
+	   (car (jabber-xml-node-children
+		 (jabber-iq-query xml-data)))))
+#+END_SRC
+**** jabber-private-set                                         :function:
+#+BEGIN_SRC emacs-lisp
+;;;###autoload
+(defun jabber-private-set (jc fragment &optional
+			      success-callback success-closure-data
+			      error-callback error-closure-data)
+  "Store FRAGMENT in private XML storage.
+SUCCESS-CALLBACK, SUCCESS-CLOSURE-DATA, ERROR-CALLBACK and
+ERROR-CLOSURE-DATA are used as in `jabber-send-iq'."
+  (jabber-send-iq jc nil "set"
+		  `(query ((xmlns . "jabber:iq:private"))
+			  ,fragment)
+		  success-callback success-closure-data
+		  error-callback error-closure-data))
 #+END_SRC
 *** muc-nick-coloring
 #+BEGIN_SRC emacs-lisp
