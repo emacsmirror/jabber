@@ -4,15 +4,18 @@
 ** README
 This is jabber.el 0.8.92, an XMPP client for Emacs.  XMPP (also known as 'Jabber') is an instant messaging system; see http://xmpp.org for more information.
 
+New resources
 + [[https://tildegit.org/wgreenhouse/emacs-jabber/][project page]]
 + chat: [[xmpp:emacs@salas.suchat.org?join][xmpp:emacs@salas.suchat.org?join]]
 
-+ [[http://sourceforge.net/projects/emacs-jabber][old project page]]
-+ [[http://emacs-jabber.sourceforge.net][old home page]]
-+ [[http://www.emacswiki.org/cgi-bin/wiki/JabberEl][old wiki page]]
+Old resources
++ [[http://sourceforge.net/projects/emacs-jabber][project page]]
++ [[http://emacs-jabber.sourceforge.net][home page]]
++ [[http://www.emacswiki.org/cgi-bin/wiki/JabberEl][wiki page]]
 + mailing list:
   * http://lists.sourceforge.net/lists/listinfo/emacs-jabber-general
   * http://dir.gmane.org/gmane.emacs.jabber.general
++ chat: jabber.el@conference.jabber.se and emacs@conference.jabber.ru (Russian, English)
 
 *** GNU Emacs
 jabber.el runs on GNU Emacs 23.1 or later.
