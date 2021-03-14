@@ -87,6 +87,8 @@ It is possible to make various web browsers pass links starting with "xmpp:" to 
 ** TODO maintenance [0%]
 1. [ ] Satisfy =M-x checkdoc=
 2. [ ] Use =rx= where regular expressions get hairy
+3. [ ] hexrgb.el is not available on MELPA
+
 ** About this file
 jabber.el is an Org literate program.
 
@@ -96,15 +98,15 @@ The sed script has the advantage that one can break a source block to insert Org
 
 If a source block does not have syntax highlighting, press =M-o M-o= (=font-lock-fontify-block=) in it.
 
-*** TODO organizational tasks [0%]
+*** TODO literate/organizational tasks [14%]
 1. [ ] (maybe) make dependencies optional and tangle them to separate files, reducing load time for users.
 2. [ ] contemplate [[https://github.com/melpa/melpa/issues/7408][distribution strategies]]
 3. [ ] make headings for remaining definitions - some FSM-related definitions remain.
 4. [ ] move tests to this file (probably migrate them to =ert= or =buttercup= first), in sub-headings of their concerned components.
 5. [ ] move dependencies to the Dependencies heading; also make library headers for them
-6. [ ] move per-file author information and copyright notice here, and delete the empty .el files
+6. [X] move per-file author information and copyright notice here, and delete the empty .el files
    * But it will cease to remain applicable as soon as we move anything around...
-7. [ ] hexrgb.el is not available on MELPA
+7. [ ] "Code" has a lot of direct sub-headings, making it somewhat cumbersome to navigate; someone with a better understanding of the program could organize these better
 ** Library headers and commentary
 #+BEGIN_SRC emacs-lisp
 ;;; jabber.el --- a minimal jabber client
