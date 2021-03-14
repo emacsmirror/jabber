@@ -107,6 +107,7 @@ If a source block does not have syntax highlighting, press =M-o M-o= (=font-lock
 6. [X] move per-file author information and copyright notice here, and delete the empty .el files
    * But it will cease to remain applicable as soon as we move anything around...
 7. [ ] "Code" has a lot of direct sub-headings, making it somewhat cumbersome to navigate; someone with a better understanding of the program could organize these better
+8. [ ] The tangled file currently does not list all the other authors (currently listed in =:COPYRIGHT:= drawers). We could add them all at once in the library headers section...or something else. 🤔
 ** Library headers and commentary
 #+BEGIN_SRC emacs-lisp
 ;;; jabber.el --- a minimal jabber client
