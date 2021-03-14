@@ -11837,7 +11837,7 @@ jabber.el can perform browse requests, but will not answer them.
 	    (jabber-process-browse jc item))))))
 
 #+END_SRC
-*** Version
+*** Software Version ([[https://xmpp.org/extensions/xep-0092.html][XEP-0092]])
 :PROPERTIES:
 :file:     jabber-version.el
 :END:
