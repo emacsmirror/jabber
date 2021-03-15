@@ -470,7 +470,7 @@ Return nil if no such data available."
     (format-time-string "%Y%m%dT%H:%M:%S" timestamp t)))
 
 (defun jabber-encode-time (time)
-  "Convert TIME to a string by JEP-0082.
+  "Convert TIME to a string by XEP-0082.
 TIME is in a format accepted by `format-time-string'."
   (format-time-string "%Y-%m-%dT%H:%M:%SZ" time t))
 
@@ -484,7 +484,7 @@ TIME is in a format accepted by `format-time-string'."
         (format "%s%02d:%02d"(if positivep "+" "-") hours minutes)))))
 
 (defun jabber-parse-time (raw-time)
-  "Parse the DateTime encoded in TIME according to JEP-0082."
+  "Parse the DateTime encoded in TIME according to XEP-0082."
   (let* ((time (if (string= (substring raw-time 4 5) "-")
                    raw-time
                  (concat
@@ -576,11 +576,11 @@ the echo area."
    (cons 503 "Service unavailable")
    (cons 504 "Remote server timeout")
    (cons 510 "Disconnected"))
-  "String descriptions of legacy errors (JEP-0086)")
+  "String descriptions of legacy errors (XEP-0086)")
 
 (defun jabber-parse-error (error-xml)
   "Parse the given <error/> tag and return a string fit for human consumption.
-See secton 9.3, Stanza Errors, of XMPP Core, and JEP-0086, Legacy Errors."
+See secton 9.3, Stanza Errors, of XMPP Core, and XEP-0086, Legacy Errors."
   (let ((error-type (jabber-xml-get-attribute error-xml 'type))
 	(error-code (jabber-xml-get-attribute error-xml 'code))
 	condition text)
@@ -6677,7 +6677,7 @@ nil, access is always granted.")
 	     (cons "http://jabber.org/protocol/disco#items" 'jabber-return-disco-info))
 (defun jabber-return-disco-info (jc xml-data)
   "Respond to a service discovery request.
-See JEP-0030."
+See XEP-0030."
   (let* ((to (jabber-xml-get-attribute xml-data 'from))
 	 (id (jabber-xml-get-attribute xml-data 'id))
 	 (xmlns (jabber-iq-xmlns xml-data))
@@ -7182,7 +7182,7 @@ MINE and THEIRS are alists, as returned by `jabber-fn-parse'.
 An alist is returned, where the keys are the negotiated variables,
 and the values are lists containing the preferred option.  If
 negotiation is impossible, an error is signalled.  The errors are as
-specified in JEP-0020, and not necessarily the ones of higher-level
+specified in XEP-0020, and not necessarily the ones of higher-level
 protocols."
 
   (let ((vars (mapcar #'car mine))
@@ -7297,7 +7297,7 @@ DEFAULT-USERNAME is the default value for the username field."
   (widget-insert "\n")
 
   (let ((possible-fields
-	 ;; taken from JEP-0077
+	 ;; taken from XEP-0077
 	 '((username . "Username")
 	   (nick . "Nickname")
 	   (password . "Password")
@@ -7443,7 +7443,7 @@ DEFAULTS takes precedence over values specified in the form."
 	 jabber-widget-alist)))
 
 (defun jabber-xdata-value-convert (value type)
-  "Convert VALUE from form used by widget library to form required by JEP-0004.
+  "Convert VALUE from form used by widget library to form required by XEP-0004.
 Return a list of strings, each of which to be included as cdata in a <value/> tag."
   (cond
    ((string= type "boolean")
@@ -7540,7 +7540,7 @@ Return a list of strings, each of which to be included as cdata in a <value/> ta
       (insert (apply #'concat values) "\n"))))
 
 (defun jabber-xdata-formtype (x)
-  "Return the form type of the xdata form in X, by JEP-0068.
+  "Return the form type of the xdata form in X, by XEP-0068.
 Return nil if no form type is specified."
   (catch 'found-formtype
     (dolist (field (jabber-xml-get-children x 'field))
@@ -9210,7 +9210,7 @@ OLD is last tried nickname."
     (dolist (x (jabber-xml-get-children query 'x))
       (when (string= (jabber-xml-get-attribute x 'xmlns) "jabber:x:data")
 	(setq have-xdata t)
-	;; If the registration form obeys JEP-0068, we know
+	;; If the registration form obeys XEP-0068, we know
 	;; for sure how to put a default username in it.
 	(jabber-render-xdata-form x
 				  (if (and register-account
@@ -9405,7 +9405,7 @@ CLOSURE-DATA is either 'success or 'error."
 	  ;; So far I've seen "server" and "directory", both in the node-name.
 	  ;; Those are actually service disco categories, but jabberd 2 seems
 	  ;; to use them for browse results as well.  It's not right (as in
-	  ;; JEP-0011), but it's reasonable.
+	  ;; XEP-0011), but it's reasonable.
 	  (let ((category (jabber-xml-get-attribute item 'category)))
 	    (if (= (length category) 0)
 		(setq category (jabber-xml-node-name item)))
@@ -9468,7 +9468,7 @@ CLOSURE-DATA is either 'success or 'error."
      (jabber-disco-advertise-feature "jabber:iq:version")))
 
 (defun jabber-return-version (jc xml-data)
-  "Return client version as defined in JEP-0092.  Sender and ID are
+  "Return client version as defined in XEP-0092.  Sender and ID are
 determined from the incoming packet passed in XML-DATA."
   ;; Things we might check: does this iq message really have type='get' and
   ;; exactly one child, namely query with xmlns='jabber:iq:version'?
@@ -9588,7 +9588,7 @@ access allowed.  nil means open for everyone."
 (add-to-list 'jabber-jid-service-menu
 	     (cons "Request command list" 'jabber-ahc-get-list))
 (defun jabber-ahc-get-list (jc to)
-  "Request list of ad-hoc commands.  (JEP-0050)"
+  "Request list of ad-hoc commands.  (XEP-0050)"
   (interactive (list (jabber-read-account)
 		     (jabber-read-jid-completing "Request command list from: " nil nil nil nil nil)))
   (jabber-get-disco-items jc to "http://jabber.org/protocol/commands"))
@@ -9596,7 +9596,7 @@ access allowed.  nil means open for everyone."
 (add-to-list 'jabber-jid-service-menu
 	     (cons "Execute command" 'jabber-ahc-execute-command))
 (defun jabber-ahc-execute-command (jc to node)
-  "Execute ad-hoc command.  (JEP-0050)"
+  "Execute ad-hoc command.  (XEP-0050)"
   (interactive (list (jabber-read-account)
 		     (jabber-read-jid-completing "Execute command of: " nil nil nil nil nil)
 		     (jabber-read-node "Node of command: ")))
@@ -10703,7 +10703,7 @@ If MIME-TYPE is not specified, try to find it from the image data."
     (jabber-avatar-compute-size
      (make-avatar :mime-type mime-type :sha1-sum sha1-sum :base64-data base64-data :bytes bytes))))
 
-;; XXX: This function is based on an outdated version of JEP-0084.
+;; XXX: This function is based on an outdated version of XEP-0084.
 ;; (defun jabber-avatar-from-data-node (data-node)
 ;;   "Construct an avatar structure from the given <data/> node."
 ;;   (jabber-xml-let-attributes
@@ -10922,7 +10922,7 @@ The top node should be the `vCard' node."
       (when e-mails
 	(push (cons 'EMAIL e-mails) result)))
 
-    ;; JEP-0153: vCard-based avatars
+    ;; XEP-0153: vCard-based avatars
     (let ((photo-tag (car (jabber-xml-get-children vcard 'PHOTO))))
       (when photo-tag
 	(let ((type (jabber-xml-path photo-tag '(TYPE "")))
@@ -11137,7 +11137,7 @@ The top node should be the `vCard' node."
 		(indent-to 20)
 		(insert (cdr field) "\n")))))))
 
-    ;; JEP-0153: vCard-based avatars
+    ;; XEP-0153: vCard-based avatars
     (let ((photo-type (nth 1 (assq 'PHOTO parsed)))
 	  (photo-binval (nth 2 (assq 'PHOTO parsed))))
       (when (and photo-type photo-binval)
@@ -11926,7 +11926,7 @@ Each entry is a list, containing:
 	  ;; Find profile
 	  (profile-data (assoc profile jabber-si-profiles)))
       ;; Now, feature negotiation for stream type (errors
-      ;; don't match JEP-0095, so convert)
+      ;; don't match XEP-0095, so convert)
       (condition-case err
 	  (setq stream-method (jabber-fn-intersection
 			       (jabber-fn-parse feature 'request)
@@ -12146,7 +12146,7 @@ Each entry is a list, containing:
  * Profile data function")
 
 (defcustom jabber-socks5-proxies nil
-  "JIDs of JEP-0065 proxies to use for file transfer.
+  "JIDs of XEP-0065 proxies to use for file transfer.
 Put preferred ones first."
   :type '(repeat string)
   :group 'jabber
@@ -12212,7 +12212,7 @@ proxies have answered."
 
 (define-state-machine jabber-socks5
   :start ((jc jid sid profile-function role)
-	  "Start JEP-0065 bytestream with JID.
+	  "Start XEP-0065 bytestream with JID.
 SID is the session ID used.
 PROFILE-FUNCTION is the function to call upon success.  See `jabber-si-stream-methods'.
 ROLE is either :initiator or :target.  The initiator sends an IQ
@@ -12472,7 +12472,7 @@ set; the target waits for one."
 (define-state-machine jabber-socks5-connection
   :start
   ((jc initiator-jid target-jid streamhost-jid sid host port socks5-fsm)
-   "Connect to a single JEP-0065 streamhost."
+   "Connect to a single XEP-0065 streamhost."
    (let ((coding-system-for-read 'binary)
 	 (coding-system-for-write 'binary))
      ;; make-network-process, which we really want, for asynchronous
