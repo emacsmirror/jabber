@@ -90,6 +90,59 @@ This release of jabber.el contains support for file transfer.  You may need to c
 *** XMPP URIs
 It is possible to make various web browsers pass links starting with "xmpp:" to jabber.el.  In the ideal case, this works right after running "make install".  Otherwise, see the manual, section "XMPP URIs".
 
+** Credits
+*** Developers
++ Tom Berger
++ Magnus Henoch
++ Kirill A. Korinskiy
++ Detlev Zundel
+  - wmii support
++ Evgenii Terechkov
+
+*** Contributors
++ Georg Lehner
+  - network transport functions
++ Anthony Chaumas-Pellet
++ Jérémy Compostella
++ Mathias Dahl
+  - history logging
+  - watch functionality
++ Mario Domenech Goulart
+  - sawfish support
+  - xmessage support
++ Nolan Eakins
++ Ami Fischman
+  - Chat State Notifications
++ François Fleuret
++ David Hansen
++ Adam Sjøgren
+  - notifications.el support
++ Rodrigo Lazo
+  - notifications.el support
+  - libnotify.el support
++ Justin Kirby
++ Carl Henrik Lunde
+  - network transport functions
+  - activity tracking
++ Olivier Ramonat
++ Andrey Slusar
++ Valery V. Vorotyntsev
+  - GMail notifications
++ Milan Zamazal
++ Xavier Maillard
++ Vitaly Mayatskikh
++ Alexander Solovyov
++ Demyan Rogozhin
+  - XML console mode
++ Michael Cardell Widerkrantz
+  - tmux support
+
+*** Maintainers
++ wgreenhouse
+  - 2021 resurrection
++ contrapunctus
+  - literate Org migration
+
 ** TODO maintenance [0%]
 1. [ ] Satisfy =M-x checkdoc=
 2. [ ] Use =rx= where regular expressions get hairy
@@ -100,7 +153,7 @@ jabber.el is an Org literate program.
 
 =org-babel-tangle= takes ages, so we use a little sed one-liner (in the file-local variables) to do the tangling, which is nearly instant. The sed script emits anything between lines matching the exact strings "#+BEGIN_SRC emacs-lisp" and "#+END_SRC".
 
-The sed script has the advantage that one can break a source block to insert Org commentary even within a =defun=, if desired - see =jabber-caps-ver-string= as a potential example. However, doing this may cause other tooling working on the s-expression level to break - =literate-elisp= definitely does.
+The sed script has the advantage that one can break a source block to insert Org commentary even within a =defun=, if desired - see =jabber-caps-ver-string= for a situation where such commentary may be desired. However, doing this may cause other tooling working on the s-expression level to break - =literate-elisp= definitely does.
 
 If a source block does not have syntax highlighting, press =M-o M-o= (=font-lock-fontify-block=) in it.
 
@@ -1649,12 +1702,10 @@ any string   character data of this node"
 :END:
 :COPYRIGHT:
 Copyright (C) 2005 - Georg Lehner - jorge@magma.com.ni
-mostly inspired by Gnus.
-
 Copyright (C) 2005 - Carl Henrik Lunde - chlunde+jabber+@ping.uio.no
 (starttls)
 :END:
-A collection of functions, that hide the details of transmitting to and fro a Jabber Server.
+A collection of functions, that hide the details of transmitting to and fro a Jabber Server. Mostly inspired by Gnus.
 
 #+BEGIN_SRC emacs-lisp
 (eval-when-compile (require 'cl))
@@ -5906,7 +5957,7 @@ of `jabber-autoanswer-alist'"
 Copyright (C) 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
 Copyright (C) 2004 - Mathias Dahl
 :END:
-1. [ ] when rotation is enabled, jabber-history-query won't look for older history files if the current history file doesn't contain enough backlog entries.
+1. [ ] when rotation is enabled, =jabber-history-query= won't look for older history files if the current history file doesn't contain enough backlog entries.
 
 **** Log format
 Each message is on one separate line, represented as a vector with five elements.  The first element is time encoded according to XEP-0082.  The second element is direction, "in" or "out". The third element is the sender, "me" or a JID.  The fourth element is the recipient.  The fifth element is the text of the message.
