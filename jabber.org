@@ -4,12 +4,18 @@
 ** README
 This is jabber.el 0.8.92, an XMPP client for Emacs.  XMPP (also known as 'Jabber') is an instant messaging system; see http://xmpp.org for more information.
 
-Home page:    http://emacs-jabber.sourceforge.net
-Project page: http://sourceforge.net/projects/emacs-jabber
-Wiki page:    http://www.emacswiki.org/cgi-bin/wiki/JabberEl
-Mailing list: http://lists.sourceforge.net/lists/listinfo/emacs-jabber-general
-and:          http://dir.gmane.org/gmane.emacs.jabber.general
-Chat:         [[xmpp:emacs@salas.suchat.org?join][xmpp:emacs@salas.suchat.org?join]]
+New resources
++ [[https://tildegit.org/wgreenhouse/emacs-jabber/][project page]]
++ chat: [[xmpp:emacs@salas.suchat.org?join][xmpp:emacs@salas.suchat.org?join]]
+
+Old resources
++ [[http://sourceforge.net/projects/emacs-jabber][project page]]
++ [[http://emacs-jabber.sourceforge.net][home page]]
++ [[http://www.emacswiki.org/cgi-bin/wiki/JabberEl][wiki page]]
++ mailing list:
+  * http://lists.sourceforge.net/lists/listinfo/emacs-jabber-general
+  * http://dir.gmane.org/gmane.emacs.jabber.general
++ chat: jabber.el@conference.jabber.se and emacs@conference.jabber.ru (Russian, English)
 
 *** GNU Emacs
 jabber.el runs on GNU Emacs 23.1 or later.
@@ -107,6 +113,7 @@ If a source block does not have syntax highlighting, press =M-o M-o= (=font-lock
 6. [X] move per-file author information and copyright notice here, and delete the empty .el files
    * But it will cease to remain applicable as soon as we move anything around...
 7. [ ] "Code" has a lot of direct sub-headings, making it somewhat cumbersome to navigate; someone with a better understanding of the program could organize these better
+8. [ ] The tangled file currently does not list all the other authors (currently listed in =:COPYRIGHT:= drawers). We could add them all at once in the library headers section...or something else. 🤔
 ** Library headers and commentary
 #+BEGIN_SRC emacs-lisp
 ;;; jabber.el --- a minimal jabber client
@@ -116,8 +123,6 @@ If a source block does not have syntax highlighting, press =M-o M-o= (=font-lock
 
 ;; SSL - Support, mostly inspired by Gnus
 ;; Copyright (C) 2005 - Georg Lehner - jorge@magma.com.ni
-
-;; This file is a part of jabber.el.
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -2663,9 +2668,6 @@ problems."
 #+END_SRC
 **** jabber-connect-all                                          :command:
 #+BEGIN_SRC emacs-lisp
-;; jabber-connect and jabber-connect-all should load jabber.el, not
-;; just jabber-core.el, when autoloaded.
-
 ;;;###autoload (autoload 'jabber-connect-all "jabber" "Connect to all configured Jabber accounts.\nSee `jabber-account-list'.\nIf no accounts are configured (or ARG supplied), call `jabber-connect' interactively." t)
 (defun jabber-connect-all (&optional arg)
   "Connect to all configured Jabber accounts.
@@ -7259,7 +7261,6 @@ If DONT-PRINT-NICK-P is true, don't include nickname."
 	;; using `field-beginning'.
 	(goto-address-fontify (field-beginning nil nil limit) end)))))
 
-;; jabber-compose is autoloaded in jabber.el
 (add-to-list 'jabber-jid-chat-menu
 	     (cons "Compose message" 'jabber-compose))
 

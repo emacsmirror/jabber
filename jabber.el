@@ -6,8 +6,6 @@
 ;; SSL - Support, mostly inspired by Gnus
 ;; Copyright (C) 2005 - Georg Lehner - jorge@magma.com.ni
 
-;; This file is a part of jabber.el.
-
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
 ;; the Free Software Foundation; either version 2 of the License, or
@@ -1992,9 +1990,6 @@ problems."
 
 (defvar jabber-connection-type-history ()
   "Keeps track of previously used connection types")
-
-;; jabber-connect and jabber-connect-all should load jabber.el, not
-;; just jabber-core.el, when autoloaded.
 
 ;;;###autoload (autoload 'jabber-connect-all "jabber" "Connect to all configured Jabber accounts.\nSee `jabber-account-list'.\nIf no accounts are configured (or ARG supplied), call `jabber-connect' interactively." t)
 (defun jabber-connect-all (&optional arg)
@@ -5753,7 +5748,6 @@ If DONT-PRINT-NICK-P is true, don't include nickname."
 	;; using `field-beginning'.
 	(goto-address-fontify (field-beginning nil nil limit) end)))))
 
-;; jabber-compose is autoloaded in jabber.el
 (add-to-list 'jabber-jid-chat-menu
 	     (cons "Compose message" 'jabber-compose))
 
