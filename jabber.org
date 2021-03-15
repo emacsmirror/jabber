@@ -157,7 +157,7 @@ The sed script has the advantage that one can break a source block to insert Org
 
 If a source block does not have syntax highlighting, press =M-o M-o= (=font-lock-fontify-block=) in it.
 
-*** TODO literate/organizational tasks [14%]
+*** TODO literate/organizational tasks [25%]
 1. [ ] (maybe) make dependencies optional and tangle them to separate files, reducing load time for users.
 2. [ ] contemplate [[https://github.com/melpa/melpa/issues/7408][distribution strategies]]
 3. [ ] make headings for remaining definitions - some FSM-related definitions remain.
@@ -166,7 +166,7 @@ If a source block does not have syntax highlighting, press =M-o M-o= (=font-lock
 6. [X] move per-file author information and copyright notice here, and delete the empty .el files
    * But it will cease to remain applicable as soon as we move anything around...
 7. [ ] "Code" has a lot of direct sub-headings, making it somewhat cumbersome to navigate; someone with a better understanding of the program could organize these better
-8. [ ] The tangled file currently does not list all the other authors (currently listed in =:COPYRIGHT:= drawers). We could add them all at once in the library headers section...or something else. 🤔
+8. [X] The tangled file currently does not list all the other authors (currently listed in =:COPYRIGHT:= drawers). We could add them all at once in the library headers section...or something else. 🤔
 ** Library headers and commentary
 #+BEGIN_SRC emacs-lisp
 ;;; jabber.el --- a minimal jabber client
@@ -176,6 +176,157 @@ If a source block does not have syntax highlighting, press =M-o M-o= (=font-lock
 
 ;; SSL - Support, mostly inspired by Gnus
 ;; Copyright (C) 2005 - Georg Lehner - jorge@magma.com.ni
+
+;; Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
+;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+;; Copyright (C) 2008, 2010 - Terechkov Evgenii - evg@altlinux.org
+;; Copyright (C) 2010 - Kirill A. Korinskiy - catap@catap.ru
+
+;; Copyright (C) 2003, 2004, 2008 - Magnus Henoch - mange@freemail.hu
+;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+
+;; Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
+;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+
+;; Copyright (C) 2005 - Georg Lehner - jorge@magma.com.ni
+;; Copyright (C) 2005 - Carl Henrik Lunde - chlunde+jabber+@ping.uio.no
+;; (starttls)
+
+;; Copyright (C) 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
+
+;; Copyright (C) 2009, 2010 - Demyan Rogozhin <demyan.rogozhin@gmail.com>
+
+;; Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
+;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+
+;; Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
+;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+
+;; Copyright (C) 2009 - Kirill A. Korinskiy - catap@catap.ru
+;; Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
+;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+
+;; Copyright (C) 2005, 2007  Magnus Henoch
+;; Author: Magnus Henoch <mange@freemail.hu>
+
+;; Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
+;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+
+;; Copyright (C) 2003, 2004, 2005, 2007, 2008 - Magnus Henoch - mange@freemail.hu
+;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+
+;; Copyright (C) 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
+;; Copyright (C) 2004 - Mathias Dahl
+
+;; Copyright (C) 2005, 2007, 2008 - Magnus Henoch - mange@freemail.hu
+
+;; Copyright (C) 2006, 2007  Magnus Henoch
+;; Author: Magnus Henoch <mange@freemail.hu>
+
+;; Copyright (C) 2005, 2007, 2008 - Magnus Henoch - mange@freemail.hu
+
+;; Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
+;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+
+;; Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
+;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+
+;; Copyright (C) 2009 - Evgenii Terechkov - evg@altlinux.org
+
+;; Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
+;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+
+;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+;; Copyright (C) 2003, 2004 - Magnus Henoch - mange@freemail.hu
+
+;; Copyright (C) 2003, 2004, 2007 - Magnus Henoch - mange@freemail.hu
+;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+
+;; Copyright (C) 2007, 2008 - Magnus Henoch - mange@freemail.hu
+
+;; Copyright (C) 2005  Magnus Henoch
+;; Author: Magnus Henoch <mange@freemail.hu>
+
+;; Copyright 2009, 2010, 2012, 2013 Terechkov Evgenii - evg@altlinux.org
+
+;; Copyright (C) 2010 - Kirill A. Korinskiy - catap@catap.ru
+;; Copyright (C) 2003, 2004, 2007, 2008, 2009, 2010 - Magnus Henoch - mange@freemail.hu
+;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+
+;; Copyright (C) 2008 - Terechkov Evgenii - evg@altlinux.org
+;; Copyright (C) 2007, 2008, 2010 - Kirill A. Korinskiy - catap@catap.ru
+;; Copyright (C) 2007 - Serguei Jidkov - jsv@e-mail.ru
+
+;; Copyright (C) 2003, 2004, 2007 - Magnus Henoch - mange@freemail.hu
+;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+
+;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+;; Copyright (C) 2003, 2004 - Magnus Henoch - mange@freemail.hu
+
+;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+;; Copyright (C) 2003, 2004 - Magnus Henoch - mange@freemail.hu
+
+;; Copyright (C) 2003, 2004, 2008 - Magnus Henoch - mange@freemail.hu
+;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+
+;; Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
+;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+
+;; Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
+;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+
+;; Copyright (C) 2004 - Magnus Henoch - mange@freemail.hu
+
+;; Copyright (C) 2004 - Mathias Dahl
+;; Copyright (C) 2004 - Magnus Henoch - mange@freemail.hu
+
+;; Copyright (C) 2004 Carl Henrik Lunde - <chlunde+jabber+@ping.uio.no>
+
+;; Copyright (C) 2005, 2008  Magnus Henoch
+;; Author: Magnus Henoch <mange@freemail.hu>
+
+;; Author: Ami Fischman <ami@fischman.org>
+
+;; Copyright (C) 2006, 2007, 2008  Magnus Henoch
+;; Author: Magnus Henoch <mange@freemail.hu>
+
+;; Copyright (C) 2005, 2007  Magnus Henoch
+;; Author: Magnus Henoch <mange@freemail.hu>
+
+;; Copyright (C) 2006, 2007, 2008  Magnus Henoch
+;; Author: Magnus Henoch <mange@freemail.hu>
+
+;; Copyright (C) 2010 - Kirill A. Korinskiy - catap@catap.ru
+;; Copyright (C) 2010 - Terechkov Evgenii - evg@altlinux.org
+;; Copyright (C) 2006, 2008  Magnus Henoch
+;; Author: Magnus Henoch <mange@freemail.hu>
+
+;; Copyright (C) 2006, 2010 - Kirill A. Kroinskiy - catap@catap.ru
+;; Copyright (C) 2006 - Magnus Henoch - mange@freemail.hu
+
+;; Copyright (C) 2007 - Kirill A. Korinskiy - catap@catap.ru
+
+;; Copyright (C) 2006  Magnus Henoch
+;; Author: Magnus Henoch <mange@freemail.hu>
+
+;; Copyright (C) 2004 - Magnus Henoch - mange@freemail.hu
+
+;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+;; Copyright (C) 2003, 2004 - Magnus Henoch - mange@freemail.hu
+
+;; Copyright (C) 2006, 2008  Magnus Henoch
+;; Author: Magnus Henoch <mange@freemail.hu>
+
+;; Copyright (C) 2004 - Magnus Henoch - mange@freemail.hu
+
+;; Copyright (C) 2003, 2004, 2007 - Magnus Henoch - mange@freemail.hu
+;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+
+;; Copyright (C) 2003, 2004, 2007 - Magnus Henoch - mange@freemail.hu
+;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+
+;; Copyright (C) 2013  Magnus Henoch
+;; Author: Magnus Henoch <magnus.henoch@gmail.com>
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -205,12 +356,6 @@ If a source block does not have syntax highlighting, press =M-o M-o= (=font-lock
 *** various utility functions
 :PROPERTIES:
 :file:     jabber-util.el
-:END:
-:COPYRIGHT:
-Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
-Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
-Copyright (C) 2008, 2010 - Terechkov Evgenii - evg@altlinux.org
-Copyright (C) 2010 - Kirill A. Korinskiy - catap@catap.ru
 :END:
 
 #+BEGIN_SRC emacs-lisp
@@ -1142,10 +1287,6 @@ applied to the node and not to the data itself."
 :PROPERTIES:
 :file:     jabber-menu.el
 :END:
-:COPYRIGHT:
-Copyright (C) 2003, 2004, 2008 - Magnus Henoch - mange@freemail.hu
-Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
-:END:
 
 #+BEGIN_SRC emacs-lisp
 (eval-when-compile (require 'cl))
@@ -1380,10 +1521,6 @@ This used to be: =(define-key-after global-map [menu-bar jabber-menu] ...)= but 
 *** XML functions
 :PROPERTIES:
 :file:     jabber-xml.el
-:END:
-:COPYRIGHT:
-Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
-Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
 :END:
 
 #+BEGIN_SRC emacs-lisp
@@ -1699,11 +1836,6 @@ any string   character data of this node"
 *** Network transport functions
 :PROPERTIES:
 :file:     jabber-conn.el
-:END:
-:COPYRIGHT:
-Copyright (C) 2005 - Georg Lehner - jorge@magma.com.ni
-Copyright (C) 2005 - Carl Henrik Lunde - chlunde+jabber+@ping.uio.no
-(starttls)
 :END:
 A collection of functions, that hide the details of transmitting to and fro a Jabber Server. Mostly inspired by Gnus.
 
@@ -2152,9 +2284,6 @@ Use `*jabber-virtual-server-function*' as send function."
 :PROPERTIES:
 :file:     jabber-sasl.el
 :END:
-:COPYRIGHT:
-Copyright (C) 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
-:END:
 
 #+BEGIN_SRC emacs-lisp
 (require 'cl)
@@ -2355,9 +2484,6 @@ Call REMEMBER with the password.  REMEMBER is expected to return it as well."
 :PROPERTIES:
 :file:     jabber-console.el
 :END:
-:COPYRIGHT:
-Copyright (C) 2009, 2010 - Demyan Rogozhin <demyan.rogozhin@gmail.com>
-:END:
 #+BEGIN_SRC emacs-lisp
 (require 'ewoc)
 (require 'sgml-mode) ;we base on this mode to hightlight XML
@@ -2523,13 +2649,6 @@ what kind of chat buffer is being created.")
 *** core
 :PROPERTIES:
 :file:     jabber-core.el
-:END:
-:COPYRIGHT:
-Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
-Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
-
-SSL-Connection Parts:
-Copyright (C) 2005 - Georg Lehner - jorge@magma.com.ni
 :END:
 
 Standards (probably) involved -
@@ -3683,10 +3802,6 @@ Return an fsm result list if it is."
 :PROPERTIES:
 :file:     jabber-logon.el
 :END:
-:COPYRIGHT:
-Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
-Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
-:END:
 
 In Emacs 24, sha1 is built in, so this =require= is only needed for earlier versions.  It's supposed to be a noop in Emacs 24, but sometimes, for some people, it isn't, and fails with =(file-error "Cannot open load file" "sha1")=.
 #+BEGIN_SRC emacs-lisp
@@ -3756,11 +3871,6 @@ CLOSURE-DATA should be the password on success and nil on failure."
 *** Displaying the roster
 :PROPERTIES:
 :file:     jabber-roster.el
-:END:
-:COPYRIGHT:
-Copyright (C) 2009 - Kirill A. Korinskiy - catap@catap.ru
-Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
-Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
 :END:
 
 #+BEGIN_SRC emacs-lisp
@@ -4793,10 +4903,6 @@ If optional PREV is non-nil, return position of previous property appearence."
 :PROPERTIES:
 :file:     jabber-export.el
 :END:
-:COPYRIGHT:
-Copyright (C) 2005, 2007  Magnus Henoch
-Author: Magnus Henoch <mange@freemail.hu>
-:END:
 
 #+BEGIN_SRC emacs-lisp
 (require 'cl)
@@ -5068,10 +5174,6 @@ See `jabber-roster-to-sexp' for description of output format."
 :PROPERTIES:
 :file:     jabber-iq.el
 :END:
-:COPYRIGHT:
-Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
-Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
-:END:
 
 **** *jabber-open-info-queries*                                 :variable:
 #+BEGIN_SRC emacs-lisp
@@ -5303,10 +5405,6 @@ See section 9.3 of XMPP Core."
 *** Alert hooks
 :PROPERTIES:
 :file:     jabber-alert.el
-:END:
-:COPYRIGHT:
-Copyright (C) 2003, 2004, 2005, 2007, 2008 - Magnus Henoch - mange@freemail.hu
-Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
 :END:
 
 #+BEGIN_SRC emacs-lisp
@@ -5953,10 +6051,7 @@ of `jabber-autoanswer-alist'"
 :PROPERTIES:
 :file:     jabber-history.el
 :END:
-:COPYRIGHT:
-Copyright (C) 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
-Copyright (C) 2004 - Mathias Dahl
-:END:
+
 1. [ ] when rotation is enabled, =jabber-history-query= won't look for older history files if the current history file doesn't contain enough backlog entries.
 
 **** Log format
@@ -6327,9 +6422,6 @@ applies, though."
 :PROPERTIES:
 :file:     jabber-chatbuffer.el
 :END:
-:COPYRIGHT:
-Copyright (C) 2005, 2007, 2008 - Magnus Henoch - mange@freemail.hu
-:END:
 
 **** jabber-point-insert                                        :variable:
 #+BEGIN_SRC emacs-lisp
@@ -6481,10 +6573,6 @@ window or at `fill-column', whichever is shorter."
 :PROPERTIES:
 :file:     jabber-compose.el
 :END:
-:COPYRIGHT:
-Copyright (C) 2006, 2007  Magnus Henoch
-Author: Magnus Henoch <mange@freemail.hu>
-:END:
 **** jabber-compose                                              :command:
 #+BEGIN_SRC emacs-lisp
 ;;;###autoload
@@ -6551,9 +6639,6 @@ Author: Magnus Henoch <mange@freemail.hu>
 *** One-to-one chats
 :PROPERTIES:
 :file:     jabber-chat.el
-:END:
-:COPYRIGHT:
-Copyright (C) 2005, 2007, 2008 - Magnus Henoch - mange@freemail.hu
 :END:
 
 #+BEGIN_SRC emacs-lisp
@@ -7380,10 +7465,6 @@ With a prefix argument, open buffer in other window."
 *** Roster and presence bookkeeping
 :PROPERTIES:
 :file:     jabber-presence.el
-:END:
-:COPYRIGHT:
-Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
-Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
 :END:
 
 **** jabber-presence-element-functions                          :variable:
@@ -8353,10 +8434,6 @@ the right node."
 :PROPERTIES:
 :file:     jabber-disco.el
 :END:
-:COPYRIGHT:
-Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
-Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
-:END:
 **** Respond to disco requests
 ***** jabber-advertised-features                               :variable:
 #+BEGIN_SRC emacs-lisp
@@ -8746,9 +8823,6 @@ invalidate cache and get fresh data."
 :PROPERTIES:
 :file:     jabber-ping.el
 :END:
-:COPYRIGHT:
-Copyright (C) 2009 - Evgenii Terechkov - evg@altlinux.org
-:END:
 
 #+BEGIN_SRC emacs-lisp
 (add-to-list 'jabber-jid-info-menu (cons "Ping" 'jabber-ping))
@@ -8802,10 +8876,6 @@ determined from the incoming packet passed in XML-DATA."
 *** keepalive - try to detect a lost connection
 :PROPERTIES:
 :file:     jabber-keepalive.el
-:END:
-:COPYRIGHT:
-Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
-Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
 :END:
 
 Send something to the server and see if it answers.
@@ -9007,10 +9077,6 @@ accounts."
 :PROPERTIES:
 :file:     jabber-feature-neg.el
 :END:
-:COPYRIGHT:
-Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
-Copyright (C) 2003, 2004 - Magnus Henoch - mange@freemail.hu
-:END:
 
 #+BEGIN_SRC emacs-lisp
 (require 'cl)
@@ -9129,10 +9195,6 @@ protocols."
 *** widget - display various kinds of forms
 :PROPERTIES:
 :file:     jabber-widget.el
-:END:
-:COPYRIGHT:
-Copyright (C) 2003, 2004, 2007 - Magnus Henoch - mange@freemail.hu
-Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
 :END:
 
 #+BEGIN_SRC emacs-lisp
@@ -9525,9 +9587,6 @@ Return nil if no form type is specified."
 :PROPERTIES:
 :file:     jabber-bookmarks.el
 :END:
-:COPYRIGHT:
-Copyright (C) 2007, 2008 - Magnus Henoch - mange@freemail.hu
-:END:
 
 #+BEGIN_SRC emacs-lisp
 (require 'cl)
@@ -9794,10 +9853,6 @@ on success or failure, respectively."
 :PROPERTIES:
 :file:     jabber-private.el
 :END:
-:COPYRIGHT:
-Copyright (C) 2005  Magnus Henoch
-Author: Magnus Henoch <mange@freemail.hu>
-:END:
 
 **** jabber-private-get                                         :function:
 #+BEGIN_SRC emacs-lisp
@@ -9845,9 +9900,6 @@ ERROR-CLOSURE-DATA are used as in `jabber-send-iq'."
 *** muc-nick-coloring
 :PROPERTIES:
 :file:     jabber-muc-nick-coloring.el
-:END:
-:COPYRIGHT:
-Copyright 2009, 2010, 2012, 2013 Terechkov Evgenii - evg@altlinux.org
 :END:
 
 #+BEGIN_SRC emacs-lisp
@@ -9932,11 +9984,6 @@ Copyright 2009, 2010, 2012, 2013 Terechkov Evgenii - evg@altlinux.org
 *** Multi-User Chat (MUC) ([[https://xmpp.org/extensions/xep-0045.html][XEP-0045]])
 :PROPERTIES:
 :file:     jabber-muc.el
-:END:
-:COPYRIGHT:
-Copyright (C) 2010 - Kirill A. Korinskiy - catap@catap.ru
-Copyright (C) 2003, 2004, 2007, 2008, 2009, 2010 - Magnus Henoch - mange@freemail.hu
-Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
 :END:
 
 #+BEGIN_SRC emacs-lisp
@@ -11349,11 +11396,6 @@ Return nil if X-MUC is nil."
 :PROPERTIES:
 :file:     jabber-muc-nick-completion.el
 :END:
-:COPYRIGHT:
-Copyright (C) 2008 - Terechkov Evgenii - evg@altlinux.org
-Copyright (C) 2007, 2008, 2010 - Kirill A. Korinskiy - catap@catap.ru
-Copyright (C) 2007 - Serguei Jidkov - jsv@e-mail.ru
-:END:
 
 **** jabber-muc-completion-delimiter                     :custom:variable:
 #+BEGIN_SRC emacs-lisp
@@ -11564,10 +11606,6 @@ OLD is last tried nickname."
 :PROPERTIES:
 :file:     jabber-register.el
 :END:
-:COPYRIGHT:
-Copyright (C) 2003, 2004, 2007 - Magnus Henoch - mange@freemail.hu
-Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
-:END:
 
 **** jabber-get-register                                         :command:
 #+BEGIN_SRC emacs-lisp
@@ -11705,10 +11743,6 @@ CLOSURE-DATA is either 'success or 'error."
 :PROPERTIES:
 :file:     jabber-search.el
 :END:
-:COPYRIGHT:
-Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
-Copyright (C) 2003, 2004 - Magnus Henoch - mange@freemail.hu
-:END:
 
 **** jabber-get-search                                           :command:
 #+BEGIN_SRC emacs-lisp
@@ -11809,10 +11843,6 @@ Copyright (C) 2003, 2004 - Magnus Henoch - mange@freemail.hu
 :PROPERTIES:
 :file:     jabber-browse.el
 :END:
-:COPYRIGHT:
-Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
-Copyright (C) 2003, 2004 - Magnus Henoch - mange@freemail.hu
-:END:
 
 jabber.el can perform browse requests, but will not answer them.
 **** jabber-get-browse                                           :command:
@@ -11895,10 +11925,6 @@ jabber.el can perform browse requests, but will not answer them.
 :PROPERTIES:
 :file:     jabber-version.el
 :END:
-:COPYRIGHT:
-Copyright (C) 2003, 2004, 2008 - Magnus Henoch - mange@freemail.hu
-Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
-:END:
 
 #+BEGIN_SRC emacs-lisp
 (require 'jabber-ourversion)
@@ -11979,10 +12005,7 @@ determined from the incoming packet passed in XML-DATA."
 :PROPERTIES:
 :file:     jabber-ahc.el
 :END:
-:COPYRIGHT:
-Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
-Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
-:END:
+
 **** jabber-ahc-sessionid                                       :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-ahc-sessionid nil
@@ -12224,10 +12247,7 @@ access allowed.  nil means open for everyone."
 :PROPERTIES:
 :file:     jabber-ahc-presence.el
 :END:
-:COPYRIGHT:
-Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
-Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
-:END:
+
 **** jabber-ahc-presence-node                                   :constant:
 #+BEGIN_SRC emacs-lisp
 (defconst jabber-ahc-presence-node "http://jabber.org/protocol/rc#set-status"
@@ -12321,9 +12341,6 @@ Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
 *** Mode line
 :PROPERTIES:
 :file:     jabber-modeline.el
-:END:
-:COPYRIGHT:
-Copyright (C) 2004 - Magnus Henoch - mange@freemail.hu
 :END:
 
 #+BEGIN_SRC emacs-lisp
@@ -12434,10 +12451,6 @@ and offline contacts, respectively."
 :PROPERTIES:
 :file:     jabber-watch.el
 :END:
-:COPYRIGHT:
-Copyright (C) 2004 - Mathias Dahl
-Copyright (C) 2004 - Magnus Henoch - mange@freemail.hu
-:END:
 
 **** jabber-watch-alist                                  :custom:variable:
 #+BEGIN_QUOTE
@@ -12505,9 +12518,7 @@ sends a message if that happens. The buddies are stored in
 :PROPERTIES:
 :file:     jabber-activity.el
 :END:
-:COPYRIGHT:
-Copyright (C) 2004 Carl Henrik Lunde - <chlunde+jabber+@ping.uio.no>
-:END:
+
 Allows tracking messages from buddies using the global mode line. See =(info "(jabber)Tracking activity")=
 
 **** TODO
@@ -13015,10 +13026,7 @@ With a numeric arg, enable this display if arg is positive."
 :PROPERTIES:
 :file:     jabber-events.el
 :END:
-:COPYRIGHT:
-Copyright (C) 2005, 2008  Magnus Henoch
-Author: Magnus Henoch <mange@freemail.hu>
-:END:
+
 #+BEGIN_SRC emacs-lisp
 (require 'cl)
 
@@ -13303,10 +13311,6 @@ Add function last in chain, so a chat buffer is already created.
 :PROPERTIES:
 :file:     jabber-chatstates.el
 :END:
-:COPYRIGHT:
-Author: Ami Fischman <ami@fischman.org>
-(based entirely on jabber-events.el by Magnus Henoch <mange@freemail.hu>)
-:END:
 
 **** TODO
 1. [ ] Currently only active/composing notifications are /sent/ though all 5 notifications are handled on receipt.
@@ -13512,11 +13516,6 @@ It can be sent and cancelled several times.")
 *** Generic functions for avatars
 :PROPERTIES:
 :file:     jabber-avatar.el
-:END:
-:COPYRIGHT:
-Copyright (C) 2006, 2007, 2008  Magnus Henoch
-
-Author: Magnus Henoch <mange@freemail.hu>
 :END:
 
 There are several methods for transporting avatars in Jabber ([[https://xmpp.org/extensions/xep-0008.html][XEP-0008: IQ-Based Avatars]], [[https://xmpp.org/extensions/xep-0084.html][XEP-0084: User Avatar]], [[https://xmpp.org/extensions/xep-0153.html][XEP-0153: vCard-Based Avatars]]).  They all have in common that they identify avatars by their SHA1 checksum, and (at least partially) use Base64-encoded image data.  Thus this library of support functions for interpreting and caching avatars.
@@ -13769,10 +13768,6 @@ available."
 *** vCard ([[https://xmpp.org/extensions/xep-0054.html][XEP-0054]])
 :PROPERTIES:
 :file:     jabber-vcard.el
-:END:
-:COPYRIGHT:
-Copyright (C) 2005, 2007  Magnus Henoch
-Author: Magnus Henoch <mange@freemail.hu>
 :END:
 
 There are great variations in Jabber vcard implementations.  This one adds some spice to the mix, while trying to follow the XEP closely.
@@ -14337,10 +14332,6 @@ The top node should be the `vCard' node."
 :PROPERTIES:
 :file:     jabber-vcard-avatars.el
 :END:
-:COPYRIGHT:
-Copyright (C) 2006, 2007, 2008  Magnus Henoch
-Author: Magnus Henoch <mange@freemail.hu>
-:END:
 
 #+BEGIN_SRC emacs-lisp
 (defcustom jabber-vcard-avatars-retrieve (and (fboundp 'display-images-p)
@@ -14480,13 +14471,6 @@ Keys are full JIDs.")
 *** autoaway
 :PROPERTIES:
 :file:     jabber-autoaway.el
-:END:
-:COPYRIGHT:
-Copyright (C) 2010 - Kirill A. Korinskiy - catap@catap.ru
-Copyright (C) 2010 - Terechkov Evgenii - evg@altlinux.org
-Copyright (C) 2006, 2008  Magnus Henoch
-
-Author: Magnus Henoch <mange@freemail.hu>
 :END:
 
 #+BEGIN_SRC emacs-lisp
@@ -14747,10 +14731,6 @@ The method for finding the terminal only works on GNU/Linux."
 :PROPERTIES:
 :file:     jabber-time.el
 :END:
-:COPYRIGHT:
-Copyright (C) 2006, 2010 - Kirill A. Kroinskiy - catap@catap.ru
-Copyright (C) 2006 - Magnus Henoch - mange@freemail.hu
-:END:
 
 #+BEGIN_SRC emacs-lisp
 (require 'time-date)
@@ -14967,9 +14947,6 @@ determined from the incoming packet passed in XML-DATA."
 :PROPERTIES:
 :file:     jabber-truncate.el
 :END:
-:COPYRIGHT:
-Copyright (C) 2007 - Kirill A. Korinskiy - catap@catap.ru
-:END:
 
 #+BEGIN_SRC emacs-lisp
 (require 'cl)
@@ -15038,6 +15015,7 @@ get it, and then it just gets deleted."
 :PROPERTIES:
 :file:     jabber-carbons.el
 :END:
+
 **** jabber-carbon-success                                      :function:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-carbon-success (jc xml-data context)
@@ -15071,10 +15049,7 @@ get it, and then it just gets deleted."
 :PROPERTIES:
 :file:     jabber-si-common.el
 :END:
-:COPYRIGHT:
-Copyright (C) 2006  Magnus Henoch
-Author: Magnus Henoch <mange@freemail.hu>
-:END:
+
 ***** jabber-si-stream-methods                                 :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-si-stream-methods nil
@@ -15119,9 +15094,7 @@ If it returns nil, the stream should be closed.")
 :PROPERTIES:
 :file:     jabber-si-client.el
 :END:
-:COPYRIGHT:
-Copyright (C) 2004 - Magnus Henoch - mange@freemail.hu
-:END:
+
 ***** jabber-si-initiate                                       :function:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-si-initiate (jc jid profile-namespace profile-data profile-function &optional mime-type)
@@ -15173,12 +15146,6 @@ Returns the SID."
 **** server
 :PROPERTIES:
 :file:     jabber-si-server.el
-:END:
-:PROPERTIES:
-:END:
-:COPYRIGHT:
-Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
-Copyright (C) 2003, 2004 - Magnus Henoch - mange@freemail.hu
 :END:
 
 #+BEGIN_SRC emacs-lisp
@@ -15256,10 +15223,6 @@ Each entry is a list, containing:
 :PROPERTIES:
 :file:     jabber-ft-common.el
 :END:
-:COPYRIGHT:
-Copyright (C) 2006, 2008  Magnus Henoch
-Author: Magnus Henoch <mange@freemail.hu>
-:END:
 
 ***** jabber-ft-md5sum-program                          :custom:variable:
 #+BEGIN_SRC emacs-lisp
@@ -15293,9 +15256,6 @@ Return nil if no MD5 summing program is available."
 **** client
 :PROPERTIES:
 :file:     jabber-ft-client.el
-:END:
-:COPYRIGHT:
-Copyright (C) 2004 - Magnus Henoch - mange@freemail.hu
 :END:
 
 #+BEGIN_SRC emacs-lisp
@@ -15350,10 +15310,6 @@ Copyright (C) 2004 - Magnus Henoch - mange@freemail.hu
 **** server
 :PROPERTIES:
 :file:     jabber-ft-server.el
-:END:
-:COPYRIGHT:
-Copyright (C) 2003, 2004, 2007 - Magnus Henoch - mange@freemail.hu
-Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
 :END:
 
 ***** jabber-ft-sessions                                       :variable:
@@ -15487,10 +15443,6 @@ Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
 *** SOCKS5 Bytestreams ([[https://xmpp.org/extensions/xep-0065.html][XEP-0065]])
 :PROPERTIES:
 :file:     jabber-socks5.el
-:END:
-:COPYRIGHT:
-Copyright (C) 2003, 2004, 2007 - Magnus Henoch - mange@freemail.hu
-Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
 :END:
 
 #+BEGIN_SRC emacs-lisp
@@ -16248,12 +16200,10 @@ This function simply starts a state machine."
 :PROPERTIES:
 :file:     jabber-rtt.el
 :END:
-:COPYRIGHT:
-Copyright (C) 2013  Magnus Henoch
-Author: Magnus Henoch <magnus.henoch@gmail.com>
-:END:
 
+#+BEGIN_SRC emacs-lisp
 (eval-when-compile (require 'cl))
+#+END_SRC
 
 **** Handling incoming events
 #+BEGIN_SRC emacs-lisp
@@ -16615,6 +16565,7 @@ XEP-0301, In-Band Real Time Text."
 :PROPERTIES:
 :file:     jabber.el
 :END:
+
 #+BEGIN_SRC emacs-lisp
 ;;; load Unicode tables if this needed
 (when (and (featurep 'xemacs) (not (emacs-version>= 21 5 5)))

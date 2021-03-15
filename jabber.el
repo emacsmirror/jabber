@@ -6,6 +6,157 @@
 ;; SSL - Support, mostly inspired by Gnus
 ;; Copyright (C) 2005 - Georg Lehner - jorge@magma.com.ni
 
+;; Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
+;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+;; Copyright (C) 2008, 2010 - Terechkov Evgenii - evg@altlinux.org
+;; Copyright (C) 2010 - Kirill A. Korinskiy - catap@catap.ru
+
+;; Copyright (C) 2003, 2004, 2008 - Magnus Henoch - mange@freemail.hu
+;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+
+;; Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
+;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+
+;; Copyright (C) 2005 - Georg Lehner - jorge@magma.com.ni
+;; Copyright (C) 2005 - Carl Henrik Lunde - chlunde+jabber+@ping.uio.no
+;; (starttls)
+
+;; Copyright (C) 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
+
+;; Copyright (C) 2009, 2010 - Demyan Rogozhin <demyan.rogozhin@gmail.com>
+
+;; Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
+;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+
+;; Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
+;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+
+;; Copyright (C) 2009 - Kirill A. Korinskiy - catap@catap.ru
+;; Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
+;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+
+;; Copyright (C) 2005, 2007  Magnus Henoch
+;; Author: Magnus Henoch <mange@freemail.hu>
+
+;; Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
+;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+
+;; Copyright (C) 2003, 2004, 2005, 2007, 2008 - Magnus Henoch - mange@freemail.hu
+;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+
+;; Copyright (C) 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
+;; Copyright (C) 2004 - Mathias Dahl
+
+;; Copyright (C) 2005, 2007, 2008 - Magnus Henoch - mange@freemail.hu
+
+;; Copyright (C) 2006, 2007  Magnus Henoch
+;; Author: Magnus Henoch <mange@freemail.hu>
+
+;; Copyright (C) 2005, 2007, 2008 - Magnus Henoch - mange@freemail.hu
+
+;; Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
+;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+
+;; Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
+;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+
+;; Copyright (C) 2009 - Evgenii Terechkov - evg@altlinux.org
+
+;; Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
+;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+
+;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+;; Copyright (C) 2003, 2004 - Magnus Henoch - mange@freemail.hu
+
+;; Copyright (C) 2003, 2004, 2007 - Magnus Henoch - mange@freemail.hu
+;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+
+;; Copyright (C) 2007, 2008 - Magnus Henoch - mange@freemail.hu
+
+;; Copyright (C) 2005  Magnus Henoch
+;; Author: Magnus Henoch <mange@freemail.hu>
+
+;; Copyright 2009, 2010, 2012, 2013 Terechkov Evgenii - evg@altlinux.org
+
+;; Copyright (C) 2010 - Kirill A. Korinskiy - catap@catap.ru
+;; Copyright (C) 2003, 2004, 2007, 2008, 2009, 2010 - Magnus Henoch - mange@freemail.hu
+;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+
+;; Copyright (C) 2008 - Terechkov Evgenii - evg@altlinux.org
+;; Copyright (C) 2007, 2008, 2010 - Kirill A. Korinskiy - catap@catap.ru
+;; Copyright (C) 2007 - Serguei Jidkov - jsv@e-mail.ru
+
+;; Copyright (C) 2003, 2004, 2007 - Magnus Henoch - mange@freemail.hu
+;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+
+;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+;; Copyright (C) 2003, 2004 - Magnus Henoch - mange@freemail.hu
+
+;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+;; Copyright (C) 2003, 2004 - Magnus Henoch - mange@freemail.hu
+
+;; Copyright (C) 2003, 2004, 2008 - Magnus Henoch - mange@freemail.hu
+;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+
+;; Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
+;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+
+;; Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
+;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+
+;; Copyright (C) 2004 - Magnus Henoch - mange@freemail.hu
+
+;; Copyright (C) 2004 - Mathias Dahl
+;; Copyright (C) 2004 - Magnus Henoch - mange@freemail.hu
+
+;; Copyright (C) 2004 Carl Henrik Lunde - <chlunde+jabber+@ping.uio.no>
+
+;; Copyright (C) 2005, 2008  Magnus Henoch
+;; Author: Magnus Henoch <mange@freemail.hu>
+
+;; Author: Ami Fischman <ami@fischman.org>
+
+;; Copyright (C) 2006, 2007, 2008  Magnus Henoch
+;; Author: Magnus Henoch <mange@freemail.hu>
+
+;; Copyright (C) 2005, 2007  Magnus Henoch
+;; Author: Magnus Henoch <mange@freemail.hu>
+
+;; Copyright (C) 2006, 2007, 2008  Magnus Henoch
+;; Author: Magnus Henoch <mange@freemail.hu>
+
+;; Copyright (C) 2010 - Kirill A. Korinskiy - catap@catap.ru
+;; Copyright (C) 2010 - Terechkov Evgenii - evg@altlinux.org
+;; Copyright (C) 2006, 2008  Magnus Henoch
+;; Author: Magnus Henoch <mange@freemail.hu>
+
+;; Copyright (C) 2006, 2010 - Kirill A. Kroinskiy - catap@catap.ru
+;; Copyright (C) 2006 - Magnus Henoch - mange@freemail.hu
+
+;; Copyright (C) 2007 - Kirill A. Korinskiy - catap@catap.ru
+
+;; Copyright (C) 2006  Magnus Henoch
+;; Author: Magnus Henoch <mange@freemail.hu>
+
+;; Copyright (C) 2004 - Magnus Henoch - mange@freemail.hu
+
+;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+;; Copyright (C) 2003, 2004 - Magnus Henoch - mange@freemail.hu
+
+;; Copyright (C) 2006, 2008  Magnus Henoch
+;; Author: Magnus Henoch <mange@freemail.hu>
+
+;; Copyright (C) 2004 - Magnus Henoch - mange@freemail.hu
+
+;; Copyright (C) 2003, 2004, 2007 - Magnus Henoch - mange@freemail.hu
+;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+
+;; Copyright (C) 2003, 2004, 2007 - Magnus Henoch - mange@freemail.hu
+;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+
+;; Copyright (C) 2013  Magnus Henoch
+;; Author: Magnus Henoch <magnus.henoch@gmail.com>
+
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
 ;; the Free Software Foundation; either version 2 of the License, or
@@ -12773,6 +12924,7 @@ This function simply starts a state machine."
 ;; 	     (lambda (data)
 ;; 	       (process-send-string proxy-connection data)))))
 
+(eval-when-compile (require 'cl))
 ;;;###autoload
 (eval-after-load "jabber-disco"
   '(jabber-disco-advertise-feature "urn:xmpp:rtt:0"))
