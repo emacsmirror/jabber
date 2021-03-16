@@ -2651,7 +2651,7 @@ With double prefix argument, specify more connection details."
 	  (setq jabber-connections nil)
 
 	  (jabber-disconnected)
-	  (when (interactive-p)
+	  (when (called-interactively-p 'interactive)
 	    (message "Disconnected from Jabber server(s)")))))))
 
 (defun jabber-disconnect-one (jc &optional dont-redisplay)
@@ -2659,7 +2659,7 @@ With double prefix argument, specify more connection details."
 If DONT-REDISPLAY is non-nil, don't update roster buffer."
   (interactive (list (jabber-read-account)))
   (fsm-send-sync jc :do-disconnect)
-  (when (interactive-p)
+  (when (called-interactively-p 'interactive)
     (message "Disconnected from %s"
 	     (jabber-connection-jid jc)))
   (unless dont-redisplay
@@ -3479,7 +3479,7 @@ H        Toggle displaying this text
 
       (goto-char (point-min))
       (setq buffer-read-only t)
-      (if (interactive-p)
+      (if (called-interactively-p 'interactive)
 	  (dolist (hook '(jabber-info-message-hooks jabber-alert-info-message-hooks))
 	    (run-hook-with-args hook 'roster (current-buffer) (funcall jabber-alert-info-message-function 'roster (current-buffer)))))
       (when current-line
