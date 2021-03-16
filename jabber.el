@@ -12562,7 +12562,7 @@ set; the target waits for one."
   (let* ((sid (plist-get state-data :sid))
 	 (initiator (plist-get state-data :initiator-jid))
 	 (target (plist-get state-data :target-jid))
-	 (hash (sha1-string (concat sid initiator target))))
+	 (hash (sha1 (concat sid initiator target))))
     (process-send-string
      (plist-get state-data :connection)
      (concat (string 5 1 0 3 (length hash))
