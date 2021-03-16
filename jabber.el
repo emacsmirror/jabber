@@ -41,56 +41,18 @@
 (defvar jabber-jid-history nil
   "History of entered JIDs.")
 
-;; Define `jabber-replace-in-string' somehow.
-(cond
- ;; Emacs 21 has replace-regexp-in-string.
- ((fboundp 'replace-regexp-in-string)
-  (defsubst jabber-replace-in-string (str regexp newtext)
-    (replace-regexp-in-string regexp newtext str t t)))
- ;; XEmacs has replace-in-string.  However, color-theme defines it as
- ;; well on Emacs 2x, so this check must be last.
- ((fboundp 'replace-in-string)
-  ;; And the version in color-theme takes only three arguments.  Check
-  ;; just to be sure.
-  (condition-case nil
-      (replace-in-string "foobar" "foo" "bar" t)
-    (wrong-number-of-arguments
-     (error "`replace-in-string' doesn't accept fourth argument")))
-  (defsubst jabber-replace-in-string (str regexp newtext)
-    (replace-in-string str regexp newtext t)))
- (t
-  (error "No implementation of `jabber-replace-in-string' available")))
+(defsubst jabber-replace-in-string (str regexp newtext)
+  (replace-regexp-in-string regexp newtext str t t))
 
-;;; XEmacs compatibility.  Stolen from ibuffer.el
-(if (fboundp 'propertize)
-    (defalias 'jabber-propertize 'propertize)
-  (defun jabber-propertize (string &rest properties)
-    "Return a copy of STRING with text properties added.
-
- [Note: this docstring has been copied from the Emacs 21 version]
-
-First argument is the string to copy.
-Remaining arguments form a sequence of PROPERTY VALUE pairs for text
-properties to add to the result."
-    (let ((str (copy-sequence string)))
-      (add-text-properties 0 (length str)
-			   properties
-			   str)
-      str)))
+(defalias 'jabber-propertize 'propertize)
 
 (unless (fboundp 'bound-and-true-p)
   (defmacro bound-and-true-p (var)
     "Return the value of symbol VAR if it is bound, else nil."
     `(and (boundp (quote ,var)) ,var)))
 
-;;; more XEmacs compatibility
-;;; Preserve input method when entering a minibuffer
-(if (featurep 'xemacs)
-    ;; I don't know how to do this
-    (defsubst jabber-read-with-input-method (prompt &optional initial-contents history default-value)
-      (read-string prompt initial-contents history default-value))
-  (defsubst jabber-read-with-input-method (prompt &optional initial-contents history default-value)
-    (read-string prompt initial-contents history default-value t)))
+(defsubst jabber-read-with-input-method (prompt &optional initial-contents history default-value)
+  (read-string prompt initial-contents history default-value t))
 
 (unless (fboundp 'delete-and-extract-region)
   (defsubst delete-and-extract-region (start end)
@@ -103,22 +65,9 @@ properties to add to the result."
     (unless (file-readable-p filename)
       (error error-message))))
 
-(if (fboundp 'float-time)
-    (defalias 'jabber-float-time 'float-time)
-  (defun jabber-float-time (&optional specified-time)
-    (unless specified-time
-      (setq specified-time (current-time)))
-    ;; second precision is good enough for us
-    (+ (* 65536.0 (car specified-time))
-       (cadr specified-time))))
+  (defalias 'jabber-float-time 'float-time)
 
-(cond
- ((fboundp 'cancel-timer)
-  (defalias 'jabber-cancel-timer 'cancel-timer))
- ((fboundp 'delete-itimer)
-  (defalias 'jabber-cancel-timer 'delete-itimer))
- (t
-  (error "No `cancel-timer' function found")))
+(defalias 'jabber-cancel-timer 'cancel-timer)
 
 (defun jabber-concat-rosters ()
   "Concatenate the rosters of all connected accounts."
@@ -1114,19 +1063,11 @@ CHILD-NAME should be a lower case symbol."
 	      (push child match))))
     (nreverse match)))
 
-(eval-and-compile
-  (if (fboundp 'xml-get-attribute-or-nil)
-      (defsubst jabber-xml-get-attribute (node attribute)
-	"Get from NODE the value of ATTRIBUTE.
+(defsubst jabber-xml-get-attribute (node attribute)
+  "Get from NODE the value of ATTRIBUTE.
 Return nil if the attribute was not found."
-	(when (consp node)
-	  (xml-get-attribute-or-nil node attribute)))
-    (defsubst jabber-xml-get-attribute (node attribute)
-      "Get from NODE the value of ATTRIBUTE.
-Return nil if the attribute was not found."
-      (when (consp node)
-	(let ((result (xml-get-attribute node attribute)))
-	  (and (> (length result) 0) result))))))
+  (when (consp node)
+    (xml-get-attribute-or-nil node attribute)))
 
 (defsubst jabber-xml-get-xmlns (node)
   "Get \"xmlns\" attribute of NODE, or nil if not present."
