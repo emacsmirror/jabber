@@ -32,6 +32,8 @@
 
 ;;; Code:
 
+(require 'goto-addr)
+
 (require 'cl)
 (require 'password-cache)
 (condition-case nil
@@ -5684,8 +5686,6 @@ If DONT-PRINT-NICK-P is true, don't include nickname."
   "Call `goto-address' on the newly written text."
   (when (eq mode :insert)
     (ignore-errors
-      ;; `goto-address' is autoloaded, but `goto-address-fontify' is not.
-      (require 'goto-addr)
       (let ((end (point))
 	    (limit (max (- (point) 1000) (1+ (point-min)))))
 	;; We only need to fontify the text written since the last
