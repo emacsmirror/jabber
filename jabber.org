@@ -149,11 +149,13 @@ It is possible to make various web browsers pass links starting with "xmpp:" to 
 3. [ ] hexrgb.el is not available on MELPA
 
 ** About this file
-jabber.el is an Org literate program.
+jabber.el is an Org literate program. We use =literate-elisp= to directly load/compile this Org file. The former is exactly what the file =jabber.el= does - this approach is also compatible with =use-package= and others. The advantages -
+1. links to the source (e.g. =describe-*= buffers, byte-compilation messages) take the user directly to the Org file rather than to the tangled source
+2. no waiting for =org-babel-tangle= (which takes ages)
+3. no need to track tangled files files in VCS, nor ensure they are kept in sync with the Org file
+4. no VCS hooks/CI required to automatically tangle the file
 
-=org-babel-tangle= takes ages, so we use a little sed one-liner (in the file-local variables) to do the tangling, which is nearly instant. The sed script emits anything between lines matching the exact strings "#+BEGIN_SRC emacs-lisp" and "#+END_SRC".
-
-The sed script has the advantage that one can break a source block to insert Org commentary even within a =defun=, if desired - see =jabber-caps-ver-string= for a situation where such commentary may be desired. However, doing this may cause other tooling working on the s-expression level to break - =literate-elisp= definitely does.
+Note that some tools, like =checkdoc=, still require a tangled file as of the time of this writing.
 
 If a source block does not have syntax highlighting, press =M-o M-o= (=font-lock-fontify-block=) in it.
 
@@ -210,6 +212,10 @@ If a source block does not have syntax highlighting, press =M-o M-o= (=font-lock
 
 #+END_SRC
 ** Code
+*** custom variables
+#+BEGIN_SRC emacs-lisp
+(defvar jabber-enable-legacy-features-p nil)
+#+END_SRC
 *** XML functions
 :PROPERTIES:
 :file:     jabber-xml.el
@@ -15242,6 +15248,7 @@ Return nil if no MD5 summing program is available."
 *** SOCKS5 Bytestreams ([[https://xmpp.org/extensions/xep-0065.html][XEP-0065]])
 :PROPERTIES:
 :file:     jabber-socks5.el
+:header-args: :tangle jabber-socks5.el :load jabber-enable-legacy-features-p
 :END:
 
 #+BEGIN_SRC emacs-lisp
@@ -16613,8 +16620,3 @@ Contents of process buffers might be useful for debugging."
 ;;; jabber.el ends here
 
 #+END_SRC
-
-** local variables
-# Local Variables:
-# eval: (progn (make-local-variable 'after-save-hook) (add-hook 'after-save-hook (lambda () (start-process-shell-command "jabber-sed-tangle" "jabber-sed-tangle" "sed -n -e '/#+BEGIN_SRC emacs-lisp$/,/#+END_SRC$/{//!p;}' jabber.org > jabber.el"))))
-# End:
