@@ -1188,7 +1188,7 @@ With prefix argument, remove it."
                                load-path)))
           (require 'srv)))
       (error
-       "srv not found in `load-path' or jabber-fallback-lib/ directory.")))
+       "The srv library was not found in `load-path' or jabber-fallback-lib/ directory")))
 
 (defgroup jabber-conn nil "Jabber Connection Settings"
   :group 'jabber)
@@ -1462,7 +1462,7 @@ connection fails."
 	(targets (jabber-srv-targets server network-server port))
 	errors)
     (unless (fboundp 'starttls-open-stream)
-      (error "starttls.el not available"))
+      (error "The starttls.el library is not available"))
     (catch 'connected
       (dolist (target targets)
 	(condition-case e
@@ -1838,19 +1838,19 @@ what kind of chat buffer is being created.")
                                load-path)))
           (require 'fsm)))
       (error
-       "fsm not found in `load-path' or jabber-fallback-lib/ directory.")))
+       "The fsm library was not found in `load-path' or jabber-fallback-lib/ directory")))
 
 (defvar jabber-connections nil
   "List of jabber-connection FSMs.")
 
 (defvar *jabber-roster* nil
-  "the roster list")
+  "The roster list")
 
 (defvar jabber-jid-obarray (make-vector 127 0)
-  "obarray for keeping JIDs")
+  "Obarray for keeping JIDs")
 
 (defvar *jabber-disconnecting* nil
-  "boolean - are we in the process of disconnecting by free will")
+  "Boolean - are we in the process of disconnecting by free will")
 
 (defvar jabber-message-chain nil
   "Incoming messages are sent to these functions, in order.")
@@ -2642,7 +2642,7 @@ DATA is any sexp."
 	(jabber-filter process fsm)))))
 
 (defun jabber-filter (process fsm)
-  "the filter function for the jabber process"
+  "The filter function for the jabber process"
   (with-current-buffer (process-buffer process)
     ;; Start from the beginning
     (goto-char (point-min))
@@ -2717,7 +2717,7 @@ DATA is any sexp."
        ))))
 
 (defun jabber-process-input (jc xml-data)
-  "process an incoming parsed tag"
+  "Process an incoming parsed tag"
   (let* ((tag (jabber-xml-node-name xml-data))
 	 (functions (eval (cdr (assq tag '((iq . jabber-iq-chain)
 					   (presence . jabber-presence-chain)
@@ -2838,7 +2838,7 @@ Return an fsm result list if it is."
 		      #'jabber-process-logon nil))))
 
 (defun jabber-process-logon (jc xml-data closure-data)
-  "receive login success or failure, and request roster.
+  "Receive login success or failure, and request roster.
 CLOSURE-DATA should be the password on success and nil on failure."
   (if closure-data
       ;; Logon success
@@ -3036,7 +3036,7 @@ Trailing newlines are always removed, regardless of this variable."
   :group 'jabber-roster)
 
 (defvar jabber-roster-debug nil
-  "debug roster draw")
+  "Debug roster draw")
 
 (defvar jabber-roster-mode-map
   (let ((map (make-sparse-keymap)))
@@ -3203,7 +3203,7 @@ be used in `jabber-post-connection-hooks'."
     (switch-to-buffer jabber-roster-buffer)))
 
 (defun jabber-sort-roster (jc)
-  "sort roster according to online status"
+  "Sort roster according to online status"
   (let ((state-data (fsm-get-state-data jc)))
     (dolist (group (plist-get state-data :roster-groups))
       (let ((group-name (car group)))
@@ -3215,7 +3215,7 @@ be used in `jabber-post-connection-hooks'."
 		 (plist-get state-data :roster-hash))))))
 
 (defun jabber-roster-prepare-roster (jc)
-  "make a hash based roster"
+  "Make a hash based roster"
   (let* ((state-data (fsm-get-state-data jc))
 	 (hash (make-hash-table :test 'equal))
 	 (buddies (plist-get state-data :roster))
@@ -3335,7 +3335,7 @@ To change this permanently, customize the `jabber-show-offline-contacts'."
   (jabber-display-roster))
 
 (defun jabber-display-roster ()
-  "switch to the main jabber buffer and refresh the roster display to reflect the current information"
+  "Switch to the main jabber buffer and refresh the roster display to reflect the current information"
   (interactive)
   (with-current-buffer (get-buffer-create jabber-roster-buffer)
     (if (not (eq major-mode 'jabber-roster-mode))
@@ -3938,7 +3938,7 @@ See `jabber-roster-to-sexp' for description of output format."
 	 :value roster)))
 
 (defvar *jabber-open-info-queries* nil
-  "an alist of open query id and their callback functions")
+  "An alist of open query id and their callback functions")
 
 (defvar jabber-iq-get-xmlns-alist nil
   "Mapping from XML namespace to handler for IQ GET requests.")
@@ -3984,7 +3984,7 @@ These fields are available at this moment:
 
 (add-to-list 'jabber-iq-chain 'jabber-process-iq)
 (defun jabber-process-iq (jc xml-data)
-  "process an incoming iq stanza"
+  "Process an incoming iq stanza"
   (let* ((id (jabber-xml-get-attribute xml-data 'id))
          (type (jabber-xml-get-attribute xml-data 'type))
          (from (jabber-xml-get-attribute xml-data 'from))
@@ -7766,7 +7766,7 @@ ERROR-CLOSURE-DATA are used as in `jabber-send-iq'."
                                load-path)))
           (require 'hexrgb)))
       (error
-       "hexrgb not found in `load-path' or jabber-fallback-lib/ directory.")))
+       "The hexrgb library was not found in `load-path' or jabber-fallback-lib/ directory")))
 
 (defcustom jabber-muc-participant-colors nil
   "Alist of used colors.  Format is (nick . color).  Color may be
@@ -9821,7 +9821,7 @@ sends a message if that happens.  The buddies are stored in
   (interactive (list (jabber-read-jid-completing "Add buddy to watch list: ")
 		     (read-string "Comment: ")))
   (unless (memq 'jabber-presence-watch jabber-presence-hooks)
-    (error "jabber-presence-watch is not in jabber-presence-hooks"))
+    (error "The jabber-presence-watch function is not in jabber-presence-hooks"))
   (add-to-list 'jabber-watch-alist (cons
 				    (jabber-jid-symbol buddy)
 				    (and (not (zerop (length comment)))
