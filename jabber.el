@@ -731,7 +731,8 @@ TIME is in a format accepted by `format-time-string'."
   "IQ callback reporting success or failure of the operation.
 CONTEXT is a string describing the action.
 \"CONTEXT succeeded\" or \"CONTEXT failed: REASON\" is displayed in
-the echo area."
+the echo area.
+JC is the Jabber connection."
   (let ((type (jabber-xml-get-attribute xml-data 'type)))
     (message (concat context
 		     (if (string= type "result")
@@ -1559,6 +1560,10 @@ Use `*jabber-virtual-server-function*' as send function."
 
 ;;; See XMPP-CORE and XMPP-IM for details about the protocol.
 (defun jabber-sasl-start-auth (jc stream-features)
+"Start the SASL authentication mechanism.
+JC is The Jabber Connection.
+STREAM-FEATURES the XML parsed \"stream features\" answer
+(it is used with `jabber-xml-get-chidlren')."
   ;; Find a suitable common mechanism.
   (let* ((mechanism-elements (car (jabber-xml-get-children stream-features 'mechanisms)))
 	 (mechanisms (mapcar
@@ -2603,7 +2608,8 @@ With double prefix argument, specify more connection details."
 
 (defun jabber-disconnect-one (jc &optional dont-redisplay)
   "Disconnect from one Jabber server.
-If DONT-REDISPLAY is non-nil, don't update roster buffer."
+If DONT-REDISPLAY is non-nil, don't update roster buffer.
+JC is the Jabber connection."
   (interactive (list (jabber-read-account)))
   (fsm-send-sync jc :do-disconnect)
   (when (called-interactively-p 'interactive)
@@ -2718,7 +2724,8 @@ DATA is any sexp."
        ))))
 
 (defun jabber-process-input (jc xml-data)
-  "Process an incoming parsed tag"
+  "Process an incoming parsed tag.
+JC is the Jabber connection."
   (let* ((tag (jabber-xml-node-name xml-data))
 	 (functions (eval (cdr (assq tag '((iq . jabber-iq-chain)
 					   (presence . jabber-presence-chain)
@@ -2788,7 +2795,7 @@ Return an fsm result list if it is."
     (jabber-send-string jc stream-header)))
 
 (defun jabber-send-string (jc string)
-  "Send STRING to the connection JC."
+  "Send STRING through the connection JC."
   (let* ((state-data (fsm-get-state-data jc))
 	 (connection (plist-get state-data :connection))
 	 (send-function (plist-get state-data :send-function)))
@@ -2800,7 +2807,8 @@ Return an fsm result list if it is."
   (require 'sha1))
 
 (defun jabber-get-auth (jc to session-id)
-  "Send IQ get request in namespace \"jabber:iq:auth\"."
+  "Send IQ get request in namespace \"jabber:iq:auth\".
+JC is the Jabber connection."
   (jabber-send-iq jc to
 		  "get"
 		  `(query ((xmlns . "jabber:iq:auth"))
@@ -2809,7 +2817,8 @@ Return an fsm result list if it is."
 		  #'jabber-report-success "Impossible error - auth field request"))
 
 (defun jabber-do-logon (jc xml-data session-id)
-  "Send username and password in logon attempt."
+  "Send username and password in logon attempt.
+JC is the Jabber connection."
   (let* ((digest-allowed (jabber-xml-get-children (jabber-iq-query xml-data) 'digest))
 	 (passwd (when
 		     (or digest-allowed
@@ -2840,7 +2849,8 @@ Return an fsm result list if it is."
 
 (defun jabber-process-logon (jc xml-data closure-data)
   "Receive login success or failure, and request roster.
-CLOSURE-DATA should be the password on success and nil on failure."
+CLOSURE-DATA should be the password on success and nil on failure.
+JC is the Jabber connection."
   (if closure-data
       ;; Logon success
       (fsm-send jc (cons :authentication-success closure-data))
@@ -3204,7 +3214,8 @@ be used in `jabber-post-connection-hooks'."
     (switch-to-buffer jabber-roster-buffer)))
 
 (defun jabber-sort-roster (jc)
-  "Sort roster according to online status"
+  "Sort roster according to online status.
+JC is the Jabber connection."
   (let ((state-data (fsm-get-state-data jc)))
     (dolist (group (plist-get state-data :roster-groups))
       (let ((group-name (car group)))
@@ -3216,7 +3227,8 @@ be used in `jabber-post-connection-hooks'."
 		 (plist-get state-data :roster-hash))))))
 
 (defun jabber-roster-prepare-roster (jc)
-  "Make a hash based roster"
+  "Make a hash based roster.
+JC is the Jabber connection."
   (let* ((state-data (fsm-get-state-data jc))
 	 (hash (make-hash-table :test 'equal))
 	 (buddies (plist-get state-data :roster))
@@ -3439,7 +3451,8 @@ H        Toggle displaying this text
 
 (defun jabber-display-roster-entry (jc group-name buddy)
   "Format and insert a roster entry for BUDDY at point.
-BUDDY is a JID symbol."
+BUDDY is a JID symbol.
+JC is the Jabber connection."
   (if buddy
       (let ((buddy-str (format-spec
 			jabber-roster-line-format
@@ -3547,7 +3560,8 @@ BUDDY is a JID symbol."
 (defun jabber-roster-update (jc new-items changed-items deleted-items)
   "Update roster, in memory and on display.
 Add NEW-ITEMS, update CHANGED-ITEMS and remove DELETED-ITEMS, all
-three being lists of JID symbols."
+three being lists of JID symbols.
+JC is the Jabber connection."
   (let* ((roster (plist-get (fsm-get-state-data jc) :roster))
 	 (hash (plist-get (fsm-get-state-data jc) :roster-hash))
 	 (ewoc (plist-get (fsm-get-state-data jc) :roster-ewoc))
@@ -3683,13 +3697,15 @@ If optional PREV is non-nil, return position of previous property appearence."
       (goto-char (point-max)))))
 
 (defun jabber-roster-restore-groups (jc)
-  "Restore roster's groups rolling state from private storage"
+  "Restore roster's groups rolling state from private storage.
+JC is the Jabber connection."
   (interactive (list (jabber-read-account)))
   (jabber-private-get jc 'roster "emacs-jabber"
                       'jabber-roster-restore-groups-1 'ignore))
 
 (defun jabber-roster-restore-groups-1 (jc xml-data)
-  "Parse roster groups and restore rolling state"
+  "Parse roster groups and restore rolling state.
+JC is the Jabber connection."
   (when (string= (jabber-xml-get-xmlns xml-data) "emacs-jabber")
     (let* ((data (car (last xml-data)))
            (groups (if (stringp data) (split-string data "\n") nil)))
@@ -3697,7 +3713,7 @@ If optional PREV is non-nil, return position of previous property appearence."
         (jabber-roster-roll-group jc group t)))))
 
 (defun jabber-roster-save-groups ()
-  "Save roster's groups rolling state in private storage"
+  "Save roster's groups rolling state in private storage."
   (interactive)
   (dolist (jc jabber-connections)
     (let* ((groups (plist-get (fsm-get-state-data jc) :roster-roll-groups))
@@ -4063,6 +4079,7 @@ and \"wait\".
 CONDITION is a symbol denoting a defined XMPP condition.
 TEXT is a string to be sent in the error message, or nil for no text.
 APP-SPECIFIC is a list of extra XML tags.
+JC is the Jabber connection.
 
 See section 9.3 of XMPP Core."
   (jabber-send-sexp
@@ -4079,7 +4096,8 @@ See section 9.3 of XMPP Core."
 	       ,@app-specific))))
 
 (defun jabber-process-data (jc xml-data closure-data)
-  "Process random results from various requests."
+  "Process random results from various requests.
+JC is the Jabber connection."
   (let ((from (or (jabber-xml-get-attribute xml-data 'from) (plist-get (fsm-get-state-data jc) :server)))
 	(xmlns (jabber-iq-xmlns xml-data))
 	(type (jabber-xml-get-attribute xml-data 'type)))
@@ -4111,7 +4129,8 @@ See section 9.3 of XMPP Core."
 	  (run-hook-with-args hook 'browse (current-buffer) (funcall jabber-alert-info-message-function 'browse (current-buffer))))))))
 
 (defun jabber-silent-process-data (jc xml-data closure-data)
-  "Process random results from various requests to only alert hooks."
+  "Process random results from various requests to only alert hooks.
+JC is the Jabber connection."
   (let ((text (cond
                ((functionp closure-data)
                 (funcall closure-data jc xml-data))
@@ -4690,7 +4709,8 @@ in the message history.")
 
 (add-to-list 'jabber-message-chain 'jabber-message-history)
 (defun jabber-message-history (jc xml-data)
-  "Log message to log file."
+  "Log message to log file.
+JC is the Jabber connection."
   (when (and (not jabber-use-global-history)
 	     (not (file-directory-p jabber-history-dir)))
     (make-directory jabber-history-dir))
@@ -5022,7 +5042,8 @@ window or at `fill-column', whichever is shorter."
 
 ;;;###autoload
 (defun jabber-compose (jc &optional recipient)
-  "Create a buffer for composing a Jabber message."
+  "Create a buffer for composing a Jabber message.
+JC is the Jabber connection."
   (interactive (list (jabber-read-account)
 		     (jabber-read-jid-completing "To whom? ")))
 
@@ -5277,7 +5298,8 @@ Either a string or a buffer is returned, so use `get-buffer' or
 
 (defun jabber-chat-create-buffer (jc chat-with)
   "Prepare a buffer for chatting with CHAT-WITH.
-This function is idempotent."
+This function is idempotent.
+JC is the Jabber connection."
   (with-current-buffer (get-buffer-create (jabber-chat-get-buffer chat-with))
     (unless (eq major-mode 'jabber-chat-mode)
       (jabber-chat-mode jc #'jabber-chat-pp)
@@ -5357,7 +5379,8 @@ This function is idempotent."
       forwarded-message)))
 
 (defun jabber-process-chat (jc xml-data)
-  "If XML-DATA is a one-to-one chat message, handle it as such."
+  "If XML-DATA is a one-to-one chat message, handle it as such.
+JC is the Jabber connection."
   ;; For now, everything that is not a public MUC message is
   ;; potentially a 1to1 chat message.
   (when (not (jabber-muc-message-p xml-data))
@@ -5403,7 +5426,8 @@ This function is idempotent."
 					   from (current-buffer) body-text)))))))))
 
 (defun jabber-chat-send (jc body)
-  "Send BODY through connection JC, and display it in chat buffer."
+  "Send BODY through connection JC, and display it in chat buffer.
+JC is the Jabber connection."
   ;; Build the stanza...
   (let* ((id (apply 'format "emacs-msg-%d.%d.%d" (current-time)))
 	 (stanza-to-send `(message
@@ -5701,7 +5725,8 @@ If DONT-PRINT-NICK-P is true, don't include nickname."
 	     (cons "Compose message" 'jabber-compose))
 
 (defun jabber-send-message (jc to subject body type)
-  "send a message tag to the server"
+  "send a message tag to the server.
+JC is the Jabber connection."
   (interactive (list (jabber-read-account)
 		     (jabber-read-jid-completing "to: ")
 		     (jabber-read-with-input-method "subject: ")
@@ -5724,7 +5749,8 @@ If DONT-PRINT-NICK-P is true, don't include nickname."
 (defun jabber-chat-with (jc jid &optional other-window)
   "Open an empty chat window for chatting with JID.
 With a prefix argument, open buffer in other window.
-Returns the chat buffer."
+Returns the chat buffer.
+JC is the Jabber connection."
   (interactive (let* ((jid
 		      (jabber-read-jid-completing "chat with:"))
 		      (account
@@ -5762,7 +5788,8 @@ stanza.")
 	     (cons "jabber:iq:roster" (function (lambda (jc x) (jabber-process-roster jc x nil)))))
 (defun jabber-process-roster (jc xml-data closure-data)
   "process an incoming roster infoquery result
-CLOSURE-DATA should be 'initial if initial roster push, nil otherwise."
+CLOSURE-DATA should be 'initial if initial roster push, nil otherwise.
+JC is the Jabber connection."
   (let ((roster (plist-get (fsm-get-state-data jc) :roster))
 	(from (jabber-xml-get-attribute xml-data 'from))
 	(type (jabber-xml-get-attribute xml-data 'type))
@@ -5845,15 +5872,18 @@ CLOSURE-DATA should be 'initial if initial roster push, nil otherwise."
     (run-hook-with-args 'jabber-post-connect-hooks jc)))
 
 (defun jabber-initial-roster-failure (jc xml-data _closure-data)
-  ;; If the initial roster request fails, let's report it, but run
-  ;; jabber-post-connect-hooks anyway.  According to the spec, there
-  ;; is nothing exceptional about the server not returning a roster.
+  "Report the initial roster failure.
+If the initial roster request fails, let's report it, but run
+jabber-post-connect-hooks anyway.  According to the spec, there
+is nothing exceptional about the server not returning a roster.
+JC is the Jabber connection."
   (jabber-report-success jc xml-data "Initial roster retrieval")
   (run-hook-with-args 'jabber-post-connect-hooks jc))
 
 (add-to-list 'jabber-presence-chain 'jabber-process-presence)
 (defun jabber-process-presence (jc xml-data)
-  "process incoming presence tags"
+  "Process incoming presence tags.
+JC is the Jabber connection."
   ;; XXX: use JC argument
   (let ((roster (plist-get (fsm-get-state-data jc) :roster))
 	(from (jabber-xml-get-attribute xml-data 'from))
@@ -5958,7 +5988,8 @@ CLOSURE-DATA should be 'initial if initial roster push, nil otherwise."
 					     (plist-get resource-plist 'status)))))))))))
 
 (defun jabber-process-subscription-request (jc from presence-status)
-  "process an incoming subscription request"
+  "Process an incoming subscription request.
+JC is the Jabber connection."
   (with-current-buffer (jabber-chat-create-buffer jc from)
     (ewoc-enter-last jabber-chat-ewoc (list :subscription-request presence-status :time (current-time)))
 
@@ -6064,7 +6095,8 @@ CLOSURE-DATA should be 'initial if initial roster push, nil otherwise."
   (jabber-display-roster))
 
 (defun jabber-presence-children (jc)
-  "Return the children for a <presence/> stanza."
+  "Return the children for a <presence/> stanza.
+JC is the Jabber connection."
   `(,(when (> (length *jabber-current-status*) 0)
        `(status () ,*jabber-current-status*))
     ,(when (> (length *jabber-current-show*) 0)
@@ -6093,7 +6125,9 @@ TYPE is one of:
   Accept contact's request for presence subscription.
   (this is usually done within a chat buffer)
 \"unsubscribed\":
-  Cancel contact's subscription to your presence."
+  Cancel contact's subscription to your presence.
+
+JC is the Jabber connection."
   (interactive
    (list (jabber-read-account)
 	 (jabber-read-jid-completing "Send directed presence to: ")
@@ -6171,8 +6205,9 @@ otherwise send defaults (see `jabber-send-default-presence')."
 (add-to-list 'jabber-jid-roster-menu (cons "Send subscription request"
 					   'jabber-send-subscription-request))
 (defun jabber-send-subscription-request (jc to &optional request)
-  "send a subscription request to jid, showing him your request
-text, if specified"
+  "Send a subscription request to jid, showing him your request
+text, if specified.
+JC is the Jabber connection."
   (interactive (list (jabber-read-account)
 		     (jabber-read-jid-completing "to: ")
 		     (jabber-read-with-input-method "request: ")))
@@ -6189,7 +6224,8 @@ text, if specified"
 (add-to-list 'jabber-jid-roster-menu
 	     (cons "Add/modify roster entry" 'jabber-roster-change))
 (defun jabber-roster-change (jc jid name groups)
-  "Add or change a roster item."
+  "Add or change a roster item.
+JC is the Jabber connection."
   (interactive (let* ((jid (jabber-jid-symbol
 			    (jabber-read-jid-completing "Add/change JID: ")))
 		      (account (jabber-read-account))
@@ -6257,7 +6293,8 @@ Signal an error if there is no JID at point."
       (error "No contact at point"))))
 
 (defun jabber-roster-delete-group-from-jids (jc jids group)
-  "Delete group `group' from all JIDs"
+  "Delete group `group' from all JIDs.
+JC is the Jabber connection."
   (interactive)
   (dolist (jid jids)
     (jabber-roster-change
@@ -6266,7 +6303,8 @@ Signal an error if there is no JID at point."
 		    (get jid 'groups)))))
 
 (defun jabber-roster-edit-group-from-jids (jc jids group)
-  "Edit group `group' from all JIDs"
+  "Edit group `group' from all JIDs.
+JC is the Jabber connection."
   (interactive)
   (let ((new-group
 	 (jabber-read-with-input-method
@@ -6320,7 +6358,8 @@ Return (IDENTITIES FEATURES), or nil if not in cache."
 
 ;;;###autoload
 (defun jabber-process-caps (jc xml-data)
-  "Look for entity capabilities in presence stanzas."
+  "Look for entity capabilities in presence stanzas.
+JC is the Jabber connection."
   (let* ((from (jabber-xml-get-attribute xml-data 'from))
 	 (type (jabber-xml-get-attribute xml-data 'type))
 	 (c (jabber-xml-path xml-data '(("http://jabber.org/protocol/caps" . "c")))))
@@ -6626,7 +6665,9 @@ nil, access is always granted.")
 	     (cons "http://jabber.org/protocol/disco#items" 'jabber-return-disco-info))
 (defun jabber-return-disco-info (jc xml-data)
   "Respond to a service discovery request.
-See XEP-0030."
+See XEP-0030.
+
+JC is the Jabber connection."
   (let* ((to (jabber-xml-get-attribute xml-data 'from))
 	 (id (jabber-xml-get-attribute xml-data 'id))
 	 (xmlns (jabber-iq-xmlns xml-data))
@@ -6676,7 +6717,9 @@ See XEP-0030."
 (add-to-list 'jabber-jid-info-menu
 	     (cons "Send items disco query" 'jabber-get-disco-items))
 (defun jabber-get-disco-items (jc to &optional node)
-  "Send a service discovery request for items"
+  "Send a service discovery request for items.
+
+JC is the Jabber connection."
   (interactive (list (jabber-read-account)
 		     (jabber-read-jid-completing "Send items disco request to: " nil nil nil 'full t)
 		     (jabber-read-node "Node (or leave empty): ")))
@@ -6691,7 +6734,9 @@ See XEP-0030."
 (add-to-list 'jabber-jid-info-menu
 	     (cons "Send info disco query" 'jabber-get-disco-info))
 (defun jabber-get-disco-info (jc to &optional node)
-  "Send a service discovery request for info"
+  "Send a service discovery request for info.
+
+JC is the Jabber connection."
   (interactive (list (jabber-read-account)
 		     (jabber-read-jid-completing "Send info disco request to: " nil nil nil 'full t)
 		     (jabber-read-node "Node (or leave empty): ")))
@@ -6704,7 +6749,9 @@ See XEP-0030."
 		  #'jabber-process-data "Info discovery failed"))
 
 (defun jabber-process-disco-info (jc xml-data)
-  "Handle results from info disco requests."
+  "Handle results from info disco requests.
+
+JC is the Jabber connection."
 
   (let ((beginning (point)))
     (dolist (x (jabber-xml-node-children (jabber-iq-query xml-data)))
@@ -6730,7 +6777,9 @@ See XEP-0030."
 		       'jabber-account jc)))
 
 (defun jabber-process-disco-items (jc xml-data)
-  "Handle results from items disco requests."
+  "Handle results from items disco requests.
+
+JC is the Jabber connection."
 
   (let ((items (jabber-xml-get-children (jabber-iq-query xml-data) 'item)))
     (if items
@@ -6879,7 +6928,9 @@ invalidate cache and get fresh data."
 		  'jabber-report-success "Disco publish"))
 
 (defun jabber-disco-publish-remove (jc node item-jid item-node)
-  "Remove the given item from published disco items."
+  "Remove the given item from published disco items.
+
+JC is the Jabber connection."
   (jabber-send-iq jc nil
 		  "set"
 		  `(query ((xmlns . "http://jabber.org/protocol/disco#items")
@@ -6895,9 +6946,9 @@ invalidate cache and get fresh data."
 
 (defun jabber-ping-send (jc to process-func on-success on-error)
   "Send XEP-0199 ping IQ stanza.  JC is connection to use, TO is
-  full JID, PROCESS-FUNC is fucntion to call to process result,
-  ON-SUCCESS and ON-ERROR is arg for this function depending on
-  result."
+full JID, PROCESS-FUNC is fucntion to call to process result,
+ON-SUCCESS and ON-ERROR is arg for this function depending on
+result."
   (jabber-send-iq jc to "get"
                   '(ping ((xmlns . "urn:xmpp:ping")))
                   process-func on-success
@@ -6911,7 +6962,9 @@ invalidate cache and get fresh data."
 
 ;; called by jabber-process-data
 (defun jabber-process-ping (jc xml-data)
-  "Handle results from ping requests."
+  "Handle results from ping requests.
+
+JC is the Jabber connection."
   (let ((to (jabber-xml-get-attribute xml-data 'from)))
     (format "%s is alive" to)))
 
@@ -6920,7 +6973,9 @@ invalidate cache and get fresh data."
 
 (defun jabber-pong (jc xml-data)
   "Return pong as defined in XEP-0199.  Sender and Id are
-determined from the incoming packet passed in XML-DATA."
+determined from the incoming packet passed in XML-DATA.
+
+JC is the Jabber connection."
   (let ((to (jabber-xml-get-attribute xml-data 'from))
 	(id (jabber-xml-get-attribute xml-data 'id)))
     (jabber-send-iq jc to "result" nil nil nil nil nil id)))
@@ -7597,7 +7652,9 @@ on success or failure, respectively."
 
 ;;;###autoload
 (defun jabber-edit-bookmarks (jc)
-  "Create a buffer for editing bookmarks interactively."
+  "Create a buffer for editing bookmarks interactively.
+
+JC is the Jabber connection."
   (interactive (list (jabber-read-account)))
   (jabber-get-bookmarks jc 'jabber-edit-bookmarks-1 t))
 
@@ -7749,7 +7806,9 @@ result."
 			      error-callback error-closure-data)
   "Store FRAGMENT in private XML storage.
 SUCCESS-CALLBACK, SUCCESS-CLOSURE-DATA, ERROR-CALLBACK and
-ERROR-CLOSURE-DATA are used as in `jabber-send-iq'."
+ERROR-CLOSURE-DATA are used as in `jabber-send-iq'.
+
+JC is the Jabber connection."
   (jabber-send-iq jc nil "set"
 		  `(query ((xmlns . "jabber:iq:private"))
 			  ,fragment)
@@ -7966,7 +8025,9 @@ Either a string or a buffer is returned, so use `get-buffer' or
 
 (defun jabber-muc-create-buffer (jc group)
   "Prepare a buffer for chatroom GROUP.
-This function is idempotent."
+This function is idempotent.
+
+JC is the Jabber connection."
   (with-current-buffer (get-buffer-create (jabber-muc-get-buffer group))
     (unless (eq major-mode 'jabber-chat-mode)
       (jabber-chat-mode jc #'jabber-chat-pp))
@@ -7991,7 +8052,9 @@ Either a string or a buffer is returned, so use `get-buffer' or
 
 (defun jabber-muc-private-create-buffer (jc group nickname)
   "Prepare a buffer for chatting with NICKNAME in GROUP.
-This function is idempotent."
+This function is idempotent.
+
+JC is the Jabber connection."
   (with-current-buffer (get-buffer-create (jabber-muc-private-get-buffer group nickname))
     (unless (eq major-mode 'jabber-chat-mode)
       (jabber-chat-mode jc #'jabber-chat-pp))
@@ -8003,7 +8066,9 @@ This function is idempotent."
     (current-buffer)))
 
 (defun jabber-muc-send (jc body)
-  "Send BODY to MUC room in current buffer."
+  "Send BODY to MUC room in current buffer.
+
+JC is the Jabber connection."
   ;; There is no need to display the sent message in the buffer, as
   ;; we will get it back from the MUC server.
   (jabber-send-sexp jc
@@ -8183,7 +8248,9 @@ JID; only provide completion as a guide."
 
 ;;;###autoload
 (defun jabber-muc-vcard-get (jc group nickname)
-  "Request vcard from chat with NICKNAME in GROUP."
+  "Request vcard from chat with NICKNAME in GROUP.
+
+JC is the Jabber connection."
   (interactive
    (jabber-muc-argument-list
     (list (jabber-muc-read-nickname jabber-group "Nickname: "))))
@@ -8195,7 +8262,9 @@ JID; only provide completion as a guide."
 This can be used for a newly created room, as an alternative to
 filling out the configuration form with `jabber-muc-get-config'.
 Both of these methods unlock the room, so that other users can
-enter it."
+enter it.
+
+JC is the Jabber connection."
   (interactive (jabber-muc-argument-list))
   (jabber-send-iq jc group
 		  "set"
@@ -8208,7 +8277,9 @@ enter it."
    (cons "Configure groupchat" 'jabber-muc-get-config))
 
 (defun jabber-muc-get-config (jc group)
-  "Ask for MUC configuration form"
+  "Ask for MUC configuration form.
+
+JC is the Jabber connection."
   (interactive (jabber-muc-argument-list))
   (jabber-send-iq jc group
 		  "get"
@@ -8220,7 +8291,9 @@ enter it."
   "Deprecated.  See `jabber-muc-get-config' instead.")
 
 (defun jabber-muc-render-config (jc xml-data)
-  "Render MUC configuration form"
+  "Render MUC configuration form.
+
+JC is the Jabber connection."
 
   (let ((query (jabber-iq-query xml-data))
 	xdata)
@@ -8277,7 +8350,9 @@ enter it."
 (defun jabber-muc-join (jc group nickname &optional popup)
   "join a groupchat, or change nick.
 In interactive calls, or if POPUP is true, switch to the
-groupchat buffer."
+groupchat buffer.
+
+JC is the Jabber connection."
   (interactive
    (let ((account (jabber-read-account))
 	 (group (jabber-read-jid-completing "group: ")))
@@ -8371,7 +8446,9 @@ groupchat buffer."
   "Deprecated.  See `jabber-muc-join-3' instead.")
 
 (defun jabber-muc-read-my-nickname (jc group &optional default)
-  "Read nickname for joining GROUP.  If DEFAULT is non-nil, return default nick without prompting."
+  "Read nickname for joining GROUP.  If DEFAULT is non-nil, return default nick without prompting.
+
+JC is the Jabber connection."
   (let ((default-nickname (or
 			   (jabber-get-conference-data jc group nil :nick)
 			   (cdr (assoc group jabber-muc-default-nicknames))
@@ -8391,7 +8468,9 @@ groupchat buffer."
 	     (cons "Leave groupchat" 'jabber-muc-leave))
 
 (defun jabber-muc-leave (jc group)
-  "leave a groupchat"
+  "Leave a groupchat.
+
+JC is the Jabber connection."
   (interactive (jabber-muc-argument-list))
   (let ((whichgroup (assoc group *jabber-active-groupchats*)))
     ;; send unavailable presence to our own nick in room
@@ -8446,7 +8525,9 @@ groupchat buffer."
 	     (cons "Set topic" 'jabber-muc-set-topic))
 
 (defun jabber-muc-set-topic (jc group topic)
-  "Set topic of GROUP to TOPIC."
+  "Set topic of GROUP to TOPIC.
+
+JC is the Jabber connection."
   (interactive
    (jabber-muc-argument-list
     (list (jabber-read-with-input-method "New topic: " jabber-muc-topic))))
@@ -8462,7 +8543,9 @@ groupchat buffer."
 	     (cons "Set role (kick, voice, op)" 'jabber-muc-set-role))
 
 (defun jabber-muc-set-role (jc group nickname role reason)
-  "Set role of NICKNAME in GROUP to ROLE, specifying REASON."
+  "Set role of NICKNAME in GROUP to ROLE, specifying REASON.
+
+JC is the Jabber connection."
   (interactive
    (jabber-muc-argument-list
     (let ((nickname (jabber-muc-read-nickname jabber-group "Nickname: ")))
@@ -8485,7 +8568,9 @@ groupchat buffer."
 (defun jabber-muc-set-affiliation (jc group nickname-or-jid nickname-p affiliation reason)
   "Set affiliation of NICKNAME-OR-JID in GROUP to AFFILIATION.
 If NICKNAME-P is non-nil, NICKNAME-OR-JID is a nickname in the
-group, else it is a JID."
+group, else it is a JID.
+
+JC is the Jabber connection."
   (interactive
    (jabber-muc-argument-list
     (let ((nickname-p (y-or-n-p "Specify user by room nickname? ")))
@@ -8521,7 +8606,9 @@ group, else it is a JID."
 	     (cons "Invite someone to chatroom" 'jabber-muc-invite))
 
 (defun jabber-muc-invite (jc jid group reason)
-  "Invite JID to GROUP, stating REASON."
+  "Invite JID to GROUP, stating REASON.
+
+JC is the Jabber connection."
   (interactive
    (list (jabber-read-account)
 	 (jabber-read-jid-completing
@@ -8602,7 +8689,9 @@ group, else it is a JID."
 	  (return t))))))
 
 (defun jabber-muc-autojoin (jc)
-  "Join rooms specified in account bookmarks and global `jabber-muc-autojoin'."
+  "Join rooms specified in account bookmarks and global `jabber-muc-autojoin'.
+
+JC is the Jabber connection."
   (interactive (list (jabber-read-account)))
   (let ((nickname (plist-get (fsm-get-state-data jc) :username)))
     (when (bound-and-true-p jabber-muc-autojoin)
@@ -8655,7 +8744,9 @@ include groupchat invites."
 	     (cons "Open private chat" 'jabber-muc-private))
 
 (defun jabber-muc-private (jc group nickname)
-  "Open private chat with NICKNAME in GROUP."
+  "Open private chat with NICKNAME in GROUP.
+
+JC is the Jabber connection."
   (interactive
    (jabber-muc-argument-list
     (list (jabber-muc-read-nickname jabber-group "Nickname: "))))
@@ -8750,7 +8841,9 @@ Return nil if X-MUC is nil."
 (add-to-list 'jabber-message-chain 'jabber-muc-process-message)
 
 (defun jabber-muc-process-message (jc xml-data)
-  "If XML-DATA is a groupchat message, handle it as such."
+  "If XML-DATA is a groupchat message, handle it as such.
+
+JC is the Jabber connection."
   (when (jabber-muc-message-p xml-data)
     (let* ((from (jabber-xml-get-attribute xml-data 'from))
 	   (group (jabber-jid-user from))
@@ -9114,7 +9207,9 @@ OLD is last tried nickname."
 (add-to-list 'jabber-jid-service-menu
 	     (cons "Register with service" 'jabber-get-register))
 (defun jabber-get-register (jc to)
-  "Send IQ get request in namespace \"jabber:iq:register\"."
+  "Send IQ get request in namespace \"jabber:iq:register\".
+
+JC is the Jabber connection."
   (interactive (list (jabber-read-account)
 		     (jabber-read-jid-completing "Register with: ")))
   (jabber-send-iq jc to
@@ -9124,7 +9219,9 @@ OLD is last tried nickname."
 		  #'jabber-report-success "Registration"))
 
 (defun jabber-process-register-or-search (jc xml-data)
-  "Display results from jabber:iq:{register,search} query as a form."
+  "Display results from jabber:iq:{register,search} query as a form.
+
+JC is the Jabber connection."
 
   (let ((query (jabber-iq-query xml-data))
 	(have-xdata nil)
@@ -9208,7 +9305,9 @@ OLD is last tried nickname."
 
 (defun jabber-process-register-secondtime (jc xml-data closure-data)
   "Receive registration success or failure.
-CLOSURE-DATA is either 'success or 'error."
+CLOSURE-DATA is either 'success or 'error.
+
+JC is the Jabber connection."
   (cond
    ((eq closure-data 'success)
     (message "Registration successful.  You may now connect to the server."))
@@ -9231,7 +9330,9 @@ CLOSURE-DATA is either 'success or 'error."
 (add-to-list 'jabber-jid-service-menu
 	     (cons "Search directory" 'jabber-get-search))
 (defun jabber-get-search (jc to)
-  "Send IQ get request in namespace \"jabber:iq:search\"."
+  "Send IQ get request in namespace \"jabber:iq:search\".
+
+JC is the Jabber connection."
   (interactive (list (jabber-read-account)
 		     (jabber-read-jid-completing "Search what database: ")))
   (jabber-send-iq jc to
@@ -9262,7 +9363,9 @@ CLOSURE-DATA is either 'success or 'error."
   (message "Search sent"))
 
 (defun jabber-process-search-result (jc xml-data)
-  "Receive and display search results."
+  "Receive and display search results.
+
+JC is the Jabber connection."
 
   ;; This function assumes that all search results come in one packet,
   ;; which is not necessarily the case.
@@ -9314,7 +9417,9 @@ CLOSURE-DATA is either 'success or 'error."
 (add-to-list 'jabber-jid-info-menu
 	     (cons "Send browse query" 'jabber-get-browse))
 (defun jabber-get-browse (jc to)
-  "send a browse infoquery request to someone"
+  "send a browse infoquery request to someone.
+
+JC is the Jabber connection."
   (interactive (list (jabber-read-account)
 		     (jabber-read-jid-completing "browse: " nil nil nil nil t)))
   (jabber-send-iq jc to
@@ -9325,7 +9430,9 @@ CLOSURE-DATA is either 'success or 'error."
 
 ;; called from jabber-process-data
 (defun jabber-process-browse (jc xml-data)
-  "Handle results from jabber:iq:browse requests."
+  "Handle results from jabber:iq:browse requests.
+
+JC is the Jabber connection."
   (dolist (item (jabber-xml-node-children xml-data))
     (when (and (listp item)
 	       (not (eq (jabber-xml-node-name item) 'ns)))
@@ -9391,7 +9498,9 @@ CLOSURE-DATA is either 'success or 'error."
 (add-to-list 'jabber-jid-info-menu
 	     (cons "Request software version" 'jabber-get-version))
 (defun jabber-get-version (jc to)
-  "Request software version"
+  "Request software version.
+
+JC is the Jabber connection."
   (interactive (list
 		(jabber-read-account)
 		(jabber-read-jid-completing "Request version of: " nil nil nil 'full t)))
@@ -9403,7 +9512,9 @@ CLOSURE-DATA is either 'success or 'error."
 
 ;; called by jabber-process-data
 (defun jabber-process-version (jc xml-data)
-  "Handle results from jabber:iq:version requests."
+  "Handle results from jabber:iq:version requests.
+
+JC is the Jabber connection."
 
   (let ((query (jabber-iq-query xml-data)))
     (dolist (x '((name . "Name:\t\t") (version . "Version:\t") (os . "OS:\t\t")))
@@ -9418,7 +9529,9 @@ CLOSURE-DATA is either 'success or 'error."
 
 (defun jabber-return-version (jc xml-data)
   "Return client version as defined in XEP-0092.  Sender and ID are
-determined from the incoming packet passed in XML-DATA."
+determined from the incoming packet passed in XML-DATA.
+
+JC is the Jabber connection."
   ;; Things we might check: does this iq message really have type='get' and
   ;; exactly one child, namely query with xmlns='jabber:iq:version'?
   ;; Then again, jabber-process-iq should take care of that.
@@ -9494,7 +9607,9 @@ access allowed.  nil means open for everyone."
 (add-to-list 'jabber-disco-items-nodes
 	     (list "http://jabber.org/protocol/commands" #'jabber-ahc-disco-items nil))
 (defun jabber-ahc-disco-items (jc xml-data)
-  "Return commands in response to disco#items request"
+  "Return commands in response to disco#items request.
+
+JC is the Jabber connection."
   (let ((jid (jabber-xml-get-attribute xml-data 'from)))
     (mapcar (function
 	     (lambda (command)
@@ -9537,7 +9652,10 @@ access allowed.  nil means open for everyone."
 (add-to-list 'jabber-jid-service-menu
 	     (cons "Request command list" 'jabber-ahc-get-list))
 (defun jabber-ahc-get-list (jc to)
-  "Request list of ad-hoc commands.  (XEP-0050)"
+  "Request list of ad-hoc commands.  
+
+See XEP-0050.
+JC is the Jabber connection."
   (interactive (list (jabber-read-account)
 		     (jabber-read-jid-completing "Request command list from: " nil nil nil nil nil)))
   (jabber-get-disco-items jc to "http://jabber.org/protocol/commands"))
@@ -9545,7 +9663,10 @@ access allowed.  nil means open for everyone."
 (add-to-list 'jabber-jid-service-menu
 	     (cons "Execute command" 'jabber-ahc-execute-command))
 (defun jabber-ahc-execute-command (jc to node)
-  "Execute ad-hoc command.  (XEP-0050)"
+  "Execute ad-hoc command.  
+
+See XEP-0050.
+JC is the Jabber connection."
   (interactive (list (jabber-read-account)
 		     (jabber-read-jid-completing "Execute command of: " nil nil nil nil nil)
 		     (jabber-read-node "Node of command: ")))
@@ -9647,7 +9768,9 @@ access allowed.  nil means open for everyone."
 		'jabber-my-jid-p)
 
 (defun jabber-ahc-presence (jc xml-data)
-  "Process presence change command."
+  "Process presence change command.
+
+JC is the Jabber connection."
 
   (let* ((query (jabber-iq-query xml-data))
 	 (sessionid (jabber-xml-get-attribute query 'sessionid))
@@ -10950,7 +11073,9 @@ The top node should be the `vCard' node."
 	     (cons "Request vcard" 'jabber-vcard-get))
 
 (defun jabber-vcard-get (jc jid)
-  "Request vcard from JID."
+  "Request vcard from JID.
+
+JC is the Jabber connection."
   (interactive (list (jabber-read-account)
 		     (jabber-read-jid-completing "Request vcard from: " nil nil nil 'bare-or-muc)))
   (jabber-send-iq jc jid
@@ -10960,7 +11085,9 @@ The top node should be the `vCard' node."
 		  #'jabber-process-data "Vcard request failed"))
 
 (defun jabber-vcard-edit (jc)
-  "Edit your own vcard."
+  "Edit your own vcard.
+
+JC is the Jabber connection."
   (interactive (list (jabber-read-account)))
   (jabber-send-iq jc nil
 		  "get"
@@ -11023,7 +11150,9 @@ The top node should be the `vCard' node."
 					(CTRY . "Country")))
 
 (defun jabber-vcard-display (jc xml-data)
-  "Display received vcard."
+  "Display received vcard.
+
+JC is the Jabber connection."
   (let ((parsed (jabber-vcard-parse (jabber-iq-query xml-data))))
     (dolist (simple-field jabber-vcard-fields)
       (let ((field (assq (car simple-field) parsed)))
@@ -11260,7 +11389,9 @@ Keys are full JIDs.")
 
 (add-to-list 'jabber-presence-chain 'jabber-vcard-avatars-presence)
 (defun jabber-vcard-avatars-presence (jc xml-data)
-  "Look for vCard avatar mark in <presence/> stanza."
+  "Look for vCard avatar mark in <presence/> stanza.
+
+JC is the Jabber connection."
   ;; Only look at ordinary presence
   (when (and jabber-vcard-avatars-retrieve
 	     (null (jabber-xml-get-attribute xml-data 'type)))
@@ -11282,7 +11413,9 @@ Keys are full JIDs.")
 	(jabber-vcard-avatars-fetch jc from sha1-hash))))))
 
 (defun jabber-vcard-avatars-fetch (jc who sha1-hash)
-  "Fetch WHO's vCard, and extract avatar."
+  "Fetch WHO's vCard, and extract avatar.
+
+JC is the Jabber connection."
   (interactive (list (jabber-read-account)
 		     (jabber-read-jid-completing "Fetch whose vCard avatar: ")
 		     nil))
@@ -11310,7 +11443,9 @@ Keys are full JIDs.")
       (jabber-avatar-set from nil))))
 
 (defun jabber-vcard-avatars-find-current (jc)
-  "Request our own vCard, to find hash of avatar."
+  "Request our own vCard, to find hash of avatar.
+
+JC is the Jabber connection."
   (when jabber-vcard-avatars-publish
     (jabber-send-iq jc nil "get" '(vCard ((xmlns . "vcard-temp")))
 		    #'jabber-vcard-avatars-find-current-1 t
@@ -11539,7 +11674,9 @@ The method for finding the terminal only works on GNU/Linux."
 (add-to-list 'jabber-jid-info-menu (cons "Request time" 'jabber-get-time))
 
 (defun jabber-get-time (jc to)
-  "Request time."
+  "Request time.
+
+JC is the Jabber connection."
   (interactive (list (jabber-read-account)
                      (jabber-read-jid-completing "Request time of: "
                                                  nil nil nil 'full t)))
@@ -11553,7 +11690,9 @@ The method for finding the terminal only works on GNU/Linux."
                       (jabber-get-legacy-time jc from)))))
 
 (defun jabber-get-legacy-time (jc to)
-  "Request legacy time."
+  "Request legacy time.
+
+JC is the Jabber connection."
   (interactive (list (jabber-read-account)
                      (jabber-read-jid-completing "Request time of: "
                                                  nil nil nil 'full t)))
@@ -11580,7 +11719,9 @@ The method for finding the terminal only works on GNU/Linux."
               from (format-time-string "%Y-%m-%d %T" (jabber-parse-time utc)) tzo))))
 
 (defun jabber-process-legacy-time (jc xml-data)
-  "Handle results from jabber:iq:time requests."
+  "Handle results from jabber:iq:time requests.
+
+JC is the Jabber connection."
   (let* ((from (jabber-xml-get-attribute xml-data 'from))
          (query (jabber-iq-query xml-data))
          (display
@@ -11604,7 +11745,9 @@ The method for finding the terminal only works on GNU/Linux."
               (when tz
                 (concat " " tz))))))))
 (defun jabber-get-last-online (jc to)
-  "Request time since a user was last online, or uptime of a component."
+  "Request time since a user was last online, or uptime of a component.
+
+JC is the Jabber connection."
   (interactive (list (jabber-read-account)
 		     (jabber-read-jid-completing "Get last online for: "
 						 nil nil nil 'bare-or-muc)))
@@ -11615,7 +11758,9 @@ The method for finding the terminal only works on GNU/Linux."
 		  #'jabber-silent-process-data "Last online request failed"))
 
 (defun jabber-get-idle-time (jc to)
-  "Request idle time of user."
+  "Request idle time of user.
+
+JC is the Jabber connection."
   (interactive (list (jabber-read-account)
 		     (jabber-read-jid-completing "Get idle time for: "
 						 nil nil nil 'full t)))
@@ -11626,7 +11771,9 @@ The method for finding the terminal only works on GNU/Linux."
 		  #'jabber-silent-process-data "Idle time request failed"))
 
 (defun jabber-process-last (jc xml-data)
-  "Handle resultts from jabber:iq:last requests."
+  "Handle resultts from jabber:iq:last requests.
+
+JC is the Jabber connection."
   (let* ((from (jabber-xml-get-attribute xml-data 'from))
 	 (query (jabber-iq-query xml-data))
 	 (seconds (jabber-xml-get-attribute query 'seconds))
@@ -11658,7 +11805,9 @@ The method for finding the terminal only works on GNU/Linux."
 
 (defun jabber-return-legacy-time (jc xml-data)
   "Return client time as defined in XEP-0090.  Sender and ID are
-determined from the incoming packet passed in XML-DATA."
+determined from the incoming packet passed in XML-DATA.
+
+JC is the Jabber connection."
   (let ((to (jabber-xml-get-attribute xml-data 'from))
 	(id (jabber-xml-get-attribute xml-data 'id)))
     (jabber-send-iq jc to "result"
@@ -11676,7 +11825,9 @@ determined from the incoming packet passed in XML-DATA."
 
 (defun jabber-return-time (jc xml-data)
   "Return client time as defined in XEP-0202.  Sender and ID are
-determined from the incoming packet passed in XML-DATA."
+determined from the incoming packet passed in XML-DATA.
+
+JC is the Jabber connection."
   (let ((to (jabber-xml-get-attribute xml-data 'from))
         (id (jabber-xml-get-attribute xml-data 'id)))
     (jabber-send-iq jc to "result"
@@ -11759,7 +11910,9 @@ get it, and then it just gets deleted."
 (add-to-list 'jabber-jid-service-menu
              (cons "Enable Carbons" 'jabber-enable-carbons))
 (defun jabber-enable-carbons (jc)
-  "Send request to enable XEP-0280 Message Carbons."
+  "Send request to enable XEP-0280 Message Carbons.
+
+JC is the Jabber connection."
   (interactive (list (jabber-read-account)))
   (jabber-send-iq jc
                   nil
