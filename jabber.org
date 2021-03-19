@@ -44,7 +44,7 @@ Note that only the connection from you to the server is encrypted; there is no g
 
 *** Installation
 jabber.el can be installed using the commands:
-#+BEGIN_SRC
+#+BEGIN_SRC shell
 ./configure
 make
 make install
@@ -212,7 +212,7 @@ If a source block does not have syntax highlighting, press =M-o M-o= (=font-lock
 ** Code
 *** XML functions
 :PROPERTIES:
-:file:     jabber-xml.el
+:old-file:     jabber-xml.el
 :END:
 
 #+BEGIN_SRC emacs-lisp
@@ -519,7 +519,7 @@ any string   character data of this node"
 #+END_SRC
 *** various utility functions
 :PROPERTIES:
-:file:     jabber-util.el
+:old-file:     jabber-util.el
 :END:
 
 #+BEGIN_SRC emacs-lisp
@@ -1401,7 +1401,7 @@ applied to the node and not to the data itself."
 #+END_SRC
 *** menu
 :PROPERTIES:
-:file:     jabber-menu.el
+:old-file:     jabber-menu.el
 :END:
 
 #+BEGIN_SRC emacs-lisp
@@ -1636,7 +1636,7 @@ This used to be: =(define-key-after global-map [menu-bar jabber-menu] ...)= but 
 #+END_SRC
 *** Network transport functions
 :PROPERTIES:
-:file:     jabber-conn.el
+:old-file:     jabber-conn.el
 :END:
 A collection of functions, that hide the details of transmitting to and fro a Jabber Server. Mostly inspired by Gnus.
 
@@ -2083,7 +2083,7 @@ Use `*jabber-virtual-server-function*' as send function."
 #+END_SRC
 *** SASL authentication
 :PROPERTIES:
-:file:     jabber-sasl.el
+:old-file:     jabber-sasl.el
 :END:
 
 #+BEGIN_SRC emacs-lisp
@@ -2231,7 +2231,7 @@ Call REMEMBER with the password.  REMEMBER is expected to return it as well."
 #+END_SRC
 *** common keymap for many modes
 :PROPERTIES:
-:file:     jabber-keymap.el
+:old-file:     jabber-keymap.el
 :END:
 #+BEGIN_SRC emacs-lisp
 ;; button.el was introduced in Emacs 22
@@ -2283,8 +2283,9 @@ Call REMEMBER with the password.  REMEMBER is expected to return it as well."
 #+END_SRC
 *** XML Console mode
 :PROPERTIES:
-:file:     jabber-console.el
+:old-file:     jabber-console.el
 :END:
+
 #+BEGIN_SRC emacs-lisp
 (require 'ewoc)
 (require 'sgml-mode) ;we base on this mode to hightlight XML
@@ -2449,7 +2450,7 @@ what kind of chat buffer is being created.")
 #+END_SRC
 *** core
 :PROPERTIES:
-:file:     jabber-core.el
+:old-file:     jabber-core.el
 :END:
 
 Standards (probably) involved -
@@ -3601,7 +3602,7 @@ Return an fsm result list if it is."
 #+END_SRC
 *** logon
 :PROPERTIES:
-:file:     jabber-logon.el
+:old-file:     jabber-logon.el
 :END:
 
 In Emacs 24, sha1 is built in, so this =require= is only needed for earlier versions.  It's supposed to be a noop in Emacs 24, but sometimes, for some people, it isn't, and fails with =(file-error "Cannot open load file" "sha1")=.
@@ -3671,7 +3672,7 @@ CLOSURE-DATA should be the password on success and nil on failure."
 #+END_SRC
 *** Displaying the roster
 :PROPERTIES:
-:file:     jabber-roster.el
+:old-file:     jabber-roster.el
 :END:
 
 #+BEGIN_SRC emacs-lisp
@@ -4702,7 +4703,7 @@ If optional PREV is non-nil, return position of previous property appearence."
 #+END_SRC
 *** export Jabber roster to file
 :PROPERTIES:
-:file:     jabber-export.el
+:old-file:     jabber-export.el
 :END:
 
 #+BEGIN_SRC emacs-lisp
@@ -4973,7 +4974,7 @@ See `jabber-roster-to-sexp' for description of output format."
 
 *** infoquery (IQ) functions
 :PROPERTIES:
-:file:     jabber-iq.el
+:old-file:     jabber-iq.el
 :END:
 
 **** *jabber-open-info-queries*                                 :variable:
@@ -5205,7 +5206,7 @@ See section 9.3 of XMPP Core."
 #+END_SRC
 *** Alert hooks
 :PROPERTIES:
-:file:     jabber-alert.el
+:old-file:     jabber-alert.el
 :END:
 
 #+BEGIN_SRC emacs-lisp
@@ -5850,7 +5851,7 @@ of `jabber-autoanswer-alist'"
 #+END_SRC
 *** FIXME Recording message history
 :PROPERTIES:
-:file:     jabber-history.el
+:old-file:     jabber-history.el
 :END:
 
 1. [ ] when rotation is enabled, =jabber-history-query= won't look for older history files if the current history file doesn't contain enough backlog entries.
@@ -6221,7 +6222,7 @@ applies, though."
 #+END_SRC
 *** Functions common to all chat buffers
 :PROPERTIES:
-:file:     jabber-chatbuffer.el
+:old-file:     jabber-chatbuffer.el
 :END:
 
 **** jabber-point-insert                                        :variable:
@@ -6372,7 +6373,7 @@ window or at `fill-column', whichever is shorter."
 #+END_SRC
 *** Compose a Jabber message in a buffer
 :PROPERTIES:
-:file:     jabber-compose.el
+:old-file:     jabber-compose.el
 :END:
 **** jabber-compose                                              :command:
 #+BEGIN_SRC emacs-lisp
@@ -6439,7 +6440,7 @@ window or at `fill-column', whichever is shorter."
 
 *** One-to-one chats
 :PROPERTIES:
-:file:     jabber-chat.el
+:old-file:     jabber-chat.el
 :END:
 
 #+BEGIN_SRC emacs-lisp
@@ -7263,7 +7264,7 @@ With a prefix argument, open buffer in other window."
 #+END_SRC
 *** Roster and presence bookkeeping
 :PROPERTIES:
-:file:     jabber-presence.el
+:old-file:     jabber-presence.el
 :END:
 
 **** jabber-presence-element-functions                          :variable:
@@ -7879,7 +7880,7 @@ Signal an error if there is no JID at point."
 #+END_SRC
 *** Entity Capabilities ([[https://xmpp.org/extensions/xep-0115.html][XEP-0115]])
 :PROPERTIES:
-:file:     jabber-disco.el
+:old-file:     jabber-disco.el
 :END:
 
 #+BEGIN_SRC emacs-lisp
@@ -8231,7 +8232,7 @@ the right node."
 #+END_SRC
 *** Service Discovery ([[https://xmpp.org/extensions/xep-0030.html][XEP-0030]])
 :PROPERTIES:
-:file:     jabber-disco.el
+:old-file:     jabber-disco.el
 :END:
 **** Respond to disco requests
 ***** jabber-advertised-features                               :variable:
@@ -8620,7 +8621,7 @@ invalidate cache and get fresh data."
 
 *** XMPP Ping ([[https://xmpp.org/extensions/xep-0199.html][XEP-0199]])
 :PROPERTIES:
-:file:     jabber-ping.el
+:old-file:     jabber-ping.el
 :END:
 
 #+BEGIN_SRC emacs-lisp
@@ -8674,7 +8675,7 @@ determined from the incoming packet passed in XML-DATA."
 
 *** keepalive - try to detect a lost connection
 :PROPERTIES:
-:file:     jabber-keepalive.el
+:old-file:     jabber-keepalive.el
 :END:
 
 Send something to the server and see if it answers.
@@ -8874,7 +8875,7 @@ accounts."
 
 *** Feature Negotiation ([[https://xmpp.org/extensions/xep-0020.html][XEP-0020]])                         :xep_deprecated:
 :PROPERTIES:
-:file:     jabber-feature-neg.el
+:old-file:     jabber-feature-neg.el
 :END:
 
 #+BEGIN_SRC emacs-lisp
@@ -8993,7 +8994,7 @@ protocols."
 #+END_SRC
 *** widget - display various kinds of forms
 :PROPERTIES:
-:file:     jabber-widget.el
+:old-file:     jabber-widget.el
 :END:
 
 #+BEGIN_SRC emacs-lisp
@@ -9384,7 +9385,7 @@ Return nil if no form type is specified."
 #+END_SRC
 *** Bookmarks ([[https://xmpp.org/extensions/xep-0048.html][XEP-0048]])                                   :xep_deprecated:
 :PROPERTIES:
-:file:     jabber-bookmarks.el
+:old-file:     jabber-bookmarks.el
 :END:
 
 #+BEGIN_SRC emacs-lisp
@@ -9650,7 +9651,7 @@ on success or failure, respectively."
 #+END_SRC
 *** Private XML Storage ([[https://xmpp.org/extensions/xep-0049.html][XEP-0049]])
 :PROPERTIES:
-:file:     jabber-private.el
+:old-file:     jabber-private.el
 :END:
 
 **** jabber-private-get                                         :function:
@@ -9698,7 +9699,7 @@ ERROR-CLOSURE-DATA are used as in `jabber-send-iq'."
 #+END_SRC
 *** muc-nick-coloring
 :PROPERTIES:
-:file:     jabber-muc-nick-coloring.el
+:old-file:     jabber-muc-nick-coloring.el
 :END:
 
 #+BEGIN_SRC emacs-lisp
@@ -9782,7 +9783,7 @@ ERROR-CLOSURE-DATA are used as in `jabber-send-iq'."
 #+END_SRC
 *** Multi-User Chat (MUC) ([[https://xmpp.org/extensions/xep-0045.html][XEP-0045]])
 :PROPERTIES:
-:file:     jabber-muc.el
+:old-file:     jabber-muc.el
 :END:
 
 #+BEGIN_SRC emacs-lisp
@@ -11193,7 +11194,7 @@ Return nil if X-MUC is nil."
 #+END_SRC
 *** muc-nick-completion
 :PROPERTIES:
-:file:     jabber-muc-nick-completion.el
+:old-file:     jabber-muc-nick-completion.el
 :END:
 
 **** jabber-muc-completion-delimiter                     :custom:variable:
@@ -11403,7 +11404,7 @@ OLD is last tried nickname."
 #+END_SRC
 *** In-Band Registration ([[https://xmpp.org/extensions/xep-0077.html][XEP-0077]])
 :PROPERTIES:
-:file:     jabber-register.el
+:old-file:     jabber-register.el
 :END:
 
 **** jabber-get-register                                         :command:
@@ -11540,7 +11541,7 @@ CLOSURE-DATA is either 'success or 'error."
 #+END_SRC
 *** Jabber Search ([[https://xmpp.org/extensions/xep-0055.html][XEP-0055]])
 :PROPERTIES:
-:file:     jabber-search.el
+:old-file:     jabber-search.el
 :END:
 
 **** jabber-get-search                                           :command:
@@ -11640,7 +11641,7 @@ CLOSURE-DATA is either 'success or 'error."
 #+END_SRC
 *** Jabber Browsing ([[https://xmpp.org/extensions/xep-0011.html][XEP-0011]])                               :xep_obsolete:
 :PROPERTIES:
-:file:     jabber-browse.el
+:old-file:     jabber-browse.el
 :END:
 
 jabber.el can perform browse requests, but will not answer them.
@@ -11722,7 +11723,7 @@ jabber.el can perform browse requests, but will not answer them.
 #+END_SRC
 *** Software Version ([[https://xmpp.org/extensions/xep-0092.html][XEP-0092]])
 :PROPERTIES:
-:file:     jabber-version.el
+:old-file:     jabber-version.el
 :END:
 
 #+BEGIN_SRC emacs-lisp
@@ -11802,7 +11803,7 @@ determined from the incoming packet passed in XML-DATA."
 #+END_SRC
 *** Ad Hoc Commands ([[https://xmpp.org/extensions/xep-0050.html][XEP-0050]])
 :PROPERTIES:
-:file:     jabber-ahc.el
+:old-file:     jabber-ahc.el
 :END:
 
 **** jabber-ahc-sessionid                                       :variable:
@@ -12044,7 +12045,7 @@ access allowed.  nil means open for everyone."
 #+END_SRC
 *** ahc-presence - provide remote control of presence
 :PROPERTIES:
-:file:     jabber-ahc-presence.el
+:old-file:     jabber-ahc-presence.el
 :END:
 
 **** jabber-ahc-presence-node                                   :constant:
@@ -12139,7 +12140,7 @@ access allowed.  nil means open for everyone."
 #+END_SRC
 *** Mode line
 :PROPERTIES:
-:file:     jabber-modeline.el
+:old-file:     jabber-modeline.el
 :END:
 
 #+BEGIN_SRC emacs-lisp
@@ -12248,11 +12249,11 @@ and offline contacts, respectively."
 #+END_SRC
 *** watch - get notified when certain persons go online
 :PROPERTIES:
-:file:     jabber-watch.el
+:old-file:     jabber-watch.el
 :END:
 
 **** jabber-watch-alist                                  :custom:variable:
-#+BEGIN_QUOTE
+#+BEGIN_SRC emacs-lisp
 (defcustom jabber-watch-alist nil
   "Alist of buddies for which an extra notification should be sent
 when they come online, with comment strings as values."
@@ -12315,7 +12316,7 @@ sends a message if that happens. The buddies are stored in
 #+END_SRC
 *** activity - show Jabber activity in the mode line
 :PROPERTIES:
-:file:     jabber-activity.el
+:old-file:     jabber-activity.el
 :END:
 
 Allows tracking messages from buddies using the global mode line. See =(info "(jabber)Tracking activity")=
@@ -12823,7 +12824,7 @@ With a numeric arg, enable this display if arg is positive."
 #+END_SRC
 *** Message Events ([[https://xmpp.org/extensions/xep-0022.html][XEP-0022]])                                :xep_obsolete:
 :PROPERTIES:
-:file:     jabber-events.el
+:old-file:     jabber-events.el
 :END:
 
 #+BEGIN_SRC emacs-lisp
@@ -13108,7 +13109,7 @@ Add function last in chain, so a chat buffer is already created.
 #+END_SRC
 *** Chat State Notifications ([[https://xmpp.org/extensions/xep-0085.html][XEP-0085]])
 :PROPERTIES:
-:file:     jabber-chatstates.el
+:old-file:     jabber-chatstates.el
 :END:
 
 **** TODO
@@ -13314,7 +13315,7 @@ It can be sent and cancelled several times.")
 #+END_SRC
 *** Generic functions for avatars
 :PROPERTIES:
-:file:     jabber-avatar.el
+:old-file:     jabber-avatar.el
 :END:
 
 There are several methods for transporting avatars in Jabber ([[https://xmpp.org/extensions/xep-0008.html][XEP-0008: IQ-Based Avatars]], [[https://xmpp.org/extensions/xep-0084.html][XEP-0084: User Avatar]], [[https://xmpp.org/extensions/xep-0153.html][XEP-0153: vCard-Based Avatars]]).  They all have in common that they identify avatars by their SHA1 checksum, and (at least partially) use Base64-encoded image data.  Thus this library of support functions for interpreting and caching avatars.
@@ -13566,7 +13567,7 @@ available."
 #+END_SRC
 *** vCard ([[https://xmpp.org/extensions/xep-0054.html][XEP-0054]])
 :PROPERTIES:
-:file:     jabber-vcard.el
+:old-file:     jabber-vcard.el
 :END:
 
 There are great variations in Jabber vcard implementations.  This one adds some spice to the mix, while trying to follow the XEP closely.
@@ -14129,7 +14130,7 @@ The top node should be the `vCard' node."
 #+END_SRC
 *** vCard-Based Avatars ([[https://xmpp.org/extensions/xep-0153.html][XEP-0153]])
 :PROPERTIES:
-:file:     jabber-vcard-avatars.el
+:old-file:     jabber-vcard-avatars.el
 :END:
 
 #+BEGIN_SRC emacs-lisp
@@ -14269,7 +14270,7 @@ Keys are full JIDs.")
 #+END_SRC
 *** autoaway
 :PROPERTIES:
-:file:     jabber-autoaway.el
+:old-file:     jabber-autoaway.el
 :END:
 
 #+BEGIN_SRC emacs-lisp
@@ -14528,7 +14529,7 @@ The method for finding the terminal only works on GNU/Linux."
 #+END_SRC
 *** Entity Time ([[https://xmpp.org/extensions/xep-0202.html][XEP-0202]]), Legacy Entity Time ([[https://xmpp.org/extensions/xep-0090.html][XEP-0090]])    :xep_obsolete:
 :PROPERTIES:
-:file:     jabber-time.el
+:old-file:     jabber-time.el
 :END:
 
 #+BEGIN_SRC emacs-lisp
@@ -14744,7 +14745,7 @@ determined from the incoming packet passed in XML-DATA."
 #+END_SRC
 *** truncate - cleanup top lines in chatbuffers
 :PROPERTIES:
-:file:     jabber-truncate.el
+:old-file:     jabber-truncate.el
 :END:
 
 #+BEGIN_SRC emacs-lisp
@@ -14812,7 +14813,7 @@ get it, and then it just gets deleted."
 #+END_SRC
 *** Message Carbons ([[https://xmpp.org/extensions/xep-0280.html][XEP-0280]])
 :PROPERTIES:
-:file:     jabber-carbons.el
+:old-file:     jabber-carbons.el
 :END:
 
 **** jabber-carbon-success                                      :function:
@@ -15997,7 +15998,7 @@ This function simply starts a state machine."
 #+END_SRC
 *** In-Band Real Time Text (RTT) ([[https://xmpp.org/extensions/xep-0301.html][XEP-0301]])
 :PROPERTIES:
-:file:     jabber-rtt.el
+:old-file:     jabber-rtt.el
 :END:
 
 #+BEGIN_SRC emacs-lisp
@@ -16362,7 +16363,7 @@ XEP-0301, In-Band Real Time Text."
 
 *** Jabber
 :PROPERTIES:
-:file:     jabber.el
+:old-file:     jabber.el
 :END:
 
 #+BEGIN_SRC emacs-lisp
