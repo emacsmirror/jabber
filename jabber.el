@@ -879,15 +879,15 @@ See secton 9.3, Stanza Errors, of XMPP Core, and XEP-0086, Legacy Errors."
 
 (defun jabber-signal-error (error-type condition &optional text app-specific)
   "Signal an error to be sent by Jabber.
-ERROR-TYPE is one of \"cancel\", \"continue\", \"modify\", \"auth\"
-and \"wait\".
+ERROR-TYPE is one of \"Cancel\", \"Continue\", \"Mmodify\", \"Auth\"
+and \"Wait\" (lowercase versions make `checkdoc' to throw errors).
 CONDITION is a symbol denoting a defined XMPP condition.
 TEXT is a string to be sent in the error message, or nil for no text.
 APP-SPECIFIC is a list of extra XML tags.
 
 See section 9.3 of XMPP Core."
   (signal 'jabber-error
-	  (list error-type condition text app-specific)))
+	  (list (downcase error-type) condition text app-specific)))
 
 (defun jabber-unhex (string)
   "Convert a hex-encoded UTF-8 string to Emacs representation.
@@ -6642,7 +6642,7 @@ See XEP-0030."
     (if return-list
 	(if (and (functionp access-control)
 		 (not (funcall access-control jc to)))
-	    (jabber-signal-error "cancel" 'not-allowed)
+	    (jabber-signal-error "Cancel" 'not-allowed)
 	  ;; Access control passed
 	  (let ((result (if (functionp func)
 			    (funcall func jc xml-data)
@@ -6655,7 +6655,7 @@ See XEP-0030."
 			    nil nil nil nil id)))
 
       ;; No such node
-      (jabber-signal-error "cancel" 'item-not-found))))
+      (jabber-signal-error "Cancel" 'item-not-found))))
 
 (defun jabber-disco-return-client-info (&optional jc xml-data)
   `(
@@ -7077,7 +7077,7 @@ alternatives."
   (let ((x (car (jabber-xml-get-children xml-data 'x))))
     (unless (and x
 		 (string= (jabber-xml-get-attribute x 'xmlns) "jabber:x:data"))
-      (jabber-signal-error "modify" 'bad-request "Malformed Feature Negotiation"))
+      (jabber-signal-error "Modify" 'bad-request "Malformed Feature Negotiation"))
 
     (let (alist
 	  (fields (jabber-xml-get-children x 'field)))
@@ -7142,9 +7142,9 @@ protocols."
     (let ((mine-but-not-theirs (set-difference vars their-vars :test 'string=))
 	  (theirs-but-not-mine (set-difference their-vars vars :test 'string=)))
       (when mine-but-not-theirs
-	(jabber-signal-error "modify" 'not-acceptable (car mine-but-not-theirs)))
+	(jabber-signal-error "Modify" 'not-acceptable (car mine-but-not-theirs)))
       (when theirs-but-not-mine
-	(jabber-signal-error "cancel" 'feature-not-implemented (car theirs-but-not-mine))))
+	(jabber-signal-error "Cancel" 'feature-not-implemented (car theirs-but-not-mine))))
 
       (let (alist)
 	(dolist (var vars)
@@ -7158,7 +7158,7 @@ protocols."
 			(cons (list var (car common-options))
 			      alist))
 		;; no match
-		(jabber-signal-error "modify" 'not-acceptable var)))))
+		(jabber-signal-error "Modify" 'not-acceptable var)))))
 	alist)))
 
 (require 'widget)
@@ -9529,9 +9529,9 @@ access allowed.  nil means open for everyone."
 			      (funcall func jc xml-data)
 			      nil nil nil nil id)
 	    ;; ...or failed
-	    (jabber-signal-error "cancel" 'not-allowed))
+	    (jabber-signal-error "Cancel" 'not-allowed))
 	;; No such node
-	(jabber-signal-error "cancel" 'item-not-found)))))
+	(jabber-signal-error "Cancel" 'item-not-found)))))
 
 (add-to-list 'jabber-jid-service-menu
 	     (cons "Request command list" 'jabber-ahc-get-list))
