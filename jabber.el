@@ -3115,7 +3115,7 @@ Trailing newlines are always removed, regardless of this variable."
     map))
 
 (defun jabber-roster-ret-action-at-point ()
-  "Action for ret.  
+  "Action for ret.
 Before try to roll up/down group.  Eval `chat-with-jid-at-point' is no group at
 point."
   (interactive)
@@ -7336,7 +7336,7 @@ protocols."
   "Alist of widgets currently used.")
 
 (defvar jabber-form-type nil
-  "Type of form. 
+  "Type of form.
 One of:
 'x-data, jabber:x:data
 'register, as used in jabber:iq:register and jabber:iq:search.")
@@ -9800,7 +9800,7 @@ JC is the Jabber connection."
 (add-to-list 'jabber-jid-service-menu
 	     (cons "Execute command" 'jabber-ahc-execute-command))
 (defun jabber-ahc-execute-command (jc to node)
-  "Execute ad-hoc command.  
+  "Execute ad-hoc command.
 
 See XEP-0050.
 JC is the Jabber connection."
@@ -10102,7 +10102,7 @@ calling `jabber-watch-add' and `jabber-watch-remove'."
 (require 'cl)
 
 (defgroup jabber-activity nil
-  "Activity tracking options"
+  "Activity tracking options."
   :group 'jabber)
 
 (defcustom jabber-activity-make-string 'jabber-activity-make-string-default
@@ -10194,7 +10194,7 @@ there are unread messages which otherwise would be lost."
   :group 'jabber-activity)
 
 (defvar jabber-activity-jids nil
-  "A list of JIDs which have caused activity")
+  "A list of JIDs which have caused activity.")
 
 (defvar jabber-activity-personal-jids nil
   "Subset of `jabber-activity-jids' for JIDs with \"personal\" activity.")
@@ -10279,7 +10279,7 @@ least `jabber-activity-shorten-minimum' long."
       (get-buffer (jabber-muc-get-buffer jid))))
 
 (defun jabber-activity-show-p-default (jid)
-  "Returns t only if there is an invisible buffer for JID.
+  "Return t only if there is an invisible buffer for JID.
 And, JID is not in `jabber-activity-banned'."
   (let ((buffer (jabber-activity-find-buffer-name jid)))
     (and (buffer-live-p buffer)
@@ -10289,7 +10289,7 @@ And, JID is not in `jabber-activity-banned'."
                   (return t)))))))
 
 (defun jabber-activity-make-name-alist ()
-  "Rebuild `jabber-activity-name-alist' based on currently known JIDs"
+  "Rebuild `jabber-activity-name-alist' based on currently known JIDs."
   (let ((jids (or (mapcar #'car jabber-activity-name-alist)
 		  (mapcar #'symbol-name *jabber-roster*))))
     (setq jabber-activity-name-alist
@@ -10312,8 +10312,10 @@ if needed, and returns a (jid . string) pair suitable for the mode line"
 (defun jabber-activity-mode-line-update ()
   "Update the string shown in the mode line using `jabber-activity-make-string'.
 Update the string shown in the mode line using `jabber-activity-make-string'
-on JIDs where `jabber-activity-show-p'.  Optional not-nil GROUP mean that message come from MUC.
-Optional TEXT used with one-to-one or MUC chats and may be used to identify personal MUC message.
+on JIDs where `jabber-activity-show-p'.  Optional not-nil GROUP mean that
+message come from MUC.
+Optional TEXT used with one-to-one or MUC chats and may be used to identify
+personal MUC message.
 Optional PRESENCE mean personal presence request or alert."
   (setq jabber-activity-mode-string
   	(if jabber-activity-jids
@@ -10521,7 +10523,7 @@ probably reading the message).")
 (make-variable-buffer-local 'jabber-events-arrived)
 
 (defvar jabber-events-message ""
-  "Human-readable presentation of event information")
+  "Human-readable presentation of event information.")
 (make-variable-buffer-local 'jabber-events-message)
 
 (defun jabber-events-update-message ()
@@ -10556,7 +10558,7 @@ probably reading the message).")
   :type 'boolean)
 
 (defvar jabber-events-requested ()
-  "List of events requested")
+  "List of events requested.")
 (make-variable-buffer-local 'jabber-events-requested)
 
 (defvar jabber-events-last-id nil
@@ -10729,7 +10731,7 @@ nil - don't send states")
 (make-variable-buffer-local 'jabber-chatstates-last-state)
 
 (defvar jabber-chatstates-message ""
-  "Human-readable presentation of chat state information")
+  "Human-readable presentation of chat state information.")
 (make-variable-buffer-local 'jabber-chatstates-message)
 
 (defun jabber-chatstates-update-message ()
@@ -10852,7 +10854,7 @@ It can be sent and cancelled several times.")
 
 (defcustom jabber-avatar-cache-directory
   (locate-user-emacs-file "jabber-avatar-cache" ".jabber-avatars")
-  "Directory to use for cached avatars"
+  "Directory to use for cached avatars."
   :group 'jabber-avatar
   :type 'directory)
 
@@ -11020,8 +11022,8 @@ AVATAR may be one of:
       (jabber-presence-update-roster jid-symbol))))
 
 (defun jabber-create-image (file-or-data &optional type data-p)
-  "Create image, scaled down to jabber-avatar-max-width/height,
-if width/height exceeds either of those, and ImageMagick is
+  "Create image, scaled down to jabber-avatar-max-width/height.
+If width/height exceeds either of those, and ImageMagick is
 available."
   (let* ((image (create-image file-or-data type data-p))
          (size (image-size image t))
@@ -11638,7 +11640,7 @@ JC is the Jabber connection."
 (require 'time-date)
 
 (defgroup jabber-autoaway nil
-  "Change status to away after idleness"
+  "Change status to away after idleness."
   :group 'jabber)
 
 (defcustom jabber-autoaway-methods
@@ -11656,22 +11658,23 @@ number of seconds since the user was active, or nil on error."
              jabber-termatime-get-idle-time))
 
 (defcustom jabber-autoaway-timeout 5
-  "Minutes of inactivity before changing status to away"
+  "Minutes of inactivity before changing status to away."
   :group 'jabber-autoaway
   :type 'number)
 
 (defcustom jabber-autoaway-xa-timeout 10
-  "Minutes of inactivity before changing status to xa.  Set to 0 to disable."
+  "Minutes of inactivity before changing status to xa.
+Set to 0 to disable."
   :group 'jabber-autoaway
   :type 'number)
 
 (defcustom jabber-autoaway-status "Idle"
-  "Status string for autoaway"
+  "Status string for autoaway."
   :group 'jabber-autoaway
   :type 'string)
 
 (defcustom jabber-autoaway-xa-status "Extended away"
-  "Status string for autoaway in xa state"
+  "Status string for autoaway in xa state."
   :group 'jabber-autoaway
   :type 'string)
 
@@ -11694,7 +11697,7 @@ information about priority."
   :link '(info-link "(jabber)Presence"))
 
 (defcustom jabber-xprintidle-program (executable-find "xprintidle")
-  "Name of the xprintidle program"
+  "Name of the xprintidle program."
   :group 'jabber-autoaway
   :type 'string)
 
@@ -11733,7 +11736,7 @@ The IGNORED argument is there so you can put this function in
     (jabber-autoaway-message "Autoaway timer stopped")))
 
 (defun jabber-autoaway-get-idle-time ()
-  "Get idle time in seconds according to jabber-autoaway-methods.
+  "Get idle time in seconds according to `jabber-autoaway-methods'.
 Return nil on error."
   (car (sort (mapcar 'funcall jabber-autoaway-methods) (lambda (a b) (if a (if b (< a b) t) nil)))))
 
@@ -11965,8 +11968,8 @@ obtained from `xml-parse-region'."
 (jabber-disco-advertise-feature "jabber:iq:time")
 
 (defun jabber-return-legacy-time (jc xml-data)
-  "Return client time as defined in XEP-0090.  Sender and ID are
-determined from the incoming packet passed in XML-DATA.
+  "Return client time as defined in XEP-0090.
+Sender and ID are determined from the incoming packet passed in XML-DATA.
 
 JC is the Jabber connection.
 XML-DATA is the parsed tree data from the stream (stanzas)
@@ -11987,8 +11990,8 @@ obtained from `xml-parse-region'."
 (jabber-disco-advertise-feature "urn:xmpp:time")
 
 (defun jabber-return-time (jc xml-data)
-  "Return client time as defined in XEP-0202.  Sender and ID are
-determined from the incoming packet passed in XML-DATA.
+  "Return client time as defined in XEP-0202.
+Sender and ID are determined from the incoming packet passed in XML-DATA.
 
 JC is the Jabber connection.
 XML-DATA is the parsed tree data from the stream (stanzas)
@@ -12023,7 +12026,7 @@ obtained from `xml-parse-region'."
 
 (defun jabber-truncate-top (buffer &optional ewoc)
   "Clean old history from a chat BUFFER.
-Optional EWOC is ewoc-widget to work.  Default is jabber-chat-ewoc
+Optional EWOC is ewoc-widget to work.  Default is `jabber-chat-ewoc'
 `jabber-log-lines-to-keep' specifies the number of lines to
 keep.
 
