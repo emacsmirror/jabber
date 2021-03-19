@@ -39,7 +39,8 @@
   (require 'cl))
 
 (defun jabber-escape-xml (str)
-  "Escape strings for XML."
+  "Escape strings for XML.
+STR the string to escape."
   (if (stringp str)
       (let ((newstr (concat str)))
 	;; Form feeds might appear in code you copy, etc.  Nevertheless,
@@ -57,7 +58,8 @@
     str))
 
 (defun jabber-unescape-xml (str)
-  "unescape xml strings"
+  "Unescape xml strings.
+STR the string to remove escaped characters."
   ;; Eventually this can be done with `xml-substitute-special', but the
   ;; version in xml.el of GNU Emacs 21.3 is buggy.
   (if (stringp str)
@@ -232,7 +234,8 @@ any string   character data of this node"
     node))
 
 (defmacro jabber-xml-let-attributes (attributes xml-data &rest body)
-  "Bind variables to the same-name attribute values in XML-DATA."
+  "Bind variables to the same-name attribute values in XML-DATA.
+ATTRIBUTES is a list of attribute names."
   `(let ,(mapcar #'(lambda (attr)
 		     (list attr `(jabber-xml-get-attribute ,xml-data ',attr)))
 		 attributes)
@@ -960,7 +963,7 @@ See Info node `(jabber)XMPP URIs'."
 	(t (string>-numerical (substring s1 1) (substring s2 1)))))
 
 (defun jabber-append-string-to-file (string file &optional func &rest args)
-  "Append STRING (may be nil) to FILE. Create FILE if needed.
+  "Append STRING (may be nil) to FILE.  Create FILE if needed.
 If FUNC is non-nil, then call FUNC with ARGS at beginning of
 temporaly buffer _before_ inserting STRING."
   (when (or (stringp string) (functionp func))
@@ -970,7 +973,7 @@ temporaly buffer _before_ inserting STRING."
       (write-region (point-min) (point-max) file t (list t)))))
 
 (defun jabber-tree-map (fn tree)
-  "Apply FN to all nodes in the TREE starting with root. FN is
+  "Apply FN to all nodes in the TREE starting with root.  FN is
 applied to the node and not to the data itself."
   (let ((result (cons nil nil)))
     (do ((tail tree (cdr tail))
@@ -1713,7 +1716,7 @@ Call REMEMBER with the password.  REMEMBER is expected to return it as well."
 (require 'ewoc)
 (require 'sgml-mode) ;we base on this mode to hightlight XML
 (defcustom jabber-console-name-format "*-jabber-console-%s-*"
-  "Format for console buffer name. %s mean connection jid."
+  "Format for console buffer name.  %s mean connection jid."
   :type 'string
   :group 'jabber-debug)
 
@@ -2580,7 +2583,7 @@ With double prefix argument, specify more connection details."
 			  :disconnection-expected t)))))
 
 (defun jabber-disconnect (&optional arg)
-  "Disconnect from all Jabber servers. If ARG supplied, disconnect one account."
+  "Disconnect from all Jabber servers.  If ARG supplied, disconnect one account."
   (interactive "P")
   (if arg
       (jabber-disconnect-one (jabber-read-account))
@@ -3064,7 +3067,7 @@ Trailing newlines are always removed, regardless of this variable."
     map))
 
 (defun jabber-roster-ret-action-at-point ()
-  "Action for ret. Before try to roll up/down group. Eval
+  "Action for ret.  Before try to roll up/down group.  Eval
 chat-with-jid-at-point is no group at point"
   (interactive)
   (let ((group-at-point (get-text-property (point)
@@ -3098,7 +3101,7 @@ chat-with-jid-at-point is no group at point"
 	(jabber-chat-with jc jid)))))
 
 (defun jabber-roster-mouse-2-action-at-point (e)
-  "Action for mouse-2. Before try to roll up/down group. Eval
+  "Action for mouse-2.  Before try to roll up/down group.  Eval
 chat-with-jid-at-point is no group at point"
   (interactive "e")
   (mouse-set-point e)
@@ -3131,7 +3134,7 @@ Delete a jid if there is no group at point."
       (jabber-roster-delete-jid-at-point))))
 
 (defun jabber-roster-edit-action-at-point ()
-  "Action for e. Before try to edit group name.
+  "Action for e.  Before try to edit group name.
 Eval `jabber-roster-change' is no group at point"
   (interactive)
   (let ((group-at-point (get-text-property (point)
@@ -4233,7 +4236,7 @@ it's not meant to be customized by the user.")
   "Function for constructing title of presence alert messages.
 
 Arguments are WHO, OLDSTATUS, NEWSTATUS and STATUSTEXT.  See
-`jabber-alert-presence-hooks' for documentation. This function
+`jabber-alert-presence-hooks' for documentation.  This function
 should return a string containing an appropriate text message, or nil
 if no message should be displayed.
 
@@ -4556,7 +4559,7 @@ This function uses `jabber-info-message-alist' to find a message."
 
 ;;; Personal alert hooks
 (defmacro define-personal-jabber-alert (name)
-  "From ALERT function, make ALERT-personal function. Makes sence only for MUC."
+  "From ALERT function, make ALERT-personal function.  Makes sence only for MUC."
   (let ((sn (symbol-name name)))
     (let ((func (intern (format "%s-personal" sn))))
     `(progn
@@ -5328,7 +5331,7 @@ This function is idempotent."
 	     (cons "Display more context" 'jabber-chat-display-more-backlog))
 
 (defun jabber-chat-display-more-backlog (how-many)
-  "Display more context. HOW-MANY is number of messages. Specify 0 to display all messages."
+  "Display more context.  HOW-MANY is number of messages.  Specify 0 to display all messages."
   (interactive "nHow many more messages (Specify 0 to display all)? ")
   (let* ((inhibit-read-only t)
 	 (jabber-backlog-days nil)
@@ -6890,7 +6893,7 @@ invalidate cache and get fresh data."
 (add-to-list 'jabber-jid-info-menu (cons "Ping" 'jabber-ping))
 
 (defun jabber-ping-send (jc to process-func on-success on-error)
-  "Send XEP-0199 ping IQ stanza. JC is connection to use, TO is
+  "Send XEP-0199 ping IQ stanza.  JC is connection to use, TO is
   full JID, PROCESS-FUNC is fucntion to call to process result,
   ON-SUCCESS and ON-ERROR is arg for this function depending on
   result."
@@ -6900,7 +6903,7 @@ invalidate cache and get fresh data."
                   process-func on-error))
 
 (defun jabber-ping (to)
-  "Ping XMPP entity. TO is full JID. All connected JIDs is used."
+  "Ping XMPP entity.  TO is full JID.  All connected JIDs is used."
   (interactive (list (jabber-read-jid-completing "Send ping to: " nil nil nil 'full)))
   (dolist (jc jabber-connections)
     (jabber-ping-send jc to 'jabber-silent-process-data 'jabber-process-ping "Ping is unsupported")))
@@ -6915,7 +6918,7 @@ invalidate cache and get fresh data."
 (jabber-disco-advertise-feature "urn:xmpp:ping")
 
 (defun jabber-pong (jc xml-data)
-  "Return pong as defined in XEP-0199. Sender and Id are
+  "Return pong as defined in XEP-0199.  Sender and Id are
 determined from the incoming packet passed in XML-DATA."
   (let ((to (jabber-xml-get-attribute xml-data 'from))
 	(id (jabber-xml-get-attribute xml-data 'id)))
@@ -7018,7 +7021,7 @@ for all accounts regardless of the argument."
 This is a traditional remedy for a number of problems: to keep NAT
 boxes from considering the connection dead, to have the OS discover
 earlier that the connection is lost, and to placate servers which rely
-on the client doing this, e.g. Openfire.
+on the client doing this, e.g.  Openfire.
 
 If you want to verify that the server is able to answer, see
 `jabber-keepalive-start' for another mechanism."
@@ -7766,8 +7769,8 @@ ERROR-CLOSURE-DATA are used as in `jabber-send-iq'."
        "hexrgb not found in `load-path' or jabber-fallback-lib/ directory.")))
 
 (defcustom jabber-muc-participant-colors nil
-  "Alist of used colors. Format is (nick . color). Color may be
-  in #RGB or textual (like red or blue) notation. Colors will be
+  "Alist of used colors.  Format is (nick . color).  Color may be
+  in #RGB or textual (like red or blue) notation.  Colors will be
   added in #RGB notation for unknown nicks."
   :type '(alist :key-type string :value-type color)
   :group 'jabber-chat)
@@ -8213,7 +8216,7 @@ enter it."
 		  #'jabber-process-data "MUC configuration request failed"))
 
 (defalias 'jabber-groupchat-get-config 'jabber-muc-get-config
-  "Deprecated. See `jabber-muc-get-config' instead.")
+  "Deprecated.  See `jabber-muc-get-config' instead.")
 
 (defun jabber-muc-render-config (jc xml-data)
   "Render MUC configuration form"
@@ -8240,7 +8243,7 @@ enter it."
     (widget-minor-mode 1))))
 
 (defalias 'jabber-groupchat-render-config 'jabber-muc-render-config
-  "Deprecated. See `jabber-muc-render-config' instead.")
+  "Deprecated.  See `jabber-muc-render-config' instead.")
 
 (defun jabber-muc-submit-config (&rest ignore)
   "Submit MUC configuration form."
@@ -8253,7 +8256,7 @@ enter it."
 		  #'jabber-report-success "MUC configuration"))
 
 (defalias 'jabber-groupchat-submit-config 'jabber-muc-submit-config
-  "Deprecated. See `jabber-muc-submit-config' instead.")
+  "Deprecated.  See `jabber-muc-submit-config' instead.")
 
 (defun jabber-muc-cancel-config (&rest ignore)
   "Cancel MUC configuration form."
@@ -8265,7 +8268,7 @@ enter it."
 		  nil nil nil nil))
 
 (defalias 'jabber-groupchat-cancel-config 'jabber-muc-cancel-config
-  "Deprecated. See `jabber-muc-cancel-config' instead.")
+  "Deprecated.  See `jabber-muc-cancel-config' instead.")
 
 (add-to-list 'jabber-jid-muc-menu
 	     (cons "Join groupchat" 'jabber-muc-join))
@@ -8290,7 +8293,7 @@ groupchat buffer."
 			   (list group nickname popup))))
 
 (defalias 'jabber-groupchat-join 'jabber-muc-join
-  "Deprecated. Use `jabber-muc-join' instead.")
+  "Deprecated.  Use `jabber-muc-join' instead.")
 
 (defun jabber-muc-join-2 (jc closure result)
   (destructuring-bind (group nickname popup) closure
@@ -8336,7 +8339,7 @@ groupchat buffer."
 	(jabber-muc-join-3 jc group nickname password popup))))))
 
 (defalias 'jabber-groupchat-join-2 'jabber-muc-join-2
-  "Deprecated. See `jabber-muc-join-2' instead.")
+  "Deprecated.  See `jabber-muc-join-2' instead.")
 
 (defun jabber-muc-join-3 (jc group nickname password popup)
 
@@ -8364,10 +8367,10 @@ groupchat buffer."
       (switch-to-buffer buffer))))
 
 (defalias 'jabber-groupchat-join-3 'jabber-muc-join-3
-  "Deprecated. See `jabber-muc-join-3' instead.")
+  "Deprecated.  See `jabber-muc-join-3' instead.")
 
 (defun jabber-muc-read-my-nickname (jc group &optional default)
-  "Read nickname for joining GROUP. If DEFAULT is non-nil, return default nick without prompting."
+  "Read nickname for joining GROUP.  If DEFAULT is non-nil, return default nick without prompting."
   (let ((default-nickname (or
 			   (jabber-get-conference-data jc group nil :nick)
 			   (cdr (assoc group jabber-muc-default-nicknames))
@@ -8396,7 +8399,7 @@ groupchat buffer."
 				  (type . "unavailable"))))))
 
 (defalias 'jabber-groupchat-leave 'jabber-muc-leave
-  "Deprecated. Use `jabber-muc-leave' instead.")
+  "Deprecated.  Use `jabber-muc-leave' instead.")
 
 (add-to-list 'jabber-jid-muc-menu
 	     (cons "List participants" 'jabber-muc-names))
@@ -8963,7 +8966,7 @@ Return nil if X-MUC is nil."
   :group 'jabber-chat)
 
 (defcustom jabber-muc-all-string "all"
-  "String meaning all conference members (to insert in completion). Note that \":\" or alike not needed (it appended in other string)"
+  "String meaning all conference members (to insert in completion).  Note that \":\" or alike not needed (it appended in other string)"
   :type 'string
   :group 'jabber-chat)
 
@@ -9380,7 +9383,7 @@ CLOSURE-DATA is either 'success or 'error."
 (require 'jabber-ourversion)
 
 (defcustom jabber-version-show t
-  "Show our client version to others. Acts on loading."
+  "Show our client version to others.  Acts on loading."
   :type 'boolean
   :group 'jabber)
 
@@ -9795,7 +9798,7 @@ and offline contacts, respectively."
 (defun jabber-presence-watch (who oldstatus newstatus
 				  statustext proposed-alert)
   "Checks if one of your extra-important buddies comes online and
-sends a message if that happens. The buddies are stored in
+sends a message if that happens.  The buddies are stored in
 `jabber-watch-alist' and are added and removed by calling
 `jabber-watch-add' and `jabber-watch-remove.'"
   ;; check that buddy was previously offline and now online
@@ -10040,7 +10043,7 @@ if needed, and returns a (jid . string) pair suitable for the mode line"
 
 (defun jabber-activity-mode-line-update ()
   "Update the string shown in the mode line using `jabber-activity-make-string'
-on JIDs where `jabber-activity-show-p'. Optional not-nil GROUP mean that message come from MUC.
+on JIDs where `jabber-activity-show-p'.  Optional not-nil GROUP mean that message come from MUC.
 Optional TEXT used with one-to-one or MUC chats and may be used to identify personal MUC message.
 Optional PRESENCE mean personal presence request or alert."
   (setq jabber-activity-mode-string
@@ -11371,7 +11374,7 @@ number of seconds since the user was active, or nil on error."
   :type 'number)
 
 (defcustom jabber-autoaway-xa-timeout 10
-  "Minutes of inactivity before changing status to xa. Set to 0 to disable."
+  "Minutes of inactivity before changing status to xa.  Set to 0 to disable."
   :group 'jabber-autoaway
   :type 'number)
 
@@ -11703,7 +11706,7 @@ determined from the incoming packet passed in XML-DATA."
 
 (defun jabber-truncate-top (buffer &optional ewoc)
   "Clean old history from a chat BUFFER.
-Optional EWOC is ewoc-widget to work. Default is jabber-chat-ewoc
+Optional EWOC is ewoc-widget to work.  Default is jabber-chat-ewoc
 `jabber-log-lines-to-keep' specifies the number of lines to
 keep.
 
@@ -12063,8 +12066,8 @@ XEP-0301, In-Band Real Time Text."
 Each element of the list is a cons cell describing a Jabber account,
 where the car is a JID and the CDR is an alist.
 
-JID is a full Jabber ID string (e.g. foo@bar.tld). You can also
-specify the resource (e.g. foo@bar.tld/emacs).
+JID is a full Jabber ID string (e.g.  foo@bar.tld).  You can also
+specify the resource (e.g.  foo@bar.tld/emacs).
 The following keys can be present in the alist:
 
   :password is a string to authenticate ourself against the server.
@@ -12076,7 +12079,7 @@ The following keys can be present in the alist:
 
   :port is the port to use (default depends on connection type).
 
-  :connection-type is a symbol. Valid symbols are `starttls',
+  :connection-type is a symbol.  Valid symbols are `starttls',
   `network' and `ssl'.
 
 Only JID is mandatory.  The rest can be guessed at run-time.
@@ -12190,7 +12193,7 @@ Contents of process buffers might be useful for debugging."
   :group 'jabber-debug)
 
 (defcustom jabber-silent-mode nil
-  "If non-nil, do not ask for confirmation for some operations. DANGEROUS!"
+  "If non-nil, do not ask for confirmation for some operations.  DANGEROUS!"
   :type 'boolean
   :group 'jabber)
 
