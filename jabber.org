@@ -1270,6 +1270,10 @@ See secton 9.3, Stanza Errors, of XMPP Core, and XEP-0086, Legacy Errors."
 
 #+END_SRC
 **** jabber-signal-error                                        :function:
+[[https://www.rfc-editor.org/rfc/rfc6120.html#section-8.3][Section 8.3 of RFC 6120]] explains that there are stanza errors, which are recoverable and do not terminate the stream.
+
+Each stanza has a type which are the one explained at the ~ERROR-TYPE~ parameter. When executing checkdoc, it throws warnings stating that errors messages should start with capital letters, thus the ~downcase~ function is used as a work around to avoid this.
+     
 #+BEGIN_SRC emacs-lisp
 (defun jabber-signal-error (error-type condition &optional text app-specific)
   "Signal an error to be sent by Jabber.
@@ -1279,7 +1283,8 @@ CONDITION is a symbol denoting a defined XMPP condition.
 TEXT is a string to be sent in the error message, or nil for no text.
 APP-SPECIFIC is a list of extra XML tags.
 
-See section 9.3 of XMPP Core."
+See section 9.3 of XMPP Core (RFC 3920).
+See section 8.3 of XMPP Core (RFC 6120)."
   (signal 'jabber-error
 	  (list (downcase error-type) condition text app-specific)))
 

@@ -885,7 +885,8 @@ CONDITION is a symbol denoting a defined XMPP condition.
 TEXT is a string to be sent in the error message, or nil for no text.
 APP-SPECIFIC is a list of extra XML tags.
 
-See section 9.3 of XMPP Core."
+See section 9.3 of XMPP Core (RFC 3920).
+See section 8.3 of XMPP Core (RFC 6120)."
   (signal 'jabber-error
 	  (list (downcase error-type) condition text app-specific)))
 
