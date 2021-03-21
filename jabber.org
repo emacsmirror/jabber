@@ -208,8 +208,8 @@ If a source block does not have syntax highlighting, press =M-o M-o= (=font-lock
 #+END_SRC
 ** Dependencies
 #+BEGIN_SRC emacs-lisp
+(require 'cl-lib)
 (require 'goto-addr)
-
 #+END_SRC
 ** Code
 *** custom variables
@@ -223,10 +223,8 @@ If a source block does not have syntax highlighting, press =M-o M-o= (=font-lock
 
 #+BEGIN_SRC emacs-lisp
 (require 'xml)
-(eval-when-compile
-  (require 'cl))
-
 #+END_SRC
+
 **** jabber-escape-xml                                          :function:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-escape-xml (str)
@@ -339,7 +337,7 @@ enough for us."
        ((looking-at ">")
 	(goto-char (match-end 0))
 	(unless (and dont-recurse-into-stream (equal node-name "stream:stream"))
-	  (loop
+	  (cl-loop
 	   do (skip-chars-forward "^<")
 	   until (looking-at (regexp-quote (concat "</" node-name ">")))
 	   do (jabber-xml-skip-tag-forward))
@@ -532,7 +530,6 @@ ATTRIBUTES is a list of attribute names."
 :END:
 
 #+BEGIN_SRC emacs-lisp
-(require 'cl)
 (require 'password-cache)
 (condition-case nil
     (require 'auth-source)
@@ -728,7 +725,7 @@ JID must be a string."
 (defun jabber-jid-bookmarkname (string)
   "Return from STRING the conference name from boomarks or displayname.
 Use the name according to roster or else the JID if none set."
-  (or (loop for conference in (first (loop for value being the hash-values of jabber-bookmarks
+  (or (cl-loop for conference in (first (cl-loop for value being the hash-values of jabber-bookmarks
                                            collect value))
             do (let ((ls (cadr conference)))
                  (if (string= (cdr (assoc 'jid ls)) string)
@@ -938,7 +935,7 @@ that has that contact in its roster."
 		 (and contact-hint
 		      (setq contact-hint (jabber-jid-symbol contact-hint))
 		      (let ((matching
-			     (find-if
+			     (cl-find-if
 			      (lambda (jc)
 				(memq contact-hint (plist-get (fsm-get-state-data jc) :roster)))
 			      jabber-connections)))
@@ -1438,10 +1435,6 @@ FN is applied to the node and not to the data itself."
 :old-file:     jabber-menu.el
 :END:
 
-#+BEGIN_SRC emacs-lisp
-(eval-when-compile (require 'cl))
-
-#+END_SRC
 **** jabber-menu                                                :variable:
 #+BEGIN_SRC emacs-lisp
 ;;;###autoload
@@ -1675,8 +1668,6 @@ This used to be: =(define-key-after global-map [menu-bar jabber-menu] ...)= but 
 A collection of functions, that hide the details of transmitting to and fro a Jabber Server. Mostly inspired by Gnus.
 
 #+BEGIN_SRC emacs-lisp
-(eval-when-compile (require 'cl))
-
 ;; Emacs 24 can be linked with GnuTLS
 (ignore-errors (require 'gnutls))
 
@@ -1836,11 +1827,11 @@ connection fails."
 		(fsm fsm))
     ;; ...and connect to them one after another, asynchronously, until
     ;; connection succeeds.
-    (labels
+    (cl-labels
 	((connect
 	  (target remaining-targets)
 	  (lexical-let ((target target) (remaining-targets remaining-targets))
-	    (labels ((connection-successful
+	    (cl-labels ((connection-successful
 		      (c)
 		      ;; This mustn't be `fsm-send-sync', because the FSM
 		      ;; needs to change the sentinel, which cannot be done
@@ -2124,8 +2115,6 @@ Use `*jabber-virtual-server-function*' as send function."
 :END:
 
 #+BEGIN_SRC emacs-lisp
-(require 'cl)
-
 ;;; This file uses sasl.el from FLIM or Gnus.  If it can't be found,
 ;;; jabber-core.el won't use the SASL functions.
 (eval-and-compile
@@ -2160,12 +2149,12 @@ with `jabber-xml-get-chidlren')."
     ;; No suitable mechanism?
     (if (null mechanism)
 	;; Maybe we can use legacy authentication
-	(let ((iq-auth (find "http://jabber.org/features/iq-auth"
+	(let ((iq-auth (cl-find "http://jabber.org/features/iq-auth"
 			  (jabber-xml-get-children stream-features 'auth)
 			  :key #'jabber-xml-get-xmlns
 			  :test #'string=))
 	      ;; Or maybe we have to use STARTTLS, but can't
-	      (starttls (find "urn:ietf:params:xml:ns:xmpp-tls"
+	      (starttls (cl-find "urn:ietf:params:xml:ns:xmpp-tls"
 			      (jabber-xml-get-children stream-features 'starttls)
 			      :key #'jabber-xml-get-xmlns
 			      :test #'string=)))
@@ -2506,8 +2495,6 @@ Standards (probably) involved -
 4. [[https://datatracker.ietf.org/doc/rfc7622/][[RFC 7622] Extensible Messaging and Presence Protocol (XMPP): Address Format]]
 
 #+BEGIN_SRC emacs-lisp
-(require 'cl)
-
 (eval-and-compile
   (or (ignore-errors (require 'fsm))
       (ignore-errors
@@ -2695,7 +2682,7 @@ interactively.
 With many prefix arguments, one less is passed to `jabber-connect'."
   (interactive "P")
   (let ((accounts
-	 (remove-if (lambda (account)
+	 (cl-remove-if (lambda (account)
 		      (cdr (assq :disabled (cdr account))))
 		    jabber-account-list)))
     (if (or (null accounts) arg)
@@ -3478,7 +3465,7 @@ DATA is any sexp."
     ;; Start from the beginning
     (goto-char (point-min))
     (let (xml-data)
-      (loop
+      (cl-loop
        do
        ;; Skip whitespace
        (unless (zerop (skip-chars-forward " \t\r\n"))
@@ -3738,7 +3725,6 @@ obtained from `xml-parse-region'."
 
 #+BEGIN_SRC emacs-lisp
 (require 'format-spec)
-(require 'cl)				;for `find'
 #+END_SRC
 **** jabber-roster                                          :custom:group:
 #+BEGIN_SRC emacs-lisp
@@ -4058,7 +4044,7 @@ point."
       (jabber-chat-with jc jid)
     ;; Otherwise, let's check whether it has a groupchat identity.
     (let ((identities (car result)))
-      (if (find "conference" (if (sequencep identities) identities nil)
+      (if (cl-find "conference" (if (sequencep identities) identities nil)
 		:key (lambda (i) (aref i 1))
 		:test #'string=)
 	  ;; Yes!  Let's join it.
@@ -4139,10 +4125,10 @@ If optional SET is t, roll up group.
 If SET is nor t or nil, roll down group."
   (let* ((state-data (fsm-get-state-data jc))
 	 (roll-groups (plist-get state-data :roster-roll-groups))
-         (new-roll-groups (if (find group-name roll-groups :test 'string=)
+         (new-roll-groups (if (cl-find group-name roll-groups :test 'string=)
                               ;; group is rolled up, roll it down if needed
                               (if (or (not set) (and set (not (eq set t))))
-                                  (remove-if-not (lambda (group-name-in-list)
+                                  (cl-remove-if-not (lambda (group-name-in-list)
                                                    (not (string= group-name
                                                                  group-name-in-list)))
                                                  roll-groups)
@@ -4239,7 +4225,7 @@ JC is the Jabber connection."
 
     ;; remove duplicates name of group
     (setq all-groups (sort
-		      (remove-duplicates all-groups
+		      (cl-remove-duplicates all-groups
 					 :test 'string=)
 		      'string<))
 
@@ -4271,7 +4257,7 @@ Return t if A is less than B."
 (defun jabber-roster-sort-by-status (a b)
   "Sort roster items by online status.
 See `jabber-sort-order' for order used."
-  (flet ((order (item) (length (member (get item 'show) jabber-sort-order))))
+  (cl-flet ((order (item) (length (member (get item 'show) jabber-sort-order))))
     (let ((a-order (order a))
 	  (b-order (order b)))
       ;; Note reversed test.  Items with longer X-order go first.
@@ -4300,7 +4286,7 @@ See `jabber-sort-order' for order used."
 #+BEGIN_SRC emacs-lisp
 (defun jabber-roster-sort-by-group (a b)
   "Sort roster items by group membership."
-  (flet ((first-group (item) (or (car (get item 'groups)) "")))
+  (cl-flet ((first-group (item) (or (car (get item 'groups)) "")))
     (let ((a-group (first-group a))
 	  (b-group (first-group b)))
       (cond
@@ -4334,7 +4320,7 @@ such.")
 #+BEGIN_SRC emacs-lisp
 (defun jabber-roster-filter-display (buddies)
   "Filter BUDDIES for items to be displayed in the roster."
-  (remove-if-not (lambda (buddy) (or jabber-show-offline-contacts
+  (cl-remove-if-not (lambda (buddy) (or jabber-show-offline-contacts
 				     (get buddy 'connected)))
 		 buddies))
 
@@ -4440,7 +4426,7 @@ H        Toggle displaying this text
 	      (when (or jabber-roster-show-empty-group
 			(> (length buddies) 0))
 		(let ((group-node (ewoc-enter-last ewoc (list group nil))))
-		  (if (not (find
+		  (if (not (cl-find
 			    group-name
 			    (plist-get (fsm-get-state-data jc) :roster-roll-groups)
 			    :test 'string=))
@@ -4650,7 +4636,7 @@ JC is the Jabber connection."
       (when jabber-roster-debug
 	(message "remove duplicates from new group"))
       (setq all-groups (sort
-			(remove-duplicates all-groups
+			(cl-remove-duplicates all-groups
 					   :test (lambda (g1 g2)
 						   (let ((g1-name (car g1))
 							 (g2-name (car g2)))
@@ -4778,10 +4764,6 @@ obtained from `xml-parse-region'."
 :old-file:     jabber-export.el
 :END:
 
-#+BEGIN_SRC emacs-lisp
-(require 'cl)
-
-#+END_SRC
 **** jabber-export-roster-widget                                :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-export-roster-widget nil)
@@ -4881,7 +4863,7 @@ not affect your actual roster.
   (let* ((value (widget-value jabber-export-roster-widget))
 	 (length-before (length value))
 	 (regexp (read-string "Remove JIDs matching regexp: ")))
-    (setq value (delete-if
+    (setq value (cl-delete-if
 		 #'(lambda (a)
 		     (string-match regexp (nth 0 a)))
 		 value))
@@ -4932,9 +4914,9 @@ not affect your actual roster.
 	       ;; or changes a name,
 	       (and name jid-name (not (string= name jid-name)))
 	       ;; or introduces new groups.
-	       (set-difference groups jid-groups :test #'string=))
+	       (cl-set-difference groups jid-groups :test #'string=))
 	  (push (jabber-roster-sexp-to-xml
-		 (list jid (or name jid-name) nil (union groups jid-groups :test #'string=))
+		 (list jid (or name jid-name) nil (cl-union groups jid-groups :test #'string=))
 		 t)
 		roster-delta))
 	;; And adujst subscription.
@@ -4943,7 +4925,7 @@ not affect your actual roster.
 		(want-from (member subscription '("from" "both")))
 		(have-to (member jid-subscription '("to" "both")))
 		(have-from (member jid-subscription '("from" "both"))))
-	    (flet ((request-subscription
+	    (cl-flet ((request-subscription
 		    (type)
 		    (jabber-send-sexp jabber-buffer-connection
 				      `(presence ((to . ,jid)
@@ -5296,10 +5278,6 @@ obtained from `xml-parse-region'."
 :old-file:     jabber-alert.el
 :END:
 
-#+BEGIN_SRC emacs-lisp
-(require 'cl)
-
-#+END_SRC
 **** jabber-alerts                                          :custom:group:
 #+BEGIN_SRC emacs-lisp
 (defgroup jabber-alerts nil "auditory and visual alerts for jabber events"
@@ -6553,9 +6531,8 @@ JC is the Jabber connection."
 
 #+BEGIN_SRC emacs-lisp
 (require 'ewoc)
-(eval-when-compile (require 'cl))
-
 #+END_SRC
+
 **** jabber-chat                                            :custom:group:
 #+BEGIN_SRC emacs-lisp
 (defgroup jabber-chat nil "chat display options"
@@ -7073,7 +7050,7 @@ This function is used as an ewoc prettyprinter."
        (when (and (stringp (cadr data)) (not (zerop (length (cadr data)))))
 	 (insert "Message: " (cadr data) "\n"))
        (insert "Accept?\n\n")
-       (flet ((button
+       (cl-flet ((button
 	       (text action)
 	       (if (fboundp 'insert-button)
 		   (insert-button text 'action action)
@@ -7111,7 +7088,7 @@ This function is used as an ewoc prettyprinter."
   (let* ((prev (ewoc-prev jabber-chat-ewoc node))
 	 (data (ewoc-data node))
 	 (prev-data (when prev (ewoc-data prev))))
-    (flet ((entry-time (entry)
+    (cl-flet ((entry-time (entry)
 		       (or (when (listp (cadr entry))
 			     (jabber-message-timestamp (cadr entry)))
 			   (plist-get (cddr entry) :time))))
@@ -8000,7 +7977,7 @@ JC is the Jabber connection."
   (dolist (jid jids)
     (jabber-roster-change
      jc jid (get jid 'name)
-     (remove-if-not (lambda (g) (not (string= g group)))
+     (cl-remove-if-not (lambda (g) (not (string= g group)))
 		    (get jid 'groups)))))
 
 #+END_SRC
@@ -8016,7 +7993,7 @@ JC is the Jabber connection."
     (dolist (jid jids)
       (jabber-roster-change
        jc jid (get jid 'name)
-       (remove-duplicates
+       (cl-remove-duplicates
 	(mapcar
 	 (lambda (g) (if (string= g group)
 			 new-group
@@ -8119,7 +8096,7 @@ obtained from `xml-parse-region'."
 	    (setf (cdr resource-entry) new-resource-plist)
 	  (push (cons resource new-resource-plist) (get symbol 'resources))))
 
-      (flet ((request-disco-info
+      (cl-flet ((request-disco-info
 	      ()
 	      (jabber-send-iq
 	       jc jid
@@ -8208,7 +8185,7 @@ obtained from `xml-parse-region'."
 	   (disco-features (mapcar (lambda (f) (jabber-xml-get-attribute f 'var))
 			     (jabber-xml-get-children query 'feature)))
 	   (maybe-forms (jabber-xml-get-children query 'x))
-	   (forms (remove-if-not
+	   (forms (cl-remove-if-not
 		   (lambda (x)
 		     ;; Keep elements that are forms and have a FORM_TYPE,
 		     ;; according to XEP-0128.
@@ -9060,11 +9037,6 @@ accounts."
 :END:
 
 #+BEGIN_SRC emacs-lisp
-(require 'cl)
-
-#+END_SRC
-
-#+BEGIN_SRC emacs-lisp
 (jabber-disco-advertise-feature "http://jabber.org/protocol/feature-neg")
 
 #+END_SRC
@@ -9150,8 +9122,8 @@ protocols."
     ;; are the same variables being negotiated?
     (sort vars 'string-lessp)
     (sort their-vars 'string-lessp)
-    (let ((mine-but-not-theirs (set-difference vars their-vars :test 'string=))
-	  (theirs-but-not-mine (set-difference their-vars vars :test 'string=)))
+    (let ((mine-but-not-theirs (cl-set-difference vars their-vars :test 'string=))
+	  (theirs-but-not-mine (cl-set-difference their-vars vars :test 'string=)))
       (when mine-but-not-theirs
 	(jabber-signal-error "Modify" 'not-acceptable (car mine-but-not-theirs)))
       (when theirs-but-not-mine
@@ -9161,7 +9133,7 @@ protocols."
 	(dolist (var vars)
 	  (let ((my-options (cdr (assoc var mine)))
 		(their-options (cdr (assoc var theirs))))
-	    (let ((common-options (intersection my-options their-options :test 'string=)))
+	    (let ((common-options (cl-intersection my-options their-options :test 'string=)))
 	      (if common-options
 		  ;; we have a match; but which one to use?
 		  ;; the first one will probably work
@@ -9571,10 +9543,6 @@ Return nil if no form type is specified."
 :old-file:     jabber-bookmarks.el
 :END:
 
-#+BEGIN_SRC emacs-lisp
-(require 'cl)
-
-#+END_SRC
 **** jabber-bookmarks                                           :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-bookmarks (make-hash-table :test 'equal)
@@ -9812,7 +9780,7 @@ JC is the Jabber connection."
   (let* ((value (widget-value (cdr (assq 'bookmarks jabber-widget-alist))))
 	 (conferences (mapcar
 		       'cdr
-		       (remove-if-not
+		       (cl-remove-if-not
 			(lambda (entry)
 			  (eq (car entry) 'conference))
 			value))))
@@ -9890,7 +9858,6 @@ JC is the Jabber connection."
 :END:
 
 #+BEGIN_SRC emacs-lisp
-(eval-when-compile (require 'cl))	;for ignore-errors
 ;; we need hexrgb-hsv-to-hex:
 (eval-and-compile
   (or (ignore-errors (require 'hexrgb))
@@ -9977,10 +9944,8 @@ added in #RGB notation for unknown nicks."
 #+BEGIN_SRC emacs-lisp
 ;; we need jabber-bookmarks for jabber-muc-autojoin (via
 ;; jabber-get-bookmarks and jabber-parse-conference-bookmark):
-
-(require 'cl)
-
 #+END_SRC
+
 **** *jabber-active-groupchats*                                 :variable:
 #+BEGIN_SRC emacs-lisp
 ;;;###autoload
@@ -10291,7 +10256,7 @@ this JID.  Suitable to call when the connection is closed."
 	  (when (string= bare-jid
 			 (jabber-connection-bare-jid jabber-buffer-connection))
 	    (setq *jabber-active-groupchats*
-		  (delete* room *jabber-active-groupchats*
+		  (cl-delete room *jabber-active-groupchats*
 			   :key #'car :test #'string=))
 	    (setq jabber-muc-participants
 		  (delq room-entry jabber-muc-participants))))))))
@@ -10659,7 +10624,7 @@ JC is the Jabber connection."
       ;; error, give the chat room the benefit of the doubt.  (Needed
       ;; for ejabberd's mod_irc, for example)
       (when (or condition
-                (find "conference" (if (sequencep identities) identities nil)
+                (cl-find "conference" (if (sequencep identities) identities nil)
                       :key (lambda (i) (aref i 1))
                       :test #'string=))
         (let ((password
@@ -11113,7 +11078,7 @@ JC is the Jabber connection."
   "Return non-nil if PRESENCE is presence from groupchat."
   (let ((from (jabber-xml-get-attribute presence 'from))
 	(type (jabber-xml-get-attribute presence 'type))
-	(muc-marker (find-if
+	(muc-marker (cl-find-if
 		     (lambda (x) (equal (jabber-xml-get-attribute x 'xmlns)
 				   "http://jabber.org/protocol/muc#user"))
 		     (jabber-xml-get-children presence 'x))))
@@ -11261,7 +11226,7 @@ JC is the Jabber connection."
 (defun jabber-muc-process-presence (jc presence)
   (let* ((from (jabber-xml-get-attribute presence 'from))
 	 (type (jabber-xml-get-attribute presence 'type))
-	 (x-muc (find-if
+	 (x-muc (cl-find-if
 		 (lambda (x) (equal (jabber-xml-get-attribute x 'xmlns)
 			       "http://jabber.org/protocol/muc#user"))
 		 (jabber-xml-get-children presence 'x)))
@@ -11465,7 +11430,6 @@ Note that \":\" or alike not needed (it appended in other string)"
 
 ;;; Code:
 
-(require 'cl)
 (require 'hippie-exp)
 
 #+END_SRC
@@ -11503,7 +11467,7 @@ Optional argument GROUP to look."
 #+BEGIN_SRC emacs-lisp
 (defun jabber-muc-nicknames ()
   "List of conference participants, excluding self, or nil if we not in conference."
-  (delete-if '(lambda (nick)
+  (cl-delete-if '(lambda (nick)
 		 (string= nick (jabber-my-nick)))
 	     (append (mapcar 'car (cdr (assoc jabber-group jabber-muc-participants))) (list jabber-muc-all-string))))
 
@@ -11547,7 +11511,7 @@ Optional argument GROUP to look."
 (defun jabber-sort-nicks (nicks group)
   "Return list of NICKS in GROUP, sorted."
   (let ((times (cdr (assoc group *jabber-muc-participant-last-speaking*))))
-    (flet ((fetch-time (nick) (or (assoc nick times) (cons nick 0)))
+    (cl-flet ((fetch-time (nick) (or (assoc nick times) (cons nick 0)))
 	   (cmp (nt1 nt2)
 		(let ((t1 (cdr nt1))
 		      (t2 (cdr nt2)))
@@ -11596,7 +11560,7 @@ OLD is last tried nickname."
       (setq he-expand-list (jabber-sort-nicks (all-completions he-search-string (mapcar 'list nicknames)) jabber-group))))
 
   (setq he-expand-list
-	(delete-if '(lambda (x)
+	(cl-delete-if '(lambda (x)
 		       (he-string-member x he-tried-table))
 		   he-expand-list))
   (if (null he-expand-list)
@@ -12419,10 +12383,6 @@ obtained from `xml-parse-region'."
 :old-file:     jabber-modeline.el
 :END:
 
-#+BEGIN_SRC emacs-lisp
-(eval-when-compile (require 'cl))
-
-#+END_SRC
 **** jabber-mode-line                                       :custom:group:
 #+BEGIN_SRC emacs-lisp
 (defgroup jabber-mode-line nil
@@ -12603,10 +12563,6 @@ Allows tracking messages from buddies using the global mode line. See =(info "(j
 4. [ ] Is there any need for having defcustom jabber-activity-make-string?
 5. [ ] When there's activity in a buffer it would be nice with a hook which does the opposite of bury-buffer, so switch-to-buffer will show that buffer first.
 
-#+BEGIN_SRC emacs-lisp
-(require 'cl)
-
-#+END_SRC
 **** jabber-activity                                        :custom:group:
 #+BEGIN_SRC emacs-lisp
 (defgroup jabber-activity nil
@@ -12826,7 +12782,7 @@ least `jabber-activity-shorten-minimum' long."
 		#'(lambda (x) (cons x (funcall jabber-activity-make-string x)))
 		jids)
 	       #'(lambda (x y) (string-lessp (cdr x) (cdr y))))))
-    (loop for ((prev-jid . prev) (cur-jid . cur) (next-jid . next))
+    (cl-loop for ((prev-jid . prev) (cur-jid . cur) (next-jid . next))
 	  on (cons nil alist)
 	  until (null cur)
 	  collect
@@ -12938,10 +12894,10 @@ Optional PRESENCE mean personal presence request or alert."
 #+BEGIN_SRC emacs-lisp
 (defun jabber-activity-clean ()
   "Remove JIDs where `jabber-activity-show-p' no longer is true."
-  (setq jabber-activity-jids (delete-if-not jabber-activity-show-p
+  (setq jabber-activity-jids (cl-delete-if-not jabber-activity-show-p
 					    jabber-activity-jids))
   (setq jabber-activity-personal-jids
-	(delete-if-not jabber-activity-show-p
+	(cl-delete-if-not jabber-activity-show-p
 		       jabber-activity-personal-jids))
   (jabber-activity-mode-line-update))
 
@@ -13113,10 +13069,6 @@ With a numeric arg, enable this display if arg is positive."
 :old-file:     jabber-events.el
 :END:
 
-#+BEGIN_SRC emacs-lisp
-(require 'cl)
-
-#+END_SRC
 **** jabber-events                                          :custom:group:
 #+BEGIN_SRC emacs-lisp
 (defgroup jabber-events nil
@@ -13313,7 +13265,7 @@ Add function last in chain, so a chat buffer is already created.
   (when (and (not (jabber-muc-message-p xml-data))
 	     (get-buffer (jabber-chat-get-buffer (jabber-xml-get-attribute xml-data 'from))))
     (with-current-buffer (jabber-chat-get-buffer (jabber-xml-get-attribute xml-data 'from))
-      (let ((x (find "jabber:x:event"
+      (let ((x (cl-find "jabber:x:event"
 		     (jabber-xml-get-children xml-data 'x)
 		     :key #'(lambda (x) (jabber-xml-get-attribute x 'xmlns))
 		     :test #'string=)))
@@ -13345,7 +13297,7 @@ Add function last in chain, so a chat buffer is already created.
 				       xml-data 'id))
 
 	  ;; Send notifications we already know about
-	  (flet ((send-notification
+	  (cl-flet ((send-notification
 		  (type)
 		  (jabber-send-sexp
 		   jc
@@ -13401,10 +13353,6 @@ Add function last in chain, so a chat buffer is already created.
 **** TODO
 1. [ ] Currently only active/composing notifications are /sent/ though all 5 notifications are handled on receipt.
 
-#+BEGIN_SRC emacs-lisp
-(require 'cl)
-
-#+END_SRC
 **** jabber-chatstates                                      :custom:group:
 #+BEGIN_SRC emacs-lisp
 (defgroup jabber-chatstates nil
@@ -13564,7 +13512,7 @@ It can be sent and cancelled several times.")
 	(let ((state
 	       (or
 		(let ((node
-		       (find jabber-chatstates-xmlns
+		       (cl-find jabber-chatstates-xmlns
 			     (jabber-xml-node-children xml-data)
 			     :key #'(lambda (x) (jabber-xml-get-attribute x 'xmlns))
 			     :test #'string=)))
@@ -13573,7 +13521,7 @@ It can be sent and cancelled several times.")
 		       ;; XXX: this is how we interoperate with
 		       ;; Google Talk.  We should really use a
 		       ;; namespace-aware XML parser.
-		       (find jabber-chatstates-xmlns
+		       (cl-find jabber-chatstates-xmlns
 			     (jabber-xml-node-children xml-data)
 			     :key #'(lambda (x) (jabber-xml-get-attribute x 'xmlns:cha))
 			     :test #'string=)))
@@ -13610,9 +13558,8 @@ A contact with an avatar has the image in the avatar property of the JID symbol.
 
 #+BEGIN_SRC emacs-lisp
 (require 'mailcap)
-(eval-when-compile (require 'cl))
-
 #+END_SRC
+
 **** jabber-avatar                                          :custom:group:
 #+BEGIN_SRC emacs-lisp
 (defgroup jabber-avatar nil
@@ -14576,10 +14523,9 @@ JC is the Jabber connection."
 :END:
 
 #+BEGIN_SRC emacs-lisp
-(eval-when-compile (require 'cl))
 (require 'time-date)
-
 #+END_SRC
+
 **** jabber-autoaway                                        :custom:group:
 #+BEGIN_SRC emacs-lisp
 (defgroup jabber-autoaway nil
@@ -15081,10 +15027,6 @@ obtained from `xml-parse-region'."
 :old-file:     jabber-truncate.el
 :END:
 
-#+BEGIN_SRC emacs-lisp
-(require 'cl)
-
-#+END_SRC
 **** jabber-log-lines-to-keep                                   :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-log-lines-to-keep 1000
@@ -15393,10 +15335,6 @@ Return nil if no MD5 summing program is available."
 :file:     jabber-ft-client.el
 :END:
 
-#+BEGIN_SRC emacs-lisp
-(eval-when-compile (require 'cl))
-
-#+END_SRC
 ***** jabber-ft-send                                            :command:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-ft-send (jc jid filename desc)
@@ -15581,10 +15519,6 @@ Return nil if no MD5 summing program is available."
 :header-args: :tangle jabber-socks5.el :load jabber-enable-legacy-features-p
 :END:
 
-#+BEGIN_SRC emacs-lisp
-(eval-when-compile (require 'cl))
-
-#+END_SRC
 **** jabber-socks5-pending-sessions                             :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-socks5-pending-sessions nil
@@ -16336,10 +16270,6 @@ This function simply starts a state machine."
 :PROPERTIES:
 :old-file:     jabber-rtt.el
 :END:
-
-#+BEGIN_SRC emacs-lisp
-(eval-when-compile (require 'cl))
-#+END_SRC
 
 **** Handling incoming events
 #+BEGIN_SRC emacs-lisp
