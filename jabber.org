@@ -4991,9 +4991,9 @@ Return an XML node."
   "Convert XML-DATA to simpler sexp format.
 XML-DATA is an <iq> node with a <query xmlns='jabber:iq:roster'> child.
 See `jabber-roster-to-sexp' for description of output format."
-  (assert (eq (jabber-xml-node-name xml-data) 'iq))
+  (cl-assert (eq (jabber-xml-node-name xml-data) 'iq))
   (let ((query (car (jabber-xml-get-children xml-data 'query))))
-    (assert query)
+    (cl-assert query)
     (mapcar
      #'(lambda (n)
 	 (list
@@ -6419,7 +6419,7 @@ JC is the Jabber connection."
   (interactive)
   ;; If user accidentally hits RET without writing anything, just
   ;; ignore it.
-  (when (plusp (- (point-max) jabber-point-insert))
+  (when (cl-plusp (- (point-max) jabber-point-insert))
     ;; If connection was lost...
     (unless (memq jabber-buffer-connection jabber-connections)
       ;; ...maybe there is a new connection to the same account.
@@ -9790,7 +9790,7 @@ JC is the Jabber connection."
       (cl-destructuring-bind (muc-jid . nick) default-nickname
 	(let ((entry (assoc muc-jid conferences)))
 	  (if entry
-	      (setf (fourth entry) nick)
+	      (setf (cl-fourth entry) nick)
 	    (setq entry (list muc-jid "" nil nick ""))
 	    (push entry conferences)
 	    (push (cons 'conference entry) value)))))
