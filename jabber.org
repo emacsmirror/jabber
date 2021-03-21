@@ -171,7 +171,7 @@ If a source block does not have syntax highlighting, press =M-o M-o= (=font-lock
 8. [X] The tangled file currently does not list all the other authors (currently listed in =:COPYRIGHT:= drawers). We could add them all at once in the library headers section...or something else. 🤔
 ** Library headers and commentary
 #+BEGIN_SRC emacs-lisp
-;;; jabber.el --- a minimal jabber client
+;;; jabber.el --- a minimal jabber client  -*- lexical-binding: y; -*-
 
 ;; Copyright (C) 2003-2010, 2013 - Magnus Henoch - mange@freemail.hu
 ;; Copyright (C) 2002-2004 - Tom Berger - object@intelectronica.net
@@ -210,6 +210,8 @@ If a source block does not have syntax highlighting, press =M-o M-o= (=font-lock
 #+BEGIN_SRC emacs-lisp
 (require 'cl-lib)
 (require 'goto-addr)
+
+(setq lexical-binding 't)
 #+END_SRC
 ** Code
 *** custom variables
@@ -1822,7 +1824,7 @@ connection fails."
 #+BEGIN_SRC emacs-lisp
 (defun jabber-network-connect-async (fsm server network-server port)
   ;; Get all potential targets...
-  (lexical-let ((targets (jabber-srv-targets server network-server port))
+  (let ((targets (jabber-srv-targets server network-server port))
 		errors
 		(fsm fsm))
     ;; ...and connect to them one after another, asynchronously, until
@@ -1830,7 +1832,7 @@ connection fails."
     (cl-labels
 	((connect
 	  (target remaining-targets)
-	  (lexical-let ((target target) (remaining-targets remaining-targets))
+	  (let ((target target) (remaining-targets remaining-targets))
 	    (cl-labels ((connection-successful
 		      (c)
 		      ;; This mustn't be `fsm-send-sync', because the FSM
@@ -1863,7 +1865,7 @@ connection fails."
 		   :coding 'utf-8
 		   :nowait t
 		   :sentinel
-		   (lexical-let ((target target) (remaining-targets remaining-targets))
+		   (let ((target target) (remaining-targets remaining-targets))
 		     (lambda (connection status)
 		       (cond
 			((string-match "^open" status)
@@ -2199,7 +2201,7 @@ with `jabber-xml-get-chidlren')."
 (defun jabber-sasl-read-passphrase-closure (jc remember)
   "Return a lambda function suitable for `sasl-read-passphrase' for JC.
 Call REMEMBER with the password.  REMEMBER is expected to return it as well."
-  (lexical-let ((password (plist-get (fsm-get-state-data jc) :password))
+  (let ((password (plist-get (fsm-get-state-data jc) :password))
 		(bare-jid (jabber-connection-bare-jid jc))
 		(remember remember))
     (if password
@@ -4402,7 +4404,7 @@ H        Toggle displaying this text
 	(jabber-sort-roster jc)
 	(let ((before-ewoc (point))
 	      (ewoc (ewoc-create
-		       (lexical-let ((jc jc))
+		       (let ((jc jc))
 			 (lambda (data)
 			   (let* ((group (car data))
 				  (group-name (car group))
@@ -9569,7 +9571,7 @@ immediately, and return nil if it is not in the cache."
          cache conference-jid key)))
     (jabber-get-bookmarks
      jc
-     (lexical-let ((conference-jid conference-jid)
+     (let ((conference-jid conference-jid)
 		   (key key)
 		   (cont cont))
        (lambda (jc result)
@@ -9618,7 +9620,7 @@ If REFRESH is non-nil, always fetch bookmarks."
   (let ((bookmarks (gethash (jabber-connection-bare-jid jc) jabber-bookmarks)))
     (if (and (not refresh) bookmarks)
 	(run-with-timer 0 nil cont jc (when (listp bookmarks) bookmarks))
-      (lexical-let* ((cont cont)
+      (let* ((cont cont)
 		     (callback (lambda (jc result) (jabber-get-bookmarks-1 jc result cont))))
 	(jabber-private-get jc 'storage "storage:bookmarks"
 			    callback callback)))))
@@ -15359,7 +15361,7 @@ Return nil if no MD5 summing program is available."
 				,@(when hash
 				    (list (cons 'hash hash))))
 			       (desc () ,desc))
-			(lexical-let ((filename filename))
+			(let ((filename filename))
 			  (lambda (jc jid sid send-data-function)
 			    (jabber-ft-do-send
 			     jid sid send-data-function filename))))))
@@ -15703,7 +15705,7 @@ set; the target waits for one."
       ;; Each entry is ["name" "jid" "node"].  We send a disco info
       ;; request to everything without a node.
       (when (null (aref entry 2))
-	(lexical-let ((jid (aref entry 1)))
+	(let ((jid (aref entry 1)))
 	  (jabber-disco-get-info
 	   (plist-get state-data :jc)
 	   jid nil
@@ -15747,7 +15749,7 @@ set; the target waits for one."
 (define-enter-state jabber-socks5 query-proxies (fsm state-data)
   (jabber-socks5-query-all-proxies
    (plist-get state-data :jc)
-   (lexical-let ((fsm fsm))
+   (let ((fsm fsm))
      (lambda () (fsm-send-sync fsm :proxies))))
   (list state-data 5))
 
@@ -15804,7 +15806,7 @@ set; the target waits for one."
 		jabber-socks5-proxies-data)
 	     ;; (fast ((xmlns . "http://affinix.com/jabber/stream")))
 	     )
-     (lexical-let ((fsm fsm))
+     (let ((fsm fsm))
        (lambda (jc xml-data closure-data)
 	 (fsm-send-sync fsm (list :iq xml-data))))
      nil
@@ -16156,7 +16158,7 @@ set; the target waits for one."
 		     :profile-data-function
 		     (funcall profile-function
 			      jc jid sid
-			      (lexical-let ((fsm fsm))
+			      (let ((fsm fsm))
 				(lambda (data)
 				  (fsm-send fsm (list :send data))))))
 	  nil)))
@@ -16248,7 +16250,7 @@ This function simply starts a state machine."
 ;; 		    `(query ((xmlns . "http://jabber.org/protocol/bytestreams")
 ;; 			     (sid . ,sid))
 ;; 			    (activate () ,jid))
-;; 		    (lexical-let ((jid jid) (sid sid) (profile-function profile-function)
+;; 		    (let ((jid jid) (sid sid) (profile-function profile-function)
 ;; 				  (connection connection))
 ;; 		      (lambda (xml-data closure-data)
 ;; 			(jabber-socks5-client-3 xml-data jid sid profile-function connection))) nil
@@ -16261,7 +16263,7 @@ This function simply starts a state machine."
 ;;   ;; information, beyond success confirmation.
 
 ;;   (funcall profile-function jid sid
-;; 	   (lexical-let ((proxy-connection proxy-connection))
+;; 	   (let ((proxy-connection proxy-connection))
 ;; 	     (lambda (data)
 ;; 	       (process-send-string proxy-connection data)))))
 
