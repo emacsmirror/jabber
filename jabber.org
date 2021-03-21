@@ -448,7 +448,7 @@ any string   character data of this node."
 		(dolist (x (jabber-xml-get-children node (intern (cdr step))))
 		  (when (string= (jabber-xml-get-attribute x 'xmlns)
 				 (car step))
-		    (return x)))))
+		    (cl-return x)))))
 	 ((stringp step)
 	  (setq node (car (jabber-xml-node-children node)))
 	  (unless (stringp node)
@@ -663,7 +663,7 @@ binding."
 Return nil if none found."
   (dolist (jc jabber-connections)
     (when (string= bare-jid (jabber-connection-bare-jid jc))
-      (return jc))))
+      (cl-return jc))))
 
 #+END_SRC
 **** jabber-find-active-connection                              :function:
@@ -727,11 +727,11 @@ JID must be a string."
 (defun jabber-jid-bookmarkname (string)
   "Return from STRING the conference name from boomarks or displayname.
 Use the name according to roster or else the JID if none set."
-  (or (cl-loop for conference in (first (cl-loop for value being the hash-values of jabber-bookmarks
+  (or (cl-loop for conference in (cl-first (cl-loop for value being the hash-values of jabber-bookmarks
                                            collect value))
             do (let ((ls (cadr conference)))
                  (if (string= (cdr (assoc 'jid ls)) string)
-                     (return (cdr (assoc 'name ls))))))
+                     (cl-return (cdr (assoc 'name ls))))))
       (jabber-jid-displayname string)))
 
 #+END_SRC
@@ -1269,7 +1269,7 @@ See secton 9.3, Stanza Errors, of XMPP Core, and XEP-0086, Legacy Errors."
 			"urn:ietf:params:xml:ns:xmpp-streams")
 	       (assq (jabber-xml-node-name node)
 		     jabber-stream-error-messages))
-      (return (jabber-xml-node-name node)))))
+      (cl-return (jabber-xml-node-name node)))))
 
 #+END_SRC
 **** jabber-parse-stream-error                                  :function:
@@ -2217,8 +2217,8 @@ Call REMEMBER with the password.  REMEMBER is expected to return it as well."
 JC is the Jabber connection.
 XML-DATA is the parsed tree data from the stream (stanzas)
 obtained from `xml-parse-region'."
-  (let* ((client (first sasl-data))
-	 (step (second sasl-data))
+  (let* ((client (cl-first sasl-data))
+	 (step (cl-second sasl-data))
 	 (passphrase (third sasl-data))
 	 (sasl-read-passphrase (jabber-sasl-read-passphrase-closure
 				jc
@@ -3478,7 +3478,7 @@ DATA is any sexp."
 
        ;; Stream end?
        (when (looking-at "</stream:stream>")
-	 (return (fsm-send fsm :stream-end)))
+	 (cl-return (fsm-send fsm :stream-end)))
 
        ;; Stream header?
        (when (looking-at "<stream:stream[^>]*\\(>\\)")
@@ -4249,9 +4249,9 @@ Return t if A is less than B."
     (let ((comparison (funcall fn a b)))
       (cond
        ((< comparison 0)
-	(return t))
+	(cl-return t))
        ((> comparison 0)
-	(return nil))))))
+	(cl-return nil))))))
 
 #+END_SRC
 **** jabber-roster-sort-by-status                               :function:
@@ -5574,22 +5574,22 @@ Examples:
 	   ,docstring
 	   (when title
 	     (funcall ,function text title)))
-	 (pushnew (quote ,msg) (get 'jabber-alert-message-hooks 'custom-options))
+	 (cl-pushnew (quote ,msg) (get 'jabber-alert-message-hooks 'custom-options))
 	 (defun ,muc (nick group buffer text title)
 	   ,docstring
 	   (when title
 	     (funcall ,function text title)))
-	 (pushnew (quote ,muc) (get 'jabber-alert-muc-hooks 'custom-options))
+	 (cl-pushnew (quote ,muc) (get 'jabber-alert-muc-hooks 'custom-options))
 	 (defun ,pres (who oldstatus newstatus statustext title)
 	   ,docstring
 	   (when title
 	     (funcall ,function statustext title)))
-	 (pushnew (quote ,pres) (get 'jabber-alert-presence-hooks 'custom-options))
+	 (cl-pushnew (quote ,pres) (get 'jabber-alert-presence-hooks 'custom-options))
 	 (defun ,info (infotype buffer text)
 	   ,docstring
 	   (when text
 	     (funcall ,function text)))
-	 (pushnew (quote ,info) (get 'jabber-alert-info-message-hooks 'custom-options))))))
+	 (cl-pushnew (quote ,info) (get 'jabber-alert-info-message-hooks 'custom-options))))))
 
 #+END_SRC
 
@@ -5639,7 +5639,7 @@ Examples:
 	   (bare-jid (jabber-jid-user from))
 	   (sound-file (or (dolist (entry jabber-alert-message-wave-alist)
 			     (when (string-match (car entry) bare-jid)
-			       (return (cdr entry))))
+			       (cl-return (cdr entry))))
 			   jabber-alert-message-wave)))
       (unless (equal sound-file "")
 	(funcall jabber-play-sound-file sound-file)))))
@@ -5787,7 +5787,7 @@ This function is not called directly, but can be used as the value for
 	   (bare-jid (symbol-name who))
 	   (sound-file (or (dolist (entry jabber-alert-presence-wave-alist)
 			     (when (string-match (car entry) bare-jid)
-			       (return (cdr entry))))
+			       (cl-return (cdr entry))))
 			   jabber-alert-presence-wave)))
       (unless (equal sound-file "")
 	(funcall jabber-play-sound-file sound-file)))))
@@ -5869,7 +5869,7 @@ NAME: the name of the sender."
        (defun ,func (nick group buffer text title)
          (if (jabber-muc-looks-like-personal-p text group)
              (,name nick group buffer text title)))
-       (pushnew (quote ,func) (get 'jabber-alert-muc-hooks 'custom-options)))))
+       (cl-pushnew (quote ,func) (get 'jabber-alert-muc-hooks 'custom-options)))))
   )
 
 #+END_SRC
@@ -5902,11 +5902,11 @@ Answer automaticaly when incoming text match the first element of
     (let ((message
            (dolist (entry jabber-autoanswer-alist)
              (when (string-match (car entry) text)
-               (return (cdr entry))))))
+               (cl-return (cdr entry))))))
       (if message
           (jabber-chat-send jabber-buffer-connection message)))
     ))
-(pushnew 'jabber-autoanswer-answer (get 'jabber-alert-message-hooks 'custom-options))
+(cl-pushnew 'jabber-autoanswer-answer (get 'jabber-alert-message-hooks 'custom-options))
 
 #+END_SRC
 ***** jabber-autoanswer-answer-muc                             :function:
@@ -5919,11 +5919,11 @@ of `jabber-autoanswer-alist'."
     (let ((message
            (dolist (entry jabber-autoanswer-alist)
              (when (string-match (car entry) text)
-               (return (cdr entry))))))
+               (cl-return (cdr entry))))))
       (if message
           (jabber-chat-send jabber-buffer-connection message)))
     ))
-(pushnew 'jabber-autoanswer-answer-muc (get 'jabber-alert-muc-hooks 'custom-options))
+(cl-pushnew 'jabber-autoanswer-answer-muc (get 'jabber-alert-muc-hooks 'custom-options))
 
 #+END_SRC
 *** FIXME Recording message history
@@ -8115,7 +8115,7 @@ obtained from `xml-parse-region'."
 	      ;; We asked someone about this hash less than 10 seconds ago.
 	      ;; Let's add the new JID to the entry, just in case that
 	      ;; doesn't work out.
-	      (pushnew jid (cdr cache-entry) :test #'string=)
+	      (cl-pushnew jid (cdr cache-entry) :test #'string=)
 	    ;; We asked someone about it more than 10 seconds ago.
 	    ;; They're probably not going to answer.  Let's ask
 	    ;; this contact about it instead.
@@ -9585,7 +9585,7 @@ immediately, and return nil if it is not in the cache."
   (let ((entry (dolist (node result)
 		(when (and (eq (jabber-xml-node-name node) 'conference)
 			   (string= (jabber-xml-get-attribute node 'jid) conference-jid))
-		  (return (jabber-parse-conference-bookmark node))))))
+		  (cl-return (jabber-parse-conference-bookmark node))))))
     (if key
 	(plist-get entry key)
       entry)))
@@ -10989,7 +10989,7 @@ obtained from `xml-parse-region'."
 		      (insert (jabber-propertize "Decline"
 						 'keymap keymap
 						 'face 'highlight))))))))
-	  (return t))))))
+	  (cl-return t))))))
 
 #+END_SRC
 **** jabber-muc-autojoin                                         :command:
@@ -12766,7 +12766,7 @@ return the user's nickname."
   (let ((len (min (length s1) (length s2))))
     (or (dotimes (i len)
 	  (when (not (eq (aref s1 i) (aref s2 i)))
-	    (return i)))
+	    (cl-return i)))
 	;; Substrings, equal, nil, or empty ("")
 	len)))
 
@@ -12820,7 +12820,7 @@ And, JID is not in `jabber-activity-banned'."
 	 (not (get-buffer-window buffer 'visible))
          (not (dolist (entry jabber-activity-banned)
                 (when (string-match entry jid)
-                  (return t)))))))
+                  (cl-return t)))))))
 
 #+END_SRC
 **** jabber-activity-make-name-alist                            :function:
@@ -13340,7 +13340,7 @@ Add function last in chain, so a chat buffer is already created.
 		  (when (jabber-xml-get-children x possible-node)
 		    (setq jabber-events-arrived possible-node)
 		    (jabber-events-update-message)
-		    (return t)))
+		    (cl-return t)))
 	      ;; Or maybe even zero, which is a negative composing node.
 	      (setq jabber-events-composing-p
 		    (not (null (jabber-xml-get-children x 'composing))))
@@ -15722,15 +15722,15 @@ set; the target waits for one."
     (fsm-debug-output "got disco event")
     ;; Count the response.
     (plist-put state-data :remaining-info (1- (plist-get state-data :remaining-info)))
-    (unless (eq (first (third event)) 'error)
-      (let ((identities (first (third event))))
+    (unless (eq (cl-first (third event)) 'error)
+      (let ((identities (cl-first (third event))))
 	;; Is it a bytestream proxy?
 	(when (dolist (identity identities)
 		(when (and (string= (aref identity 1) "proxy")
 			   (string= (aref identity 2) "bytestreams"))
-		  (return t)))
+		  (cl-return t)))
 	  ;; Yes, it is.  Add it to the list.
-	  (push (second event) jabber-socks5-proxies))))
+	  (push (cl-second event) jabber-socks5-proxies))))
 
     ;; Wait for more responses, if any are to be expected.
     (if (zerop (plist-get state-data :remaining-info))
@@ -15830,7 +15830,7 @@ set; the target waits for one."
 	 (session (dolist (pending-session jabber-socks5-pending-sessions)
 		    (when (and (equal sid (nth 0 pending-session))
 			       (equal jid (nth 1 pending-session)))
-		      (return pending-session)))))
+		      (cl-return pending-session)))))
     ;; check that we really are expecting this session
     (unless session
       (jabber-signal-error "auth" 'not-acceptable))
@@ -15849,7 +15849,7 @@ set; the target waits for one."
 ;; 			     ;; Now set the filter, for the rest of the output
 ;; 			     (set-process-filter connection #'jabber-socks5-filter)
 ;; 			     (set-process-sentinel connection #'jabber-socks5-sentinel)
-;; 			     (return streamhost))))))
+;; 			     (cl-return streamhost))))))
 ;;       (unless streamhost
 ;; 	(jabber-signal-error "cancel" 'item-not-found))
 
@@ -15881,7 +15881,7 @@ set; the target waits for one."
 
      ;; Incoming IQ
      ((eq (car-safe event) :iq)
-      (let ((xml-data (second event)))
+      (let ((xml-data (cl-second event)))
 	;; This is either type "set" (with a list of streamhosts to
 	;; use), or a "result" (indicating the streamhost finally used
 	;; by the other party).
@@ -16008,7 +16008,7 @@ set; the target waits for one."
 	  ;; Authenticated.  Send connect command.
 	  (list 'connect state-data nil)
 	;; Authentication failed...
-	(delete-process (second event))
+	(delete-process (cl-second event))
 	(list 'fail state-data nil))))
 
    ((eq (car-safe event) :sentinel)
@@ -16134,7 +16134,7 @@ set; the target waits for one."
    ;; Stray events from earlier state
    ((eq (car-safe event) :connected)
     ;; We just close the connection
-    (delete-process (second event))
+    (delete-process (cl-second event))
     (list 'wait-for-activation state-data :keep))
    ((eq event :not-connected)
     (list 'wait-for-activation state-data :keep))))
@@ -16173,28 +16173,28 @@ set; the target waits for one."
 	(jid (plist-get state-data :jid)))
     (cond
      ((eq (car-safe event) :send)
-      (process-send-string connection (second event))
+      (process-send-string connection (cl-second event))
       (list 'stream-activated state-data nil))
 
      ((eq (car-safe event) :filter)
       ;; Pass data from connection to profile data function
       ;; If the data function requests it, tear down the connection.
       (unless (funcall profile-data-function jc jid sid (third event))
-	(fsm-send fsm (list :sentinel (second event) "shutdown")))
+	(fsm-send fsm (list :sentinel (cl-second event) "shutdown")))
 
       (list 'stream-activated state-data nil))
 
      ((eq (car-safe event) :sentinel)
       ;; Connection terminated.  Shuffle together the remaining data,
       ;; and kill the buffer.
-      (delete-process (second event))
+      (delete-process (cl-second event))
       (funcall profile-data-function jc jid sid nil)
       (list 'closed nil nil))
 
      ;; Stray events from earlier state
      ((eq (car-safe event) :connected)
       ;; We just close the connection
-      (delete-process (second event))
+      (delete-process (cl-second event))
       (list 'stream-activated state-data nil))
      ((eq event :not-connected)
       (list 'stream-activated state-data nil)))))
