@@ -824,7 +824,7 @@ If FULLJIDS is non-nil, complete jids with resources."
 		   input))))
 
     (when chosen
-      (case resource
+      (cl-case resource
 	(full
 	 ;; If JID is bare, add the highest-priority resource.
 	 (if (jabber-jid-resource chosen)
@@ -1352,7 +1352,7 @@ See Info node `(jabber)XMPP URIs'."
 		  (let ((pairs (split-string text ";")))
 		    (mapcar (lambda (pair)
 			      ;; ...and split keys from values by '='.
-			      (destructuring-bind (key value)
+			      (cl-destructuring-bind (key value)
 				  (split-string pair "=")
 				;; Values can be hex-coded.
 				(cons key (jabber-unhex value))))
@@ -1418,7 +1418,7 @@ temporaly buffer _before_ inserting STRING."
   "Apply FN to all nodes in the TREE starting with root.
 FN is applied to the node and not to the data itself."
   (let ((result (cons nil nil)))
-    (do ((tail tree (cdr tail))
+    (cl-do ((tail tree (cdr tail))
 	 (prev result end)
 	 (end result (let* ((x (car tail))
 			    (val (if (atom x)
@@ -2065,7 +2065,7 @@ obtained from `xml-parse-region'."
 	   (connection (plist-get state-data :connection)))
       ;; Did we use open-network-stream or starttls-open-stream?  We
       ;; can tell by process-type.
-      (case (process-type connection)
+      (cl-case (process-type connection)
 	(network
 	 (let* ((hostname (plist-get state-data :server))
 		(verifyp (not (member hostname jabber-invalid-certificate-servers))))
@@ -2219,7 +2219,7 @@ XML-DATA is the parsed tree data from the stream (stanzas)
 obtained from `xml-parse-region'."
   (let* ((client (cl-first sasl-data))
 	 (step (cl-second sasl-data))
-	 (passphrase (third sasl-data))
+	 (passphrase (cl-third sasl-data))
 	 (sasl-read-passphrase (jabber-sasl-read-passphrase-closure
 				jc
 				(lambda (p) (setq passphrase (copy-sequence p)) p))))
@@ -2875,7 +2875,7 @@ With double prefix argument, specify more connection details."
   ;; In the `nil' state, the connection is dead.  We wait for a
   ;; :timeout message, meaning to reconnect, or :do-disconnect,
   ;; meaning to cancel reconnection.
-  (case event
+  (cl-case event
     (:timeout
      (list :connecting state-data))
     (:do-disconnect
@@ -2901,7 +2901,7 @@ With double prefix argument, specify more connection details."
 #+BEGIN_SRC emacs-lisp
 (define-state jabber-connection :connecting
   (fsm state-data event callback)
-  (case (or (car-safe event) event)
+  (cl-case (or (car-safe event) event)
     (:connected
      (let ((connection (cadr event))
 	   (registerp (plist-get state-data :registerp)))
@@ -2967,7 +2967,7 @@ With double prefix argument, specify more connection details."
 #+BEGIN_SRC emacs-lisp
 (define-state jabber-connection :connected
   (fsm state-data event callback)
-  (case (or (car-safe event) event)
+  (cl-case (or (car-safe event) event)
     (:filter
      (let ((process (cadr event))
 	   (string (car (cddr event))))
@@ -3040,7 +3040,7 @@ With double prefix argument, specify more connection details."
 #+BEGIN_SRC emacs-lisp
 (define-state jabber-connection :starttls
   (fsm state-data event callback)
-  (case (or (car-safe event) event)
+  (cl-case (or (car-safe event) event)
     (:filter
      (let ((process (cadr event))
 	   (string (car (cddr event))))
@@ -3081,7 +3081,7 @@ With double prefix argument, specify more connection details."
 (define-state jabber-connection :register-account
   (fsm state-data event callback)
   ;; The connection will be closed in jabber-register
-  (case (or (car-safe event) event)
+  (cl-case (or (car-safe event) event)
     (:filter
      (let ((process (cadr event))
 	   (string (car (cddr event))))
@@ -3117,7 +3117,7 @@ With double prefix argument, specify more connection details."
 #+BEGIN_SRC emacs-lisp
 (define-state jabber-connection :legacy-auth
   (fsm state-data event callback)
-  (case (or (car-safe event) event)
+  (cl-case (or (car-safe event) event)
     (:filter
      (let ((process (cadr event))
 	   (string (car (cddr event))))
@@ -3168,7 +3168,7 @@ With double prefix argument, specify more connection details."
 #+BEGIN_SRC emacs-lisp
 (define-state jabber-connection :sasl-auth
   (fsm state-data event callback)
-  (case (or (car-safe event) event)
+  (cl-case (or (car-safe event) event)
     (:filter
      (let ((process (cadr event))
 	   (string (car (cddr event))))
@@ -3216,7 +3216,7 @@ With double prefix argument, specify more connection details."
 #+BEGIN_SRC emacs-lisp
 (define-state jabber-connection :bind
   (fsm state-data event callback)
-  (case (or (car-safe event) event)
+  (cl-case (or (car-safe event) event)
     (:filter
      (let ((process (cadr event))
 	   (string (car (cddr event))))
@@ -3329,7 +3329,7 @@ With double prefix argument, specify more connection details."
 #+BEGIN_SRC emacs-lisp
 (define-state jabber-connection :session-established
   (fsm state-data event callback)
-  (case (or (car-safe event) event)
+  (cl-case (or (car-safe event) event)
     (:filter
      (let ((process (cadr event))
 	   (string (car (cddr event))))
@@ -7007,7 +7007,7 @@ This function is used as an ewoc prettyprinter."
     ;; Print prompt...
     (let ((delayed (or original-timestamp (plist-get (cddr data) :delayed)))
 	  (prompt-start (point)))
-      (case (car data)
+      (cl-case (car data)
 	(:local
 	 (jabber-chat-self-prompt (or original-timestamp internal-time)
 				  delayed
@@ -7032,7 +7032,7 @@ This function is used as an ewoc prettyprinter."
       (put-text-property prompt-start (point) 'field 'jabber-prompt))
 
     ;; ...and body
-    (case (car data)
+    (cl-case (car data)
       ((:local :foreign)
        (run-hook-with-args 'jabber-chat-printers (cadr data) (car data) :insert))
       ((:muc-local :muc-foreign)
@@ -7205,7 +7205,7 @@ obtained from `xml-parse-region'."
 		   (car
 		    (jabber-xml-get-children xml-data 'subject))))))
     (when (not (zerop (length subject)))
-      (case mode
+      (cl-case mode
 	(:printp
 	 t)
 	(:insert
@@ -7252,7 +7252,7 @@ obtained from `xml-parse-region'."
 		       'face 'jabber-chat-prompt-system)))
 	  (insert (jabber-propertize
 		   body
-		   'face (case who
+		   'face (cl-case who
 			   ((:foreign :muc-foreign) 'jabber-chat-text-foreign)
 			   ((:local :muc-local) 'jabber-chat-text-local))))))
       t)))
@@ -8135,7 +8135,7 @@ obtained from `xml-parse-region'."
 **** jabber-process-caps-info-result                            :function:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-process-caps-info-result (jc xml-data closure-data)
-  (destructuring-bind (hash node ver) closure-data
+  (cl-destructuring-bind (hash node ver) closure-data
     (let* ((key (cons hash ver))
 	   (query (jabber-iq-query xml-data))
 	   (verification-string (jabber-caps-ver-string query hash)))
@@ -8149,7 +8149,7 @@ obtained from `xml-parse-region'."
 **** jabber-process-caps-info-error                             :function:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-process-caps-info-error (jc xml-data closure-data)
-  (destructuring-bind (hash node ver) closure-data
+  (cl-destructuring-bind (hash node ver) closure-data
     (jabber-caps-try-next jc hash node ver)))
 
 #+END_SRC
@@ -9681,7 +9681,7 @@ JC is the Jabber connection."
   (setq bookmarks
 	(mapcar
 	 (lambda (e)
-	   (case (jabber-xml-node-name e)
+	   (cl-case (jabber-xml-node-name e)
 	     (url
 	      (list 'url (or (jabber-xml-get-attribute e 'url) "")
 		    (or (jabber-xml-get-attribute e 'name) "")))
@@ -9749,13 +9749,13 @@ JC is the Jabber connection."
     (setq bookmarks
 	  (mapcar
 	   (lambda (entry)
-	     (case (car entry)
+	     (cl-case (car entry)
 	       (url
-		(destructuring-bind (symbol url name) entry
+		(cl-destructuring-bind (symbol url name) entry
 		  `(url ((url . ,url)
 			 (name . ,name)))))
 	       (conference
-		(destructuring-bind (symbol jid name autojoin nick password)
+		(cl-destructuring-bind (symbol jid name autojoin nick password)
 		    entry
 		  `(conference ((jid . ,jid)
 				(name . ,name)
@@ -9787,7 +9787,7 @@ JC is the Jabber connection."
 			  (eq (car entry) 'conference))
 			value))))
     (dolist (default-nickname jabber-muc-default-nicknames)
-      (destructuring-bind (muc-jid . nick) default-nickname
+      (cl-destructuring-bind (muc-jid . nick) default-nickname
 	(let ((entry (assoc muc-jid conferences)))
 	  (if entry
 	      (setf (fourth entry) nick)
@@ -9797,7 +9797,7 @@ JC is the Jabber connection."
     (dolist (autojoin jabber-muc-autojoin)
       (let ((entry (assoc autojoin conferences)))
 	(if entry
-	    (setf (third entry) t)
+	    (setf (cl-third entry) t)
 	  (setq entry (list autojoin "" t "" ""))
 	  (push (cons 'conference entry) value))))
     (widget-value-set (cdr (assq 'bookmarks jabber-widget-alist)) value)
@@ -10596,7 +10596,7 @@ JC is the Jabber connection."
 **** jabber-muc-join-2                                          :function:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-muc-join-2 (jc closure result)
-  (destructuring-bind (group nickname popup) closure
+  (cl-destructuring-bind (group nickname popup) closure
     (let* ( ;; Either success...
 	  (identities (car result))
 	  (features (cadr result))
@@ -15621,7 +15621,7 @@ proxies have answered."
 	(setq jabber-socks5-proxies-data
 	      (delq existing-entry jabber-socks5-proxies-data))))
 
-    (destructuring-bind (callback successp) closure-data
+    (cl-destructuring-bind (callback successp) closure-data
       (when successp
 	(setq jabber-socks5-proxies-data
 	      (cons (cons from streamhosts)
@@ -15722,8 +15722,8 @@ set; the target waits for one."
     (fsm-debug-output "got disco event")
     ;; Count the response.
     (plist-put state-data :remaining-info (1- (plist-get state-data :remaining-info)))
-    (unless (eq (cl-first (third event)) 'error)
-      (let ((identities (cl-first (third event))))
+    (unless (eq (cl-first (cl-third event)) 'error)
+      (let ((identities (cl-first (cl-third event))))
 	;; Is it a bytestream proxy?
 	(when (dolist (identity identities)
 		(when (and (string= (aref identity 1) "proxy")
@@ -15973,7 +15973,7 @@ set; the target waits for one."
   (fsm state-data event callback)
   (cond
    ((eq (car-safe event) :sentinel)
-    (let ((string (third event)))
+    (let ((string (cl-third event)))
       (cond
        ;; Connection succeeded
        ((string= (substring string 0 4) "open")
@@ -16001,7 +16001,7 @@ set; the target waits for one."
   "Receive response to authenticate command."
   (cond
    ((eq (car-safe event) :filter)
-    (let ((string (third event)))
+    (let ((string (cl-third event)))
       ;; should return:
       ;; version: 5.  auth method to use: none
       (if (string= string (string 5 0))
@@ -16038,7 +16038,7 @@ set; the target waits for one."
   "Receive response to connect command."
   (cond
    ((eq (car-safe event) :filter)
-    (let ((string (third event)))
+    (let ((string (cl-third event)))
       (if (string= (substring string 0 2) (string 5 0))
 	  ;; connection established
 	  (progn
@@ -16084,7 +16084,7 @@ set; the target waits for one."
   (fsm state-data event callback)
   (cond
    ((eq (car-safe event) :connected)
-    (destructuring-bind (ignored connection streamhost-jid) event
+    (cl-destructuring-bind (ignored connection streamhost-jid) event
       (setq state-data (plist-put state-data :connection connection))
       ;; If we are expected to tell which streamhost we chose, do so.
       (let ((iq-id (plist-get state-data :iq-id)))
@@ -16179,7 +16179,7 @@ set; the target waits for one."
      ((eq (car-safe event) :filter)
       ;; Pass data from connection to profile data function
       ;; If the data function requests it, tear down the connection.
-      (unless (funcall profile-data-function jc jid sid (third event))
+      (unless (funcall profile-data-function jc jid sid (cl-third event))
 	(fsm-send fsm (list :sentinel (cl-second event) "shutdown")))
 
       (list 'stream-activated state-data nil))
@@ -16394,7 +16394,7 @@ Add function last in chain, so a chat buffer is already created.
     (catch 'wait
       (while jabber-rtt-pending-events
 	(let ((action (pop jabber-rtt-pending-events)))
-	  (case (jabber-xml-node-name action)
+	  (cl-case (jabber-xml-node-name action)
 	    ((t)
 	     ;; insert text
 	     (let* ((p (jabber-xml-get-attribute action 'p))
