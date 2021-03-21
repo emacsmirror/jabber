@@ -171,7 +171,7 @@ If a source block does not have syntax highlighting, press =M-o M-o= (=font-lock
 8. [X] The tangled file currently does not list all the other authors (currently listed in =:COPYRIGHT:= drawers). We could add them all at once in the library headers section...or something else. 🤔
 ** Library headers and commentary
 #+BEGIN_SRC emacs-lisp
-;;; jabber.el --- a minimal jabber client  -*- lexical-binding: y; -*-
+;;; jabber.el --- a minimal jabber client  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2003-2010, 2013 - Magnus Henoch - mange@freemail.hu
 ;; Copyright (C) 2002-2004 - Tom Berger - object@intelectronica.net
