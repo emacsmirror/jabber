@@ -207,16 +207,19 @@ If a source block does not have syntax highlighting, press =M-o M-o= (=font-lock
 
 #+END_SRC
 ** Dependencies
+  
 #+BEGIN_SRC emacs-lisp
 (require 'cl-lib)
 (require 'goto-addr)
-
-(setq lexical-binding 't)
 #+END_SRC
 ** Code
 *** custom variables
+   The ~lexical-binding~ variable is setted to t evaluating the code to ensure that ~literate-elisp-load~ works using lexical bindings. The prop-line is also used just in case the code is tangled and byte-compiled.
+   
 #+BEGIN_SRC emacs-lisp
-(defvar jabber-enable-legacy-features-p nil)
+  (setq lexical-binding t)
+
+  (defvar jabber-enable-legacy-features-p nil)
 #+END_SRC
 *** XML functions
 :PROPERTIES:
