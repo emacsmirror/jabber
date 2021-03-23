@@ -156,7 +156,7 @@
 ;;
 ;;; Code:
 
-(eval-when-compile (require 'cl)) ;; case; plus, for Emacs < 20: when, unless
+(eval-when-compile (require 'cl-lib)) ;; case; plus, for Emacs < 20: when, unless
 
 ;; Unless you first load `hexrgb.el', then either `palette.el' or `eyedropper.el', you will get
 ;; warnings about variables and functions with prefix `eyedrop-' when you byte-compile
@@ -346,7 +346,7 @@ Optional arg PROMPT is the prompt.  Nil means use a default prompt."
                          (try-completion color colors))))
           (error "No such color: %S" color))
         (when convert-to-RGB-p (setq color  (hexrgb-color-name-to-hex color))))
-      (when (interactive-p) (message "Color: `%s'" color))
+      (when (called-interactively-p 'interactive) (message "Color: `%s'" color))
       color)))
 
 ;;;###autoload
@@ -370,7 +370,7 @@ returned; otherwise, t is returned."
         (green  (hexrgb-green color))
         (blue   (hexrgb-blue color)))
     (setq color  (hexrgb-rgb-to-hex (- 1.0 red) (- 1.0 green) (- 1.0 blue))))
-  (when (interactive-p) (message "Complement: `%s'" color))
+  (when (called-interactively-p 'interactive) (message "Complement: `%s'" color))
   color)
 
 ;;;###autoload
@@ -481,7 +481,7 @@ Returns a list of RGB components of value 0.0 to 1.0, inclusive."
             pp       (* value (- 1 saturation))
             qq       (* value (- 1 (* saturation fract)))
             ww       (* value (- 1 (* saturation (- 1 (- hue int-hue))))))
-      (case int-hue
+      (cl-case int-hue
         ((0 6) (setq red    value
                      green  ww
                      blue   pp))
