@@ -214,11 +214,15 @@ If a source block does not have syntax highlighting, press =M-o M-o= (=font-lock
 #+END_SRC
 ** Code
 *** custom variables
-   The ~lexical-binding~ variable is setted to t evaluating the code to ensure that ~literate-elisp-load~ works using lexical bindings. The prop-line is also used just in case the code is tangled and byte-compiled.
-   
+   The ~lexical-binding~ variable is setted to t evaluating the code to ensure that ~literate-elisp-load~ works using lexical bindings. The prop-line is also used just in case the code is tangled and byte-compiled, but ~literate-elisp-tangle~ discards all comments, thus the eval-when-compile sentence below.
+
 #+BEGIN_SRC emacs-lisp
   (setq lexical-binding t)
-
+  (eval-when-compile
+    (setq lexical-binding t))
+#+END_SRC
+   
+#+BEGIN_SRC emacs-lisp
   (defvar jabber-enable-legacy-features-p nil)
 #+END_SRC
 *** XML functions
