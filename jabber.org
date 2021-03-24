@@ -432,38 +432,38 @@ Return nil if the attribute was not found."
 #+END_SRC
 **** jabber-xml-path                                            :function:
 #+BEGIN_SRC emacs-lisp
-(defun jabber-xml-path (xml-data path)
-  "Find sub-node of XML-DATA according to PATH.
-PATH is a vaguely XPath-inspired list.  Each element can be:
-
-a symbol     go to first child node with this node name
-cons cell    car is string containing namespace URI,
-             cdr is string containing node name.  Find
-             first matching child node.
-any string   character data of this node."
-  (let ((node xml-data))
-    (while (and path node)
-      (let ((step (car path)))
-	(cond
-	 ((symbolp step)
-	  (setq node (car (jabber-xml-get-children node step))))
-	 ((consp step)
-	  ;; This will be easier with namespace-aware use
-	  ;; of xml.el.  It will also be more correct.
-	  ;; Now, it only matches explicit namespace declarations.
-	  (setq node
-		(dolist (x (jabber-xml-get-children node (intern (cdr step))))
-		  (when (string= (jabber-xml-get-attribute x 'xmlns)
-				 (car step))
-		    (cl-return x)))))
-	 ((stringp step)
-	  (setq node (car (jabber-xml-node-children node)))
-	  (unless (stringp node)
-	    (setq node nil)))
-	 (t
-	  (error "Unknown path step: %s" step))))
-      (setq path (cdr path)))
-    node))
+  (defun jabber-xml-path (xml-data path)
+    "Find sub-node of XML-DATA according to PATH.
+  PATH is a vaguely XPath-inspired list.  Each element can be:
+  a symbol     go to first child node with this node name
+  cons cell    car is string containing namespace URI,
+               cdr is string containing node name.  Find
+               first matching child node.
+  any string   character data of this node."
+    (let ((node xml-data))
+      (while (and path node)
+        (let ((step (car path)))
+          (cond
+           ((symbolp step)
+            (setq node (car (jabber-xml-get-children node step))))
+           ((consp step)
+            ;; This will be easier with namespace-aware use
+            ;; of xml.el.  It will also be more correct.
+            ;; Now, it only matches explicit namespace declarations.
+            (setq node
+                  (cl-block dolist-loop
+                  (dolist (x (jabber-xml-get-children node (intern (cdr step))))
+                    (when (string= (jabber-xml-get-attribute x 'xmlns)
+                                   (car step))
+                      (cl-return-from dolist-loop  x))))))
+           ((stringp step)
+            (setq node (car (jabber-xml-node-children node)))
+            (unless (stringp node)
+              (setq node nil)))
+           (t
+            (error "Unknown path step: %s" step))))
+        (setq path (cdr path)))
+      node))
 
 #+END_SRC
 **** jabber-xml-let-attributes                                     :macro:
@@ -4249,16 +4249,16 @@ JC is the Jabber connection."
 #+END_SRC
 **** jabber-roster-sort-items                                   :function:
 #+BEGIN_SRC emacs-lisp
-(defun jabber-roster-sort-items (a b)
-  "Sort roster items A and B according to `jabber-roster-sort-functions'.
-Return t if A is less than B."
-  (dolist (fn jabber-roster-sort-functions)
-    (let ((comparison (funcall fn a b)))
-      (cond
-       ((< comparison 0)
-	(cl-return t))
-       ((> comparison 0)
-	(cl-return nil))))))
+  (defun jabber-roster-sort-items (a b)
+    "Sort roster items A and B according to `jabber-roster-sort-functions'.
+  Return t if A is less than B."
+    (dolist (fn jabber-roster-sort-functions)
+      (let ((comparison (funcall fn a b)))
+        (cond
+         ((< comparison 0)
+          t)
+         ((> comparison 0)
+          nil)))))
 
 #+END_SRC
 **** jabber-roster-sort-by-status                               :function:
