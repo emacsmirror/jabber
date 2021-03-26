@@ -11551,7 +11551,7 @@ Optional argument GROUP to look."
                        (car nt1)
                        (car nt2))
 		    (> t1 t2)))))
-      (mapcar 'car (sort (mapcar 'fetch-time nicks)
+      (mapcar 'car (sort (mapcar #'fetch-time nicks)
 			  'cmp)))))
 
 #+END_SRC
