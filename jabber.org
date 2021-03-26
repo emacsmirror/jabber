@@ -11215,7 +11215,7 @@ Return nil if X-MUC is nil."
 
 JC is the Jabber connection."
   (when (jabber-muc-message-p xml-data)
-
+    (defvar printers nil)
     (let* ((from (jabber-xml-get-attribute xml-data 'from))
 	   (group (jabber-jid-user from))
 	   (nick (jabber-jid-resource from))
