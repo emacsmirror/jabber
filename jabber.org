@@ -213,25 +213,46 @@ If a source block does not have syntax highlighting, press =M-o M-o= (=font-lock
 (require 'goto-addr)
 #+END_SRC
 ** Code
-*** custom variables
+*** lexical binding test
    The ~lexical-binding~ variable is setted to t evaluating the code to ensure that ~literate-elisp-load~ works using lexical bindings. The prop-line is also used just in case the code is tangled and byte-compiled, but ~literate-elisp-tangle~ discards all comments, thus the eval-when-compile sentence below.
 
 #+BEGIN_SRC emacs-lisp
-  (setq lexical-binding t)
-  (eval-when-compile
+  (defmacro lexical-p ()
+    "Return non-nil in buffers with lexical binding."
+    '(let* ((ret t)
+            (code (lambda ()
+                    ret)))
+       (let ((ret nil))
+         (funcall code))))
+
+  (unless (lexical-p)
+    (message "jabber.org: Lexical binding is off, trying to turn it on.")
     (setq lexical-binding t))
+
+  (eval-when-compile
+    (unless (lexical-p)
+      (message "jabber.org: Lexical binding is off, trying to turn it on.")
+      (setq lexical-binding t)))
+
+  (unless (lexical-p)
+    (message "jabber.org: It seems that lexical binding is still off... 
+  Consider adding the file-local variable prop-line to the tangled jabber.el file
+  or try to byte-compile the code."))
 #+END_SRC
+
+*** custom variables
    
 #+BEGIN_SRC emacs-lisp
   (defvar jabber-enable-legacy-features-p nil)
 #+END_SRC
+
 *** XML functions
 :PROPERTIES:
 :old-file:     jabber-xml.el
 :END:
 
 #+BEGIN_SRC emacs-lisp
-(require 'xml)
+    (require 'xml)
 #+END_SRC
 
 **** jabber-escape-xml                                          :function:
@@ -11194,6 +11215,7 @@ Return nil if X-MUC is nil."
 
 JC is the Jabber connection."
   (when (jabber-muc-message-p xml-data)
+
     (let* ((from (jabber-xml-get-attribute xml-data 'from))
 	   (group (jabber-jid-user from))
 	   (nick (jabber-jid-resource from))
