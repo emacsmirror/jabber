@@ -7020,43 +7020,43 @@ JC is the Jabber connection."
 \(cadr data) is the <message/> stanza.
 This function is used as an ewoc prettyprinter."
   (let* ((beg (point))
-	 (original-timestamp (when (listp (cadr data))
-			       (jabber-message-timestamp (cadr data))))
-	 (internal-time
-	  (plist-get (cddr data) :time))
-	 (body (ignore-errors (car
-	       (jabber-xml-node-children
-		(car
-		 (jabber-xml-get-children (cadr data) 'body))))))
-	 (/me-p
-	  (and (> (length body) 4)
-	       (string= (substring body 0 4) "/me "))))
+         (original-timestamp (when (listp (cadr data))
+                               (jabber-message-timestamp (cadr data))))
+         (internal-time
+          (plist-get (cddr data) :time))
+         (body (ignore-errors (car
+               (jabber-xml-node-children
+                (car
+                 (jabber-xml-get-children (cadr data) 'body))))))
+         (/me-p
+          (and (> (length body) 4)
+               (string= (substring body 0 4) "/me "))))
 
     ;; Print prompt...
     (let ((delayed (or original-timestamp (plist-get (cddr data) :delayed)))
-	  (prompt-start (point)))
+          (prompt-start (point)))
       (cl-case (car data)
-	(:local
-	 (jabber-chat-self-prompt (or original-timestamp internal-time)
-				  delayed
-				  /me-p))
-	(:foreign
-	 (if (and (listp (cadr data))
-		  (jabber-muc-private-message-p (cadr data)))
-	     (jabber-muc-private-print-prompt (cadr data))
-	   ;; For :error and :notice, this might be a string... beware
-	   (jabber-chat-print-prompt (when (listp (cadr data)) (cadr data))
-				     (or original-timestamp internal-time)
-				     delayed
-				     /me-p)))
-	((:error :notice :subscription-request)
-	 (jabber-chat-system-prompt (or original-timestamp internal-time)))
-	(:muc-local
-	 (jabber-muc-print-prompt (cadr data) t /me-p))
+        (:local
+         (jabber-chat-self-prompt (or original-timestamp internal-time)
+                                  delayed
+                                  /me-p))
+        (:foreign
+         (if (and (listp (cadr data))
+                  (jabber-muc-private-message-p (cadr data)))
+             (jabber-muc-private-print-prompt (cadr data))
+           ;; For :error and :notice, this might be a string... beware
+           (jabber-chat-print-prompt (when (listp (cadr data)) (cadr data))
+                                     (or original-timestamp internal-time)
+                                     delayed
+                                     /me-p)))
+        ((:error :notice :subscription-request)
+         (jabber-chat-system-prompt (or original-timestamp internal-time)))
+        (:muc-local
+         (jabber-muc-print-prompt (cadr data) t /me-p))
         (:muc-foreign
          (jabber-muc-print-prompt (cadr data) nil /me-p))
-	((:muc-notice :muc-error)
-	 (jabber-muc-system-prompt)))
+        ((:muc-notice :muc-error)
+         (jabber-muc-system-prompt)))
       (put-text-property prompt-start (point) 'field 'jabber-prompt))
 
     ;; ...and body
@@ -7064,39 +7064,39 @@ This function is used as an ewoc prettyprinter."
       ((:local :foreign)
        (run-hook-with-args 'jabber-chat-printers (cadr data) (car data) :insert))
       ((:muc-local :muc-foreign)
-       (let ((printers (append jabber-muc-printers jabber-chat-printers)))
-	 (run-hook-with-args 'printers (cadr data) (car data) :insert)))
+       (dolist (hook '(jabber-muc-printers jabber-chat-printers))
+         (run-hook-with-args hook (cadr data) (car data) :insert)))
       ((:error :muc-error)
        (if (stringp (cadr data))
-	    (insert (jabber-propertize (cadr data) 'face 'jabber-chat-error))
-	 (jabber-chat-print-error (cadr data))))
+            (insert (jabber-propertize (cadr data) 'face 'jabber-chat-error))
+         (jabber-chat-print-error (cadr data))))
       ((:notice :muc-notice)
        (insert (cadr data)))
       (:rare-time
        (insert (jabber-propertize (format-time-string jabber-rare-time-format (cadr data))
-				  'face 'jabber-rare-time-face)))
+                                  'face 'jabber-rare-time-face)))
       (:subscription-request
        (insert "This user requests subscription to your presence.\n")
        (when (and (stringp (cadr data)) (not (zerop (length (cadr data)))))
-	 (insert "Message: " (cadr data) "\n"))
+         (insert "Message: " (cadr data) "\n"))
        (insert "Accept?\n\n")
        (cl-flet ((button
-	       (text action)
-	       (if (fboundp 'insert-button)
-		   (insert-button text 'action action)
-		 ;; simple button replacement
-		 (let ((keymap (make-keymap)))
-		   (define-key keymap "\r" action)
-		   (insert (jabber-propertize text 'keymap keymap 'face 'highlight))))
-	       (insert "\t")))
-	 (button "Mutual" 'jabber-subscription-accept-mutual)
-	 (button "One-way" 'jabber-subscription-accept-one-way)
-	 (button "Decline" 'jabber-subscription-decline))))
+               (text action)
+               (if (fboundp 'insert-button)
+                   (insert-button text 'action action)
+                 ;; simple button replacement
+                 (let ((keymap (make-keymap)))
+                   (define-key keymap "\r" action)
+                   (insert (jabber-propertize text 'keymap keymap 'face 'highlight))))
+               (insert "\t")))
+         (button "Mutual" 'jabber-subscription-accept-mutual)
+         (button "One-way" 'jabber-subscription-accept-one-way)
+         (button "Decline" 'jabber-subscription-decline))))
 
     (when jabber-chat-fill-long-lines
       (save-restriction
-	(narrow-to-region beg (point))
-	(jabber-chat-buffer-fill-long-lines)))
+        (narrow-to-region beg (point))
+        (jabber-chat-buffer-fill-long-lines)))
 
     (put-text-property beg (point) 'read-only t)
     (put-text-property beg (point) 'front-sticky t)
