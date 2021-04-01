@@ -5,7 +5,6 @@ This file implements the HTTP Upload [[https://xmpp.org/extensions/xep-0363.html
 
 It is separated from the jabber.org file in order to implement and test it without affecting the original implementation.
 
-
 * Headers and commentary
 #+BEGIN_SRC emacs-lisp
 ;;; jabber-httpupload.el --- Emacs Jabber HTTP Upload Implementation -*- lexical-binding: t; -*-
@@ -50,32 +49,130 @@ The namespace of the HTTP Upload feature is ~urn:xmpp:http:upload:0~. This will 
 
 For more information, see XML examples at the [[https://xmpp.org/extensions/xep-0363.html#disco][Discovering Support section of XEP-0363]].
 
-** jabber-httpupload-has-support
+This implementation requires an initialization step to fill the ~jabber-httpupload-support~ variable. This variable registers all connections with their HTTP Upload item. If one of the server associated to a connection does not support HTTP Upload, then it will be registered with a ~nil~ item.
+
+** jabber-httpupload-support                                      :variable:
+#+BEGIN_SRC emacs-lisp
+  (defvar jabber-httpupload-support nil
+  "An alist of jabber connections and the node with HTTP Upload support.
+  This is filled by the `jabber-httpupload-test-all-connections-suport'.
+  Each element are of the form (jabber-connection . string/nil). If the value is
+  a string, it is the upload item IRI, if nil means no support.")
+#+END_SRC
+
+** jabber-httpupload-all-connections-support
+#+BEGIN_SRC emacs-lisp
+  (defun jabber-httpupload-test-all-connections-support ()
+    "Test all connections in `jabber-connections' for HTTP Upload support.
+  Store the results at `jabber-httpupload-support'.
+  If the connection is already tested, ignore it."
+    (let ((connections (seq-difference jabber-connections (map 'list #'car jabber-httpupload-support))))
+      (dolist (jc connections)
+        (jabber-httpupload-test-connection-support jc))))
+#+END_SRC
+
+** jabber-httpupload-test-connection-support
+#+BEGIN_SRC emacs-lisp
+  (defun jabber-httpupload-test-connection-support (jc)
+    "Test if HTTP Upload is supported on the JC connection's server.
+  If it is supported, store the item IRI at `jabber-httpupload-support'."
+    (jabber-httpupload-get-items jc
+                                 (lambda (jc result)
+                                   (jabber-httpupload-test-item-support jc (elt item 1))))
+#+END_SRC
+
+
+** jabber-httpupload-test-item-support
+~callback~ receives three arguments: the jabber connection, extra data and the query result. The result is a list of features supported by the server. For example, if the client receives the following IQ answer:
+
+#+BEGIN_SRC xml
+<iq from="upload.server.org" type="result" to="myjid@server.org/pc1" id="emacs-iq-24678.666.622936">
+  <query xmlns="http://jabber.org/protocol/disco#info">
+    <identity name="HTTP File Upload" type="file" category="store"/>
+    <feature var="http://jabber.org/protocol/disco#info"/>
+    <feature var="http://jabber.org/protocol/disco#items"/>
+    <feature var="urn:xmpp:http:upload:0"/>
+    <feature var="urn:xmpp:http:upload"/>
+    <x xmlns="jabber:x:data" type="result">
+      <field type="hidden" var="FORM_TYPE">
+        <value>urn:xmpp:http:upload:0</value>
+      </field>
+      <field type="text-single" var="max-file-size">
+        <value>500000</value>
+      </field>
+    </x>
+    <x xmlns="jabber:x:data" type="result">
+      <field type="hidden" var="FORM_TYPE">
+        <value>urn:xmpp:http:upload</value>
+      </field>
+      <field type="text-single" var="max-file-size">
+        <value>500000</value>
+      </field>
+    </x>
+  </query>
+</iq>
+#+END_SRC
+
+The result would be:
+
+: ((["HTTP File Upload" "store" "file"]) ("http://jabber.org/protocol/disco#info" "http://jabber.org/protocol/disco#items" "urn:xmpp:http:upload:0" "urn:xmpp:http:upload"))
+
+This Disco item support HTTP Upload because the ~urn:xmpp:http:upload~ namespace is in the second list.
+
+#+BEGIN_SRC emacs-lisp
+  (defun jabber-httpupload-test-item-support (jc iri)
+    "Test if the IRI Disco item supports HTTP Upload.
+  Get the Disco Info from the provided IRI at the current JC jabber connection,
+  if the HTTP Upload namespace feature is in the answer, store the IRI
+  in `jabber-httpupload-support'."
+    (jabber-disco-get-info jc iri
+                           (lambda (jc data result)
+                             (when (member "urn:xmpp:http:upload"
+                                           (nth 2 result))
+                               ;; This item supports HTTP Upload... register it!
+                               (push (cons jc iri) jabber-httpupload-support))
+                             nil)))
+  #+END_SRC
+
+** jabber-httpupload-get-items
+~callback~ receives three arguments: the jabber connection, extra data and the query result. The result is a list of vector with the node name, its IRI and any other properties.
+
+For example, if the client receives the following XML:
+#+BEGIN_SRC xml
+  <iq from="server.org" type="result" to="myjid@server.org/pc1" id="emacs-iq-24677.56646.166389">
+    <query xmlns="http://jabber.org/protocol/disco#items">
+      <item jid="conference.server.org" name="MUC chats!"/>
+      <item jid="upload.server.org"/>
+    </query>
+  </iq>
+#+END_SRC
+
+The result would be:
+
+: (["MUC chats!" "conference.server.org" nil] [nil "upload.server.org" nil])
+
+#+BEGIN_SRC emacs-lisp
+  (defun jabber-httpupload-get-items (jc callback)
+    "Retrieve al Disco IRIs from the server connected in JC.
+  Return a list of IRI strings.
+
+  JC is a jabber connection."
+    (let ((node (plist-get (fsm-get-state-data jc) :server)))
+      (jabber-disco-get-items jc node nil
+                              (lambda (jc data result)
+                                (funcall callback jc result))
+                              nil)))
+#+END_SRC
+
+** TODO jabber-httpupload-has-support
+- State "TODO"       from              [2021-04-01 jue 14:24]
 #+BEGIN_SRC emacs-lisp
   (defun jabber-httpupload-server-has-support (jc)
     "Check if the server has HTTP Upload support.
   Return non-nil when there is support from the server.
 
-  JC is the Jabber Connection to use."
-    (seq-find (lambda (iri)
-                (jabber-httpupload-is-upload-item jc iri))
-              (jabber-httpupload-get-items jc)))
-#+END_SRC
-
-** jabber-httpupload-is-upload-item
-#+BEGIN_SRC emacs-lisp
-  (defun jabber-httpupload-is-upload-item (jc iri)
-    "Return non-nil if IRI Disco item supports HTTP Upload.
-  Get the Disco Info from the provided IRI at the current JC jabber connection,
-  if the HTTP Upload namespace feature is in the list, return non-nil.")
-#+END_SRC
-** jabber-httpupload-get-items
-#+BEGIN_SRC emacs-lisp
-  (defun jabber-httpupload-get-items (jc)
-    "Retrieve al Disco IRIs from the server connected in JC.
-  Return a list of IRI strings.
-
-  JC is a jabber connection.")
+  JC is the Jabber Connection to use.
+  The variable `jabber-httpupload-support' is used.")
 #+END_SRC
 
 * Requesting a slot
