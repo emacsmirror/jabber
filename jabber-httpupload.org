@@ -1,5 +1,5 @@
 #+TODO: TODO WIP EXTEND CLEANUP FIXME REVIEW |
-#+PROPERTY: header-args :tangle yes
+#+PROPERTY: header-args :tangle yes :results ignore
 
 This file implements the HTTP Upload [[https://xmpp.org/extensions/xep-0363.html][XEP-0363]] extension.
 
@@ -39,6 +39,12 @@ It is separated from the jabber.org file in order to implement and test it witho
 ;;; Code:
 #+END_SRC
 
+* Required libraries
+#+BEGIN_SRC emacs-lisp
+(require 'seq)
+(require 'jabber)
+#+END_SRC
+
 * Discovering support
 Disco is used to discover if HTTP Upload is supported on the server side. Two queries are used:
 
@@ -53,20 +59,21 @@ This implementation requires an initialization step to fill the ~jabber-httpuplo
 
 ** jabber-httpupload-support                                      :variable:
 #+BEGIN_SRC emacs-lisp
-  (defvar jabber-httpupload-support nil
-  "An alist of jabber connections and the node with HTTP Upload support.
-  This is filled by the `jabber-httpupload-test-all-connections-suport'.
-  Each element are of the form (jabber-connection . string/nil). If the value is
-  a string, it is the upload item IRI, if nil means no support.")
+(defvar jabber-httpupload-support nil
+"An alist of jabber connections and the node with HTTP Upload support.
+This is filled by the `jabber-httpupload-test-all-connections-suport'.
+Each element are of the form (jabber-connection . string/nil). If the value is
+a string, it is the upload item IRI, if nil means no support.")
 #+END_SRC
 
 ** jabber-httpupload-all-connections-support
 #+BEGIN_SRC emacs-lisp
   (defun jabber-httpupload-test-all-connections-support ()
     "Test all connections in `jabber-connections' for HTTP Upload support.
-  Store the results at `jabber-httpupload-support'.
-  If the connection is already tested, ignore it."
-    (let ((connections (seq-difference jabber-connections (map 'list #'car jabber-httpupload-support))))
+    Store the results at `jabber-httpupload-support'.
+    If the connection is already tested, ignore it."
+    (let ((connections (seq-difference jabber-connections
+                                       (mapcar #'car jabber-httpupload-support))))
       (dolist (jc connections)
         (jabber-httpupload-test-connection-support jc))))
 #+END_SRC
@@ -78,9 +85,8 @@ This implementation requires an initialization step to fill the ~jabber-httpuplo
   If it is supported, store the item IRI at `jabber-httpupload-support'."
     (jabber-httpupload-get-items jc
                                  (lambda (jc result)
-                                   (jabber-httpupload-test-item-support jc (elt item 1))))
+                                   (jabber-httpupload-test-item-support jc (elt result 1)))))
 #+END_SRC
-
 
 ** jabber-httpupload-test-item-support
 ~callback~ receives three arguments: the jabber connection, extra data and the query result. The result is a list of features supported by the server. For example, if the client receives the following IQ answer:
@@ -125,13 +131,13 @@ This Disco item support HTTP Upload because the ~urn:xmpp:http:upload~ namespace
   Get the Disco Info from the provided IRI at the current JC jabber connection,
   if the HTTP Upload namespace feature is in the answer, store the IRI
   in `jabber-httpupload-support'."
-    (jabber-disco-get-info jc iri
+    (jabber-disco-get-info jc iri nil
                            (lambda (jc data result)
                              (when (member "urn:xmpp:http:upload"
-                                           (nth 2 result))
+                                           (nth 1 result))
                                ;; This item supports HTTP Upload... register it!
-                               (push (cons jc iri) jabber-httpupload-support))
-                             nil)))
+                               (push (cons jc iri) jabber-httpupload-support)))
+                             nil))
   #+END_SRC
 
 ** jabber-httpupload-get-items
@@ -160,7 +166,9 @@ The result would be:
     (let ((node (plist-get (fsm-get-state-data jc) :server)))
       (jabber-disco-get-items jc node nil
                               (lambda (jc data result)
-                                (funcall callback jc result))
+                                (dolist (item result)
+				      (message "item: %S" item)
+                                  (funcall callback jc item)))
                               nil)))
 #+END_SRC
 
@@ -179,10 +187,9 @@ The result would be:
 * Uploading the file
 * Providing the package name
 #+BEGIN_SRC emacs-lisp
-  (provide 'jabber-httpupload)
+(provide 'jabber-httpupload)
 
-  ;;; jabber-httpupload.el ends here
-
+;;; jabber-httpupload.el ends here
 #+END_SRC
 
 
