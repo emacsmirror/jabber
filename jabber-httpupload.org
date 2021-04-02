@@ -2,8 +2,16 @@
 #+PROPERTY: header-args :tangle yes :results silent
 
 This file implements the HTTP Upload [[https://xmpp.org/extensions/xep-0363.html][XEP-0363]] extension.
-
 It is separated from the jabber.org file in order to implement and test it without affecting the original implementation.
+
+The HTTP Upload implements a way to send files (images, audio, etc.) through XMPP clients by using server space and the HTTP protocol to upload and download from it. The advantage is that the sender user does not need to be connected after sharing the file, and the receiver may be disconnected while the sender is uploading.
+
+The procedure to send a file is the following:
+
+1. Use Disco queries to discover if the server supports the HTTP Upload (~urn:xmpp:http:upload~ namespace).
+2. Request a slot to the upload Disco item. The server will answer with a GET and PUT URL.
+3. Upload the file to the HTTP server by using the PUT URL.
+4. Usually, send the GET URL to the other XMPP clients to allow them to access the uploaded file.
 
 * Headers and commentary
 #+BEGIN_SRC emacs-lisp
@@ -191,7 +199,65 @@ on-line, use `jabber-httpupload-test-connection-support'."
 #+END_SRC
 
 * Requesting a slot
-* Uploading the file
+The HTTP Upload specify that the client must ask for a "slot" before uploading the file to the server. The slot is a fresh URL that will be enabled for the client to upload the file. The server may give two URLs in one slot query: the uploading URL and the GET URL to share.
+
+The server may limit the file size to upload. 
+
+** TODO jabber-httpupload--request-slot-succesful
+#+BEGIN_SRC emacs-lisp
+(defun jabber-httpupload--request-slot-succesful (_jc _xml-data _data)
+  "Callback function used when the slot request succeeded")
+#+END_SRC
+
+** TODO jabber-httpupload--request-slot-failed
+#+BEGIN_SRC emacs-lisp
+(defun jabber-httpupload--request-slot-failed (_jc _xml-data _data)
+  "Callback function used when the slot request failed") 
+#+END_SRC
+
+** jabber-httpupload-request-slot                                 :function:
+The XML used to request a slot 
+#+BEGIN_SRC xml
+<iq from='romeo@montague.tld/garden'
+    id='step_03'
+    to='upload.montague.tld'
+    type='get'>
+  <request xmlns='urn:xmpp:http:upload:0'
+    filename='très cool.jpg'
+    size='23456'
+    content-type='image/jpeg' />
+</iq>
+#+END_SRC
+
+#+BEGIN_SRC emacs-lisp
+  (defun jabber-httpupload-request-slot (jc filename size content-type)
+    "Request a slot for HTTP Upload to the server's connection.
+  JC is an active Jabber Connection.  
+  FILENAME is the filename to upload to the server.  SIZE is it's size in bytes.
+  CONTENT-TYPE is the MIME type of the file."
+    (jabber-send-iq jc (cdr (jabber-httpupload-has-support jc)) "get"
+                    `(query ((xmlns . "urn:xmpp:http:upload:0")
+                             (filename . ,filename)
+                             (size . ,size)
+                             (content-type . ,content-type)))
+                    #'jabber-httpupload--request-slot-succesful nil
+                    #'jabber-httpupload--request-slot-failed nil))
+#+END_SRC
+
+
+* TODO Uploading the file
+Use the HTTP protocol to upload the file to the PUT URL provided by the slot.
+
+* TODO Send the file URL to the client
+Prepare the GET URL to send it to an XMPP client throug a Message stanza.
+
+* Chat Buffer
+** TODO Send file (complete process)
+The following functions add interactive commands to the chat buffer to send the GET URL to the current (or selected) client.
+
+** TODO Recording audio and sending
+To easy the burden to send an audio message, the following functions allows the user to call a recorder program and send the results through one M-x interactive command.
+
 * Providing the package name
 #+BEGIN_SRC emacs-lisp
 (provide 'jabber-httpupload)
