@@ -175,15 +175,19 @@ the item vector."
                             nil)))
 #+END_SRC
 
-** TODO jabber-httpupload-has-support
-- State "TODO"       from              [2021-04-01 jue 14:24]
+** jabber-httpupload-has-support
 #+BEGIN_SRC emacs-lisp
 (defun jabber-httpupload-server-has-support (jc)
   "Check if the server has HTTP Upload support.
 Return non-nil when there is support from the server.
 
 JC is the Jabber Connection to use.
-The variable `jabber-httpupload-support' is used.")
+The variable `jabber-httpupload-support' is used.  To test for server support
+on-line, use `jabber-httpupload-test-connection-support'."
+  (seq-find (lambda (tuple)
+              (and (equal jc (car tuple))
+                   (cdr tuple)))
+            jabber-httpupload-support))
 #+END_SRC
 
 * Requesting a slot
