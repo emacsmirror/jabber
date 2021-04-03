@@ -203,20 +203,53 @@ The HTTP Upload specify that the client must ask for a "slot" before uploading t
 
 The server may limit the file size to upload. 
 
-** TODO jabber-httpupload--request-slot-succesful
-#+BEGIN_SRC emacs-lisp
-(defun jabber-httpupload--request-slot-succesful (_jc _xml-data _data)
-  "Callback function used when the slot request succeeded")
+** jabber-httpupload-parse-slot-answer
+#+BEGIN_SRC xml
+<iq from='upload.montague.tld'
+    id='step_03'
+    to='romeo@montague.tld/garden'
+    type='result'>
+  <slot xmlns='urn:xmpp:http:upload:0'>
+    <put url='https://upload.montague.tld/4a771ac1-f0b2-4a4a-9700-f2a26fa2bb67/tr%C3%A8s%20cool.jpg'>
+      <header name='Authorization'>Basic Base64String==</header>
+      <header name='Cookie'>foo=bar; user=romeo</header>
+    </put>
+    <get url='https://download.montague.tld/4a771ac1-f0b2-4a4a-9700-f2a26fa2bb67/tr%C3%A8s%20cool.jpg' />
+  </slot>
+</iq>
 #+END_SRC
 
-** TODO jabber-httpupload--request-slot-failed
 #+BEGIN_SRC emacs-lisp
-(defun jabber-httpupload--request-slot-failed (_jc _xml-data _data)
-  "Callback function used when the slot request failed") 
+(defun jabber-httpupload-parse-slot-answer (xml-data)
+  "Retrieve the slot data from the XML-DATA information.
+  The XML-DATA is the stanza receive from the Jabber Connection after requesting
+  the slot for a file.
+  The returned date are the PUT URL and the GET URL."
+  (list
+   (jabber-xml-get-attribute (jabber-xml-path (car iq-a) '(slot put)) 'url)
+   (jabber-xml-get-attribute (jabber-xml-path (car iq-a) '(slot get)) 'url)))
+#+END_SRC
+
+
+** TODO jabber-httpupload--request-slot-succesful
+When the slot is reserved, the HTTP upload should be started.
+
+#+BEGIN_SRC emacs-lisp
+(defun jabber-httpupload--request-slot-succesful (_jc _xml-data _data)
+  "Callback function used when the slot request succeeded.")
+#+END_SRC
+
+** jabber-httpupload--request-slot-failed
+#+BEGIN_SRC emacs-lisp
+(defun jabber-httpupload--request-slot-failed (_jc xml-data data)
+  "Callback function used when the slot request failed"
+  (error (format "The file %s cannot be uploaded: SLOT rejected. %S"
+                 (car data) xml-data)))
 #+END_SRC
 
 ** jabber-httpupload-request-slot                                 :function:
-The XML used to request a slot 
+The XML used to request a slot is simmilar as the following:
+
 #+BEGIN_SRC xml
 <iq from='romeo@montague.tld/garden'
     id='step_03'
@@ -230,23 +263,31 @@ The XML used to request a slot
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp
-  (defun jabber-httpupload-request-slot (jc filename size content-type)
-    "Request a slot for HTTP Upload to the server's connection.
-  JC is an active Jabber Connection.  
-  FILENAME is the filename to upload to the server.  SIZE is it's size in bytes.
-  CONTENT-TYPE is the MIME type of the file."
-    (jabber-send-iq jc (cdr (jabber-httpupload-has-support jc)) "get"
-                    `(query ((xmlns . "urn:xmpp:http:upload:0")
-                             (filename . ,filename)
-                             (size . ,size)
-                             (content-type . ,content-type)))
-                    #'jabber-httpupload--request-slot-succesful nil
-                    #'jabber-httpupload--request-slot-failed nil))
+(defun jabber-httpupload-request-slot (jc filename size content-type)
+  "Request a slot for HTTP Upload to the server's connection.
+JC is an active Jabber Connection.  
+FILENAME is the filename to upload to the server.  SIZE is it's size in bytes.
+CONTENT-TYPE is the MIME type of the file."
+  (jabber-send-iq jc (cdr (jabber-httpupload-has-support jc)) "get"
+                  `(query ((xmlns . "urn:xmpp:http:upload:0")
+                           (filename . ,filename)
+                           (size . ,size)
+                           (content-type . ,content-type)))
+                  #'jabber-httpupload--request-slot-succesful (list filename)
+                  #'jabber-httpupload--request-slot-failed (list filename)))
 #+END_SRC
-
 
 * TODO Uploading the file
 Use the HTTP protocol to upload the file to the PUT URL provided by the slot.
+
+** TODO jabber-httpupload-upload-file
+#+BEGIN_SRC emacs-lisp
+  (defun jabber-httpupload-upload-file (_filepath _size _content-type _put-url)
+    "Update the given file at FILEPATH to the PUT-URL provided.
+  The SIZE and CONTENT-TYPE (MIME type) of the file must match the one provided
+  to the Jabber Connection with `jabber-httpupload-request-slot'.")
+#+END_SRC
+
 
 * TODO Send the file URL to the client
 Prepare the GET URL to send it to an XMPP client throug a Message stanza.
