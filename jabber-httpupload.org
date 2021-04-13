@@ -64,12 +64,12 @@ The procedure to send a file is the following:
 
 ** jabber-httpupload-upload-function
 #+BEGIN_SRC emacs-lisp
-(defcustom jabber-httpupload-upload-function #'jabber-httpupload-put-file-curl
-  "The function used to upload the file.  Some functions calls external
-programs such as Curl and wget, please check their documentation for more
-information. "
-  :group 'jabber-httpupload
-  :type 'function)
+  (defcustom jabber-httpupload-upload-function #'jabber-httpupload-put-file-curl
+    "The function used to upload the file.
+  Some functions calls external programs such as Curl and wget, please check their
+  documentation for more information."
+    :group 'jabber-httpupload
+    :type 'function)
 #+END_SRC
 
 
@@ -243,9 +243,9 @@ The server may limit the file size to upload.
 #+BEGIN_SRC emacs-lisp
 (defun jabber-httpupload-parse-slot-answer (xml-data)
   "Retrieve the slot data from the XML-DATA information.
-  The XML-DATA is the stanza receive from the Jabber Connection after requesting
-  the slot for a file.q
-  The returned list has the PUT URL and the GET URL."
+The XML-DATA is the stanza receive from the Jabber Connection after requesting
+the slot for a file.q
+The returned list has the PUT URL and the GET URL."
   (list
    (jabber-xml-get-attribute (jabber-xml-path (car iq-a) '(slot put)) 'url)
    (jabber-xml-get-attribute (jabber-xml-path (car iq-a) '(slot get)) 'url)))
@@ -253,15 +253,15 @@ The server may limit the file size to upload.
 
 ** WIP jabber-httpupload--request-slot-succesful
 #+BEGIN_SRC emacs-lisp
-  (defun jabber-httpupload--request-slot-succesful (jc xml-data data success-callback)
-    "Callback function used when the slot request succeeded.
-  XML-DATA is the received XML from the server.
-  DATA is a triple `(filepath content-type JID).
-  SUCCESS-CALLBACK is a function to call after parsing and requesting the upload.
-    It should accept following arguments: JC XML-DATA DATA and the GET and POST
-    URLs."
-    (let ((urls (jabber-httpupload-parse-slot-answer xml-data)))
-      (funcall success-callback jc xml-data data urls)))
+(defun jabber-httpupload--request-slot-succesful (jc xml-data data success-callback)
+  "Callback function used when the slot request succeeded.
+XML-DATA is the received XML from the server.
+DATA is a triple `(filepath content-type JID).
+SUCCESS-CALLBACK is a function to call after parsing and requesting the upload.
+  It should accept following arguments: JC XML-DATA DATA and the GET and POST
+  URLs."
+  (let ((urls (jabber-httpupload-parse-slot-answer xml-data)))
+    (funcall success-callback jc xml-data data urls)))
 #+END_SRC
 
 ** jabber-httpupload--request-slot-failed
@@ -296,11 +296,11 @@ The XML used to request a slot is simmilar as the following:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-httpupload-request-slot (jc filedata success-callback &optional error-callback)
   "Request a slot for HTTP Upload to the server's connection.
-JC is an active Jabber Connection.  
+JC is an active Jabber Connection.
 FILEDATA is a list with (filename size content-type).
-SUCCESS-CALLBACK is a function name to call when the slot is received. Its
+SUCCESS-CALLBACK is a function name to call when the slot is received.  Its
   arguments should be: jc xml-data data and URLs.
-ERROR-CALLBACK is a function to call on failure. Its arguments should be: 
+ERROR-CALLBACK is a function to call on failure.  Its arguments should be:
   jc xml-data."
   (jabber-send-iq jc (cdr (jabber-httpupload-has-support jc)) "get"
                   `(query ((xmlns . "urn:xmpp:http:upload:0")
@@ -320,27 +320,27 @@ The following functions call the upload programs asynchronously.
 
 ** jabber-httpupload-upload-file
 #+BEGIN_SRC emacs-lisp
-  (defun jabber-httpupload-upload-file (filepath content-type put-url)
-      "Update the given file at FILEPATH to the PUT-URL provided.
-    The CONTENT-TYPE (MIME type) of the file must match the one provided
-    to the Jabber Connection with `jabber-httpupload-request-slot'."
-      (unless (funcall jabber-httpupload-upload-function filepath content-type put-url)
-        (error (concat "The upload function failed to PUT the file to the server. "
-                       "Try other function or install the required program"))))
+(defun jabber-httpupload-upload-file (filepath content-type put-url)
+    "Update the given file at FILEPATH to the provided PUT-URL.
+The CONTENT-TYPE (MIME type) of the file must match the one provided
+to the Jabber Connection with `jabber-httpupload-request-slot'."
+    (unless (funcall jabber-httpupload-upload-function filepath content-type put-url)
+      (error (concat "The upload function failed to PUT the file to the server. "
+                     "Try other function or install the required program"))))
 #+END_SRC
 
 ** WIP Use CURL to send the file
 #+BEGIN_SRC emacs-lisp
-  (defun jabber-httpupload-put-file-curl (filepath content-type put-url)
-    "Use the curl command to put the file at FILEPATH into the PUT-URL.
-  Send the SIZE and CONTENT-TYPE MIME as headers."
-    (let* ((exec-path (executable-find "curl"))
-           (cmd (format "%s --upload-file %s -H \"content-type: %s\" %s"
-                        exec-path filepath content-type put-url)))
-      (when exec-path
-        (start-process-shell-command "jabber-httpupload-put-file-curl"
-                                     "*jabber-httpupload-put-file-curl*"
-                                     cmd))))
+(defun jabber-httpupload-put-file-curl (filepath content-type put-url)
+  "Use the curl command to put the file at FILEPATH into the PUT-URL.
+Send the SIZE and CONTENT-TYPE MIME as headers."
+  (let* ((exec-path (executable-find "curl"))
+         (cmd (format "%s --upload-file %s -H \"content-type: %s\" %s"
+                      exec-path filepath content-type put-url)))
+    (when exec-path
+      (start-process-shell-command "jabber-httpupload-put-file-curl"
+                                   "*jabber-httpupload-put-file-curl*"
+                                   cmd))))
 #+END_SRC
 
 ** TODO Use wget to send the file
@@ -352,7 +352,7 @@ Prepare the GET URL to send it to an XMPP client throug a Message stanza.
 
 #+BEGIN_SRC emacs-lisp
 (defun jabber-httpupload-send-file-url ()
-  "Send the GET URL address to the JID user")
+  "Send the GET URL address to the JID user.")
 #+END_SRC
 
 
@@ -361,15 +361,16 @@ Prepare the GET URL to send it to an XMPP client throug a Message stanza.
 The following functions add interactive commands to the chat buffer to send the GET URL to the current (or selected) client.
 
 #+BEGIN_SRC emacs-lisp
-  (defun jabber-httpupload-send-file (jc jid filepath)
-    "Send the file at FILEPATH to the user JID."
-    (interactive (list (jabber-read-account)
-                       (jabber-read-jid-completing "Send file to: " nil nil nil 'full t)
-                       (read-file-name "File to send:")))
-    (unless (jabber-httpupload-server-has-support jc)
-      (error "The Jabber Connection provided has no HTTP Upload support"))
-    (jabber-httpupload-request-slot jc filedata
-                                    #'jabber-httpupload--slot-reserved))
+(defun jabber-httpupload-send-file (jc jid filepath)
+  "Send the file at FILEPATH to the user JID.
+JC is the Jabber Connection to send the file URL."
+  (interactive (list (jabber-read-account)
+                     (jabber-read-jid-completing "Send file to: " nil nil nil 'full t)
+                     (read-file-name "File to send:")))
+  (unless (jabber-httpupload-server-has-support jc)
+    (error "The Jabber Connection provided has no HTTP Upload support"))
+  (jabber-httpupload-request-slot jc filedata
+                                  #'jabber-httpupload--slot-reserved))
 #+END_SRC
 
 *** WIP jabber-httpupload--slot-reserved
@@ -378,8 +379,10 @@ When the slot is reserved, the HTTP upload should be started.
 #+BEGIN_SRC emacs-lisp
 (defun jabber-httpupload--slot-reserved (jc xml-data data urls)
   "Callback function used when the slot request succeeded.
+JC is the current Jabber Connection.
 XML-DATA is the received XML from the server.
-DATA is a triple `(filepath content-type JID)."
+DATA is a triple `(filepath content-type JID).
+URLs is a tuple `(post-url get-url)."
   (let ((filepath (car data))
         (content-type (nth 1 data))
         (jid (nth 2 data)))
