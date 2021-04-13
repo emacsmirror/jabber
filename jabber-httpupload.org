@@ -54,6 +54,25 @@ The procedure to send a file is the following:
 (require 'jabber)
 #+END_SRC
 
+* Configuration variables
+
+** jabber-httpupload group
+#+BEGIN_SRC emacs-lisp
+(defgroup 'jabber-httpupload nil "Jabber HTTP Upload Settings."
+  :group 'jabber)
+#+END_SRC
+
+** jabber-httpupload-upload-function
+#+BEGIN_SRC emacs-lisp
+(defcustom jabber-httpupload-upload-function #'jabber-httpupload-put-file-curl
+  "The function used to upload the file.  Some functions calls external
+programs such as Curl and wget, please check their documentation for more
+information. "
+  :group 'jabber-httpupload
+  :type 'function)
+#+END_SRC
+
+
 * Discovering support
 Disco is used to discover if HTTP Upload is supported on the server side. Two queries are used:
 
@@ -223,31 +242,41 @@ The server may limit the file size to upload.
 (defun jabber-httpupload-parse-slot-answer (xml-data)
   "Retrieve the slot data from the XML-DATA information.
   The XML-DATA is the stanza receive from the Jabber Connection after requesting
-  the slot for a file.
-  The returned date are the PUT URL and the GET URL."
+  the slot for a file.q
+  The returned list has the PUT URL and the GET URL."
   (list
    (jabber-xml-get-attribute (jabber-xml-path (car iq-a) '(slot put)) 'url)
    (jabber-xml-get-attribute (jabber-xml-path (car iq-a) '(slot get)) 'url)))
 #+END_SRC
 
-
-** TODO jabber-httpupload--request-slot-succesful
-When the slot is reserved, the HTTP upload should be started.
-
+** WIP jabber-httpupload--request-slot-succesful
 #+BEGIN_SRC emacs-lisp
-(defun jabber-httpupload--request-slot-succesful (_jc _xml-data _data)
-  "Callback function used when the slot request succeeded.")
+  (defun jabber-httpupload--request-slot-succesful (jc xml-data data success-callback)
+    "Callback function used when the slot request succeeded.
+  XML-DATA is the received XML from the server.
+  DATA is a triple `(filepath content-type JID).
+  SUCCESS-CALLBACK is a function to call after parsing and requesting the upload.
+    It should accept following arguments: JC XML-DATA DATA and the GET and POST
+    URLs."
+    (let ((urls (jabber-httpupload-parse-slot-answer xml-data)))
+      (funcall success-callback jc xml-data data urls)))
 #+END_SRC
 
 ** jabber-httpupload--request-slot-failed
+Maybe this function should be added as lambda inside the jabber-httpupload-request-slot...
+
 #+BEGIN_SRC emacs-lisp
-(defun jabber-httpupload--request-slot-failed (_jc xml-data data)
-  "Callback function used when the slot request failed"
-  (error (format "The file %s cannot be uploaded: SLOT rejected. %S"
-                 (car data) xml-data)))
+(defun jabber-httpupload--request-slot-failed (jc xml-data data &optional error-callback)
+  "Callback function used when the slot request failed.
+If ERROR-CALLBACK is defined, no error is thrown and it is called with the
+  following parameters: JC XML-DATA DATA"
+  (if error-callback
+      (funcall error-callback jc xml-data data)
+    (error (format "The file %s cannot be uploaded: SLOT rejected. %S"
+                   (car data) xml-data))))
 #+END_SRC
 
-** jabber-httpupload-request-slot                                 :function:
+** WIP jabber-httpupload-request-slot                             :function:
 The XML used to request a slot is simmilar as the following:
 
 #+BEGIN_SRC xml
@@ -263,18 +292,23 @@ The XML used to request a slot is simmilar as the following:
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp
-(defun jabber-httpupload-request-slot (jc filename size content-type)
+(defun jabber-httpupload-request-slot (jc filedata success-callback &optional error-callback)
   "Request a slot for HTTP Upload to the server's connection.
 JC is an active Jabber Connection.  
-FILENAME is the filename to upload to the server.  SIZE is it's size in bytes.
-CONTENT-TYPE is the MIME type of the file."
+FILEDATA is a list with (filename size content-type).
+SUCCESS-CALLBACK is a function name to call when the slot is received. Its
+  arguments should be: jc xml-data data and URLs.
+ERROR-CALLBACK is a function to call on failure. Its arguments should be: 
+  jc xml-data."
   (jabber-send-iq jc (cdr (jabber-httpupload-has-support jc)) "get"
                   `(query ((xmlns . "urn:xmpp:http:upload:0")
                            (filename . ,filename)
                            (size . ,size)
                            (content-type . ,content-type)))
-                  #'jabber-httpupload--request-slot-succesful (list filename)
-                  #'jabber-httpupload--request-slot-failed (list filename)))
+                  #'jabber-httpupload--request-slot-succesful
+                  (list filename content-type success-callback)
+                  #'jabber-httpupload--request-slot-failed
+                  (list filename content-type error-callback)))
 #+END_SRC
 
 * TODO Uploading the file
@@ -282,19 +316,71 @@ Use the HTTP protocol to upload the file to the PUT URL provided by the slot.
 
 ** TODO jabber-httpupload-upload-file
 #+BEGIN_SRC emacs-lisp
-  (defun jabber-httpupload-upload-file (_filepath _size _content-type _put-url)
-    "Update the given file at FILEPATH to the PUT-URL provided.
-  The SIZE and CONTENT-TYPE (MIME type) of the file must match the one provided
-  to the Jabber Connection with `jabber-httpupload-request-slot'.")
+  (defun jabber-httpupload-upload-file (filepath content-type put-url)
+      "Update the given file at FILEPATH to the PUT-URL provided.
+    The CONTENT-TYPE (MIME type) of the file must match the one provided
+    to the Jabber Connection with `jabber-httpupload-request-slot'."
+      (unless (funcall jabber-httpupload-upload-function filepath content-type put-url)
+        (error (concat "The upload function failed to PUT the file to the server. "
+                       "Try other function or install the required program"))))
 #+END_SRC
+
+** WIP Use CURL to send the file
+#+BEGIN_SRC emacs-lisp
+  (defun jabber-httpupload-put-file-curl (filepath content-type put-url)
+    "Use the curl command to put the file at FILEPATH into the PUT-URL.
+  Send the SIZE and CONTENT-TYPE MIME as headers."
+    (let* ((exec-path (executable-find "curl"))
+           (cmd (format "%s --upload-file %s -H \"content-type: %s\" %s"
+                        exec-path filepath content-type put-url)))
+      (when exec-path
+        (start-process-shell-command "jabber-httpupload-put-file-curl"
+                                     "*jabber-httpupload-put-file-curl*"
+                                     cmd))))
+#+END_SRC
+
+
+** TODO Use wget to send the file
 
 
 * TODO Send the file URL to the client
 Prepare the GET URL to send it to an XMPP client throug a Message stanza.
 
+** TODO jabber-httpupload-send-file-url
+
+#+BEGIN_SRC emacs-lisp
+(defun jabber-httpupload-send-file-url ()
+  "Send the GET URL address to the JID user")
+#+END_SRC
+
+
 * Chat Buffer
-** TODO Send file (complete process)
+** WIP Send file (complete process)
 The following functions add interactive commands to the chat buffer to send the GET URL to the current (or selected) client.
+
+#+BEGIN_SRC emacs-lisp
+(defun jabber-httpupload-send-file (jid filepath)
+  "Send the file at FILEPATH to the user JID."
+  (interactive "MJID?\nfFile?")
+  (jabber-httpupload-request-slot jc filedata
+                                  #'jabber-httpupload--slot-reserved))
+#+END_SRC
+
+*** WIP jabber-httpupload--slot-reserved
+When the slot is reserved, the HTTP upload should be started.
+
+#+BEGIN_SRC emacs-lisp
+(defun jabber-httpupload--slot-reserved (jc xml-data data urls)
+  "Callback function used when the slot request succeeded.
+XML-DATA is the received XML from the server.
+DATA is a triple `(filepath content-type JID)."
+  (let ((filepath (car data))
+        (content-type (nth 1 data))
+        (jid (nth 2 data)))                                      
+    (jabber-httpupload-upload-file filepath content-type (car urls))
+    (jabber-httpupload-send-file-url jc jid (cdr urls))))
+#+END_SRC
+
 
 ** TODO Recording audio and sending
 To easy the burden to send an audio message, the following functions allows the user to call a recorder program and send the results through one M-x interactive command.
