@@ -203,6 +203,8 @@ the item vector."
 #+END_SRC
 
 ** jabber-httpupload-has-support
+Use this function to check if a Jabber Connection has HTTP Upload support.
+
 #+BEGIN_SRC emacs-lisp
 (defun jabber-httpupload-server-has-support (jc)
   "Check if the server has HTTP Upload support.
@@ -311,10 +313,12 @@ ERROR-CALLBACK is a function to call on failure. Its arguments should be:
                   (list filename content-type error-callback)))
 #+END_SRC
 
-* TODO Uploading the file
+* Uploading the file
 Use the HTTP protocol to upload the file to the PUT URL provided by the slot.
 
-** TODO jabber-httpupload-upload-file
+The following functions call the upload programs asynchronously.
+
+** jabber-httpupload-upload-file
 #+BEGIN_SRC emacs-lisp
   (defun jabber-httpupload-upload-file (filepath content-type put-url)
       "Update the given file at FILEPATH to the PUT-URL provided.
@@ -339,9 +343,7 @@ Use the HTTP protocol to upload the file to the PUT URL provided by the slot.
                                      cmd))))
 #+END_SRC
 
-
 ** TODO Use wget to send the file
-
 
 * TODO Send the file URL to the client
 Prepare the GET URL to send it to an XMPP client throug a Message stanza.
@@ -359,11 +361,15 @@ Prepare the GET URL to send it to an XMPP client throug a Message stanza.
 The following functions add interactive commands to the chat buffer to send the GET URL to the current (or selected) client.
 
 #+BEGIN_SRC emacs-lisp
-(defun jabber-httpupload-send-file (jid filepath)
-  "Send the file at FILEPATH to the user JID."
-  (interactive "MJID?\nfFile?")
-  (jabber-httpupload-request-slot jc filedata
-                                  #'jabber-httpupload--slot-reserved))
+  (defun jabber-httpupload-send-file (jc jid filepath)
+    "Send the file at FILEPATH to the user JID."
+    (interactive (list (jabber-read-account)
+                       (jabber-read-jid-completing "Send file to: " nil nil nil 'full t)
+                       (read-file-name "File to send:")))
+    (unless (jabber-httpupload-server-has-support jc)
+      (error "The Jabber Connection provided has no HTTP Upload support"))
+    (jabber-httpupload-request-slot jc filedata
+                                    #'jabber-httpupload--slot-reserved))
 #+END_SRC
 
 *** WIP jabber-httpupload--slot-reserved
@@ -376,7 +382,8 @@ XML-DATA is the received XML from the server.
 DATA is a triple `(filepath content-type JID)."
   (let ((filepath (car data))
         (content-type (nth 1 data))
-        (jid (nth 2 data)))                                      
+        (jid (nth 2 data)))
+    (message "jabber-httpupload: slot POST and GET URLs: %S" urls)
     (jabber-httpupload-upload-file filepath content-type (car urls))
     (jabber-httpupload-send-file-url jc jid (cdr urls))))
 #+END_SRC
