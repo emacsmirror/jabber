@@ -255,13 +255,13 @@ The XML-DATA is the stanza receive from the Jabber Connection after requesting
 the slot for a file.
 The returned list has the PUT URL and the GET URL."
   (list
-   (jabber-xml-get-attribute (jabber-xml-path (car xml-data) '(slot put)) 'url)
-   (jabber-xml-get-attribute (jabber-xml-path (car xml-data) '(slot get)) 'url)))
+   (jabber-xml-get-attribute (jabber-xml-path xml-data '(slot put)) 'url)
+   (jabber-xml-get-attribute (jabber-xml-path xml-data '(slot get)) 'url)))
 #+END_SRC
 
-** jabber-httpupload--request-slot-succesful
+** jabber-httpupload--request-slot-successful
 #+BEGIN_SRC emacs-lisp
-(defun jabber-httpupload--request-slot-succesful (jc xml-data data)
+(defun jabber-httpupload--request-slot-successful (jc xml-data data)
   "Callback function used when the slot request succeeded.
 XML-DATA is the received XML from the server.
 DATA is a triple (filedata success-callback success-args) where:
@@ -332,7 +332,7 @@ ERROR-CALLBACK is a function to call on failure.  Its arguments should be:
                                (filename . ,filename)
                                (size . ,size)
                                (content-type . ,content-type)))
-                    #'jabber-httpupload--request-slot-succesful
+                    #'jabber-httpupload--request-slot-successful
                     (list filedata success-callback success-args)
                     #'jabber-httpupload--request-slot-failed
                     (list filedata error-callback error-args))))
@@ -343,25 +343,47 @@ Use the HTTP protocol to upload the file to the PUT URL provided by the slot.
 
 The following functions call the upload programs asynchronously.
 
+** jabber-httpupload-ignore-certificate
+#+BEGIN_SRC emacs-lisp
+(defun jabber-httpupload-ignore-certificate (jc)
+  "Should the SSL/TLS certificates be ignore from JC connection?
+Check if JC URL is in the variable `jabber-invalid-certificate-servers', if it
+is the XMPP and HTTPs connection should be established regarding their
+certificate validation status."
+  (member (plist-get (fsm-get-state-data jc) :server)
+          jabber-invalid-certificate-servers))
+#+END_SRC
+
 ** jabber-httpupload-upload-file
 #+BEGIN_SRC emacs-lisp
-(defun jabber-httpupload-upload-file (filepath content-type put-url)
-    "Update the given file at FILEPATH to the provided PUT-URL.
+(defun jabber-httpupload-upload-file (filepath content-type put-url
+                                           &optional ignore-cert-problems)
+  "Update the given file at FILEPATH to the provided PUT-URL.
 The CONTENT-TYPE (MIME type) of the file must match the one provided
-to the Jabber Connection with `jabber-httpupload-request-slot'."
-    (unless (funcall jabber-httpupload-upload-function filepath content-type put-url)
-      (error (concat "The upload function failed to PUT the file to the server. "
-                     "Try other function or install the required program"))))
+to the Jabber Connection with `jabber-httpupload-request-slot'.
+IGNORE-CERT-PROBLEMS allows to connect with HTTPS servers with invalid or
+non-trusted SSL/TLS certificates"
+  (unless (funcall jabber-httpupload-upload-function filepath content-type put-url
+                   ignore-cert-problems)
+    (error (concat "The upload function failed to PUT the file to the server. "
+                   "Try other function or install the required program"))))
 #+END_SRC
 
 ** WIP Use CURL to send the file
 #+BEGIN_SRC emacs-lisp
-(defun jabber-httpupload-put-file-curl (filepath content-type put-url)
+(defun jabber-httpupload-put-file-curl (filepath content-type put-url
+                                             &optional ignore-cert-problems)
   "Use the curl command to put the file at FILEPATH into the PUT-URL.
-Send the SIZE and CONTENT-TYPE MIME as headers."
+Send the SIZE and CONTENT-TYPE MIME as headers.
+IGNORE-CERT-PROBLEMS enable the use of HTTPS connections with invalid or
+  non-trusted SSL/TLS certificates.  If nil, curl will validate the certificate
+  provided by the HTTP/S Web server."
   (let* ((exec-path (executable-find "curl"))
-         (cmd (format "%s --upload-file %s -H \"content-type: %s\" %s"
-                      exec-path filepath content-type put-url)))
+         (cmd (format "%s %s --upload-file \"%s\" -H \"content-type: %s\" %s"
+                      exec-path
+                      (when ignore-cert-problems
+                        "--insecure")
+                      filepath content-type put-url)))
     (when exec-path
       (start-process-shell-command "jabber-httpupload-put-file-curl"
                                    "*jabber-httpupload-put-file-curl*"
@@ -417,7 +439,8 @@ EXTRA-DATA is a list `(jid)"
         (content-type (nth 1 data))
         (jid (car extra-data)))
     (message "jabber-httpupload: slot POST and GET URLs: %S" urls)
-    (jabber-httpupload-upload-file filepath content-type (car urls))
+    (jabber-httpupload-upload-file filepath content-type (car urls)
+                                   (jabber-httpupload-ignore-certificate jc urls))
     (jabber-httpupload-send-file-url jc jid (cdr urls))))
 #+END_SRC
 
