@@ -51,14 +51,15 @@ The procedure to send a file is the following:
 #+BEGIN_SRC emacs-lisp
 (require 'seq)
 (require 'fsm)
-(require 'jabber)
+(require 'mailcap)
+;; (require 'jabber)
 #+END_SRC
 
 * Configuration variables
 
 ** jabber-httpupload group
 #+BEGIN_SRC emacs-lisp
-(defgroup 'jabber-httpupload nil "Jabber HTTP Upload Settings."
+(defgroup jabber-httpupload nil "Jabber HTTP Upload Settings."
   :group 'jabber)
 #+END_SRC
 
@@ -110,7 +111,9 @@ If the connection is already tested, ignore it."
 #+BEGIN_SRC emacs-lisp
 (defun jabber-httpupload-test-connection-support (jc)
   "Test if HTTP Upload is supported on the JC connection's server.
-If it is supported, store the item IRI at `jabber-httpupload-support'."
+If it is supported, store the item IRI at `jabber-httpupload-support'.
+
+This function is asynchronous, thus it won't return any results."
   (jabber-httpupload-apply-to-items jc
                                (lambda (jc result)
                                  (jabber-httpupload-test-item-support jc (elt result 1)))))
@@ -208,11 +211,16 @@ Use this function to check if a Jabber Connection has HTTP Upload support.
 #+BEGIN_SRC emacs-lisp
 (defun jabber-httpupload-server-has-support (jc)
   "Check if the server has HTTP Upload support.
-Return non-nil when there is support from the server.
+Return the tuple (jabber-connection . upload-url) when there is support from
+the server.  Return nil when the server does not support HTTP Upload.
 
-JC is the Jabber Connection to use.
-The variable `jabber-httpupload-support' is used.  To test for server support
-on-line, use `jabber-httpupload-test-connection-support'."
+If the server is not in `jabber-httpupload-support', then it is considered as
+it is not supported.  It SHOULD be tested on-line with
+`jabber-httpupload-test-connection-support' as soon as the connection and
+authentication is established.
+
+JC is the Jabber Connection to use."
+
   (seq-find (lambda (tuple)
               (and (equal jc (car tuple))
                    (cdr tuple)))
@@ -244,41 +252,53 @@ The server may limit the file size to upload.
 (defun jabber-httpupload-parse-slot-answer (xml-data)
   "Retrieve the slot data from the XML-DATA information.
 The XML-DATA is the stanza receive from the Jabber Connection after requesting
-the slot for a file.q
+the slot for a file.
 The returned list has the PUT URL and the GET URL."
   (list
-   (jabber-xml-get-attribute (jabber-xml-path (car iq-a) '(slot put)) 'url)
-   (jabber-xml-get-attribute (jabber-xml-path (car iq-a) '(slot get)) 'url)))
+   (jabber-xml-get-attribute (jabber-xml-path (car xml-data) '(slot put)) 'url)
+   (jabber-xml-get-attribute (jabber-xml-path (car xml-data) '(slot get)) 'url)))
 #+END_SRC
 
-** WIP jabber-httpupload--request-slot-succesful
+** jabber-httpupload--request-slot-succesful
 #+BEGIN_SRC emacs-lisp
-(defun jabber-httpupload--request-slot-succesful (jc xml-data data success-callback)
+(defun jabber-httpupload--request-slot-succesful (jc xml-data data)
   "Callback function used when the slot request succeeded.
 XML-DATA is the received XML from the server.
-DATA is a triple `(filepath content-type JID).
-SUCCESS-CALLBACK is a function to call after parsing and requesting the upload.
-  It should accept following arguments: JC XML-DATA DATA and the GET and POST
-  URLs."
-  (let ((urls (jabber-httpupload-parse-slot-answer xml-data)))
-    (funcall success-callback jc xml-data data urls)))
+DATA is a triple (filedata success-callback success-args) where:
+  FILEDATA is a triple (filename size content-type)
+  SUCCESS-CALLBACK is a function to call after parsing and requesting the upload.
+  It should accept following arguments: JC XML-DATA DATA, the GET and POST
+  URLs and the SUCCESS-ARGS list.
+  SUCCESS-ARGS is a list to pass to the SUCCESS-CALLBACK."
+  (let ((urls (jabber-httpupload-parse-slot-answer xml-data))
+        (filedata (car data))
+        (success-callback (nth 1 data))
+        (success-args (nth 2 data)))
+    (funcall success-callback jc xml-data filedata urls success-args)))
 #+END_SRC
 
 ** jabber-httpupload--request-slot-failed
 Maybe this function should be added as lambda inside the jabber-httpupload-request-slot...
 
 #+BEGIN_SRC emacs-lisp
-(defun jabber-httpupload--request-slot-failed (jc xml-data data &optional error-callback)
+(defun jabber-httpupload--request-slot-failed (jc xml-data data)
   "Callback function used when the slot request failed.
-If ERROR-CALLBACK is defined, no error is thrown and it is called with the
-  following parameters: JC XML-DATA DATA"
-  (if error-callback
-      (funcall error-callback jc xml-data data)
-    (error (format "The file %s cannot be uploaded: SLOT rejected. %S"
-                   (car data) xml-data))))
+
+DATA is a list (filedata error-callback error-args) where:
+  FILEDATA is a triple (filename size content-type)
+  ERROR-CALLBACK is a function to call. If no error-callback is provided, then
+  `error' is used.  Its arguments are JC XML-DATA FILEDATA ERROR-ARGS.
+  ERROR-ARGS is list passed to the ERROR-CALLBACK."
+  (let ((filedata (car (data)))
+        (error-callback (nth 1 data))
+        (error-args (nth 2 data)))
+    (if error-callback
+        (funcall error-callback jc xml-data filedata error-args)
+      (error (format "The file %s cannot be uploaded: SLOT rejected. %S"
+                     (car data) xml-data)))))
 #+END_SRC
 
-** WIP jabber-httpupload-request-slot                             :function:
+** jabber-httpupload-request-slot                             :function:
 The XML used to request a slot is simmilar as the following:
 
 #+BEGIN_SRC xml
@@ -294,23 +314,28 @@ The XML used to request a slot is simmilar as the following:
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp
-(defun jabber-httpupload-request-slot (jc filedata success-callback &optional error-callback)
+(defun jabber-httpupload-request-slot (jc filedata success-callback success-args
+                                      &optional error-callback error-args)
   "Request a slot for HTTP Upload to the server's connection.
 JC is an active Jabber Connection.
 FILEDATA is a list with (filename size content-type).
 SUCCESS-CALLBACK is a function name to call when the slot is received.  Its
   arguments should be: jc xml-data data and URLs.
+SUCCESS-ARGS is a list of arguments used by the SUCCESS-CALLBACK
 ERROR-CALLBACK is a function to call on failure.  Its arguments should be:
   jc xml-data."
-  (jabber-send-iq jc (cdr (jabber-httpupload-has-support jc)) "get"
-                  `(query ((xmlns . "urn:xmpp:http:upload:0")
-                           (filename . ,filename)
-                           (size . ,size)
-                           (content-type . ,content-type)))
-                  #'jabber-httpupload--request-slot-succesful
-                  (list filename content-type success-callback)
-                  #'jabber-httpupload--request-slot-failed
-                  (list filename content-type error-callback)))
+  (let ((filename (car filedata))
+        (size (nth 1 filedata))
+        (content-type (nth 2 filedata)))
+    (jabber-send-iq jc (cdr (jabber-httpupload-server-has-support jc)) "get"
+                    `(request ((xmlns . "urn:xmpp:http:upload:0")
+                               (filename . ,filename)
+                               (size . ,size)
+                               (content-type . ,content-type)))
+                    #'jabber-httpupload--request-slot-succesful
+                    (list filedata success-callback success-args)
+                    #'jabber-httpupload--request-slot-failed
+                    (list filedata error-callback error-args))))
 #+END_SRC
 
 * Uploading the file
@@ -369,23 +394,28 @@ JC is the Jabber Connection to send the file URL."
                      (read-file-name "File to send:")))
   (unless (jabber-httpupload-server-has-support jc)
     (error "The Jabber Connection provided has no HTTP Upload support"))
-  (jabber-httpupload-request-slot jc filedata
-                                  #'jabber-httpupload--slot-reserved))
+  (let* ((size (file-attribute-size (file-attributes filepath)))
+         (content-type (mailcap-extension-to-mime (file-name-extension filepath)))
+         (filedata (list filepath size content-type)))
+    (jabber-httpupload-request-slot jc filedata
+                                    #'jabber-httpupload--slot-reserved
+                                    (list jid))))
 #+END_SRC
 
 *** WIP jabber-httpupload--slot-reserved
 When the slot is reserved, the HTTP upload should be started.
 
 #+BEGIN_SRC emacs-lisp
-(defun jabber-httpupload--slot-reserved (jc xml-data data urls)
+(defun jabber-httpupload--slot-reserved (jc _xml-data data urls extra-data)
   "Callback function used when the slot request succeeded.
 JC is the current Jabber Connection.
 XML-DATA is the received XML from the server.
 DATA is a triple `(filepath content-type JID).
-URLs is a tuple `(post-url get-url)."
+URLs is a tuple `(post-url get-url).
+EXTRA-DATA is a list `(jid)"
   (let ((filepath (car data))
         (content-type (nth 1 data))
-        (jid (nth 2 data)))
+        (jid (car extra-data)))
     (message "jabber-httpupload: slot POST and GET URLs: %S" urls)
     (jabber-httpupload-upload-file filepath content-type (car urls))
     (jabber-httpupload-send-file-url jc jid (cdr urls))))
@@ -395,6 +425,11 @@ URLs is a tuple `(post-url get-url)."
 ** TODO Recording audio and sending
 To easy the burden to send an audio message, the following functions allows the user to call a recorder program and send the results through one M-x interactive command.
 
+* Add hooks
+Some function should start automatically.
+
+** Test connection support after session is established
+Call ~jabber-httpupload-test-connection-support~ as soon as 
 * Providing the package name
 #+BEGIN_SRC emacs-lisp
 (provide 'jabber-httpupload)
