@@ -369,7 +369,7 @@ non-trusted SSL/TLS certificates"
                    "Try other function or install the required program"))))
 #+END_SRC
 
-** WIP Use CURL to send the file
+** Use CURL to send the file
 #+BEGIN_SRC emacs-lisp
 (defun jabber-httpupload-put-file-curl (filepath content-type put-url
                                              &optional ignore-cert-problems)
@@ -397,9 +397,35 @@ Prepare the GET URL to send it to an XMPP client throug a Message stanza.
 
 ** TODO jabber-httpupload-send-file-url
 
+#+BEGIN_SRC xml
+<message from="from_jid@fromserver.org/Resource" id="fc824dcb-c654-4911-a22b-25718dfe4590" type="chat" to="to_jid@toserver.org">
+  <body>https://fromserver.org:5281/upload/kFTT5ET9JeF_CC6s/_IJNy8ZUSRGiKyVxjf5FkA.jpg</body>
+  <request xmlns="urn:xmpp:receipts"/>
+  <markable xmlns="urn:xmpp:chat-markers:0"/>
+  <origin-id id="fc824dcb-c654-4911-a22b-25718dfe4590" xmlns="urn:xmpp:sid:0"/>
+  <x xmlns="jabber:x:oob">
+    <url>https://fromserver.org:5281/upload/kFTT5ET9JeF_CC6s/_IJNy8ZUSRGiKyVxjf5FkA.jpg</url>
+  </x>
+  <stanza-id xmlns="urn:xmpp:sid:0" id="7e18d73a-278c-4e5e-bd09-61c12187e5d6" by="to_jid@toserver.org"/>
+</message>
+#+END_SRC
+
+
 #+BEGIN_SRC emacs-lisp
-(defun jabber-httpupload-send-file-url ()
-  "Send the GET URL address to the JID user.")
+(defun jabber-httpupload-send-file-url (jc jid get-url)
+  "Send the GET URL address to the JID user.
+The message requiers the GET-URL of the slot file, the receiver's JID 
+and the JC Jabber Connection."
+  ;; This could be a possibliity, but... cannot send the x tag.
+  ;; (jabber-send-message jc jid nil get-url nil)
+  (let ((fromjid (jabber-connection-original-jid jc)))
+    (jabber-send-sexp jc
+                      `(message ((to . jid)
+                                 (from . fromjid)
+                                 (type . "chat"))
+                                (body () ,get-url)
+                                (x ((xmlns . "jabber:x:oob"))
+                                   (url () ,get-url))))))
 #+END_SRC
 
 
