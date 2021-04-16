@@ -392,10 +392,11 @@ IGNORE-CERT-PROBLEMS enable the use of HTTPS connections with invalid or
 
 ** TODO Use wget to send the file
 
-* TODO Send the file URL to the client
+* Send the file URL to the client
 Prepare the GET URL to send it to an XMPP client throug a Message stanza.
 
-** TODO jabber-httpupload-send-file-url
+** jabber-httpupload-send-file-url
+The following message is simmilar to one sent by conversations:
 
 #+BEGIN_SRC xml
 <message from="from_jid@fromserver.org/Resource" id="fc824dcb-c654-4911-a22b-25718dfe4590" type="chat" to="to_jid@toserver.org">
@@ -410,6 +411,7 @@ Prepare the GET URL to send it to an XMPP client throug a Message stanza.
 </message>
 #+END_SRC
 
+The message should add the "body" and "x" tags. 
 
 #+BEGIN_SRC emacs-lisp
 (defun jabber-httpupload-send-file-url (jc jid get-url)
@@ -420,8 +422,8 @@ and the JC Jabber Connection."
   ;; (jabber-send-message jc jid nil get-url nil)
   (let ((fromjid (jabber-connection-original-jid jc)))
     (jabber-send-sexp jc
-                      `(message ((to . jid)
-                                 (from . fromjid)
+                      `(message ((to . ,jid)
+                                 (from . ,fromjid)
                                  (type . "chat"))
                                 (body () ,get-url)
                                 (x ((xmlns . "jabber:x:oob"))
