@@ -386,15 +386,16 @@ IGNORE-CERT-PROBLEMS enable the use of HTTPS connections with invalid or
                       filepath content-type put-url)))
     (when exec-path
       (with-current-buffer (get-buffer-create "*jabber-httpupload-put-file-curl*")
-        (goto-char (point-max))
-        (insert (format  "%s Uploading to %s with curl:\n$ %s"
-                         (current-time-string)
-                         put-url
-                         cmd))
-        (start-process-shell-command "jabber-httpupload-put-file-curl"
-                                     (current-buffer)
-                                     cmd)
-        (insert "-- done --")))))
+        (let ((inhibit-read-only t))
+          (goto-char (point-max))
+          (insert (format  "%s Uploading to %s with curl:\n$ %s"
+                           (current-time-string)
+                           put-url
+                           cmd))
+          (start-process-shell-command "jabber-httpupload-put-file-curl"
+                                       (current-buffer)
+                                       cmd)
+          (insert "-- done --"))))))
 #+END_SRC
 
 ** TODO Use wget to send the file
