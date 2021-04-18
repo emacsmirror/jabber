@@ -496,7 +496,15 @@ To easy the burden to send an audio message, the following functions allows the 
 Some function should start automatically.
 
 ** Test connection support after session is established
-Call ~jabber-httpupload-test-connection-support~ as soon as 
+Call ~jabber-httpupload-test-connection-support~ as soon as
+
+* Adding functions to hooks
+
+** Test HTTP Upload support after connecting
+#+BEGIN_SRC emacs-lisp
+(add-hook 'jabber-post-connect-hooks #'jabber-httpupload-test-all-connections-suport)
+#+END_SRC
+
 * Providing the package name
 #+BEGIN_SRC emacs-lisp
 (provide 'jabber-httpupload)
