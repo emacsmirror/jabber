@@ -267,7 +267,7 @@ XML-DATA is the received XML from the server.
 DATA is a triple (filedata success-callback success-args) where:
   FILEDATA is a triple (filename size content-type)
   SUCCESS-CALLBACK is a function to call after parsing and requesting the upload.
-  It should accept following arguments: JC XML-DATA DATA PUT-GET-URLS SUCCESS-ARGS
+  It should accept following arguments: JC XML-DATA FILEDATA PUT-GET-URLS SUCCESS-ARGS
   SUCCESS-ARGS is a list to pass to the SUCCESS-CALLBACK."
   (let ((urls (jabber-httpupload-parse-slot-answer xml-data))
         (filedata (car data))
@@ -378,15 +378,23 @@ IGNORE-CERT-PROBLEMS enable the use of HTTPS connections with invalid or
   non-trusted SSL/TLS certificates.  If nil, curl will validate the certificate
   provided by the HTTP/S Web server."
   (let* ((exec-path (executable-find "curl"))
-         (cmd (format "%s %s --upload-file \"%s\" -H \"content-type: %s\" %s"
+         (cmd (format "%s %s --upload-file '%s' -H \"content-type: %s\" '%s'"
                       exec-path
-                      (when ignore-cert-problems
-                        "--insecure")
+                      (if ignore-cert-problems                          
+                          "--insecure"
+                        "")
                       filepath content-type put-url)))
     (when exec-path
-      (start-process-shell-command "jabber-httpupload-put-file-curl"
-                                   "*jabber-httpupload-put-file-curl*"
-                                   cmd))))
+      (with-current-buffer (get-buffer-create "*jabber-httpupload-put-file-curl*")
+        (goto-char (point-max))
+        (insert (format  "%s Uploading to %s with curl:\n$ %s"
+                         (current-time-string)
+                         put-url
+                         cmd))
+        (start-process-shell-command "jabber-httpupload-put-file-curl"
+                                     (current-buffer)
+                                     cmd)
+        (insert "-- done --")))))
 #+END_SRC
 
 ** TODO Use wget to send the file
@@ -455,15 +463,15 @@ JC is the Jabber Connection to send the file URL."
 When the slot is reserved, the HTTP upload should be started.
 
 #+BEGIN_SRC emacs-lisp
-(defun jabber-httpupload--slot-reserved (jc _xml-data data urls extra-data)
+(defun jabber-httpupload--slot-reserved (jc _xml-data filedata urls extra-data)
   "Callback function used when the slot request succeeded.
 JC is the current Jabber Connection.
 XML-DATA is the received XML from the server.
-DATA is a triple `(filepath content-type JID).
+FILEDATA is a triple `(filepath size content-type).
 URLs is a tuple `(put-url get-url).
 EXTRA-DATA is a list `(jid)"
-  (let ((filepath (car data))
-        (content-type (nth 1 data))
+  (let ((filepath (car filedata))
+        (content-type (nth 2 filedata))
         (jid (car extra-data)))
     (message "jabber-httpupload: slot PUT and GET URLs: %S" urls)
     (jabber-httpupload-upload-file (expand-file-name filepath)
