@@ -267,8 +267,7 @@ XML-DATA is the received XML from the server.
 DATA is a triple (filedata success-callback success-args) where:
   FILEDATA is a triple (filename size content-type)
   SUCCESS-CALLBACK is a function to call after parsing and requesting the upload.
-  It should accept following arguments: JC XML-DATA DATA, the GET and POST
-  URLs and the SUCCESS-ARGS list.
+  It should accept following arguments: JC XML-DATA DATA PUT-GET-URLS SUCCESS-ARGS
   SUCCESS-ARGS is a list to pass to the SUCCESS-CALLBACK."
   (let ((urls (jabber-httpupload-parse-slot-answer xml-data))
         (filedata (car data))
@@ -320,11 +319,11 @@ The XML used to request a slot is simmilar as the following:
 JC is an active Jabber Connection.
 FILEDATA is a list with (filename size content-type).
 SUCCESS-CALLBACK is a function name to call when the slot is received.  Its
-  arguments should be: jc xml-data data and URLs.
+  arguments should be: jc xml-data data and put-get-URLs.
 SUCCESS-ARGS is a list of arguments used by the SUCCESS-CALLBACK
 ERROR-CALLBACK is a function to call on failure.  Its arguments should be:
   jc xml-data."
-  (let ((filename (car filedata))
+  (let ((filename (file-name-nondirectory (car filedata)))
         (size (nth 1 filedata))
         (content-type (nth 2 filedata)))
     (jabber-send-iq jc (cdr (jabber-httpupload-server-has-support jc)) "get"
@@ -461,14 +460,16 @@ When the slot is reserved, the HTTP upload should be started.
 JC is the current Jabber Connection.
 XML-DATA is the received XML from the server.
 DATA is a triple `(filepath content-type JID).
-URLs is a tuple `(post-url get-url).
+URLs is a tuple `(put-url get-url).
 EXTRA-DATA is a list `(jid)"
   (let ((filepath (car data))
         (content-type (nth 1 data))
         (jid (car extra-data)))
-    (message "jabber-httpupload: slot POST and GET URLs: %S" urls)
-    (jabber-httpupload-upload-file filepath content-type (car urls)
-                                   (jabber-httpupload-ignore-certificate jc urls))
+    (message "jabber-httpupload: slot PUT and GET URLs: %S" urls)
+    (jabber-httpupload-upload-file (expand-file-name filepath)
+                                   content-type
+                                   (car urls)
+                                   (jabber-httpupload-ignore-certificate jc))
     (jabber-httpupload-send-file-url jc jid (cdr urls))))
 #+END_SRC
 
