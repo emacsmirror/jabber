@@ -472,13 +472,19 @@ URLs is a tuple `(put-url get-url).
 EXTRA-DATA is a list `(jid)"
   (let ((filepath (car filedata))
         (content-type (nth 2 filedata))
-        (jid (car extra-data)))
+        (jid (car extra-data))
+        (get-url (cadr urls))
+        (put-url (car urls)))
     (message "jabber-httpupload: slot PUT and GET URLs: %S" urls)
-    (jabber-httpupload-upload-file (expand-file-name filepath)
-                                   content-type
-                                   (car urls)
-                                   (jabber-httpupload-ignore-certificate jc))
-    (jabber-httpupload-send-file-url jc jid (cdr urls))))
+    (condition-case err
+        (jabber-httpupload-upload-file (expand-file-name filepath)
+                                       content-type
+                                       put-url
+                                       (jabber-httpupload-ignore-certificate jc))
+      (error "Cannot upload the file. Error: %S" err))
+    (condition-case err
+        (jabber-httpupload-send-file-url jc jid get-url)
+      (error "Cannot send message. Error: %S" err))))
 #+END_SRC
 
 
