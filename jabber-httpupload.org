@@ -505,7 +505,7 @@ Call ~jabber-httpupload-test-connection-support~ as soon as
 
 ** Test HTTP Upload support after connecting
 #+BEGIN_SRC emacs-lisp
-(add-hook 'jabber-post-connect-hooks #'jabber-httpupload-test-all-connections-suport)
+(add-hook 'jabber-post-connect-hooks #'jabber-httpupload-test-connection-support)
 #+END_SRC
 
 * Providing the package name
