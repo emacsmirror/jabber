@@ -428,11 +428,14 @@ The message requiers the GET-URL of the slot file, the receiver's JID
 and the JC Jabber Connection."
   ;; This could be a possibliity, but... cannot send the x tag.
   ;; (jabber-send-message jc jid nil get-url nil)
-  (let ((fromjid (jabber-connection-original-jid jc)))
+  (let ((fromjid (jabber-connection-original-jid jc))
+        (type (if (assoc jid *jabber-active-groupchats*)
+                  "groupchat"
+                "chat")))
     (jabber-send-sexp jc
                       `(message ((to . ,jid)
                                  (from . ,fromjid)
-                                 (type . "chat"))
+                                 (type . ,type))
                                 (body () ,get-url)
                                 (x ((xmlns . "jabber:x:oob"))
                                    (url () ,get-url))))))
