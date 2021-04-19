@@ -342,6 +342,10 @@ Use the HTTP protocol to upload the file to the PUT URL provided by the slot.
 
 The following functions call the upload programs asynchronously. When the program ends, a callback function is called with one argument provided by the caller function.
 
+The uploading process supports multiple calls. For example, when the user call ~jabber-httpupload-send-file~ with one file, and then he or she calls ~jabber-httpuploads-send-file~ again while the upload process of the first one is still running.
+
+Also, a callback can be provided in order to send the URL to the receiver Jabber client or to do any other action after uploading the file.
+
 ** jabber-httpupload-ignore-certificate
 #+BEGIN_SRC emacs-lisp
 (defun jabber-httpupload-ignore-certificate (jc)
@@ -373,6 +377,10 @@ code: (funcall CALLBACK CALLBACK-ARG)"
 #+END_SRC
 
 ** jabber-httpupload-upload-processes                             :variable:
+Multiple files can be uploaded in parallel, and thus multiple subprocess could be working at the same time. This happens when the user calls interactively ~jabber-httpupload-send-file~ twice or while a file is still uploading.
+
+This variable keeps track of the subprocess and their callback along with any data required by these functions.
+
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-httpupload-upload-processes nil
   "List of running processes uploading the file to the server
@@ -381,6 +389,8 @@ Each element has the following format: (process . (callback arg))")
 #+END_SRC
 
 ** jabber-httpupload-process-ended
+When the file has been uploaded, the process is still registered with its callback function. This callback should be called and the process deleted from the system.
+
 #+BEGIN_SRC emacs-lisp
 (defun jabber-httpupload-process-ended (process)
   "What to do when an upload process ends.
@@ -397,11 +407,12 @@ then call its callback with the provided argument."
 
 
 ** Use CURL to send the file
+These functions call curl to send the file to the server. A sentinel is required to check when the subprocess finishes to call the next function (usually, send the URL to the other jabber client).
 
 *** jabber-httpupload-curl-sentinel
 #+BEGIN_SRC emacs-lisp
 (defun jabber-httpupload-curl-sentinel (process event)
-  "Detect when Curl outputs or ends and act accordingly.
+  "Detect when Curl ends and act accordingly.
 PROCESS is the asynchronous Curl call.
 EVENT is a string describing the reason the sentinel were called.
 
@@ -416,6 +427,8 @@ is called."
 #+END_SRC
 
 *** jabber-httpupload-put-file-curl
+This is the function used to send a file to the server by running a curl subprocess.
+
 #+BEGIN_SRC emacs-lisp
 (defun jabber-httpupload-put-file-curl (filepath content-type put-url
                                              callback callback-arg
@@ -499,7 +512,7 @@ and the JC Jabber Connection."
 
 
 * Chat Buffer
-** WIP Send file (complete process)
+** Send file (complete process)
 The following functions add interactive commands to the chat buffer to send the GET URL to the current (or selected) client.
 
 #+BEGIN_SRC emacs-lisp
@@ -518,7 +531,16 @@ JC is the Jabber Connection to send the file URL."
                                     #'jabber-httpupload--slot-reserved
                                     (list jid))))
 #+END_SRC
-*** WIP jabber-httpupload--upload-done
+
+The following functions are callbacks used in the following order:
+
+1. ~jabber-httpupload-request-slot~ calls ~jabber-httpupload--slot-reserved~.
+2. ~jabber-httpupload--slot-reserved~ calls ~jabber-httpupload--upload-done~.
+3. ~jabber-httpupload--upload-done~ calls ~jabber-httpupload-send-file-url~.
+
+This form of calling is required because of the asynchronous behaviour of the upload file function.
+
+*** jabber-httpupload--upload-done
 #+BEGIN_SRC emacs-lisp
 (defun jabber-httpupload--upload-done (data)
   "Callback function used when the upload is done.
@@ -536,7 +558,7 @@ After the upload is done, send the get-url to the destined Jabber user JID."
       (error "Cannot send message. Error: %S" err))))
 #+END_SRC
 
-*** WIP jabber-httpupload--slot-reserved
+*** jabber-httpupload--slot-reserved
 When the slot is reserved, the HTTP upload should be started.
 
 #+BEGIN_SRC emacs-lisp
