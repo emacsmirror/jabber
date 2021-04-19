@@ -340,7 +340,7 @@ ERROR-CALLBACK is a function to call on failure.  Its arguments should be:
 * Uploading the file
 Use the HTTP protocol to upload the file to the PUT URL provided by the slot.
 
-The following functions call the upload programs asynchronously.
+The following functions call the upload programs asynchronously. When the program ends, a callback function is called with one argument provided by the caller function.
 
 ** jabber-httpupload-ignore-certificate
 #+BEGIN_SRC emacs-lisp
@@ -356,27 +356,79 @@ certificate validation status."
 ** jabber-httpupload-upload-file
 #+BEGIN_SRC emacs-lisp
 (defun jabber-httpupload-upload-file (filepath content-type put-url
+                                           callback callback-arg
                                            &optional ignore-cert-problems)
   "Update the given file at FILEPATH to the provided PUT-URL.
 The CONTENT-TYPE (MIME type) of the file must match the one provided
 to the Jabber Connection with `jabber-httpupload-request-slot'.
 IGNORE-CERT-PROBLEMS allows to connect with HTTPS servers with invalid or
-non-trusted SSL/TLS certificates"
+non-trusted SSL/TLS certificates.
+When the process ends, a callback function is called using the following
+code: (funcall CALLBACK CALLBACK-ARG)"
   (unless (funcall jabber-httpupload-upload-function filepath content-type put-url
+                   callback callback-arg
                    ignore-cert-problems)
     (error (concat "The upload function failed to PUT the file to the server. "
                    "Try other function or install the required program"))))
 #+END_SRC
 
+** jabber-httpupload-upload-processes                             :variable:
+#+BEGIN_SRC emacs-lisp
+(defvar jabber-httpupload-upload-processes nil
+  "List of running processes uploading the file to the server
+associated with their callback and arguments.
+Each element has the following format: (process . (callback arg))")
+#+END_SRC
+
+** jabber-httpupload-process-ended
+#+BEGIN_SRC emacs-lisp
+(defun jabber-httpupload-process-ended (process)
+  "What to do when an upload process ends.
+PROCESS is the process that ended.
+First remove the process from `jabber-httpupload-upload-processes',
+then call its callback with the provided argument."
+  (let* ((data (assq process jabber-httpupload-upload-processes))
+         (callback (cadr data))
+         (callback-arg (caddr data)))
+    (setq jabber-httpupload-upload-processes
+          (assq-delete-all process jabber-httpupload-upload-processes))
+    (funcall callback callback-arg)))
+#+END_SRC
+
+
 ** Use CURL to send the file
+
+*** jabber-httpupload-curl-sentinel
+#+BEGIN_SRC emacs-lisp
+(defun jabber-httpupload-curl-sentinel (process event)
+  "Detect when Curl outputs or ends and act accordingly.
+PROCESS is the asynchronous Curl call.
+EVENT is a string describing the reason the sentinel were called.
+
+When EVENT is \"finished\n\", then the function `jabber-httpupload-process-ended'
+is called."
+  (with-current-buffer (process-buffer process)
+    (let ((inhibit-read-only t))
+      (goto-char (point-max))
+      (insert (format "Sentinel: %S event received." event))))
+  (when (string= event "finished\n")
+    (jabber-httpupload-process-ended process)))
+#+END_SRC
+
+*** jabber-httpupload-put-file-curl
 #+BEGIN_SRC emacs-lisp
 (defun jabber-httpupload-put-file-curl (filepath content-type put-url
+                                             callback callback-arg
                                              &optional ignore-cert-problems)
   "Use the curl command to put the file at FILEPATH into the PUT-URL.
 Send the SIZE and CONTENT-TYPE MIME as headers.
 IGNORE-CERT-PROBLEMS enable the use of HTTPS connections with invalid or
-  non-trusted SSL/TLS certificates.  If nil, curl will validate the certificate
-  provided by the HTTP/S Web server."
+non-trusted SSL/TLS certificates.  If nil, curl will validate the certificate
+provided by the HTTP/S Web server.
+When the process ends, the function CALLBACK is called like the following
+call: (funcall CALLBACK CALLBACK-ARG).
+The process is registered at `jabber-httpupload-upload-processes' AList with
+the provided CALLBACK and CALLBACK-ARG."
   (let* ((exec-path (executable-find "curl"))
          (cmd (format "%s %s --upload-file '%s' -H \"content-type: %s\" '%s'"
                       exec-path
@@ -392,10 +444,14 @@ IGNORE-CERT-PROBLEMS enable the use of HTTPS connections with invalid or
                            (current-time-string)
                            put-url
                            cmd))
-          (start-process-shell-command "jabber-httpupload-put-file-curl"
-                                       (current-buffer)
-                                       cmd)
-          (insert "-- done --"))))))
+          (let ((process (start-process-shell-command "jabber-httpupload-put-file-curl"
+                                                      (current-buffer)
+                                                      cmd)))
+            (push (cons process (list callback callback-arg))
+                  jabber-httpupload-upload-processes)
+            (set-process-sentinel process #'jabber-httpupload-curl-sentinel))
+          (insert "-- done --")
+          t)))))
 #+END_SRC
 
 ** TODO Use wget to send the file
@@ -462,6 +518,23 @@ JC is the Jabber Connection to send the file URL."
                                     #'jabber-httpupload--slot-reserved
                                     (list jid))))
 #+END_SRC
+*** WIP jabber-httpupload--upload-done
+#+BEGIN_SRC emacs-lisp
+(defun jabber-httpupload--upload-done (data)
+  "Callback function used when the upload is done.
+When the upload process finished, a callback function is called with an argument.
+This function is expected to be used as the CALLBACK argument for the function
+`jabber-httpupload-upload-file', DATA is its CALLBACK-ARG argument.
+Also, see `jabber-httpupload-process-ended' for more information.
+DATA is expected to have the following foramt: (jc jid get-url).
+After the upload is done, send the get-url to the destined Jabber user JID."
+  (let ((jc (car data))
+        (jid (nth 1 data))
+        (get-url (nth 2 data)))
+    (condition-case err
+        (jabber-httpupload-send-file-url jc jid get-url)
+      (error "Cannot send message. Error: %S" err))))
+#+END_SRC
 
 *** WIP jabber-httpupload--slot-reserved
 When the slot is reserved, the HTTP upload should be started.
@@ -484,11 +557,9 @@ EXTRA-DATA is a list `(jid)"
         (jabber-httpupload-upload-file (expand-file-name filepath)
                                        content-type
                                        put-url
+                                       #'jabber-httpupload--upload-done (list jc jid get-url)
                                        (jabber-httpupload-ignore-certificate jc))
-      (error "Cannot upload the file. Error: %S" err))
-    (condition-case err
-        (jabber-httpupload-send-file-url jc jid get-url)
-      (error "Cannot send message. Error: %S" err))))
+      (error "Cannot upload the file. Error: %S" err))))
 #+END_SRC
 
 
