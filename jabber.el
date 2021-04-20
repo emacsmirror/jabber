@@ -1143,7 +1143,7 @@ With prefix argument, remove it."
   (interactive "P")
   (setq jabber-display-menu (if remove nil t))
   (force-mode-line-update))
-(make-obsolete 'jabber-menu "set the variable `jabber-display-menu' instead.")
+(make-obsolete 'jabber-menu "set the variable `jabber-display-menu' instead." "27.2")
 
 ;;;###autoload
 (define-key-after (lookup-key global-map [menu-bar])
@@ -3708,7 +3708,7 @@ JC is the Jabber connection."
 (defalias 'jabber-presence-update-roster 'ignore)
 ;;jabber-presence-update-roster is not needed anymore.
 ;;Its work is done in `jabber-process-presence'."
-(make-obsolete 'jabber-presence-update-roster 'ignore)
+(make-obsolete 'jabber-presence-update-roster 'ignore "27.2")
 
 (defun jabber-next-property (&optional prev)
   "Return position of next property appearence or nil if there is none.

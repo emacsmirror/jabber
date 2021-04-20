@@ -1578,13 +1578,13 @@ if any of `jabber-account-list' or `jabber-connections' is non-nil."
 #+END_SRC
 **** jabber-menu                                                 :command:
 #+BEGIN_SRC emacs-lisp
-(defun jabber-menu (&optional remove)
-  "Put \"Jabber\" menu on menubar.
-With prefix argument, remove it."
-  (interactive "P")
-  (setq jabber-display-menu (if remove nil t))
-  (force-mode-line-update))
-(make-obsolete 'jabber-menu "set the variable `jabber-display-menu' instead.")
+  (defun jabber-menu (&optional remove)
+    "Put \"Jabber\" menu on menubar.
+  With prefix argument, remove it."
+    (interactive "P")
+    (setq jabber-display-menu (if remove nil t))
+    (force-mode-line-update))
+  (make-obsolete 'jabber-menu "set the variable `jabber-display-menu' instead." "27.2")
 
 #+END_SRC
 
@@ -4693,7 +4693,7 @@ JC is the Jabber connection."
 (defalias 'jabber-presence-update-roster 'ignore)
 ;;jabber-presence-update-roster is not needed anymore.
 ;;Its work is done in `jabber-process-presence'."
-(make-obsolete 'jabber-presence-update-roster 'ignore)
+(make-obsolete 'jabber-presence-update-roster 'ignore "27.2")
 
 #+END_SRC
 **** jabber-next-property                                       :function:
