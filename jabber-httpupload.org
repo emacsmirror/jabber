@@ -73,6 +73,15 @@ The procedure to send a file is the following:
     :type 'function)
 #+END_SRC
 
+** jabber-httpupload-record-command
+#+BEGIN_SRC emacs-lisp
+(defcustom jabber-httpupload-record-command "sox -d -t ogg $(filename).ogg"
+  "What is the command used to record audio?
+Use $(filename) where the temporal filename should be."
+  :group 'jabber-httpupload
+  :type 'function)
+#+END_SRC
+
 
 * Discovering support
 Disco is used to discover if HTTP Upload is supported on the server side. Two queries are used:
@@ -587,6 +596,31 @@ EXTRA-DATA is a list `(jid)"
 
 ** TODO Recording audio and sending
 To easy the burden to send an audio message, the following functions allows the user to call a recorder program and send the results through one M-x interactive command.
+
+*** TODO jabber-httpupload--record-audio
+Create a new audio record and save the file into a temporal directory.
+
+#+BEGIN_SRC emacs-lisp
+  (defun jabber-httpupload--record-audio ()
+    "Create a new audio record and save the file into a temporal directory."
+    (let ((process (start-process-shell-command "jabber-httpupload-record-audio"
+                                                (current-buffer)
+                                                (replace-string "$(filename" "/tmp/jabber-httpupload-record"
+                                                                jabber-httpupload-record-command))))
+      (set-process-sentinel process #'jabber-httpupload-record-sentinel)))
+#+END_SRC
+
+
+*** jabber-httpupload-record-and-send-audio
+#+BEGIN_SRC emacs-lisp
+(defun jabber-httpupload-record-and-send-audio (jc jid)
+  "Record an audio and send it to a user JID.
+JC is the Jabber Connection to send the file URL."
+  (interactive (list (jabber-read-account)
+                     (jabber-read-jid-completing "Send audio to:" nil nil nil 'full t)))
+  (jabber-httpupload-send-file jc jid (jabber-httpupload--record-audio)))
+#+END_SRC
+
 
 * Add hooks
 Some function should start automatically.
