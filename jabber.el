@@ -9263,7 +9263,7 @@ Optional argument GROUP to look."
 (defun jabber-sort-nicks (nicks group)
   "Return list of NICKS in GROUP, sorted."
   (let ((times (cdr (assoc group *jabber-muc-participant-last-speaking*))))
-    (cl-flet ((fetch-time (nick) (or (assoc nick times) (cons nick 0)))
+    (flet ((fetch-time (nick) (or (assoc nick times) (cons nick 0)))
 	   (cmp (nt1 nt2)
 		(let ((t1 (cdr nt1))
 		      (t2 (cdr nt2)))
