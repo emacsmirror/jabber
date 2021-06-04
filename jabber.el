@@ -40,10 +40,10 @@
 (eval-when-compile
   (require 'cl))
 
-(defun jabber-escape-xml (str)
-  "Escape strings for XML."
-  (if (stringp str)
-      (let ((newstr (concat str)))
+(defun jabber-escape-xml (string)
+  "Escape STRING for XML."
+  (if (stringp string)
+      (let ((newstr (concat string)))
 	;; Form feeds might appear in code you copy, etc.  Nevertheless,
 	;; it's invalid XML.
 	(setq newstr (jabber-replace-in-string newstr "\f" "\n"))
@@ -56,21 +56,21 @@
 	(setq newstr (jabber-replace-in-string newstr "'" "&apos;"))
 	(setq newstr (jabber-replace-in-string newstr "\"" "&quot;"))
 	newstr)
-    str))
+    string))
 
-(defun jabber-unescape-xml (str)
-  "unescape xml strings"
+(defun jabber-unescape-xml (string)
+  "Unescape STRING for XML."
   ;; Eventually this can be done with `xml-substitute-special', but the
   ;; version in xml.el of GNU Emacs 21.3 is buggy.
-  (if (stringp str)
-      (let ((newstr str))
+  (if (stringp string)
+      (let ((newstr string))
 	(setq newstr (jabber-replace-in-string newstr "&quot;" "\""))
 	(setq newstr (jabber-replace-in-string newstr "&apos;" "'"))
 	(setq newstr (jabber-replace-in-string newstr "&gt;" ">"))
 	(setq newstr (jabber-replace-in-string newstr "&lt;" "<"))
 	(setq newstr (jabber-replace-in-string newstr "&amp;" "&"))
 	newstr)
-    str))
+    string))
 
 (defun jabber-sexp2xml (sexp)
   "Return SEXP as well-formatted XML.
@@ -234,7 +234,8 @@ any string   character data of this node"
     node))
 
 (defmacro jabber-xml-let-attributes (attributes xml-data &rest body)
-  "Bind variables to the same-name attribute values in XML-DATA."
+  "Evaluate BODY with ATTRIBUTES bound to their values in XML-DATA.
+ATTRIBUTES must be a list of symbols, as present in XML-DATA."
   `(let ,(mapcar #'(lambda (attr)
 		     (list attr `(jabber-xml-get-attribute ,xml-data ',attr)))
 		 attributes)
@@ -300,6 +301,8 @@ any string   character data of this node"
   "History of entered JIDs.")
 
 (defsubst jabber-replace-in-string (str regexp newtext)
+  "Replace all matches for REGEXP with NEWTEXT in STR.
+NEWTEXT is inserted literally, without changing its case or treating \\ specially."
   (replace-regexp-in-string regexp newtext str t t))
 
 (defalias 'jabber-propertize 'propertize)
