@@ -1,5 +1,6 @@
+#+PROPERTY: header-args :tangle yes :load yes
 #+TODO: TODO WIP EXTEND CLEANUP FIXME REVIEW |
-#+PROPERTY: header-args :tangle yes
+
 * jabber.el
 ** README
 This is jabber.el 0.8.92, an XMPP client for Emacs.  XMPP (also known as 'Jabber') is an instant messaging system; see http://xmpp.org for more information.
@@ -149,13 +150,9 @@ It is possible to make various web browsers pass links starting with "xmpp:" to 
 3. [ ] hexrgb.el is not available on MELPA
 
 ** About this file
-jabber.el is an Org literate program. We use =literate-elisp= to directly load/compile this Org file. The former is exactly what the file =jabber.el= does - this approach is also compatible with =use-package= and others. The advantages -
-1. links to the source (e.g. =describe-*= buffers, byte-compilation messages) take the user directly to the Org file rather than to the tangled source
-2. no waiting for =org-babel-tangle= (which takes ages)
-3. no need to track tangled files files in VCS, nor ensure they are kept in sync with the Org file
-4. no VCS hooks/CI required to automatically tangle the file
+jabber.el is an Org literate program. Tangling is done automatically after each save.
 
-Note that some tools, like =checkdoc=, still require a tangled file as of the time of this writing.
+Alternatively, it is possible to use =literate-elisp-load= from  [[https://github.com/jingtaozf/literate-elisp][literate-elisp]] to directly load this Org file. This way, links to the source (e.g. =describe-*= buffers, byte-compilation messages) take the user directly to the Org file rather than to the tangled source.
 
 If a source block does not have syntax highlighting, press =M-o M-o= (=font-lock-fontify-block=) in it.
 
@@ -15249,7 +15246,7 @@ Return nil if no MD5 summing program is available."
 *** SOCKS5 Bytestreams ([[https://xmpp.org/extensions/xep-0065.html][XEP-0065]])
 :PROPERTIES:
 :file:     jabber-socks5.el
-:header-args: :tangle jabber-socks5.el :load jabber-enable-legacy-features-p
+:header-args: :tangle jabber-legacy-socks5.el :load jabber-enable-legacy-features-p
 :END:
 
 #+BEGIN_SRC emacs-lisp
@@ -16621,3 +16618,8 @@ Contents of process buffers might be useful for debugging."
 ;;; jabber.el ends here
 
 #+END_SRC
+
+* Local variables                                 :noexport:
+# Local Variables:
+# eval: (add-hook 'after-save-hook (lambda nil (interactive) (compile (mapconcat #'shell-quote-argument `("emacs" "-q" "-Q" "--batch" "--eval=(require 'ob-tangle)" ,(format "--eval=(org-babel-tangle-file \"%s\")" (buffer-file-name))) " "))) nil t)
+# End:
