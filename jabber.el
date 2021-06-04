@@ -327,6 +327,7 @@ any string   character data of this node"
 
 (defalias 'jabber-cancel-timer 'cancel-timer)
 
+(defvar jabber-connections)
 (defun jabber-concat-rosters ()
   "Concatenate the rosters of all connected accounts."
   (apply #'append
@@ -414,8 +415,9 @@ JID must be a string."
 			   (symbol-name string)
 			 string))))
 
+(defvar jabber-bookmarks)
 (defun jabber-jid-bookmarkname (string)
-  "Return the conference name from boomarks or displayname from roster, or JID if none set."
+  "Return the conference name from bookmarks or displayname from roster, or JID if none set."
   (or (loop for conference in (first (loop for value being the hash-values of jabber-bookmarks
                                            collect value))
             do (let ((ls (cadr conference)))
@@ -429,6 +431,7 @@ JID must be a string."
   (when (string-match "^\\(\\([^/]*@\\)?[^/]*\\)/\\(.*\\)" jid)
     (match-string 3 jid)))
 
+(defvar jabber-jid-obarray)
 (defun jabber-jid-symbol (jid)
   "Return the symbol for the given JID.
 JID must be a string."
@@ -438,6 +441,7 @@ JID must be a string."
     ;; XXX: "downcase" is poor man's nodeprep.  See XMPP CORE.
     (intern (downcase (jabber-jid-user jid)) jabber-jid-obarray)))
 
+(defvar jabber-account-list)
 (defun jabber-my-jid-p (jc jid)
   "Return non-nil if the specified JID is in jabber-account-list (modulo resource).
 Also return non-nil if JID matches JC, modulo resource."
@@ -446,6 +450,7 @@ Also return non-nil if JID matches JC, modulo resource."
 	  (jabber-connection-bare-jid jc))
    (member (jabber-jid-user jid) (mapcar (lambda (x) (jabber-jid-user (car x))) jabber-account-list))))
 
+(defvar *jabber-active-groupchats*)
 (defun jabber-read-jid-completing (prompt &optional subset require-match default resource fulljids)
   "Read a jid out of the current roster from the minibuffer.
 If SUBSET is non-nil, it should be a list of symbols from which
@@ -564,6 +569,7 @@ Useful if the password proved to be wrong."
 		      (completing-read "Forget password of account: " jabber-account-list nil nil nil 'jabber-account-history))))
   (password-cache-remove (jabber-password-key bare-jid)))
 
+(defvar jabber-buffer-connection)
 (defun jabber-read-account (&optional always-ask contact-hint)
   "Ask for which connected account to use.
 If ALWAYS-ASK is nil and there is only one account, return that
