@@ -46,7 +46,7 @@ Note that only the connection from you to the server is encrypted; there is no g
 
 ** Installation
 jabber.el can be installed using the commands:
-#+BEGIN_SRC shell
+#+BEGIN_SRC shell :tangle no :load no
 ./configure
 make
 make install
