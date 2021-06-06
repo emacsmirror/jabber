@@ -1,5 +1,12 @@
 ;;; jabber.el --- a minimal jabber client
 
+;; Author: Magnus Henoch - mange@freemail.hu
+;; Maintainer: wgreenhouse
+;; Keywords: comm
+;; Homepage: https://tildegit.org/wgreenhouse/emacs-jabber
+;; Package-Requires: ((hexrgb "0"))
+;; Version: 0.8.92
+
 ;; Copyright (C) 2003-2010, 2013 - Magnus Henoch - mange@freemail.hu
 ;; Copyright (C) 2002-2004 - Tom Berger - object@intelectronica.net
 ;; Copyright (C) 2005 - Georg Lehner - jorge@magma.com.ni

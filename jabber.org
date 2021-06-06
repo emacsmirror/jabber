@@ -168,8 +168,20 @@ If a source block does not have syntax highlighting, press =M-o M-o= (=font-lock
 7. [ ] "Code" has a lot of direct sub-headings, making it somewhat cumbersome to navigate; someone with a better understanding of the program could organize these better
 8. [X] The tangled file currently does not list all the other authors (currently listed in =:COPYRIGHT:= drawers). We could add them all at once in the library headers section...or something else. 🤔
 * Library headers and commentary
+:PROPERTIES:
+:header-args: :tangle yes :load yes :comments no
+:END:
+
+We don't want comments to be inserted within the comment structure, and certainly not before the package first line summary, hence the =:comments no= in the header-args.
 #+BEGIN_SRC emacs-lisp
 ;;; jabber.el --- a minimal jabber client
+
+;; Author: Magnus Henoch - mange@freemail.hu
+;; Maintainer: wgreenhouse
+;; Keywords: comm
+;; Homepage: https://tildegit.org/wgreenhouse/emacs-jabber
+;; Package-Requires: ((hexrgb "0"))
+;; Version: 0.8.92
 
 ;; Copyright (C) 2003-2010, 2013 - Magnus Henoch - mange@freemail.hu
 ;; Copyright (C) 2002-2004 - Tom Berger - object@intelectronica.net
@@ -195,6 +207,10 @@ If a source block does not have syntax highlighting, press =M-o M-o= (=font-lock
 ;; along with this program; if not, write to the Free Software
 ;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+#+END_SRC
+
+"Commentary" is displayed when the user clicks on the package's entry in =M-x list-packages=.
+#+BEGIN_SRC emacs-lisp
 ;;; Commentary:
 ;;
 
