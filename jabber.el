@@ -1,7 +1,7 @@
 ;;; jabber.el --- a minimal jabber client
 
-;; Author: Magnus Henoch - mange@freemail.hu
-;; Maintainer: wgreenhouse
+;; Author: Magnus Henoch <mange@freemail.hu>
+;; Maintainer: wgreenhouse <wgreenhouse@tilde.club>
 ;; Keywords: comm
 ;; Homepage: https://tildegit.org/wgreenhouse/emacs-jabber
 ;; Package-Requires: ((hexrgb "0"))
