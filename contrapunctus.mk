@@ -7,17 +7,21 @@ setup:
 	--eval="(mapcar #'package-install '(indent-lint package-lint relint))"
 
 jabber.el:
-	emacs -q -Q --batch --eval="(require 'ob-tangle)" \
-        --eval='(org-babel-tangle-file "jabber.org")'
+	if [ -z "${ORG_PATH}" ]; then \
+          emacs -q -Q --batch \
+          --eval="(require 'ob-tangle)" \
+          --eval='(org-babel-tangle-file "jabber.org")' ; \
+        else \
+          emacs -q -Q --batch \
+          --eval="(add-to-list 'load-path \"${ORG_PATH}\")" \
+          --eval="(require 'ob-tangle)" \
+          --eval='(org-babel-tangle-file "jabber.org")' ; \
+        fi
 
 tangle: jabber.el
 
 compile: tangle
-	if [ -z "$$ORG_PATH" ]; then \
-	  emacs -q -Q --batch --eval='(byte-compile-file "jabber.el")' ; \
-	else \
-	  emacs -q -Q --batch --eval="(add-to-list 'load-path \"$$ORG_PATH\")" --eval='(byte-compile-file "jabber.el")' ; \
-	fi
+	emacs -q -Q --batch --eval='(byte-compile-file "jabber.el")' ; \
 
 lint-check-declare: tangle
 	emacs -q -Q --batch --eval='(check-declare-file "jabber.el")'
