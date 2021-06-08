@@ -1,6 +1,6 @@
 #+TITLE: jabber.el
 #+SUBTITLE: XMPP client for Emacs
-#+PROPERTY: header-args :tangle yes :load yes
+#+PROPERTY: header-args :tangle yes :load yes :comments link
 #+TODO: TODO WIP EXTEND CLEANUP FIXME REVIEW |
 
 * README
