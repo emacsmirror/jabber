@@ -6,9 +6,17 @@ setup:
 	emacs --batch --eval="(package-initialize)" \
 	--eval="(mapcar #'package-install '(indent-lint package-lint relint))"
 
+# No -q or -Q without ORG_PATH - if the user has a newer version of
+# Org, we want to use it.
 jabber.el:
 	if [ -z "${ORG_PATH}" ]; then \
-          emacs -q -Q --batch \
+          echo ; \
+	  echo "[WARNING] ORG_PATH is unset. Org versions older than 9.3.8 have a bug" ; \
+	  echo "which result in them always using absolute paths in comment links in" ; \
+	  echo "tangled source files. If your Org version is older than 9.3.8, please" ; \
+	  echo "upgrade it before tangling." ; \
+          echo ; \
+          emacs --batch \
           --eval="(require 'ob-tangle)" \
           --eval='(org-babel-tangle-file "jabber.org")' ; \
         else \
