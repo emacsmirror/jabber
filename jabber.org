@@ -144,11 +144,15 @@ It is possible to make various web browsers pass links starting with "xmpp:" to 
   - 2021 resurrection
 + contrapunctus
   - literate Org migration
+  - Makefile
++ tomasino on #team@irc.tilde.chat
+  - helping contrapunctus debug the Makefile
 
 * TODO maintenance [0%]
 1. [ ] Satisfy =M-x checkdoc=
 2. [ ] Use =rx= where regular expressions get hairy
 3. [ ] hexrgb.el is not available on MELPA
+4. [ ] Migrate tests to ERT/Buttercup/etc
 
 * About this file
 jabber.el is an Org literate program. Tangling is done automatically after each save.
