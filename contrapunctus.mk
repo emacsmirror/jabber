@@ -34,3 +34,11 @@ lint-relint: setup tangle
 	emacs -q -Q --batch --eval='(relint-file "jabber.el")'
 
 lint: lint-check-declare lint-checkdoc lint-package-lint lint-relint
+
+clean-tangle:
+	rm jabber.el
+
+clean-elc:
+	rm *.elc
+
+clean: clean-elc
