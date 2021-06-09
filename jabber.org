@@ -151,6 +151,9 @@ It is possible to make various web browsers pass links starting with "xmpp:" to 
 * TODO maintenance [0%]
 1. [ ] Satisfy =M-x checkdoc=
 2. [ ] Use =rx= where regular expressions get hairy
+   * [ ] =jabber-jid-username=
+   * [ ] =jabber-jid-server=
+   * [ ] =jabber-jid-resource=
 3. [ ] hexrgb.el is not available on MELPA
 4. [ ] Migrate tests to ERT/Buttercup/etc
 
