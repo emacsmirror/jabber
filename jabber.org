@@ -16643,5 +16643,4 @@ Contents of process buffers might be useful for debugging."
 * Local variables                                 :noexport:
 # Local Variables:
 # org-tags-column: -60
-# eval: (add-hook 'after-save-hook (lambda nil (interactive) (compile (mapconcat #'shell-quote-argument `("emacs" "-q" "-Q" "--batch" "--eval=(require 'ob-tangle)" ,(format "--eval=(org-babel-tangle-file \"%s\")" (buffer-file-name))) " "))) nil t)
 # End:
