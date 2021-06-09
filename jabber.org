@@ -245,7 +245,7 @@ We don't want comments to be inserted within the comment structure, and certainl
   (require 'cl))
 
 #+END_SRC
-*** jabber-escape-xml                           :function:
+*** jabber-escape-xml                                 :function:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-escape-xml (str)
   "Escape strings for XML."
@@ -283,7 +283,7 @@ We don't want comments to be inserted within the comment structure, and certainl
     str))
 
 #+END_SRC
-*** jabber-sexp2xml                             :function:
+*** jabber-sexp2xml                                   :function:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-sexp2xml (sexp)
   "Return SEXP as well-formatted XML.
@@ -16639,8 +16639,3 @@ Contents of process buffers might be useful for debugging."
 ;;; jabber.el ends here
 
 #+END_SRC
-
-* Local variables                                 :noexport:
-# Local Variables:
-# org-tags-column: -60
-# End:
