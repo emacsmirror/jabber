@@ -138,8 +138,11 @@ To generate the configure script, make sure that autoconf and automake are insta
    Note -
    * =ORG_PATH= must point to the =/lisp/= subdirectory of the cloned Org repository.
    * =.dir-locals-2.el= is for your personal preferences - do not add it to the repository.
-4. In Emacs, open =jabber.org=. Press =!= to accept the directory local variables, then make your changes. Always edit =jabber.org=, never =jabber.el=!
-5. Stage your changes in =jabber.org=, as well as the changes in the automatically tangled sources in =jabber.el=
+4. Create your branch, and open =jabber.org= for editing. Press =!= to accept the directory local variables, then make your changes. Always edit =jabber.org=, never =jabber.el=!
+5. Stage your changes in =jabber.org=, as well as the changes in the automatically tangled sources in =jabber.el=.
+6. Address the issues presented by the linters and tests. Hitting Enter on an error in the compilation buffer will take you to the source in =jabber.el= - use =org-babel-tangle-jump-to-org= to go to the source block in =jabber.org=.
+7. Push and create your PR, or send a patch using [[https://git-send-email.io/][=git-send-email=]] to wgreenhouse@tilde.club
+
 * TODO maintenance [0%]
 1. [ ] Satisfy =M-x checkdoc=
 2. [ ] Use =rx= where regular expressions get hairy
