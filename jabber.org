@@ -3,7 +3,7 @@
 #+PROPERTY: header-args :tangle yes :load yes :comments link
 #+TODO: TODO WIP EXTEND CLEANUP FIXME REVIEW |
 
-* README
+* Introduction
 This is jabber.el 0.8.92, an XMPP client for Emacs.  XMPP (also known as 'Jabber') is an instant messaging system; see http://xmpp.org for more information.
 
 New resources
