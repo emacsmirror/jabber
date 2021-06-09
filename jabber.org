@@ -1,6 +1,6 @@
 #+TITLE: jabber.el
 #+SUBTITLE: XMPP client for Emacs
-#+PROPERTY: header-args :tangle yes :load yes
+#+PROPERTY: header-args :tangle yes :load yes :comments link
 #+TODO: TODO WIP EXTEND CLEANUP FIXME REVIEW |
 
 * README
@@ -46,7 +46,7 @@ Note that only the connection from you to the server is encrypted; there is no g
 
 ** Installation
 jabber.el can be installed using the commands:
-#+BEGIN_SRC shell
+#+BEGIN_SRC shell :tangle no :load no
 ./configure
 make
 make install
@@ -144,11 +144,15 @@ It is possible to make various web browsers pass links starting with "xmpp:" to 
   - 2021 resurrection
 + contrapunctus
   - literate Org migration
+  - Makefile
++ tomasino on #team@irc.tilde.chat
+  - helping contrapunctus debug the Makefile
 
 * TODO maintenance [0%]
 1. [ ] Satisfy =M-x checkdoc=
 2. [ ] Use =rx= where regular expressions get hairy
 3. [ ] hexrgb.el is not available on MELPA
+4. [ ] Migrate tests to ERT/Buttercup/etc
 
 * About this file
 jabber.el is an Org literate program. Tangling is done automatically after each save.
@@ -168,9 +172,20 @@ If a source block does not have syntax highlighting, press =M-o M-o= (=font-lock
 7. [ ] "Code" has a lot of direct sub-headings, making it somewhat cumbersome to navigate; someone with a better understanding of the program could organize these better
 8. [X] The tangled file currently does not list all the other authors (currently listed in =:COPYRIGHT:= drawers). We could add them all at once in the library headers section...or something else. 🤔
 * Library headers and commentary
-=:comments no= here, because we do not want the first line of the file to be an Org link comment.
-#+BEGIN_SRC emacs-lisp :comments no
+:PROPERTIES:
+:header-args: :tangle yes :load yes :comments no
+:END:
+
+We don't want comments to be inserted within the package comment structure, and certainly not before the package first line summary, hence the =:comments no= in the header-args.
+#+BEGIN_SRC emacs-lisp
 ;;; jabber.el --- a minimal jabber client
+
+;; Author: Magnus Henoch <mange@freemail.hu>
+;; Maintainer: wgreenhouse <wgreenhouse@tilde.club>
+;; Keywords: comm
+;; Homepage: https://tildegit.org/wgreenhouse/emacs-jabber
+;; Package-Requires: ((hexrgb "0"))
+;; Version: 0.8.92
 
 ;; Copyright (C) 2003-2010, 2013 - Magnus Henoch - mange@freemail.hu
 ;; Copyright (C) 2002-2004 - Tom Berger - object@intelectronica.net
@@ -196,6 +211,10 @@ If a source block does not have syntax highlighting, press =M-o M-o= (=font-lock
 ;; along with this program; if not, write to the Free Software
 ;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+#+END_SRC
+
+"Commentary" is displayed when the user clicks on the package's entry in =M-x list-packages=.
+#+BEGIN_SRC emacs-lisp
 ;;; Commentary:
 ;;
 
@@ -226,7 +245,7 @@ If a source block does not have syntax highlighting, press =M-o M-o= (=font-lock
   (require 'cl))
 
 #+END_SRC
-*** jabber-escape-xml                           :function:
+*** jabber-escape-xml                                 :function:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-escape-xml (string)
   "Escape STRING for XML."
@@ -16629,9 +16648,3 @@ Contents of process buffers might be useful for debugging."
 ;;; jabber.el ends here
 
 #+END_SRC
-
-* Local variables                                 :noexport:
-# Local Variables:
-# org-tags-column: -60
-# eval: (add-hook 'after-save-hook (lambda nil (interactive) (compile (mapconcat #'shell-quote-argument `("emacs" "-q" "-Q" "--batch" "--eval=(require 'ob-tangle)" ,(format "--eval=(org-babel-tangle-file \"%s\")" (buffer-file-name))) " "))) nil t)
-# End:
