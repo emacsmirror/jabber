@@ -92,62 +92,6 @@ This release of jabber.el contains support for file transfer.  You may need to c
 ** XMPP URIs
 It is possible to make various web browsers pass links starting with "xmpp:" to jabber.el.  In the ideal case, this works right after running "make install".  Otherwise, see the manual, section "XMPP URIs".
 
-* Credits
-** Developers
-+ Tom Berger
-+ Magnus Henoch
-+ Kirill A. Korinskiy
-+ Detlev Zundel
-  - wmii support
-+ Evgenii Terechkov
-
-** Contributors
-+ Georg Lehner
-  - network transport functions
-+ Anthony Chaumas-Pellet
-+ Jérémy Compostella
-+ Mathias Dahl
-  - history logging
-  - watch functionality
-+ Mario Domenech Goulart
-  - sawfish support
-  - xmessage support
-+ Nolan Eakins
-+ Ami Fischman
-  - Chat State Notifications
-+ François Fleuret
-+ David Hansen
-+ Adam Sjøgren
-  - notifications.el support
-+ Rodrigo Lazo
-  - notifications.el support
-  - libnotify.el support
-+ Justin Kirby
-+ Carl Henrik Lunde
-  - network transport functions
-  - activity tracking
-+ Olivier Ramonat
-+ Andrey Slusar
-+ Valery V. Vorotyntsev
-  - GMail notifications
-+ Milan Zamazal
-+ Xavier Maillard
-+ Vitaly Mayatskikh
-+ Alexander Solovyov
-+ Demyan Rogozhin
-  - XML console mode
-+ Michael Cardell Widerkrantz
-  - tmux support
-
-** Maintainers
-+ wgreenhouse
-  - 2021 resurrection
-+ contrapunctus
-  - literate Org migration
-  - Makefile
-+ tomasino on #team@irc.tilde.chat
-  - helping contrapunctus debug the Makefile
-
 * TODO maintenance [0%]
 1. [ ] Satisfy =M-x checkdoc=
 2. [ ] Use =rx= where regular expressions get hairy
@@ -16642,3 +16586,58 @@ Contents of process buffers might be useful for debugging."
 ;;; jabber.el ends here
 
 #+END_SRC
+* Credits
+** Developers
++ Tom Berger
++ Magnus Henoch
++ Kirill A. Korinskiy
++ Detlev Zundel
+  - wmii support
++ Evgenii Terechkov
+
+** Contributors
++ Georg Lehner
+  - network transport functions
++ Anthony Chaumas-Pellet
++ Jérémy Compostella
++ Mathias Dahl
+  - history logging
+  - watch functionality
++ Mario Domenech Goulart
+  - sawfish support
+  - xmessage support
++ Nolan Eakins
++ Ami Fischman
+  - Chat State Notifications
++ François Fleuret
++ David Hansen
++ Adam Sjøgren
+  - notifications.el support
++ Rodrigo Lazo
+  - notifications.el support
+  - libnotify.el support
++ Justin Kirby
++ Carl Henrik Lunde
+  - network transport functions
+  - activity tracking
++ Olivier Ramonat
++ Andrey Slusar
++ Valery V. Vorotyntsev
+  - GMail notifications
++ Milan Zamazal
++ Xavier Maillard
++ Vitaly Mayatskikh
++ Alexander Solovyov
++ Demyan Rogozhin
+  - XML console mode
++ Michael Cardell Widerkrantz
+  - tmux support
+
+** Maintainers
++ wgreenhouse
+  - 2021 resurrection
++ contrapunctus
+  - literate Org migration
+  - Makefile
++ tomasino on #team@irc.tilde.chat
+  - helping contrapunctus debug the Makefile
