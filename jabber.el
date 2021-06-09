@@ -348,10 +348,10 @@ ATTRIBUTES must be a list of symbols, as present in XML-DATA."
 ;; jabber-jid-history:1 ends here
 
 ;; [[file:jabber.org::*jabber-replace-in-string][jabber-replace-in-string:1]]
-(defsubst jabber-replace-in-string (str regexp newtext)
-  "Replace all matches for REGEXP with NEWTEXT in STR.
+(defsubst jabber-replace-in-string (string regexp newtext)
+  "Return STRING with all matches for REGEXP replaced with NEWTEXT.
 NEWTEXT is inserted literally, without changing its case or treating \\ specially."
-  (replace-regexp-in-string regexp newtext str t t))
+  (replace-regexp-in-string regexp newtext string t t))
 ;; jabber-replace-in-string:1 ends here
 
 ;; [[file:jabber.org::*jabber-propertize][jabber-propertize:1]]
@@ -367,6 +367,7 @@ NEWTEXT is inserted literally, without changing its case or treating \\ speciall
 
 ;; [[file:jabber.org::*jabber-read-with-input-method][jabber-read-with-input-method:1]]
 (defsubst jabber-read-with-input-method (prompt &optional initial-contents history default-value)
+  "Like `read-string', but always inheriting the current input method."
   (read-string prompt initial-contents history default-value t))
 ;; jabber-read-with-input-method:1 ends here
 
@@ -489,9 +490,9 @@ JID must be a string."
 ;; jabber-jid-server:1 ends here
 
 ;; [[file:jabber.org::*jabber-jid-rostername][jabber-jid-rostername:1]]
-(defun jabber-jid-rostername (string)
-  "Return the name of the user, if given in roster, else nil."
-  (let ((user (jabber-jid-symbol string)))
+(defun jabber-jid-rostername (user)
+  "Return the name of USER if present in roster, or nil."
+  (let ((user (jabber-jid-symbol user)))
     (if (> (length (get user 'name)) 0)
 	(get user 'name))))
 ;; jabber-jid-rostername:1 ends here
@@ -528,12 +529,11 @@ JID must be a string."
 ;; [[file:jabber.org::*jabber-jid-symbol][jabber-jid-symbol:1]]
 (defvar jabber-jid-obarray)
 (defun jabber-jid-symbol (jid)
-  "Return the symbol for the given JID.
-JID must be a string."
+  "Return the symbol for JID, which must be a symbol or a string."
   ;; If it's already a symbol, just return it.
   (if (symbolp jid)
       jid
-    ;; XXX: "downcase" is poor man's nodeprep.  See XMPP CORE.
+    ;; XXX: "downcase" is a poor man's nodeprep.  See XMPP CORE.
     (intern (downcase (jabber-jid-user jid)) jabber-jid-obarray)))
 ;; jabber-jid-symbol:1 ends here
 

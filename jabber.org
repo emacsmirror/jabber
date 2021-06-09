@@ -563,10 +563,10 @@ ATTRIBUTES must be a list of symbols, as present in XML-DATA."
 #+END_SRC
 *** jabber-replace-in-string             :inline:function:
 #+BEGIN_SRC emacs-lisp
-(defsubst jabber-replace-in-string (str regexp newtext)
-  "Replace all matches for REGEXP with NEWTEXT in STR.
+(defsubst jabber-replace-in-string (string regexp newtext)
+  "Return STRING with all matches for REGEXP replaced with NEWTEXT.
 NEWTEXT is inserted literally, without changing its case or treating \\ specially."
-  (replace-regexp-in-string regexp newtext str t t))
+  (replace-regexp-in-string regexp newtext string t t))
 
 #+END_SRC
 *** jabber-propertize                           :function:
@@ -586,6 +586,7 @@ NEWTEXT is inserted literally, without changing its case or treating \\ speciall
 Preserve input method when entering a minibuffer.
 #+BEGIN_SRC emacs-lisp
 (defsubst jabber-read-with-input-method (prompt &optional initial-contents history default-value)
+  "Like `read-string', but always inheriting the current input method."
   (read-string prompt initial-contents history default-value t))
 
 #+END_SRC
@@ -725,9 +726,9 @@ JID must be a string."
 #+END_SRC
 *** jabber-jid-rostername                       :function:
 #+BEGIN_SRC emacs-lisp
-(defun jabber-jid-rostername (string)
-  "Return the name of the user, if given in roster, else nil."
-  (let ((user (jabber-jid-symbol string)))
+(defun jabber-jid-rostername (user)
+  "Return the name of USER if present in roster, or nil."
+  (let ((user (jabber-jid-symbol user)))
     (if (> (length (get user 'name)) 0)
 	(get user 'name))))
 
@@ -768,12 +769,11 @@ JID must be a string."
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-jid-obarray)
 (defun jabber-jid-symbol (jid)
-  "Return the symbol for the given JID.
-JID must be a string."
+  "Return the symbol for JID, which must be a symbol or a string."
   ;; If it's already a symbol, just return it.
   (if (symbolp jid)
       jid
-    ;; XXX: "downcase" is poor man's nodeprep.  See XMPP CORE.
+    ;; XXX: "downcase" is a poor man's nodeprep.  See XMPP CORE.
     (intern (downcase (jabber-jid-user jid)) jabber-jid-obarray)))
 
 #+END_SRC
