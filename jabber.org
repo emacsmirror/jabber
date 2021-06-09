@@ -4,6 +4,9 @@
 #+TODO: TODO WIP EXTEND CLEANUP FIXME REVIEW |
 
 * Introduction
+:PROPERTIES:
+:CUSTOM_ID: introduction
+:END:
 This is jabber.el 0.8.92, an XMPP client for Emacs.  XMPP (also known as 'Jabber') is an instant messaging system; see http://xmpp.org for more information.
 
 New resources
@@ -71,6 +74,9 @@ This release of jabber.el contains support for file transfer.  You may need to c
 It is possible to make various web browsers pass links starting with "xmpp:" to jabber.el.  In the ideal case, this works right after running "make install".  Otherwise, see the manual, section "XMPP URIs".
 
 * Getting started
+:PROPERTIES:
+:CUSTOM_ID: getting-started
+:END:
 ** Installation
 jabber.el can be installed using the commands:
 #+BEGIN_SRC shell :tangle no :load no
@@ -94,6 +100,9 @@ If you are running jabber.el from Git, you need to generate the =jabber-autoload
 To generate the configure script, make sure that autoconf and automake are installed and run =autoreconf -i=.
 
 ** [Developers] Making your first pull request
+:PROPERTIES:
+:CUSTOM_ID: getting-started-dev
+:END:
 1. Clone the jabber.el repository.
    #+BEGIN_SRC shell :tangle no
      mkdir ~/git/ && cd ~/git/
@@ -155,6 +164,10 @@ To generate the configure script, make sure that autoconf and automake are insta
 6. [ ] Create testing for tutorial
 
 * Explanation
+:PROPERTIES:
+:CUSTOM_ID: explanation
+:END:
+
 ** About this file
 jabber.el is an Org literate program. Tangling is done automatically after each save.
 
