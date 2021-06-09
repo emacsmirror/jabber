@@ -101,14 +101,15 @@ It is possible to make various web browsers pass links starting with "xmpp:" to 
 3. [ ] hexrgb.el is not available on MELPA
 4. [ ] Migrate tests to ERT/Buttercup/etc
 
-* About this file
+* Explanation
+** About this file
 jabber.el is an Org literate program. Tangling is done automatically after each save.
 
 Alternatively, it is possible to use =literate-elisp-load= from  [[https://github.com/jingtaozf/literate-elisp][literate-elisp]] to directly load this Org file. This way, links to the source (e.g. =describe-*= buffers, byte-compilation messages) take the user directly to the Org file rather than to the tangled source.
 
 If a source block does not have syntax highlighting, press =M-o M-o= (=font-lock-fontify-block=) in it.
 
-** TODO literate/organizational tasks [25%]
+*** TODO literate/organizational tasks [25%]
 1. [ ] (maybe) make dependencies optional and tangle them to separate files, reducing load time for users.
 2. [ ] contemplate [[https://github.com/melpa/melpa/issues/7408][distribution strategies]]
 3. [ ] make headings for remaining definitions - some FSM-related definitions remain.
