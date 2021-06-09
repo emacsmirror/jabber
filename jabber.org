@@ -93,6 +93,53 @@ If you are running jabber.el from Git, you need to generate the =jabber-autoload
 
 To generate the configure script, make sure that autoconf and automake are installed and run =autoreconf -i=.
 
+** [Developers] Making your first pull request
+1. Clone the jabber.el repository.
+   #+BEGIN_SRC shell :tangle no
+     mkdir ~/git/ && cd ~/git/
+     git clone https://tildegit.org/wgreenhouse/emacs-jabber
+   #+END_SRC
+2. Install development dependencies.
+   1. Install Org mode v9.3.8 or higher.
+      #+BEGIN_SRC shell :tangle no
+        git clone https://code.orgmode.org/bzg/org-mode.git
+        cd ~/git/org-mode/
+        make
+      #+END_SRC
+   2. Install the remaining tools.
+      #+BEGIN_SRC shell :tangle no
+        cd ~/git/emacs-jabber/
+        make -f contrapunctus.mk setup
+      #+END_SRC
+3. Set up automatic tangling, linting, and testing - in the =emacs-jabber= directory, create a =.dir-locals-2.el= containing the following -
+   #+BEGIN_SRC emacs-lisp :tangle no :load no
+((org-mode . ((nameless-mode . t)
+              (eval . (progn
+                        (make-local-variable 'after-save-hook)
+                        (add-hook 'after-save-hook
+                                  (lambda ()
+                                    (compile
+                                     (concat
+                                      "make ORG_PATH=\"~/git/org-mode/lisp/\" "
+                                      "--silent --always-make "
+                                      "-f contrapunctus.mk "
+                                      "tangle")))
+                                  nil t)))
+              ;; use `vc-before-checkin-hook' instead, if using `vc'
+              (eval . (add-hook 'magit-post-stage-hook
+                                (lambda ()
+                                  ;; check if we are in the right project
+                                  (when (file-exists-p "jabber.org")
+                                    (compile
+                                     (concat
+                                      "make --silent --always-make "
+                                      "-f contrapunctus.mk lint")))))))))
+   #+END_SRC
+   Note -
+   * =ORG_PATH= must point to the =/lisp/= subdirectory of the cloned Org repository.
+   * =.dir-locals-2.el= is for your personal preferences - do not add it to the repository.
+4. In Emacs, open =jabber.org=. Press =!= to accept the directory local variables, then make your changes. Always edit =jabber.org=, never =jabber.el=!
+5. Stage your changes in =jabber.org=, as well as the changes in the automatically tangled sources in =jabber.el=
 * TODO maintenance [0%]
 1. [ ] Satisfy =M-x checkdoc=
 2. [ ] Use =rx= where regular expressions get hairy
@@ -101,6 +148,8 @@ To generate the configure script, make sure that autoconf and automake are insta
    * [ ] =jabber-jid-resource=
 3. [ ] hexrgb.el is not available on MELPA
 4. [ ] Migrate tests to ERT/Buttercup/etc
+5. [ ] Add Windows support to developer tutorial
+6. [ ] Create testing for tutorial
 
 * Explanation
 ** About this file
