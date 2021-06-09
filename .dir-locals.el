@@ -19,4 +19,8 @@
                               ("js"  . "jabber-socks5")
                               ("jv"  . "jabber-vcard")
                               ("jw"  . "jabber-whitespace")
-                              ("jx"  . "jabber-xml"))))))
+                              ("jx"  . "jabber-xml")))))
+ (org-mode . ((org-tags-column . -60)
+              (eval . (progn
+                        (make-local-variable 'before-save-hook)
+                        (add-hook 'before-save-hook #'org-align-all-tags nil t))))))
