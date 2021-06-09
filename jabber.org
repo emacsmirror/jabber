@@ -44,28 +44,6 @@ To use the latter form of encryption, customize =jabber-account-list=.
 
 Note that only the connection from you to the server is encrypted; there is no guarantee of connections from your server to your contacts' server being encrypted.
 
-** Installation
-jabber.el can be installed using the commands:
-#+BEGIN_SRC shell :tangle no :load no
-./configure
-make
-make install
-#+END_SRC
-
-You can specify which emacs you want to use:
-: ./configure EMACS=emacs-or-xemacs-21.4
-
-You can also install jabber.el by hand.  Put all .el files somewhere in your =load-path=, or have your =load-path= include the directory they're in.  To install the Info documentation, copy =jabber.info= to =/usr/local/info= and run ="install-info /usr/local/info/jabber.info"=.
-
-After installation by either method, add (load "jabber-autoloads") to your .emacs file.  (If you got the code from GIT, you still need the makefile to generate jabber-autoloads.el.)
-
-If you are upgrading from 0.7-0.7.x, you need to update your configuration.  See the section "Account settings" in the manual.
-
-*** Special notes for Git version
-If you are running jabber.el from Git, you need to generate the =jabber-autoloads.el= file yourself.  The simplest way to do this is by using the =./configure && make= process.
-
-To generate the configure script, make sure that autoconf and automake are installed and run =autoreconf -i=.
-
 ** Usage
 To connect to a Jabber server, type =C-x C-j C-c= (or equivalently =M-x jabber-connect-all=) and enter your JID.  With prefix argument, register a new account.  You can set your JID permanently with =M-x jabber-customize=.
 
@@ -91,6 +69,29 @@ This release of jabber.el contains support for file transfer.  You may need to c
 
 ** XMPP URIs
 It is possible to make various web browsers pass links starting with "xmpp:" to jabber.el.  In the ideal case, this works right after running "make install".  Otherwise, see the manual, section "XMPP URIs".
+
+* Getting started
+** Installation
+jabber.el can be installed using the commands:
+#+BEGIN_SRC shell :tangle no :load no
+./configure
+make
+make install
+#+END_SRC
+
+You can specify which emacs you want to use:
+: ./configure EMACS=emacs-or-xemacs-21.4
+
+You can also install jabber.el by hand.  Put all .el files somewhere in your =load-path=, or have your =load-path= include the directory they're in.  To install the Info documentation, copy =jabber.info= to =/usr/local/info= and run ="install-info /usr/local/info/jabber.info"=.
+
+After installation by either method, add (load "jabber-autoloads") to your .emacs file.  (If you got the code from GIT, you still need the makefile to generate jabber-autoloads.el.)
+
+If you are upgrading from 0.7-0.7.x, you need to update your configuration.  See the section "Account settings" in the manual.
+
+*** Special notes for Git version
+If you are running jabber.el from Git, you need to generate the =jabber-autoloads.el= file yourself.  The simplest way to do this is by using the =./configure && make= process.
+
+To generate the configure script, make sure that autoconf and automake are installed and run =autoreconf -i=.
 
 * TODO maintenance [0%]
 1. [ ] Satisfy =M-x checkdoc=
