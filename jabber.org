@@ -115,7 +115,15 @@ To generate the configure script, make sure that autoconf and automake are insta
         cd ~/git/org-mode/
         make
       #+END_SRC
-   2. Install the remaining tools.
+   2. Install Magit - type -
+      #+BEGIN_SRC
+        M-x package-install RET magit RET
+      #+END_SRC
+      or evaluate -
+      #+BEGIN_SRC emacs-lisp :tangle no :load no
+        (package-install 'magit)
+      #+END_SRC
+   3. Install the remaining tools.
       #+BEGIN_SRC shell :tangle no
         cd ~/git/emacs-jabber/
         make -f contrapunctus.mk setup
