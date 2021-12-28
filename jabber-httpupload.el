@@ -7,7 +7,7 @@
 ;; Version: 0.1.0
 ;; Keywords: comm
 ;; URL: https://github.com/cnngimenez/emacs-jabber
-;; Package-Requires: ((emacs "24.1"))
+;; Package-Requires: ((emacs "26.1") (jabber "0.8.92"))
 
 ;; This program is free software: you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -25,14 +25,17 @@
 
 ;;; Commentary:
 
+;; This file implements the HTTP Upload XEP-0363 extension.  This extension
+;; enables the user to send files through XMPP clients by using server space.
 ;; 
+;; Please read the jabber-httpupload.org file for information.
 
 ;;; Code:
 
 (require 'seq)
 (require 'fsm)
 (require 'mailcap)
-;; (require 'jabber)
+(require 'jabber)
 
 (defgroup jabber-httpupload nil "Jabber HTTP Upload Settings."
   :group 'jabber)
@@ -133,8 +136,10 @@ The returned list has the PUT URL and the GET URL."
 XML-DATA is the received XML from the server.
 DATA is a triple (filedata success-callback success-args) where:
   FILEDATA is a triple (filename size content-type)
-  SUCCESS-CALLBACK is a function to call after parsing and requesting the upload.
-  It should accept following arguments: JC XML-DATA FILEDATA PUT-GET-URLS SUCCESS-ARGS
+  SUCCESS-CALLBACK is a function to call after parsing and requesting the
+    upload.
+  It should accept following arguments: JC XML-DATA FILEDATA PUT-GET-URLS
+    and SUCCESS-ARGS.
   SUCCESS-ARGS is a list to pass to the SUCCESS-CALLBACK."
   (let ((urls (jabber-httpupload-parse-slot-answer xml-data))
         (filedata (car data))
@@ -147,10 +152,10 @@ DATA is a triple (filedata success-callback success-args) where:
 
 DATA is a list (filedata error-callback error-args) where:
   FILEDATA is a triple (filename size content-type)
-  ERROR-CALLBACK is a function to call. If no error-callback is provided, then
+  ERROR-CALLBACK is a function to call.  If no error-callback is provided, then
   `error' is used.  Its arguments are JC XML-DATA FILEDATA ERROR-ARGS.
   ERROR-ARGS is list passed to the ERROR-CALLBACK."
-  (let ((filedata (car (data)))
+  (let ((filedata (car data))
         (error-callback (nth 1 data))
         (error-args (nth 2 data)))
     (if error-callback
@@ -167,7 +172,8 @@ SUCCESS-CALLBACK is a function name to call when the slot is received.  Its
   arguments should be: jc xml-data data and put-get-URLs.
 SUCCESS-ARGS is a list of arguments used by the SUCCESS-CALLBACK
 ERROR-CALLBACK is a function to call on failure.  Its arguments should be:
-  jc xml-data."
+  jc xml-data.
+ERROR-ARGS is a list with arguments for ERROR-CALLBACK."
   (let ((filename (file-name-nondirectory (car filedata)))
         (size (nth 1 filedata))
         (content-type (nth 2 filedata)))
@@ -206,8 +212,9 @@ code: (funcall CALLBACK CALLBACK-ARG)"
                    "Try other function or install the required program"))))
 
 (defvar jabber-httpupload-upload-processes nil
-  "List of running processes uploading the file to the server
-associated with their callback and arguments.
+  "List of running processes uploading the file to the server.
+List of running processes uploading the file to the server associated with
+their callback and arguments.
 Each element has the following format: (process . (callback arg))")
 
 (defun jabber-httpupload-process-ended (process)
@@ -227,8 +234,8 @@ then call its callback with the provided argument."
 PROCESS is the asynchronous Curl call.
 EVENT is a string describing the reason the sentinel were called.
 
-When EVENT is \"finished\n\", then the function `jabber-httpupload-process-ended'
-is called."
+When EVENT is \"finished\n\", then the function
+`jabber-httpupload-process-ended' is called."
   (with-current-buffer (process-buffer process)
     (let ((inhibit-read-only t))
       (goto-char (point-max))
@@ -307,7 +314,8 @@ JC is the Jabber Connection to send the file URL."
 
 (defun jabber-httpupload--upload-done (data)
   "Callback function used when the upload is done.
-When the upload process finished, a callback function is called with an argument.
+When the upload process finished, a callback function is called with an
+argument.
 This function is expected to be used as the CALLBACK argument for the function
 `jabber-httpupload-upload-file', DATA is its CALLBACK-ARG argument.
 Also, see `jabber-httpupload-process-ended' for more information.
@@ -318,14 +326,14 @@ After the upload is done, send the get-url to the destined Jabber user JID."
         (get-url (nth 2 data)))
     (condition-case err
         (jabber-httpupload-send-file-url jc jid get-url)
-      (error "Cannot send message. Error: %S" err))))
+      (error "Cannot send message.  Error: %S" err))))
 
 (defun jabber-httpupload--slot-reserved (jc _xml-data filedata urls extra-data)
   "Callback function used when the slot request succeeded.
 JC is the current Jabber Connection.
 XML-DATA is the received XML from the server.
 FILEDATA is a triple `(filepath size content-type).
-URLs is a tuple `(put-url get-url).
+URLS is a tuple `(put-url get-url).
 EXTRA-DATA is a list `(jid)"
   (let ((filepath (car filedata))
         (content-type (nth 2 filedata))
@@ -339,22 +347,7 @@ EXTRA-DATA is a list `(jid)"
                                        put-url
                                        #'jabber-httpupload--upload-done (list jc jid get-url)
                                        (jabber-httpupload-ignore-certificate jc))
-      (error "Cannot upload the file. Error: %S" err))))
-
-(defun jabber-httpupload--record-audio ()
-  "Create a new audio record and save the file into a temporal directory."
-  (let ((process (start-process-shell-command "jabber-httpupload-record-audio"
-                                              (current-buffer)
-                                              (replace-string "$(filename" "/tmp/jabber-httpupload-record"
-                                                              jabber-httpupload-record-command))))
-    (set-process-sentinel process #'jabber-httpupload-record-sentinel)))
-
-(defun jabber-httpupload-record-and-send-audio (jc jid)
-  "Record an audio and send it to a user JID.
-JC is the Jabber Connection to send the file URL."
-  (interactive (list (jabber-read-account)
-                     (jabber-read-jid-completing "Send audio to:" nil nil nil 'full t)))
-  (jabber-httpupload-send-file jc jid (jabber-httpupload--record-audio)))
+      (error "Cannot upload the file.  Error: %S" err))))
 
 (add-hook 'jabber-post-connect-hooks #'jabber-httpupload-test-connection-support)
 

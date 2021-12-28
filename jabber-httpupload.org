@@ -15,36 +15,39 @@ The procedure to send a file is the following:
 
 * Headers and commentary
 #+BEGIN_SRC emacs-lisp
-;;; jabber-httpupload.el --- Emacs Jabber HTTP Upload Implementation -*- lexical-binding: t; -*-
+  ;;; jabber-httpupload.el --- Emacs Jabber HTTP Upload Implementation -*- lexical-binding: t; -*-
 
-;; Copyright 2021 cnngimenez
-;;
-;; Author: cnngimenez
-;; Maintainer: cnngimenez
-;; Version: 0.1.0
-;; Keywords: comm
-;; URL: https://github.com/cnngimenez/emacs-jabber
-;; Package-Requires: ((emacs "24.1"))
+  ;; Copyright 2021 cnngimenez
+  ;;
+  ;; Author: cnngimenez
+  ;; Maintainer: cnngimenez
+  ;; Version: 0.1.0
+  ;; Keywords: comm
+  ;; URL: https://github.com/cnngimenez/emacs-jabber
+  ;; Package-Requires: ((emacs "26.1") (jabber "0.8.92"))
 
-;; This program is free software: you can redistribute it and/or modify
-;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation, either version 3 of the License, or
-;; (at your option) any later version.
+  ;; This program is free software: you can redistribute it and/or modify
+  ;; it under the terms of the GNU General Public License as published by
+  ;; the Free Software Foundation, either version 3 of the License, or
+  ;; (at your option) any later version.
 
-;; This program is distributed in the hope that it will be useful,
-;; but WITHOUT ANY WARRANTY; without even the implied warranty of
-;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-;; GNU General Public License for more details.
+  ;; This program is distributed in the hope that it will be useful,
+  ;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  ;; GNU General Public License for more details.
 
-;; You should have received a copy of the GNU General Public License
-;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
+  ;; You should have received a copy of the GNU General Public License
+  ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
-;;; Commentary:
+  ;;; Commentary:
 
-;; 
+  ;; This file implements the HTTP Upload XEP-0363 extension.  This extension
+  ;; enables the user to send files through XMPP clients by using server space.
+  ;; 
+  ;; Please read the jabber-httpupload.org file for information.
 
-;;; Code:
+  ;;; Code:
 #+END_SRC
 
 * Required libraries
@@ -52,7 +55,7 @@ The procedure to send a file is the following:
 (require 'seq)
 (require 'fsm)
 (require 'mailcap)
-;; (require 'jabber)
+(require 'jabber)
 #+END_SRC
 
 * Configuration variables
@@ -275,8 +278,10 @@ The returned list has the PUT URL and the GET URL."
 XML-DATA is the received XML from the server.
 DATA is a triple (filedata success-callback success-args) where:
   FILEDATA is a triple (filename size content-type)
-  SUCCESS-CALLBACK is a function to call after parsing and requesting the upload.
-  It should accept following arguments: JC XML-DATA FILEDATA PUT-GET-URLS SUCCESS-ARGS
+  SUCCESS-CALLBACK is a function to call after parsing and requesting the
+    upload.
+  It should accept following arguments: JC XML-DATA FILEDATA PUT-GET-URLS
+    and SUCCESS-ARGS.
   SUCCESS-ARGS is a list to pass to the SUCCESS-CALLBACK."
   (let ((urls (jabber-httpupload-parse-slot-answer xml-data))
         (filedata (car data))
@@ -294,10 +299,10 @@ Maybe this function should be added as lambda inside the jabber-httpupload-reque
 
 DATA is a list (filedata error-callback error-args) where:
   FILEDATA is a triple (filename size content-type)
-  ERROR-CALLBACK is a function to call. If no error-callback is provided, then
+  ERROR-CALLBACK is a function to call.  If no error-callback is provided, then
   `error' is used.  Its arguments are JC XML-DATA FILEDATA ERROR-ARGS.
   ERROR-ARGS is list passed to the ERROR-CALLBACK."
-  (let ((filedata (car (data)))
+  (let ((filedata (car data))
         (error-callback (nth 1 data))
         (error-args (nth 2 data)))
     (if error-callback
@@ -331,7 +336,8 @@ SUCCESS-CALLBACK is a function name to call when the slot is received.  Its
   arguments should be: jc xml-data data and put-get-URLs.
 SUCCESS-ARGS is a list of arguments used by the SUCCESS-CALLBACK
 ERROR-CALLBACK is a function to call on failure.  Its arguments should be:
-  jc xml-data."
+  jc xml-data.
+ERROR-ARGS is a list with arguments for ERROR-CALLBACK."
   (let ((filename (file-name-nondirectory (car filedata)))
         (size (nth 1 filedata))
         (content-type (nth 2 filedata)))
@@ -391,10 +397,11 @@ Multiple files can be uploaded in parallel, and thus multiple subprocess could b
 This variable keeps track of the subprocess and their callback along with any data required by these functions.
 
 #+BEGIN_SRC emacs-lisp
-(defvar jabber-httpupload-upload-processes nil
-  "List of running processes uploading the file to the server
-associated with their callback and arguments.
-Each element has the following format: (process . (callback arg))")
+  (defvar jabber-httpupload-upload-processes nil
+    "List of running processes uploading the file to the server.
+  List of running processes uploading the file to the server associated with
+  their callback and arguments.
+  Each element has the following format: (process . (callback arg))")
 #+END_SRC
 
 ** jabber-httpupload-process-ended
@@ -425,8 +432,8 @@ These functions call curl to send the file to the server. A sentinel is required
 PROCESS is the asynchronous Curl call.
 EVENT is a string describing the reason the sentinel were called.
 
-When EVENT is \"finished\n\", then the function `jabber-httpupload-process-ended'
-is called."
+When EVENT is \"finished\n\", then the function
+`jabber-httpupload-process-ended' is called."
   (with-current-buffer (process-buffer process)
     (let ((inhibit-read-only t))
       (goto-char (point-max))
@@ -553,7 +560,8 @@ This form of calling is required because of the asynchronous behaviour of the up
 #+BEGIN_SRC emacs-lisp
 (defun jabber-httpupload--upload-done (data)
   "Callback function used when the upload is done.
-When the upload process finished, a callback function is called with an argument.
+When the upload process finished, a callback function is called with an
+argument.
 This function is expected to be used as the CALLBACK argument for the function
 `jabber-httpupload-upload-file', DATA is its CALLBACK-ARG argument.
 Also, see `jabber-httpupload-process-ended' for more information.
@@ -564,7 +572,7 @@ After the upload is done, send the get-url to the destined Jabber user JID."
         (get-url (nth 2 data)))
     (condition-case err
         (jabber-httpupload-send-file-url jc jid get-url)
-      (error "Cannot send message. Error: %S" err))))
+      (error "Cannot send message.  Error: %S" err))))
 #+END_SRC
 
 *** jabber-httpupload--slot-reserved
@@ -576,7 +584,7 @@ When the slot is reserved, the HTTP upload should be started.
 JC is the current Jabber Connection.
 XML-DATA is the received XML from the server.
 FILEDATA is a triple `(filepath size content-type).
-URLs is a tuple `(put-url get-url).
+URLS is a tuple `(put-url get-url).
 EXTRA-DATA is a list `(jid)"
   (let ((filepath (car filedata))
         (content-type (nth 2 filedata))
@@ -590,11 +598,15 @@ EXTRA-DATA is a list `(jid)"
                                        put-url
                                        #'jabber-httpupload--upload-done (list jc jid get-url)
                                        (jabber-httpupload-ignore-certificate jc))
-      (error "Cannot upload the file. Error: %S" err))))
+      (error "Cannot upload the file.  Error: %S" err))))
 #+END_SRC
 
 
 ** TODO Recording audio and sending
+:PROPERTIES:
+:header-args: :tangle no
+:END:
+
 To easy the burden to send an audio message, the following functions allows the user to call a recorder program and send the results through one M-x interactive command.
 
 *** TODO jabber-httpupload--record-audio
