@@ -131,7 +131,7 @@ This function is asynchronous, thus it won't return any results."
 ** jabber-httpupload-test-item-support
 ~callback~ receives three arguments: the jabber connection, extra data and the query result. The result is a list of features supported by the server. For example, if the client receives the following IQ answer:
 
-#+BEGIN_SRC xml
+#+BEGIN_SRC xml :tangle no
 <iq from="upload.server.org" type="result" to="myjid@server.org/pc1" id="emacs-iq-24678.666.622936">
   <query xmlns="http://jabber.org/protocol/disco#info">
     <identity name="HTTP File Upload" type="file" category="store"/>
@@ -184,7 +184,7 @@ in `jabber-httpupload-support'."
 ~callback~ receives three arguments: the jabber connection, extra data and the query result. The result is a list of vector with the node name, its IRI and any other properties.
 
 For example, if the client receives the following XML:
-#+BEGIN_SRC xml
+#+BEGIN_SRC xml :tangle no
   <iq from="server.org" type="result" to="myjid@server.org/pc1" id="emacs-iq-24677.56646.166389">
     <query xmlns="http://jabber.org/protocol/disco#items">
       <item jid="conference.server.org" name="MUC chats!"/>
@@ -242,7 +242,7 @@ The HTTP Upload specify that the client must ask for a "slot" before uploading t
 The server may limit the file size to upload. 
 
 ** jabber-httpupload-parse-slot-answer
-#+BEGIN_SRC xml
+#+BEGIN_SRC xml :tangle no
 <iq from='upload.montague.tld'
     id='step_03'
     to='romeo@montague.tld/garden'
@@ -309,7 +309,7 @@ DATA is a list (filedata error-callback error-args) where:
 ** jabber-httpupload-request-slot                             :function:
 The XML used to request a slot is simmilar as the following:
 
-#+BEGIN_SRC xml
+#+BEGIN_SRC xml :tangle no
 <iq from='romeo@montague.tld/garden'
     id='step_03'
     to='upload.montague.tld'
@@ -484,7 +484,7 @@ Prepare the GET URL to send it to an XMPP client throug a Message stanza.
 ** jabber-httpupload-send-file-url
 The following message is simmilar to one sent by conversations:
 
-#+BEGIN_SRC xml
+#+BEGIN_SRC xml :tangle no
 <message from="from_jid@fromserver.org/Resource" id="fc824dcb-c654-4911-a22b-25718dfe4590" type="chat" to="to_jid@toserver.org">
   <body>https://fromserver.org:5281/upload/kFTT5ET9JeF_CC6s/_IJNy8ZUSRGiKyVxjf5FkA.jpg</body>
   <request xmlns="urn:xmpp:receipts"/>
