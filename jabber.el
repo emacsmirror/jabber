@@ -1,5 +1,12 @@
 ;;; jabber.el --- a minimal jabber client  -*- lexical-binding: t; -*-
 
+;; Author: Magnus Henoch <mange@freemail.hu>
+;; Maintainer: wgreenhouse <wgreenhouse@tilde.club>
+;; Keywords: comm
+;; Homepage: https://tildegit.org/wgreenhouse/emacs-jabber
+;; Package-Requires: ((hexrgb "0"))
+;; Version: 0.8.92
+
 ;; Copyright (C) 2003-2010, 2013 - Magnus Henoch - mange@freemail.hu
 ;; Copyright (C) 2002-2004 - Tom Berger - object@intelectronica.net
 ;; Copyright (C) 2005 - Georg Lehner - jorge@magma.com.ni
@@ -32,9 +39,12 @@
 
 ;;; Code:
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*Dependencies][Dependencies:1]]
 (require 'cl-lib)
 (require 'goto-addr)
+;; Dependencies:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*lexical binding test][lexical binding test:1]]
 (defmacro lexical-p ()
   "Return non-nil in buffers with lexical binding."
   '(let* ((ret t)
@@ -53,14 +63,20 @@
     (setq lexical-binding t)))
 
 (unless (lexical-p)
-  (message "jabber.org: It seems that lexical binding is still off... 
+  (message "jabber.org: It seems that lexical binding is still off...
 Consider adding the file-local variable prop-line to the tangled jabber.el file
 or try to byte-compile the code."))
+;; lexical binding test:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*custom variables][custom variables:1]]
 (defvar jabber-enable-legacy-features-p nil)
+;; custom variables:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*XML functions][XML functions:1]]
 (require 'xml)
+;; XML functions:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-escape-xml][jabber-escape-xml:1]]
 (defun jabber-escape-xml (str)
   "Escape strings for XML.
 STR the string to escape."
@@ -79,7 +95,9 @@ STR the string to escape."
 	(setq newstr (jabber-replace-in-string newstr "\"" "&quot;"))
 	newstr)
     str))
+;; jabber-escape-xml:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-unescape-xml][jabber-unescape-xml:1]]
 (defun jabber-unescape-xml (str)
   "Unescape xml strings.
 STR the string to remove escaped characters."
@@ -94,7 +112,9 @@ STR the string to remove escaped characters."
 	(setq newstr (jabber-replace-in-string newstr "&amp;" "&"))
 	newstr)
     str))
+;; jabber-unescape-xml:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-sexp2xml][jabber-sexp2xml:1]]
 (defun jabber-sexp2xml (sexp)
   "Return SEXP as well-formatted XML.
 SEXP should be in the form (tagname ((attribute-name . attribute-value)...) children...)"
@@ -135,7 +155,9 @@ SEXP should be in the form (tagname ((attribute-name . attribute-value)...) chil
 	(setq xml (concat xml
 			  "/>")))
       xml))))
+;; jabber-sexp2xml:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-xml-skip-tag-forward][jabber-xml-skip-tag-forward:1]]
 (defun jabber-xml-skip-tag-forward (&optional dont-recurse-into-stream)
   "Skip to end of tag or matching closing tag if present.
 Return t iff after a closing tag, otherwise throws an 'unfinished
@@ -172,7 +194,9 @@ enough for us."
 	(throw 'unfinished nil)))))
    (t
     (throw 'unfinished nil))))
+;; jabber-xml-skip-tag-forward:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-xml-parse-next-stanza][jabber-xml-parse-next-stanza:1]]
 (defun jabber-xml-parse-next-stanza ()
   "Parse the first XML stanza in the current buffer.
 Parse and return the first complete XML element in the buffer,
@@ -183,17 +207,23 @@ element, return nil."
 	 (jabber-xml-skip-tag-forward)
 	 (> (point) (point-min)))
        (xml-parse-region (point-min) (point))))
+;; jabber-xml-parse-next-stanza:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-xml-node-name][jabber-xml-node-name:1]]
 (defsubst jabber-xml-node-name (node)
   "Return the tag associated with NODE.
 The tag is a lower-case symbol."
   (if (listp node) (car node)))
+;; jabber-xml-node-name:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-xml-node-attributes][jabber-xml-node-attributes:1]]
 (defsubst jabber-xml-node-attributes (node)
   "Return the list of attributes of NODE.
 The list can be nil."
   (if (listp node) (nth 1 node)))
+;; jabber-xml-node-attributes:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-xml-node-children][jabber-xml-node-children:1]]
 (defsubst jabber-xml-node-children (node)
   "Return the list of children of NODE.
 This is a list of nodes, and it can be nil."
@@ -202,7 +232,9 @@ This is a list of nodes, and it can be nil."
     (if (equal children '(("")))
 	nil
       children)))
+;; jabber-xml-node-children:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-xml-get-children][jabber-xml-get-children:1]]
 (defun jabber-xml-get-children (node child-name)
   "Return the children of NODE whose tag is CHILD-NAME.
 CHILD-NAME should be a lower case symbol."
@@ -212,17 +244,23 @@ CHILD-NAME should be a lower case symbol."
 	  (if (equal (jabber-xml-node-name child) child-name)
 	      (push child match))))
     (nreverse match)))
+;; jabber-xml-get-children:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-xml-get-attribute][jabber-xml-get-attribute:1]]
 (defsubst jabber-xml-get-attribute (node attribute)
   "Get from NODE the value of ATTRIBUTE.
 Return nil if the attribute was not found."
   (when (consp node)
     (xml-get-attribute-or-nil node attribute)))
+;; jabber-xml-get-attribute:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-xml-get-xmlns][jabber-xml-get-xmlns:1]]
 (defsubst jabber-xml-get-xmlns (node)
   "Get \"xmlns\" attribute of NODE, or nil if not present."
   (jabber-xml-get-attribute node 'xmlns))
+;; jabber-xml-get-xmlns:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-xml-path][jabber-xml-path:1]]
 (defun jabber-xml-path (xml-data path)
   "Find sub-node of XML-DATA according to PATH.
 PATH is a vaguely XPath-inspired list.  Each element can be:
@@ -255,7 +293,9 @@ any string   character data of this node."
           (error "Unknown path step: %s" step))))
       (setq path (cdr path)))
     node))
+;; jabber-xml-path:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-xml-let-attributes][jabber-xml-let-attributes:1]]
 (defmacro jabber-xml-let-attributes (attributes xml-data &rest body)
   "Bind variables to the same-name attribute values in XML-DATA.
 ATTRIBUTES is a list of attribute names."
@@ -264,7 +304,9 @@ ATTRIBUTES is a list of attribute names."
 		 attributes)
      ,@body))
 (put 'jabber-xml-let-attributes 'lisp-indent-function 2)
+;; jabber-xml-let-attributes:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-xml-resolve-namespace-prefixes][jabber-xml-resolve-namespace-prefixes:1]]
 (defun jabber-xml-resolve-namespace-prefixes (xml-data &optional default-ns prefixes)
   (let ((node-name (jabber-xml-node-name xml-data))
 	(attrs (jabber-xml-node-attributes xml-data)))
@@ -294,7 +336,9 @@ ATTRIBUTES is a list of attribute names."
 	      (jabber-xml-resolve-namespace-prefixes x default-ns prefixes)))
 	  (jabber-xml-node-children xml-data))
     xml-data))
+;; jabber-xml-resolve-namespace-prefixes:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-xml-merge-namespace-declarations][jabber-xml-merge-namespace-declarations:1]]
 (defun jabber-xml-merge-namespace-declarations (attrs prefixes)
   ;; First find any xmlns:foo attributes..
   (dolist (attr attrs)
@@ -313,43 +357,65 @@ ATTRIBUTES is a list of attribute names."
 			    (remove (assoc prefix prefixes) prefixes)
 			  prefixes)))))))
   prefixes)
+;; jabber-xml-merge-namespace-declarations:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*various utility functions][various utility functions:1]]
 (require 'password-cache)
 (condition-case nil
     (require 'auth-source)
   (error nil))
+;; various utility functions:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-jid-history][jabber-jid-history:1]]
 (defvar jabber-jid-history nil
   "History of entered JIDs.")
+;; jabber-jid-history:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-replace-in-string][jabber-replace-in-string:1]]
 (defsubst jabber-replace-in-string (str regexp newtext)
   (replace-regexp-in-string regexp newtext str t t))
+;; jabber-replace-in-string:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-propertize][jabber-propertize:1]]
 (defalias 'jabber-propertize 'propertize)
+;; jabber-propertize:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*bound-and-true-p][bound-and-true-p:1]]
 (unless (fboundp 'bound-and-true-p)
   (defmacro bound-and-true-p (var)
     "Return the value of symbol VAR if it is bound, else nil."
     `(and (boundp (quote ,var)) ,var)))
+;; bound-and-true-p:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-read-with-input-method][jabber-read-with-input-method:1]]
 (defsubst jabber-read-with-input-method (prompt &optional initial-contents history default-value)
   (read-string prompt initial-contents history default-value t))
+;; jabber-read-with-input-method:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*delete-and-extract-region][delete-and-extract-region:1]]
 (unless (fboundp 'delete-and-extract-region)
   (defsubst delete-and-extract-region (start end)
     (prog1
 	(buffer-substring start end)
       (delete-region start end))))
+;; delete-and-extract-region:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*access-file][access-file:1]]
 (unless (fboundp 'access-file)
   (defsubst access-file (filename error-message)
     (unless (file-readable-p filename)
       (error error-message))))
+;; access-file:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-float-time][jabber-float-time:1]]
 (defalias 'jabber-float-time 'float-time)
+;; jabber-float-time:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-cancel-timer][jabber-cancel-timer:1]]
 (defalias 'jabber-cancel-timer 'cancel-timer)
+;; jabber-cancel-timer:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-concat-rosters][jabber-concat-rosters:1]]
 (defun jabber-concat-rosters ()
   "Concatenate the rosters of all connected accounts."
   (apply #'append
@@ -357,7 +423,9 @@ ATTRIBUTES is a list of attribute names."
 	  (lambda (jc)
 	    (plist-get (fsm-get-state-data jc) :roster))
 	  jabber-connections)))
+;; jabber-concat-rosters:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-concat-rosters-full][jabber-concat-rosters-full:1]]
 (defun jabber-concat-rosters-full ()
   "Concatenate the rosters of all connected accounts.
 Show full JIDs, with resources."
@@ -371,46 +439,60 @@ Show full JIDs, with resources."
                      (mapcar (lambda (res) (intern (format "%s/%s" jid (car res))))
                              (get (jabber-jid-symbol jid) 'resources)))
                    jids))))
+;; jabber-concat-rosters-full:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-connection-jid][jabber-connection-jid:1]]
 (defun jabber-connection-jid (jc)
   "Return the full JID of connection JC."
   (let ((sd (fsm-get-state-data jc)))
     (concat (plist-get sd :username) "@"
 	    (plist-get sd :server) "/"
 	    (plist-get sd :resource))))
+;; jabber-connection-jid:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-connection-bare-jid][jabber-connection-bare-jid:1]]
 (defun jabber-connection-bare-jid (jc)
   "Return the bare JID of connection JC."
   (let ((sd (fsm-get-state-data jc)))
     (concat (plist-get sd :username) "@"
 	    (plist-get sd :server))))
+;; jabber-connection-bare-jid:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-connection-original-jid][jabber-connection-original-jid:1]]
 (defun jabber-connection-original-jid (jc)
   "Return the original JID of connection JC.
 The \"original JID\" is the JID we authenticated with.  The
 server might subsequently assign us a different JID at resource
 binding."
   (plist-get (fsm-get-state-data jc) :original-jid))
+;; jabber-connection-original-jid:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-find-connection][jabber-find-connection:1]]
 (defun jabber-find-connection (bare-jid)
   "Find the connection to the account named by BARE-JID.
 Return nil if none found."
   (dolist (jc jabber-connections)
     (when (string= bare-jid (jabber-connection-bare-jid jc))
       (cl-return jc))))
+;; jabber-find-connection:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-find-active-connection][jabber-find-active-connection:1]]
 (defun jabber-find-active-connection (dead-jc)
   "Find an active connection for dead connection DEAD-JC.
 Return nil if none found."
   (let ((jid (jabber-connection-bare-jid dead-jc)))
     (jabber-find-connection jid)))
+;; jabber-find-active-connection:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-jid-username][jabber-jid-username:1]]
 (defun jabber-jid-username (jid)
   "Return the username portion of JID, or nil if none found.
 JID must be a string."
   (when (string-match "\\(.*\\)@.*\\(/.*\\)?" jid)
     (match-string 1 jid)))
+;; jabber-jid-username:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-jid-user][jabber-jid-user:1]]
 (defun jabber-jid-user (jid)
   "Return the user portion (username@server) of JID.
 JID must be a string."
@@ -418,25 +500,33 @@ JID must be a string."
   ;;(string-match ".*@[^/]*" jid)
   (string-match "[^/]*" jid)
   (match-string 0 jid))
+;; jabber-jid-user:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-jid-server][jabber-jid-server:1]]
 (defun jabber-jid-server (jid)
   "Return the server portion of JID."
   (string-match "^\\(.*@\\)?\\([^@/]+\\)\\(/.*\\)?$" jid)
   (match-string 2 jid))
+;; jabber-jid-server:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-jid-rostername][jabber-jid-rostername:1]]
 (defun jabber-jid-rostername (string)
   "Return the name of the user from STRING as in roster, else nil."
   (let ((user (jabber-jid-symbol string)))
     (if (> (length (get user 'name)) 0)
 	(get user 'name))))
+;; jabber-jid-rostername:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-jid-displayname][jabber-jid-displayname:1]]
 (defun jabber-jid-displayname (string)
   "Return the name of the user from STRING as in roster, else username@server."
   (or (jabber-jid-rostername string)
       (jabber-jid-user (if (symbolp string)
 			   (symbol-name string)
 			 string))))
+;; jabber-jid-displayname:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-jid-bookmarkname][jabber-jid-bookmarkname:1]]
 (defun jabber-jid-bookmarkname (string)
   "Return from STRING the conference name from boomarks or displayname.
 Use the name according to roster or else the JID if none set."
@@ -446,13 +536,17 @@ Use the name according to roster or else the JID if none set."
                  (if (string= (cdr (assoc 'jid ls)) string)
                      (cl-return (cdr (assoc 'name ls))))))
       (jabber-jid-displayname string)))
+;; jabber-jid-bookmarkname:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-jid-resource][jabber-jid-resource:1]]
 (defun jabber-jid-resource (jid)
   "Return the resource portion of a JID, or nil if there is none.
 JID must be a string."
   (when (string-match "^\\(\\([^/]*@\\)?[^/]*\\)/\\(.*\\)" jid)
     (match-string 3 jid)))
+;; jabber-jid-resource:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-jid-symbol][jabber-jid-symbol:1]]
 (defun jabber-jid-symbol (jid)
   "Return the symbol for the given JID.
 JID must be a string."
@@ -461,7 +555,9 @@ JID must be a string."
       jid
     ;; XXX: "downcase" is poor man's nodeprep.  See XMPP CORE.
     (intern (downcase (jabber-jid-user jid)) jabber-jid-obarray)))
+;; jabber-jid-symbol:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-my-jid-p][jabber-my-jid-p:1]]
 (defun jabber-my-jid-p (jc jid)
   "Return non-nil if the specified JID is in the `jabber-account-list'.
 Comment: (modulo resource).
@@ -470,7 +566,9 @@ Also return non-nil if JID matches JC, modulo resource."
    (equal (jabber-jid-user jid)
 	  (jabber-connection-bare-jid jc))
    (member (jabber-jid-user jid) (mapcar (lambda (x) (jabber-jid-user (car x))) jabber-account-list))))
+;; jabber-my-jid-p:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-read-jid-completing][jabber-read-jid-completing:1]]
 (defun jabber-read-jid-completing (prompt &optional subset require-match default resource fulljids)
   "Read a jid out of the current roster from the minibuffer.
 If SUBSET is non-nil, it should be a list of symbols from which
@@ -544,7 +642,9 @@ If FULLJIDS is non-nil, complete jids with resources."
 	       bare))))
 	(t
 	 chosen)))))
+;; jabber-read-jid-completing:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-read-node][jabber-read-node:1]]
 (defun jabber-read-node (prompt)
   "Read node name, taking default from disco item at point."
   (let ((node-at-point (get-text-property (point) 'jabber-node)))
@@ -552,11 +652,15 @@ If FULLJIDS is non-nil, complete jids with resources."
 			 (if node-at-point
 			     (format "(default %s) " node-at-point)))
 		 node-at-point)))
+;; jabber-read-node:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-password-key][jabber-password-key:1]]
 (defun jabber-password-key (bare-jid)
   "Construct key for `password' library from BARE-JID."
   (concat "xmpp:" bare-jid))
+;; jabber-password-key:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-read-password][jabber-read-password:1]]
 (defun jabber-read-password (bare-jid)
   "Read Jabber password from minibuffer."
   (let ((found
@@ -577,18 +681,24 @@ If FULLJIDS is non-nil, complete jids with resources."
 	;; Need to copy the password, as sasl.el wants to erase it.
 	(copy-sequence
 	 (password-read prompt (jabber-password-key bare-jid)))))))
+;; jabber-read-password:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-cache-password][jabber-cache-password:1]]
 (defun jabber-cache-password (bare-jid password)
   "Cache PASSWORD for BARE-JID."
   (password-cache-add (jabber-password-key bare-jid) password))
+;; jabber-cache-password:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-uncache-password][jabber-uncache-password:1]]
 (defun jabber-uncache-password (bare-jid)
   "Uncache cached password for BARE-JID.
 Useful if the password proved to be wrong."
   (interactive (list (jabber-jid-user
 		      (completing-read "Forget password of account: " jabber-account-list nil nil nil 'jabber-account-history))))
   (password-cache-remove (jabber-password-key bare-jid)))
+;; jabber-uncache-password:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-read-account][jabber-read-account:1]]
 (defun jabber-read-account (&optional always-ask contact-hint)
   "Ask for which connected account to use.
 If ALWAYS-ASK is nil and there is only one account, return that
@@ -639,7 +749,9 @@ that has that contact in its roster."
                       completions nil t nil 'jabber-account-history
                       default)))
          (cdr (assoc input completions))))))))
+;; jabber-read-account:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-iq-query][jabber-iq-query:1]]
 (defun jabber-iq-query (xml-data)
   "Return the query part of an IQ stanza.
 An IQ stanza may have zero or one query child, and zero or one <error/> child.
@@ -654,21 +766,27 @@ obtained from `xml-parse-region'."
 	   (not (eq (jabber-xml-node-name x) 'error)))
 	  (setq query x)))
     query))
+;; jabber-iq-query:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-iq-error][jabber-iq-error:1]]
 (defun jabber-iq-error (xml-data)
   "Return the <error/> part of an IQ stanza, if any.
 
 XML-DATA is the parsed tree data from the stream (stanzas)
 obtained from `xml-parse-region'."
   (car (jabber-xml-get-children xml-data 'error)))
+;; jabber-iq-error:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-iq-xmlns][jabber-iq-xmlns:1]]
 (defun jabber-iq-xmlns (xml-data)
   "Return the namespace of an IQ stanza, i.e. the namespace of its query part.
 
 XML-DATA is the parsed tree data from the stream (stanzas)
 obtained from `xml-parse-region'."
   (jabber-xml-get-attribute (jabber-iq-query xml-data) 'xmlns))
+;; jabber-iq-xmlns:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-message-timestamp][jabber-message-timestamp:1]]
 (defun jabber-message-timestamp (xml-data)
   "Given a <message/> element, return its timestamp, or nil if none.
 
@@ -678,7 +796,9 @@ obtained from `xml-parse-region'."
    (or
     (jabber-xml-path xml-data '(("urn:xmpp:delay" . "delay")))
     (jabber-xml-path xml-data '(("jabber:x:delay" . "x"))))))
+;; jabber-message-timestamp:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-x-delay][jabber-x-delay:1]]
 (defun jabber-x-delay (xml-data)
   "Return timestamp given a delayed delivery element.
 This can be either a <delay/> tag in namespace urn:xmpp:delay (XEP-0203), or
@@ -699,7 +819,9 @@ obtained from `xml-parse-region'."
     (let ((stamp (jabber-xml-get-attribute xml-data 'stamp)))
       (when (stringp stamp)
 	(jabber-parse-time stamp))))))
+;; jabber-x-delay:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-parse-legacy-time][jabber-parse-legacy-time:1]]
 (defun jabber-parse-legacy-time (timestamp)
   "Parse timestamp in ccyymmddThh:mm:ss format (UTC) and return as internal time value."
   (let ((year (string-to-number (substring timestamp 0 4)))
@@ -709,7 +831,9 @@ obtained from `xml-parse-region'."
 	(minute (string-to-number (substring timestamp 12 14)))
 	(second (string-to-number (substring timestamp 15 17))))
     (encode-time second minute hour day month year 0)))
+;; jabber-parse-legacy-time:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-encode-legacy-time][jabber-encode-legacy-time:1]]
 (defun jabber-encode-legacy-time (timestamp)
   "Parse TIMESTAMP as internal time value and encode as ccyymmddThh:mm:ss (UTC)."
   (if (featurep 'xemacs)
@@ -719,12 +843,16 @@ obtained from `xml-parse-region'."
 			  (time-subtract timestamp
 					 (list 0 (car (current-time-zone)))))
     (format-time-string "%Y%m%dT%H:%M:%S" timestamp t)))
+;; jabber-encode-legacy-time:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-encode-time][jabber-encode-time:1]]
 (defun jabber-encode-time (time)
   "Convert TIME to a string by XEP-0082.
 TIME is in a format accepted by `format-time-string'."
   (format-time-string "%Y-%m-%dT%H:%M:%SZ" time t))
+;; jabber-encode-time:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-encode-timezone][jabber-encode-timezone:1]]
 (defun jabber-encode-timezone ()
   (let ((time-zone-offset (nth 0 (current-time-zone))))
     (if (null time-zone-offset)
@@ -733,7 +861,9 @@ TIME is in a format accepted by `format-time-string'."
              (hours (/ (abs time-zone-offset) 3600))
              (minutes (/ (% (abs time-zone-offset) 3600) 60)))
         (format "%s%02d:%02d"(if positivep "+" "-") hours minutes)))))
+;; jabber-encode-timezone:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-parse-time][jabber-parse-time:1]]
 (defun jabber-parse-time (raw-time)
   "Parse the DateTime encoded in TIME according to XEP-0082."
   (let* ((time (if (string= (substring raw-time 4 5) "-")
@@ -765,7 +895,9 @@ TIME is in a format accepted by `format-time-string'."
 		(* 60 (+ (* 60 (string-to-number (substring timezone 1 3)))
 			 (string-to-number (substring timezone 4 6))))))))
       (encode-time second minute hour day month year timezone-seconds))))
+;; jabber-parse-time:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-report-success][jabber-report-success:1]]
 (defun jabber-report-success (jc xml-data context)
   "IQ callback reporting success or failure of the operation.
 CONTEXT is a string describing the action.
@@ -784,7 +916,9 @@ obtained from `xml-parse-region'."
 			  (if the-error
 			      (jabber-parse-error the-error)
 			    "No error message given"))))))))
+;; jabber-report-success:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-error-messages][jabber-error-messages:1]]
 (defconst jabber-error-messages
   (list
    (cons 'bad-request "Bad request")
@@ -810,7 +944,9 @@ obtained from `xml-parse-region'."
    (cons 'undefined-condition "Undefined condition")
    (cons 'unexpected-request "Unexpected request"))
   "String descriptions of XMPP stanza errors.")
+;; jabber-error-messages:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-legacy-error-messages][jabber-legacy-error-messages:1]]
 (defconst jabber-legacy-error-messages
   (list
    (cons 302 "Redirect")
@@ -831,7 +967,9 @@ obtained from `xml-parse-region'."
    (cons 504 "Remote server timeout")
    (cons 510 "Disconnected"))
   "String descriptions of legacy errors (XEP-0086).")
+;; jabber-legacy-error-messages:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-parse-error][jabber-parse-error:1]]
 (defun jabber-parse-error (error-xml)
   "Parse the given <error/> tag and return a string fit for human consumption.
 See secton 9.3, Stanza Errors, of XMPP Core, and XEP-0086, Legacy Errors."
@@ -854,7 +992,9 @@ See secton 9.3, Stanza Errors, of XMPP Core, and XEP-0086, Legacy Errors."
       (setq text (car (jabber-xml-node-children error-xml))))
     (concat condition
 	    (if text (format ": %s" text)))))
+;; jabber-parse-error:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-error-condition][jabber-error-condition:1]]
 (defun jabber-error-condition (error-xml)
   "Parse the given <error/> tag and return the condition symbol."
   (catch 'condition
@@ -863,7 +1003,9 @@ See secton 9.3, Stanza Errors, of XMPP Core, and XEP-0086, Legacy Errors."
 		 (jabber-xml-get-attribute child 'xmlns)
 		 "urn:ietf:params:xml:ns:xmpp-stanzas")
 	(throw 'condition (jabber-xml-node-name child))))))
+;; jabber-error-condition:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-stream-error-messages][jabber-stream-error-messages:1]]
 (defvar jabber-stream-error-messages
   (list
    (cons 'bad-format "Bad XML format")
@@ -891,7 +1033,9 @@ See secton 9.3, Stanza Errors, of XMPP Core, and XEP-0086, Legacy Errors."
    (cons 'unsupported-version "Unsupported version")
    (cons 'xml-not-well-formed "XML not well formed"))
   "String descriptions of XMPP stream errors.")
+;; jabber-stream-error-messages:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-stream-error-condition][jabber-stream-error-condition:1]]
 (defun jabber-stream-error-condition (error-xml)
   "Return the condition of a <stream:error/> tag."
   ;; as we don't know the node name of the condition, we have to
@@ -902,7 +1046,9 @@ See secton 9.3, Stanza Errors, of XMPP Core, and XEP-0086, Legacy Errors."
 	       (assq (jabber-xml-node-name node)
 		     jabber-stream-error-messages))
       (cl-return (jabber-xml-node-name node)))))
+;; jabber-stream-error-condition:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-parse-stream-error][jabber-parse-stream-error:1]]
 (defun jabber-parse-stream-error (error-xml)
   "Parse the given <stream:error/> tag and return a sting fit for human consumption."
   (let ((text-node (car (jabber-xml-get-children error-xml 'text)))
@@ -911,14 +1057,18 @@ See secton 9.3, Stanza Errors, of XMPP Core, and XEP-0086, Legacy Errors."
 	      "Unknown stream error")
 	    (if (and text-node (stringp (car (jabber-xml-node-children text-node))))
 		(concat ": " (car (jabber-xml-node-children text-node)))))))
+;; jabber-parse-stream-error:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-parse-stream-error][jabber-parse-stream-error:2]]
 (put 'jabber-error
      'error-conditions
      '(error jabber-error))
 (put 'jabber-error
      'error-message
      "Jabber error")
+;; jabber-parse-stream-error:2 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-signal-error][jabber-signal-error:1]]
 (defun jabber-signal-error (error-type condition &optional text app-specific)
   "Signal an error to be sent by Jabber.
 ERROR-TYPE is one of \"Cancel\", \"Continue\", \"Mmodify\", \"Auth\"
@@ -931,13 +1081,17 @@ See section 9.3 of XMPP Core (RFC 3920).
 See section 8.3 of XMPP Core (RFC 6120)."
   (signal 'jabber-error
 	  (list (downcase error-type) condition text app-specific)))
+;; jabber-signal-error:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-unhex][jabber-unhex:1]]
 (defun jabber-unhex (string)
   "Convert a hex-encoded UTF-8 string to Emacs representation.
 For example, \"ji%C5%99i@%C4%8Dechy.example/v%20Praze\" becomes
 \"jiři@čechy.example/v Praze\"."
   (decode-coding-string (url-unhex-string string) 'utf-8))
+;; jabber-unhex:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-handle-uri][jabber-handle-uri:1]]
 (defun jabber-handle-uri (uri &rest ignored-args)
   "Handle XMPP links according to draft-saintandre-xmpp-iri-04.
 See Info node `(jabber)XMPP URIs'."
@@ -989,13 +1143,17 @@ See Info node `(jabber)XMPP URIs'."
      ;; Everything else: open a chat buffer.
      (t
       (jabber-chat-with (jabber-read-account) jid)))))
+;; jabber-handle-uri:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*url-xmpp][url-xmpp:1]]
 (defun url-xmpp (url)
   "Handle XMPP URLs from internal Emacs functions."
   ;; XXX: This parsing roundtrip is redundant, and the parser of the
   ;; url package might lose information.
   (jabber-handle-uri (url-recreate-url url)))
+;; url-xmpp:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*string>-numerical][string>-numerical:1]]
 (defun string>-numerical (s1 s2)
   "Return t if first arg string is more than second in numerical order."
   (cond ((string= s1 s2) nil)
@@ -1004,7 +1162,9 @@ See Info node `(jabber)XMPP URIs'."
 	((< (string-to-number (substring s1 0 1)) (string-to-number (substring s2 0 1))) nil)
 	((> (string-to-number (substring s1 0 1)) (string-to-number (substring s2 0 1))) t)
 	(t (string>-numerical (substring s1 1) (substring s2 1)))))
+;; string>-numerical:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-append-string-to-file][jabber-append-string-to-file:1]]
 (defun jabber-append-string-to-file (string file &optional func &rest args)
   "Append STRING (may be nil) to FILE.  Create FILE if needed.
 If FUNC is non-nil, then call FUNC with ARGS at beginning of
@@ -1014,7 +1174,9 @@ temporaly buffer _before_ inserting STRING."
       (when (functionp func) (apply func args))
       (when (stringp string) (insert string))
       (write-region (point-min) (point-max) file t (list t)))))
+;; jabber-append-string-to-file:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-tree-map][jabber-tree-map:1]]
 (defun jabber-tree-map (fn tree)
   "Apply FN to all nodes in the TREE starting with root.
 FN is applied to the node and not to the data itself."
@@ -1031,7 +1193,9 @@ FN is applied to the node and not to the data itself."
 	 (progn
 	   (setf (cdr prev) (if tail (funcall fn tail) nil))
 	   result)))))
+;; jabber-tree-map:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-menu][jabber-menu:1]]
 ;;;###autoload
 (defvar jabber-menu
   (let ((map (make-sparse-keymap "jabber-menu")))
@@ -1124,7 +1288,9 @@ FN is applied to the node and not to the data itself."
       '("Help" . jabber-info))
 
     map))
+;; jabber-menu:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-display-menu][jabber-display-menu:1]]
 ;;;###autoload
 (defcustom jabber-display-menu 'maybe
   "Decide whether the \"Jabber\" menu is displayed in the menu bar.
@@ -1136,7 +1302,9 @@ if any of `jabber-account-list' or `jabber-connections' is non-nil."
   :type '(choice (const :tag "Never" nil)
 		 (const :tag "Always" t)
 		 (const :tag "When installed by user, or when any accounts have been configured or connected" maybe)))
+;; jabber-display-menu:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-menu][jabber-menu:1]]
 (defun jabber-menu (&optional remove)
   "Put \"Jabber\" menu on menubar.
 With prefix argument, remove it."
@@ -1144,7 +1312,9 @@ With prefix argument, remove it."
   (setq jabber-display-menu (if remove nil t))
   (force-mode-line-update))
 (make-obsolete 'jabber-menu "set the variable `jabber-display-menu' instead." "27.2")
+;; jabber-menu:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-menu][jabber-menu:2]]
 ;;;###autoload
 (define-key-after (lookup-key global-map [menu-bar])
   [jabber-menu]
@@ -1154,22 +1324,34 @@ With prefix argument, remove it."
              (and (eq jabber-display-menu 'maybe)
                   (or (bound-and-true-p jabber-account-list)
                       (bound-and-true-p jabber-connections))))))
+;; jabber-menu:2 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-jid-chat-menu][jabber-jid-chat-menu:1]]
 (defvar jabber-jid-chat-menu nil
   "Menu items for chat menu.")
+;; jabber-jid-chat-menu:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-jid-info-menu][jabber-jid-info-menu:1]]
 (defvar jabber-jid-info-menu nil
   "Menu item for info menu.")
+;; jabber-jid-info-menu:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-jid-roster-menu][jabber-jid-roster-menu:1]]
 (defvar jabber-jid-roster-menu nil
   "Menu items for roster menu.")
+;; jabber-jid-roster-menu:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-jid-muc-menu][jabber-jid-muc-menu:1]]
 (defvar jabber-jid-muc-menu nil
   "Menu items for MUC menu.")
+;; jabber-jid-muc-menu:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-jid-service-menu][jabber-jid-service-menu:1]]
 (defvar jabber-jid-service-menu nil
   "Menu items for service menu.")
+;; jabber-jid-service-menu:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-popup-menu][jabber-popup-menu:1]]
 (defun jabber-popup-menu (which-menu)
   "Popup specified menu."
   (let* ((mouse-event (and (listp last-input-event) last-input-event))
@@ -1178,37 +1360,51 @@ With prefix argument, remove it."
 	(mouse-set-point mouse-event))
     (if choice
 	(call-interactively choice))))
+;; jabber-popup-menu:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-popup-chat-menu][jabber-popup-chat-menu:1]]
 (defun jabber-popup-chat-menu ()
   "Popup chat menu."
   (interactive)
   (jabber-popup-menu jabber-jid-chat-menu))
+;; jabber-popup-chat-menu:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-popup-info-menu][jabber-popup-info-menu:1]]
 (defun jabber-popup-info-menu ()
   "Popup info menu."
   (interactive)
   (jabber-popup-menu jabber-jid-info-menu))
+;; jabber-popup-info-menu:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-popup-roster-menu][jabber-popup-roster-menu:1]]
 (defun jabber-popup-roster-menu ()
   "Popup roster menu."
   (interactive)
   (jabber-popup-menu jabber-jid-roster-menu))
+;; jabber-popup-roster-menu:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-popup-muc-menu][jabber-popup-muc-menu:1]]
 (defun jabber-popup-muc-menu ()
   "Popup MUC menu."
   (interactive)
   (jabber-popup-menu jabber-jid-muc-menu))
+;; jabber-popup-muc-menu:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-popup-service-menu][jabber-popup-service-menu:1]]
 (defun jabber-popup-service-menu ()
   "Popup service menu."
   (interactive)
   (jabber-popup-menu jabber-jid-service-menu))
+;; jabber-popup-service-menu:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-popup-combined-menu][jabber-popup-combined-menu:1]]
 (defun jabber-popup-combined-menu ()
   "Popup combined menu."
   (interactive)
   (jabber-popup-menu (append jabber-jid-chat-menu jabber-jid-info-menu jabber-jid-roster-menu jabber-jid-muc-menu)))
+;; jabber-popup-combined-menu:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*Network transport functions][Network transport functions:1]]
 ;; Emacs 24 can be linked with GnuTLS
 (ignore-errors (require 'gnutls))
 
@@ -1228,10 +1424,14 @@ With prefix argument, remove it."
           (require 'srv)))
       (error
        "The srv library was not found in `load-path' or jabber-fallback-lib/ directory")))
+;; Network transport functions:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-conn][jabber-conn:1]]
 (defgroup jabber-conn nil "Jabber Connection Settings."
   :group 'jabber)
+;; jabber-conn:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-have-starttls][jabber-have-starttls:1]]
 (defun jabber-have-starttls ()
   "Return non-nil if we can use STARTTLS."
   (or (and (fboundp 'gnutls-available-p)
@@ -1241,7 +1441,9 @@ With prefix argument, remove it."
 		    (executable-find starttls-gnutls-program))
 	       (and (bound-and-true-p starttls-program)
 		    (executable-find starttls-program))))))
+;; jabber-have-starttls:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-default-connection-type][jabber-default-connection-type:1]]
 (defconst jabber-default-connection-type
   (cond
    ;; Use STARTTLS if we can...
@@ -1252,7 +1454,9 @@ With prefix argument, remove it."
     'network))
   "Default connection type.
 See `jabber-connect-methods'.")
+;; jabber-default-connection-type:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-connection-ssl-program][jabber-connection-ssl-program:1]]
 (defcustom jabber-connection-ssl-program nil
   "Program used for SSL/TLS connections.
 nil means prefer gnutls but fall back to openssl.
@@ -1262,7 +1466,9 @@ nil means prefer gnutls but fall back to openssl.
 		 (const :tag "Use gnutls" gnutls)
 		 (const :tag "Use openssl" openssl))
   :group 'jabber-conn)
+;; jabber-connection-ssl-program:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-invalid-certificate-servers][jabber-invalid-certificate-servers:1]]
 (defcustom jabber-invalid-certificate-servers ()
   "Jabber servers for which we accept invalid TLS certificates.
 This is a list of server names, each matching the hostname part
@@ -1272,7 +1478,9 @@ This option has effect only when using native GnuTLS in Emacs 24
 or later."
   :type '(repeat string)
   :group 'jabber-conn)
+;; jabber-invalid-certificate-servers:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-connect-methods][jabber-connect-methods:1]]
 (defvar jabber-connect-methods
   `((network jabber-network-connect jabber-network-send)
     (starttls
@@ -1288,19 +1496,25 @@ or later."
 First item is the symbol naming the method.
 Second item is the connect function.
 Third item is the send function.")
+;; jabber-connect-methods:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-get-connect-function][jabber-get-connect-function:1]]
 (defun jabber-get-connect-function (type)
   "Get the connect function associated with TYPE.
 TYPE is a symbol; see `jabber-connection-type'."
   (let ((entry (assq type jabber-connect-methods)))
     (nth 1 entry)))
+;; jabber-get-connect-function:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-get-send-function][jabber-get-send-function:1]]
 (defun jabber-get-send-function (type)
   "Get the send function associated with TYPE.
 TYPE is a symbol; see `jabber-connection-type'."
   (let ((entry (assq type jabber-connect-methods)))
     (nth 2 entry)))
+;; jabber-get-send-function:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-srv-targets][jabber-srv-targets:1]]
 (defun jabber-srv-targets (server network-server port)
   "Find host and port to connect to.
 If NETWORK-SERVER and/or PORT are specified, use them.
@@ -1313,7 +1527,9 @@ If we can't find SRV records, use standard defaults."
 	    (srv-lookup (concat "_xmpp-client._tcp." server))
 	  (error nil))
 	(list (cons server 5222)))))
+;; jabber-srv-targets:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-network-connect][jabber-network-connect:1]]
 ;; Plain TCP/IP connection
 (defun jabber-network-connect (fsm server network-server port)
   "Connect to a Jabber server with a plain network connection.
@@ -1327,7 +1543,9 @@ connection fails."
    (t
     ;; Connecting to the server will block Emacs.
     (jabber-network-connect-sync fsm server network-server port))))
+;; jabber-network-connect:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-network-connect-async][jabber-network-connect-async:1]]
 (defun jabber-network-connect-async (fsm server network-server port)
   ;; Get all potential targets...
   (let ((targets (jabber-srv-targets server network-server port))
@@ -1394,7 +1612,9 @@ connection fails."
 		 (connection-failed nil (error-message-string e))))))))
       (message "Connecting to %s:%s..." (caar targets) (cdar targets))
       (connect (car targets) (cdr targets)))))
+;; jabber-network-connect-async:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-network-connect-sync][jabber-network-connect-sync:1]]
 (defun jabber-network-connect-sync (fsm server network-server port)
   ;; This code will AFAIK only be used on Windows.  Apologies in
   ;; advance for any bit rot...
@@ -1437,11 +1657,15 @@ connection fails."
 	     (message "%s" err)
 	     (push err errors)))))
       (fsm-send fsm (list :connection-failed (nreverse errors))))))
+;; jabber-network-connect-sync:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-network-send][jabber-network-send:1]]
 (defun jabber-network-send (connection string)
   "Send a string via a plain TCP/IP connection to the Jabber Server."
   (process-send-string connection string))
+;; jabber-network-send:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-ssl-connect][jabber-ssl-connect:1]]
 ;; SSL connection, we use openssl's s_client function for encryption
 ;; of the link
 ;; TODO: make this configurable
@@ -1484,13 +1708,17 @@ connection fails."
 	  (fsm-send fsm (list :connected connection))
 	(fsm-send fsm (list :connection-failed
 			    (when error-msg (list error-msg))))))))
+;; jabber-ssl-connect:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-ssl-send][jabber-ssl-send:1]]
 (defun jabber-ssl-send (connection string)
   "Send a string via an SSL-encrypted connection to the Jabber Server."
   ;; It seems we need to send a linefeed afterwards.
   (process-send-string connection string)
   (process-send-string connection "\n"))
+;; jabber-ssl-send:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-starttls-connect][jabber-starttls-connect:1]]
 (defun jabber-starttls-connect (fsm server network-server port)
   "Connect via an external GnuTLS process to a Jabber Server.
 Send a message of the form (:connected CONNECTION) to FSM if
@@ -1532,12 +1760,16 @@ connection fails."
 	     (message "%s" err)
 	     (push err errors)))))
 	(fsm-send fsm (list :connection-failed (nreverse errors))))))
+;; jabber-starttls-connect:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-starttls-initiate][jabber-starttls-initiate:1]]
 (defun jabber-starttls-initiate (fsm)
   "Initiate a starttls connection."
   (jabber-send-sexp fsm
    '(starttls ((xmlns . "urn:ietf:params:xml:ns:xmpp-tls")))))
+;; jabber-starttls-initiate:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-starttls-process-input][jabber-starttls-process-input:1]]
 (defun jabber-starttls-process-input (fsm xml-data)
   "Process result of starttls request.
 On failure, signal error.
@@ -1568,12 +1800,16 @@ obtained from `xml-parse-region'."
 	  (error "Negotiation failure"))))))
    ((eq (car xml-data) 'failure)
     (error "Command rejected by server"))))
+;; jabber-starttls-process-input:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::**jabber-virtual-server-function*][*jabber-virtual-server-function*:1]]
 (defvar *jabber-virtual-server-function* nil
   "Function to use for sending stanzas on a virtual connection.
 The function should accept two arguments, the connection object
 and a string that the connection wants to send.")
+;; *jabber-virtual-server-function*:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-virtual-connect][jabber-virtual-connect:1]]
 (defun jabber-virtual-connect (fsm server network-server port)
   "Connect to a virtual \"server\".
 Use `*jabber-virtual-server-function*' as send function."
@@ -1582,10 +1818,14 @@ Use `*jabber-virtual-server-function*' as send function."
   ;; We pass the fsm itself as "connection object", as that is what a
   ;; virtual server needs to send stanzas.
   (fsm-send fsm (list :connected fsm)))
+;; jabber-virtual-connect:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-virtual-send][jabber-virtual-send:1]]
 (defun jabber-virtual-send (connection string)
   (funcall *jabber-virtual-server-function* connection string))
+;; jabber-virtual-send:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*SASL authentication][SASL authentication:1]]
 ;;; This file uses sasl.el from FLIM or Gnus.  If it can't be found,
 ;;; jabber-core.el won't use the SASL functions.
 (eval-and-compile
@@ -1597,7 +1837,9 @@ Use `*jabber-virtual-server-function*' as send function."
 ;;; or anything the Gnus people decide to use.
 
 ;;; See XMPP-CORE and XMPP-IM for details about the protocol.
+;; SASL authentication:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-sasl-start-auth][jabber-sasl-start-auth:1]]
 (defun jabber-sasl-start-auth (jc stream-features)
 "Start the SASL authentication mechanism.
 JC is The Jabber Connection.
@@ -1661,7 +1903,9 @@ with `jabber-xml-get-chidlren')."
 		  ,(when (sasl-step-data step)
 		     (base64-encode-string (sasl-step-data step) t))))
 	  (list client step passphrase))))))
+;; jabber-sasl-start-auth:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-sasl-read-passphrase-closure][jabber-sasl-read-passphrase-closure:1]]
 (defun jabber-sasl-read-passphrase-closure (jc remember)
   "Return a lambda function suitable for `sasl-read-passphrase' for JC.
 Call REMEMBER with the password.  REMEMBER is expected to return it as well."
@@ -1671,7 +1915,9 @@ Call REMEMBER with the password.  REMEMBER is expected to return it as well."
     (if password
 	(lambda (prompt) (funcall remember (copy-sequence password)))
       (lambda (prompt) (funcall remember (jabber-read-password bare-jid))))))
+;; jabber-sasl-read-passphrase-closure:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-sasl-process-input][jabber-sasl-process-input:1]]
 (defun jabber-sasl-process-input (jc xml-data sasl-data)
 "SASL protocol input processing.
 
@@ -1725,12 +1971,16 @@ obtained from `xml-parse-region'."
 		    (error-message-string e))
 	   (fsm-send jc :authentication-failure))))))
     (list client step passphrase)))
+;; jabber-sasl-process-input:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*common keymap for many modes][common keymap for many modes:1]]
 ;; button.el was introduced in Emacs 22
 (condition-case e
     (require 'button)
   (error nil))
+;; common keymap for many modes:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-common-keymap][jabber-common-keymap:1]]
 (defvar jabber-common-keymap
   (let ((map (make-sparse-keymap)))
     (define-key map "\C-c\C-c" 'jabber-popup-chat-menu)
@@ -1744,7 +1994,9 @@ obtained from `xml-parse-region'."
       (define-key map [?\t] 'forward-button)
       (define-key map [backtab] 'backward-button))
     map))
+;; jabber-common-keymap:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-global-keymap][jabber-global-keymap:1]]
 ;;;###autoload
 (defvar jabber-global-keymap
   (let ((map (make-sparse-keymap)))
@@ -1759,44 +2011,64 @@ obtained from `xml-parse-region'."
     (define-key map "\C-p" 'jabber-send-presence)
     map)
   "Global Jabber keymap (usually under C-x C-j).")
+;; jabber-global-keymap:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-global-keymap][jabber-global-keymap:2]]
 ;;;###autoload
 (define-key ctl-x-map "\C-j" jabber-global-keymap)
+;; jabber-global-keymap:2 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*XML Console mode][XML Console mode:1]]
 (require 'ewoc)
 (require 'sgml-mode) ;we base on this mode to hightlight XML
+;; XML Console mode:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-console-name-format][jabber-console-name-format:1]]
 (defcustom jabber-console-name-format "*-jabber-console-%s-*"
   "Format for console buffer name.  %s mean connection jid."
   :type 'string
   :group 'jabber-debug)
+;; jabber-console-name-format:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-console-truncate-lines][jabber-console-truncate-lines:1]]
 (defcustom jabber-console-truncate-lines 3000
   "Maximum number of lines in console buffer.
 Not truncate if set to 0."
   :type 'integer
   :group 'jabber-debug)
+;; jabber-console-truncate-lines:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-point-insert][jabber-point-insert:1]]
 (defvar jabber-point-insert nil
   "Position where the message being composed starts.")
+;; jabber-point-insert:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-send-function][jabber-send-function:1]]
 (defvar jabber-send-function nil
   "Function for sending a message from a chat buffer.")
+;; jabber-send-function:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-console-mode-hook][jabber-console-mode-hook:1]]
 (defvar jabber-console-mode-hook nil
   "Hook called at the end of `jabber-console-mode'.
 Note that functions in this hook have no way of knowing
 what kind of chat buffer is being created.")
+;; jabber-console-mode-hook:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-console-ewoc][jabber-console-ewoc:1]]
 (defvar jabber-console-ewoc nil
   "The ewoc showing the XML elements of this stream buffer.")
+;; jabber-console-ewoc:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-console-mode-map][jabber-console-mode-map:1]]
 (defvar jabber-console-mode-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map jabber-common-keymap)
     (define-key map "\r" 'jabber-chat-buffer-send)
     map))
+;; jabber-console-mode-map:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-console-create-buffer][jabber-console-create-buffer:1]]
 (defun jabber-console-create-buffer (jc)
   (with-current-buffer
 	  (get-buffer-create (format jabber-console-name-format (jabber-connection-bare-jid jc)))
@@ -1805,13 +2077,17 @@ what kind of chat buffer is being created.")
     ;; Make sure the connection variable is up to date.
     (setq jabber-buffer-connection jc)
     (current-buffer)))
+;; jabber-console-create-buffer:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-console-send][jabber-console-send:1]]
 (defun jabber-console-send (jc data)
   ;; Put manual string into buffers ewoc
   (jabber-process-console jc "raw" data)
   ;; ...than sent it to server
   (jabber-send-string jc data))
+;; jabber-console-send:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-console-comment][jabber-console-comment:1]]
 (defun jabber-console-comment (str)
   "Insert comment into console buffer."
   (let ((string (concat
@@ -1820,7 +2096,9 @@ what kind of chat buffer is being created.")
     (when (stringp jabber-debug-log-xml)
       (jabber-append-string-to-file string jabber-debug-log-xml))
     (insert string)))
+;; jabber-console-comment:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-console-pp][jabber-console-pp:1]]
 (defun jabber-console-pp (data)
   "Pretty Printer for XML-sexp and raw data."
   (let ((direction (car data))
@@ -1839,7 +2117,9 @@ what kind of chat buffer is being created.")
         (when (stringp jabber-debug-log-xml)
           (jabber-append-string-to-file
            "\n" jabber-debug-log-xml 'xml-print xml-list))))))
+;; jabber-console-pp:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-console-mode][jabber-console-mode:1]]
 (define-derived-mode jabber-console-mode sgml-mode "Jabber Console"
   "Major mode for debug XMPP protocol."
   ;; Make sure to set this variable somewhere
@@ -1858,15 +2138,21 @@ what kind of chat buffer is being created.")
       (put-text-property (point-min) (point) 'front-sticky t)
       (put-text-property (point-min) (point) 'rear-nonsticky t))
     (setq jabber-point-insert (point-marker))))
+;; jabber-console-mode:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-console-mode][jabber-console-mode:2]]
 (put 'jabber-console-mode 'mode-class 'special)
+;; jabber-console-mode:2 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-console-sanitize][jabber-console-sanitize:1]]
 (defun jabber-console-sanitize (xml-data)
   "Sanitize XML-DATA for `jabber-process-console'."
   (if (listp xml-data)
       (jabber-tree-map (lambda (x) (if (numberp x) (format "%s" x) x)) xml-data)
     xml-data))
+;; jabber-console-sanitize:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-process-console][jabber-process-console:1]]
 ;;;###autoload
 (defun jabber-process-console (jc direction xml-data)
   "Log XML-DATA i/o as XML in \"*-jabber-console-JID-*\" buffer."
@@ -1877,7 +2163,9 @@ what kind of chat buffer is being created.")
 		(when (< 1  jabber-console-truncate-lines)
 		  (let ((jabber-log-lines-to-keep jabber-console-truncate-lines))
 			(jabber-truncate-top buffer jabber-console-ewoc)))))))
+;; jabber-process-console:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*core][core:1]]
 (eval-and-compile
   (or (ignore-errors (require 'fsm))
       (ignore-errors
@@ -1888,35 +2176,55 @@ what kind of chat buffer is being created.")
           (require 'fsm)))
       (error
        "The fsm library was not found in `load-path' or jabber-fallback-lib/ directory")))
+;; core:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-connections][jabber-connections:1]]
 (defvar jabber-connections nil
   "List of jabber-connection FSMs.")
+;; jabber-connections:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::**jabber-roster*][*jabber-roster*:1]]
 (defvar *jabber-roster* nil
   "The roster list.")
+;; *jabber-roster*:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-jid-obarray][jabber-jid-obarray:1]]
 (defvar jabber-jid-obarray (make-vector 127 0)
   "Obarray for keeping JIDs.")
+;; jabber-jid-obarray:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::**jabber-disconnecting*][*jabber-disconnecting*:1]]
 (defvar *jabber-disconnecting* nil
   "Boolean - are we in the process of disconnecting by free will.")
+;; *jabber-disconnecting*:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-message-chain][jabber-message-chain:1]]
 (defvar jabber-message-chain nil
   "Incoming messages are sent to these functions, in order.")
+;; jabber-message-chain:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-iq-chain][jabber-iq-chain:1]]
 (defvar jabber-iq-chain nil
   "Incoming infoqueries are sent to these functions, in order.")
+;; jabber-iq-chain:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-presence-chain][jabber-presence-chain:1]]
 (defvar jabber-presence-chain nil
   "Incoming presence notifications are sent to these functions, in order.")
+;; jabber-presence-chain:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-namespace-prefixes][jabber-namespace-prefixes:1]]
 (defvar jabber-namespace-prefixes nil
   "XML namespace prefixes used for the current connection.")
 (make-variable-buffer-local 'jabber-namespace-prefixes)
+;; jabber-namespace-prefixes:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-core][jabber-core:1]]
 (defgroup jabber-core nil "customize core functionality."
   :group 'jabber)
+;; jabber-core:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-post-connect-hooks][jabber-post-connect-hooks:1]]
 (defcustom jabber-post-connect-hooks '(jabber-send-current-presence
 				       jabber-muc-autojoin
 				       jabber-whitespace-ping-start
@@ -1931,24 +2239,32 @@ The functions should accept one argument, the connection object."
 	     jabber-vcard-avatars-find-current
 	     jabber-autoaway-start)
   :group 'jabber-core)
+;; jabber-post-connect-hooks:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-pre-disconnect-hook][jabber-pre-disconnect-hook:1]]
 (defcustom jabber-pre-disconnect-hook nil
   "*Hooks run just before voluntary disconnection.
 This might be due to failed authentication."
   :type 'hook
   :group 'jabber-core)
+;; jabber-pre-disconnect-hook:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-lost-connection-hooks][jabber-lost-connection-hooks:1]]
 (defcustom jabber-lost-connection-hooks nil
   "*Hooks run after involuntary disconnection.
 The functions are called with one argument: the connection object."
   :type 'hook
   :group 'jabber-core)
+;; jabber-lost-connection-hooks:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-post-disconnect-hook][jabber-post-disconnect-hook:1]]
 (defcustom jabber-post-disconnect-hook nil
   "*Hooks run after disconnection."
   :type 'hook
   :group 'jabber-core)
+;; jabber-post-disconnect-hook:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-auto-reconnect][jabber-auto-reconnect:1]]
 (defcustom jabber-auto-reconnect nil
   "Reconnect automatically after losing connection?
 This will be of limited use unless you have the password library
@@ -1956,20 +2272,28 @@ installed, and have configured it to cache your password
 indefinitely.  See `password-cache' and `password-cache-expiry'."
   :type 'boolean
   :group 'jabber-core)
+;; jabber-auto-reconnect:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-reconnect-delay][jabber-reconnect-delay:1]]
 (defcustom jabber-reconnect-delay 5
   "Seconds to wait before reconnecting."
   :type 'integer
   :group 'jabber-core)
+;; jabber-reconnect-delay:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-roster-buffer][jabber-roster-buffer:1]]
 (defcustom jabber-roster-buffer "*-jabber-roster-*"
   "The name of the roster buffer."
   :type 'string
   :group 'jabber-core)
+;; jabber-roster-buffer:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-process-buffer][jabber-process-buffer:1]]
 (defvar jabber-process-buffer " *-jabber-process-*"
   "The name of the process buffer.")
+;; jabber-process-buffer:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-use-sasl][jabber-use-sasl:1]]
 (defcustom jabber-use-sasl t
   "If non-nil, use SASL if possible.
 SASL will still not be used if the library for it is missing or
@@ -1979,17 +2303,25 @@ Disabling this shouldn't be necessary, but it may solve certain
 problems."
   :type 'boolean
   :group 'jabber-core)
+;; jabber-use-sasl:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-have-sasl-p][jabber-have-sasl-p:1]]
 (defsubst jabber-have-sasl-p ()
   "Return non-nil if SASL functions are available."
   (featurep 'sasl))
+;; jabber-have-sasl-p:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-account-history][jabber-account-history:1]]
 (defvar jabber-account-history ()
   "Keeps track of previously used jabber accounts.")
+;; jabber-account-history:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-connection-type-history][jabber-connection-type-history:1]]
 (defvar jabber-connection-type-history ()
   "Keeps track of previously used connection types.")
+;; jabber-connection-type-history:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-connect-all][jabber-connect-all:1]]
 ;;;###autoload (autoload 'jabber-connect-all "jabber" "Connect to all configured Jabber accounts.\nSee `jabber-account-list'.\nIf no accounts are configured (or ARG supplied), call `jabber-connect' interactively." t)
 (defun jabber-connect-all (&optional arg)
   "Connect to all configured Jabber accounts.
@@ -2034,7 +2366,9 @@ With many prefix arguments, one less is passed to `jabber-connect'."
 	      (setq connected-one t))))
 	(unless connected-one
 	  (message "All configured Jabber accounts are already connected"))))))
+;; jabber-connect-all:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-connect][jabber-connect:1]]
 ;;;###autoload (autoload 'jabber-connect "jabber" "Connect to the Jabber server and start a Jabber XML stream.\nWith prefix argument, register a new account.\nWith double prefix argument, specify more connection details." t)
 (defun jabber-connect (username server resource &optional
 				registerp password network-server
@@ -2107,7 +2441,9 @@ With double prefix argument, specify more connection details."
 				   registerp password
 				   network-server port connection-type)
 	  jabber-connections)))
+;; jabber-connect:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-connection][jabber-connection:1]]
 (define-state-machine jabber-connection
   :start ((username server resource registerp password network-server port connection-type)
 	  "Start a Jabber connection."
@@ -2129,7 +2465,9 @@ With double prefix argument, specify more connection details."
 			:encrypted (eq connection-type 'ssl)
 			:network-server network-server
 			:port port)))))
+;; jabber-connection:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-connection][jabber-connection:2]]
 (define-enter-state jabber-connection nil
   (fsm state-data)
   ;; `nil' is the error state.
@@ -2172,7 +2510,9 @@ With double prefix argument, specify more connection details."
       (jabber-display-roster)
       ;; And let the FSM sleep...
       (list state-data nil))))
+;; jabber-connection:2 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-connection][jabber-connection:3]]
 (define-state jabber-connection nil
   (fsm state-data event callback)
   ;; In the `nil' state, the connection is dead.  We wait for a
@@ -2185,7 +2525,9 @@ With double prefix argument, specify more connection details."
      (setq jabber-connections
 	    (delq fsm jabber-connections))
      (list nil state-data nil))))
+;; jabber-connection:3 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-connection][jabber-connection:4]]
 (define-enter-state jabber-connection :connecting
   (fsm state-data)
   (let* ((connection-type (plist-get state-data :connection-type))
@@ -2195,7 +2537,9 @@ With double prefix argument, specify more connection details."
 	 (port (plist-get state-data :port)))
     (funcall connect-function fsm server network-server port))
   (list state-data nil))
+;; jabber-connection:4 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-connection][jabber-connection:5]]
 (define-state jabber-connection :connecting
   (fsm state-data event callback)
   (cl-case (or (car-safe event) event)
@@ -2225,7 +2569,9 @@ With double prefix argument, specify more connection details."
     (:do-disconnect
      ;; We don't have the connection object, so defer the disconnection.
      :defer)))
+;; jabber-connection:5 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-fsm-handle-sentinel][jabber-fsm-handle-sentinel:1]]
 (defsubst jabber-fsm-handle-sentinel (state-data event)
   "Handle sentinel event for jabber fsm."
   ;; We do the same thing for every state, so avoid code duplication.
@@ -2243,7 +2589,9 @@ With double prefix argument, specify more connection details."
 	      state-data
 	    (plist-put state-data :disconnection-reason trimmed-string))))
     (list nil new-state-data)))
+;; jabber-fsm-handle-sentinel:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-fsm-handle-sentinel][jabber-fsm-handle-sentinel:2]]
 (define-enter-state jabber-connection :connected
   (fsm state-data)
 
@@ -2252,7 +2600,9 @@ With double prefix argument, specify more connection details."
   ;; Next thing happening is the server sending its own <stream:stream> start tag.
 
   (list state-data nil))
+;; jabber-fsm-handle-sentinel:2 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-fsm-handle-sentinel][jabber-fsm-handle-sentinel:3]]
 (define-state jabber-connection :connected
   (fsm state-data event callback)
   (cl-case (or (car-safe event) event)
@@ -2314,12 +2664,16 @@ With double prefix argument, specify more connection details."
      (jabber-send-string fsm "</stream:stream>")
      (list nil (plist-put state-data
 			  :disconnection-expected t)))))
+;; jabber-fsm-handle-sentinel:3 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-fsm-handle-sentinel][jabber-fsm-handle-sentinel:4]]
 (define-enter-state jabber-connection :starttls
   (fsm state-data)
   (jabber-starttls-initiate fsm)
   (list state-data nil))
+;; jabber-fsm-handle-sentinel:4 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-fsm-handle-sentinel][jabber-fsm-handle-sentinel:5]]
 (define-state jabber-connection :starttls
   (fsm state-data event callback)
   (cl-case (or (car-safe event) event)
@@ -2348,12 +2702,16 @@ With double prefix argument, specify more connection details."
      (jabber-send-string fsm "</stream:stream>")
      (list nil (plist-put state-data
 			  :disconnection-expected t)))))
+;; jabber-fsm-handle-sentinel:5 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-fsm-handle-sentinel][jabber-fsm-handle-sentinel:6]]
 (define-enter-state jabber-connection :register-account
   (fsm state-data)
   (jabber-get-register fsm nil)
   (list state-data nil))
+;; jabber-fsm-handle-sentinel:6 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-fsm-handle-sentinel][jabber-fsm-handle-sentinel:7]]
 (define-state jabber-connection :register-account
   (fsm state-data event callback)
   ;; The connection will be closed in jabber-register
@@ -2378,13 +2736,17 @@ With double prefix argument, specify more connection details."
      (jabber-send-string fsm "</stream:stream>")
      (list nil (plist-put state-data
 			  :disconnection-expected t)))))
+;; jabber-fsm-handle-sentinel:7 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-fsm-handle-sentinel][jabber-fsm-handle-sentinel:8]]
 (define-enter-state jabber-connection :legacy-auth
   (fsm state-data)
   (jabber-get-auth fsm (plist-get state-data :server)
 		   (plist-get state-data :session-id))
   (list state-data nil))
+;; jabber-fsm-handle-sentinel:8 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-fsm-handle-sentinel][jabber-fsm-handle-sentinel:9]]
 (define-state jabber-connection :legacy-auth
   (fsm state-data event callback)
   (cl-case (or (car-safe event) event)
@@ -2418,7 +2780,9 @@ With double prefix argument, specify more connection details."
      (jabber-send-string fsm "</stream:stream>")
      (list nil (plist-put state-data
 			  :disconnection-expected t)))))
+;; jabber-fsm-handle-sentinel:9 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-fsm-handle-sentinel][jabber-fsm-handle-sentinel:10]]
 (define-enter-state jabber-connection :sasl-auth
   (fsm state-data)
   (let ((new-state-data
@@ -2429,7 +2793,9 @@ With double prefix argument, specify more connection details."
 		     (plist-get state-data
 				:stream-features)))))
     (list new-state-data nil)))
+;; jabber-fsm-handle-sentinel:10 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-fsm-handle-sentinel][jabber-fsm-handle-sentinel:11]]
 (define-state jabber-connection :sasl-auth
   (fsm state-data event callback)
   (cl-case (or (car-safe event) event)
@@ -2466,12 +2832,16 @@ With double prefix argument, specify more connection details."
      (jabber-send-string fsm "</stream:stream>")
      (list nil (plist-put state-data
 			  :disconnection-expected t)))))
+;; jabber-fsm-handle-sentinel:11 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-fsm-handle-sentinel][jabber-fsm-handle-sentinel:12]]
 (define-enter-state jabber-connection :bind
   (fsm state-data)
   (jabber-send-stream-header fsm)
   (list state-data nil))
+;; jabber-fsm-handle-sentinel:12 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-fsm-handle-sentinel][jabber-fsm-handle-sentinel:13]]
 (define-state jabber-connection :bind
   (fsm state-data event callback)
   (cl-case (or (car-safe event) event)
@@ -2563,7 +2933,9 @@ With double prefix argument, specify more connection details."
      (jabber-send-string fsm "</stream:stream>")
      (list nil (plist-put state-data
 			  :disconnection-expected t)))))
+;; jabber-fsm-handle-sentinel:13 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-fsm-handle-sentinel][jabber-fsm-handle-sentinel:14]]
 (define-enter-state jabber-connection :session-established
   (fsm state-data)
   (jabber-send-iq fsm nil
@@ -2572,10 +2944,14 @@ With double prefix argument, specify more connection details."
 		  #'jabber-process-roster 'initial
 		  #'jabber-initial-roster-failure nil)
   (list (plist-put state-data :ever-session-established t) nil))
+;; jabber-fsm-handle-sentinel:14 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-pending-presence-timeout][jabber-pending-presence-timeout:1]]
 (defvar jabber-pending-presence-timeout 0.5
   "Wait this long before doing presence packet batch processing.")
+;; jabber-pending-presence-timeout:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-pending-presence-timeout][jabber-pending-presence-timeout:2]]
 (define-state jabber-connection :session-established
   (fsm state-data event callback)
   (cl-case (or (car-safe event) event)
@@ -2631,7 +3007,9 @@ With double prefix argument, specify more connection details."
      (jabber-send-string fsm "</stream:stream>")
      (list nil (plist-put state-data
 			  :disconnection-expected t)))))
+;; jabber-pending-presence-timeout:2 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-disconnect][jabber-disconnect:1]]
 (defun jabber-disconnect (&optional arg)
   "Disconnect from all Jabber servers.  If ARG supplied, disconnect one account."
   (interactive "P")
@@ -2649,7 +3027,9 @@ With double prefix argument, specify more connection details."
 	  (jabber-disconnected)
 	  (when (called-interactively-p 'interactive)
 	    (message "Disconnected from Jabber server(s)")))))))
+;; jabber-disconnect:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-disconnect-one][jabber-disconnect-one:1]]
 (defun jabber-disconnect-one (jc &optional dont-redisplay)
   "Disconnect from one Jabber server.
 If DONT-REDISPLAY is non-nil, don't update roster buffer.
@@ -2661,7 +3041,9 @@ JC is the Jabber connection."
 	     (jabber-connection-jid jc)))
   (unless dont-redisplay
     (jabber-display-roster)))
+;; jabber-disconnect-one:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-disconnected][jabber-disconnected:1]]
 (defun jabber-disconnected ()
   "Re-initialise jabber package variables.
 Call this function after disconnection."
@@ -2672,7 +3054,9 @@ Call this function after disconnection."
 
   (jabber-clear-roster)
   (run-hooks 'jabber-post-disconnect-hook))
+;; jabber-disconnected:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-log-xml][jabber-log-xml:1]]
 (defun jabber-log-xml (fsm direction data)
   "Print DATA to XML console (and, optionally, in file).
 If `jabber-debug-log-xml' is nil, do nothing.
@@ -2681,7 +3065,9 @@ DIRECTION is a string, either \"sending\" or \"receive\".
 DATA is any sexp."
   (when jabber-debug-log-xml
       (jabber-process-console fsm direction data)))
+;; jabber-log-xml:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-pre-filter][jabber-pre-filter:1]]
 (defun jabber-pre-filter (process string fsm)
   (with-current-buffer (process-buffer process)
     ;; Append new data
@@ -2691,7 +3077,9 @@ DATA is any sexp."
     (unless (boundp 'jabber-filtering)
       (let (jabber-filtering)
 	(jabber-filter process fsm)))))
+;; jabber-pre-filter:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-filter][jabber-filter:1]]
 (defun jabber-filter (process fsm)
   "The filter function for the jabber process."
   (with-current-buffer (process-buffer process)
@@ -2766,7 +3154,9 @@ DATA is any sexp."
        ;; to facilitate debugging.
        ;; (jabber-process-input (car xml-data))
        ))))
+;; jabber-filter:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-process-input][jabber-process-input:1]]
 (defun jabber-process-input (jc xml-data)
   "Process an incoming parsed tag.
 
@@ -2782,7 +3172,9 @@ obtained from `xml-parse-region'."
 	  (funcall f jc xml-data)
 	((debug error)
 	 (fsm-debug-output "Error %S while processing %S with function %s" e xml-data f))))))
+;; jabber-process-input:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-process-stream-error][jabber-process-stream-error:1]]
 (defun jabber-process-stream-error (xml-data state-data)
   "Process an incoming stream error.
 Return nil if XML-DATA is not a stream:error stanza.
@@ -2799,7 +3191,9 @@ Return an fsm result list if it is."
       (when (eq condition 'conflict)
 	(setq state-data (plist-put state-data :disconnection-expected t)))
       (list nil state-data))))
+;; jabber-process-stream-error:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-clear-roster][jabber-clear-roster:1]]
 ;; XXX: This function should probably die.  The roster is stored
 ;; inside the connection plists, and the obarray shouldn't be so big
 ;; that we need to clean it.
@@ -2810,7 +3204,9 @@ Return an fsm result list if it is."
 		(unintern x jabber-jid-obarray))
 	    jabber-jid-obarray)
   (setq *jabber-roster* nil))
+;; jabber-clear-roster:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-send-sexp][jabber-send-sexp:1]]
 (defun jabber-send-sexp (jc sexp)
   "Send the xml corresponding to SEXP to connection JC."
   (condition-case e
@@ -2820,11 +3216,15 @@ Return an fsm result list if it is."
      (message "Couldn't write XML log: %s" (error-message-string e))
      (sit-for 2)))
   (jabber-send-string jc (jabber-sexp2xml sexp)))
+;; jabber-send-sexp:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-send-sexp-if-connected][jabber-send-sexp-if-connected:1]]
 (defun jabber-send-sexp-if-connected (jc sexp)
   "Send the stanza SEXP only if JC has established a session."
   (fsm-send-sync jc (cons :send-if-connected sexp)))
+;; jabber-send-sexp-if-connected:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-send-stream-header][jabber-send-stream-header:1]]
 (defun jabber-send-stream-header (jc)
   "Send stream header to connection JC."
   (let ((stream-header
@@ -2840,7 +3240,9 @@ Return an fsm result list if it is."
 ")))
     (jabber-log-xml jc "sending" stream-header)
     (jabber-send-string jc stream-header)))
+;; jabber-send-stream-header:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-send-string][jabber-send-string:1]]
 (defun jabber-send-string (jc string)
   "Send STRING through the connection JC."
   (let* ((state-data (fsm-get-state-data jc))
@@ -2849,10 +3251,14 @@ Return an fsm result list if it is."
     (unless connection
       (error "%s has no connection" (jabber-connection-jid jc)))
     (funcall send-function connection string)))
+;; jabber-send-string:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*logon][logon:1]]
 (unless (fboundp 'sha1)
   (require 'sha1))
+;; logon:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-get-auth][jabber-get-auth:1]]
 (defun jabber-get-auth (jc to session-id)
   "Send IQ get request in namespace \"jabber:iq:auth\".
 JC is the Jabber connection."
@@ -2862,7 +3268,9 @@ JC is the Jabber connection."
 			  (username () ,(plist-get (fsm-get-state-data jc) :username)))
 		  #'jabber-do-logon session-id
 		  #'jabber-report-success "Impossible error - auth field request"))
+;; jabber-get-auth:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-do-logon][jabber-do-logon:1]]
 (defun jabber-do-logon (jc xml-data session-id)
   "Send username and password in logon attempt.
 
@@ -2896,7 +3304,9 @@ obtained from `xml-parse-region'."
 			      (resource () ,(plist-get (fsm-get-state-data jc) :resource)))
 		      #'jabber-process-logon passwd
 		      #'jabber-process-logon nil))))
+;; jabber-do-logon:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-process-logon][jabber-process-logon:1]]
 (defun jabber-process-logon (jc xml-data closure-data)
   "Receive login success or failure, and request roster.
 CLOSURE-DATA should be the password on success and nil on failure.
@@ -2911,12 +3321,18 @@ obtained from `xml-parse-region'."
     ;; Logon failure
     (jabber-report-success jc xml-data "Logon")
     (fsm-send jc :authentication-failure)))
+;; jabber-process-logon:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*Displaying the roster][Displaying the roster:1]]
 (require 'format-spec)
+;; Displaying the roster:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-roster][jabber-roster:1]]
 (defgroup jabber-roster nil "roster display options"
   :group 'jabber)
+;; jabber-roster:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-roster-line-format][jabber-roster-line-format:1]]
 (defcustom jabber-roster-line-format " %a %c %-25n %u %-8s  %S"
   "The format specification of the lines in the roster display.
 
@@ -2935,7 +3351,9 @@ These fields are available:
 `jabber-roster-subscription-display'."
   :type 'string
   :group 'jabber-roster)
+;; jabber-roster-line-format:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-roster-subscription-display][jabber-roster-subscription-display:1]]
 (defcustom jabber-roster-subscription-display '(("none" . "   ")
 						("from" . "<  ")
 						("to" . "  >")
@@ -2959,7 +3377,9 @@ display them: ← → ⇄ ↔."
 	       (cons :format "%v" (const :format "" "to") (string :tag "To"))
 	       (cons :format "%v" (const :format "" "both") (string :tag "Both")))
   :group 'jabber-roster)
+;; jabber-roster-subscription-display:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-resource-line-format][jabber-resource-line-format:1]]
 (defcustom jabber-resource-line-format "     %r - %s (%S), priority %p"
   "The format specification of resource lines in the roster display.
 These are displayed when `jabber-show-resources' permits it.
@@ -2975,7 +3395,9 @@ These fields are available:
 %S   Status string specified by resource."
   :type 'string
   :group 'jabber-roster)
+;; jabber-resource-line-format:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-roster-sort-functions][jabber-roster-sort-functions:1]]
 (defcustom jabber-roster-sort-functions
   '(jabber-roster-sort-by-status jabber-roster-sort-by-displayname)
   "Sort roster according to these criteria.
@@ -2989,13 +3411,17 @@ These functions should take two roster items A and B, and return:
 	     jabber-roster-sort-by-displayname
 	     jabber-roster-sort-by-group)
   :group 'jabber-roster)
+;; jabber-roster-sort-functions:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-sort-order][jabber-sort-order:1]]
 (defcustom jabber-sort-order '("chat" "" "away" "dnd" "xa")
   "Sort by status in this order.  Anything not in list goes last.
 Offline is represented as nil."
   :type '(repeat (restricted-sexp :match-alternatives (stringp nil)))
   :group 'jabber-roster)
+;; jabber-sort-order:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-show-resources][jabber-show-resources:1]]
 (defcustom jabber-show-resources 'sometimes
   "Show contacts' resources in roster?
 This can be one of the following symbols:
@@ -3007,12 +3433,16 @@ always    Always show resources."
 		(const :tag "When more than one connected resource" sometimes)
 		(const :tag "Always" always))
   :group 'jabber-roster)
+;; jabber-show-resources:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-show-offline-contacts][jabber-show-offline-contacts:1]]
 (defcustom jabber-show-offline-contacts t
   "Show offline contacts in roster when non-nil."
   :type 'boolean
   :group 'jabber-roster)
+;; jabber-show-offline-contacts:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-remove-newlines][jabber-remove-newlines:1]]
 (defcustom jabber-remove-newlines t
   "Remove newlines in status messages?
 Newlines in status messages mess up the roster display.  However,
@@ -3022,22 +3452,30 @@ choose the behaviour.
 Trailing newlines are always removed, regardless of this variable."
   :type 'boolean
   :group 'jabber-roster)
+;; jabber-remove-newlines:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-roster-show-bindings][jabber-roster-show-bindings:1]]
 (defcustom jabber-roster-show-bindings t
   "Show keybindings in roster buffer?."
   :type 'boolean
   :group 'jabber-roster)
+;; jabber-roster-show-bindings:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-roster-show-title][jabber-roster-show-title:1]]
 (defcustom jabber-roster-show-title t
   "Show title in roster buffer?."
   :type 'boolean
   :group 'jabber-roster)
+;; jabber-roster-show-title:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-roster-mode-hook][jabber-roster-mode-hook:1]]
 (defcustom jabber-roster-mode-hook nil
   "Hook run when entering Roster mode."
   :group 'jabber-roster
   :type 'hook)
+;; jabber-roster-mode-hook:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-roster-default-group-name][jabber-roster-default-group-name:1]]
 (defcustom jabber-roster-default-group-name "other"
   "Default group name for buddies without groups."
   :group 'jabber-roster
@@ -3052,56 +3490,78 @@ Trailing newlines are always removed, regardless of this variable."
 	    (set-text-properties 0 (length val) nil val))
           (custom-set-default var val))
   )
+;; jabber-roster-default-group-name:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-roster-show-empty-group][jabber-roster-show-empty-group:1]]
 (defcustom jabber-roster-show-empty-group nil
   "Show empty groups in roster?."
   :group 'jabber-roster
   :type 'boolean)
+;; jabber-roster-show-empty-group:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-roster-roll-up-group][jabber-roster-roll-up-group:1]]
 (defcustom jabber-roster-roll-up-group nil
   "Show empty groups in roster?."
   :group 'jabber-roster
   :type 'boolean)
+;; jabber-roster-roll-up-group:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-roster-user-online][jabber-roster-user-online:1]]
 (defface jabber-roster-user-online
   '((t (:foreground "blue" :weight bold :slant normal)))
   "face for displaying online users."
   :group 'jabber-roster)
+;; jabber-roster-user-online:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-roster-user-xa][jabber-roster-user-xa:1]]
 (defface jabber-roster-user-xa
   '((((background dark)) (:foreground "magenta" :weight normal :slant italic))
     (t (:foreground "black" :weight normal :slant italic)))
   "face for displaying extended away users."
   :group 'jabber-roster)
+;; jabber-roster-user-xa:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-roster-user-dnd][jabber-roster-user-dnd:1]]
 (defface jabber-roster-user-dnd
   '((t (:foreground "red" :weight normal :slant italic)))
   "face for displaying do not disturb users."
   :group 'jabber-roster)
+;; jabber-roster-user-dnd:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-roster-user-away][jabber-roster-user-away:1]]
 (defface jabber-roster-user-away
   '((t (:foreground "dark green" :weight normal :slant italic)))
   "face for displaying away users."
   :group 'jabber-roster)
+;; jabber-roster-user-away:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-roster-user-chatty][jabber-roster-user-chatty:1]]
 (defface jabber-roster-user-chatty
   '((t (:foreground "dark orange" :weight bold :slant normal)))
   "face for displaying chatty users."
   :group 'jabber-roster)
+;; jabber-roster-user-chatty:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-roster-user-error][jabber-roster-user-error:1]]
 (defface jabber-roster-user-error
   '((t (:foreground "red" :weight light :slant italic)))
   "face for displaying users sending presence errors."
   :group 'jabber-roster)
+;; jabber-roster-user-error:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-roster-user-offline][jabber-roster-user-offline:1]]
 (defface jabber-roster-user-offline
   '((t (:foreground "dark grey" :weight light :slant italic)))
   "face for displaying offline users."
   :group 'jabber-roster)
+;; jabber-roster-user-offline:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-roster-debug][jabber-roster-debug:1]]
 (defvar jabber-roster-debug nil
   "Debug roster draw.")
+;; jabber-roster-debug:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-roster-mode-map][jabber-roster-mode-map:1]]
 (defvar jabber-roster-mode-map
   (let ((map (make-sparse-keymap)))
     (suppress-keymap map)
@@ -3129,7 +3589,9 @@ Trailing newlines are always removed, regardless of this variable."
     (define-key map "H" 'jabber-roster-toggle-binding-display)
     ;;(define-key map "D" 'jabber-disconnect)
     map))
+;; jabber-roster-mode-map:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-roster-ret-action-at-point][jabber-roster-ret-action-at-point:1]]
 (defun jabber-roster-ret-action-at-point ()
   "Action for ret.
 Before try to roll up/down group.  Eval `chat-with-jid-at-point' is no group at
@@ -3148,7 +3610,9 @@ point."
        account-at-point (jabber-jid-user jid-at-point) nil
        #'jabber-roster-ret-action-at-point-1
        jid-at-point))))
+;; jabber-roster-ret-action-at-point:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-roster-ret-action-at-point-1][jabber-roster-ret-action-at-point-1:1]]
 (defun jabber-roster-ret-action-at-point-1 (jc jid result)
   ;; If we get an error, assume it's a normal contact.
   (if (eq (car result) 'error)
@@ -3164,7 +3628,9 @@ point."
 			   t)
 	;; No.  Let's open a normal chat buffer.
 	(jabber-chat-with jc jid)))))
+;; jabber-roster-ret-action-at-point-1:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-roster-mouse-2-action-at-point][jabber-roster-mouse-2-action-at-point:1]]
 (defun jabber-roster-mouse-2-action-at-point (e)
   "Action for mouse 2.
 Before try to roll up/down group.  Eval `chat-with-jid-at-point' is no group
@@ -3178,7 +3644,9 @@ at point."
     (if (and group-at-point account-at-point)
 	(jabber-roster-roll-group account-at-point group-at-point)
       (jabber-popup-combined-menu))))
+;; jabber-roster-mouse-2-action-at-point:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-roster-delete-at-point][jabber-roster-delete-at-point:1]]
 (defun jabber-roster-delete-at-point ()
   "Delete at point from roster.
 Try to delete the group from all contaacs.
@@ -3198,7 +3666,9 @@ Delete a jid if there is no group at point."
 						jids-with-group
 						group-at-point))
       (jabber-roster-delete-jid-at-point))))
+;; jabber-roster-delete-at-point:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-roster-edit-action-at-point][jabber-roster-edit-action-at-point:1]]
 (defun jabber-roster-edit-action-at-point ()
   "Action for e.  Before try to edit group name.
 Eval `jabber-roster-change' is no group at point."
@@ -3217,7 +3687,9 @@ Eval `jabber-roster-change' is no group at point."
 					      jids-with-group
 					      group-at-point))
       (call-interactively 'jabber-roster-change))))
+;; jabber-roster-edit-action-at-point:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-roster-roll-group][jabber-roster-roll-group:1]]
 (defun jabber-roster-roll-group (jc group-name &optional set)
   "Roll up/down group in roster.
 If optional SET is t, roll up group.
@@ -3241,7 +3713,9 @@ If SET is nor t or nil, roll down group."
        state-data :roster-roll-groups
        new-roll-groups)
       (jabber-display-roster))))
+;; jabber-roster-roll-group:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-roster-mode][jabber-roster-mode:1]]
 (defun jabber-roster-mode ()
   "Major mode for Jabber roster display.
 Use the keybindings (mnemonic as Chat, Roster, Info, MUC, Service) to
@@ -3255,9 +3729,13 @@ bring up menus of actions.
   (if (fboundp 'run-mode-hooks)
       (run-mode-hooks 'jabber-roster-mode-hook)
     (run-hooks 'jabber-roster-mode-hook)))
+;; jabber-roster-mode:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-roster-mode][jabber-roster-mode:2]]
 (put 'jabber-roster-mode 'mode-class 'special)
+;; jabber-roster-mode:2 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-switch-to-roster-buffer][jabber-switch-to-roster-buffer:1]]
 ;;;###autoload
 (defun jabber-switch-to-roster-buffer (&optional jc)
   "Switch to roster buffer.
@@ -3267,7 +3745,9 @@ be used in `jabber-post-connection-hooks'."
   (if (not (get-buffer jabber-roster-buffer))
       (jabber-display-roster)
     (switch-to-buffer jabber-roster-buffer)))
+;; jabber-switch-to-roster-buffer:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-sort-roster][jabber-sort-roster:1]]
 (defun jabber-sort-roster (jc)
   "Sort roster according to online status.
 JC is the Jabber connection."
@@ -3280,7 +3760,9 @@ JC is the Jabber connection."
 			   (plist-get state-data :roster-hash))
 		  #'jabber-roster-sort-items)
 		 (plist-get state-data :roster-hash))))))
+;; jabber-sort-roster:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-roster-prepare-roster][jabber-roster-prepare-roster:1]]
 (defun jabber-roster-prepare-roster (jc)
   "Make a hash based roster.
 JC is the Jabber connection."
@@ -3320,7 +3802,9 @@ JC is the Jabber connection."
     ;; put to state-data hash-roster
     (plist-put state-data :roster-hash
 	       hash)))
+;; jabber-roster-prepare-roster:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-roster-sort-items][jabber-roster-sort-items:1]]
 (defun jabber-roster-sort-items (a b)
   "Sort roster items A and B according to `jabber-roster-sort-functions'.
 Return t if A is less than B."
@@ -3331,7 +3815,9 @@ Return t if A is less than B."
         t)
        ((> comparison 0)
         nil)))))
+;; jabber-roster-sort-items:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-roster-sort-by-status][jabber-roster-sort-by-status:1]]
 (defun jabber-roster-sort-by-status (a b)
   "Sort roster items by online status.
 See `jabber-sort-order' for order used."
@@ -3346,7 +3832,9 @@ See `jabber-sort-order' for order used."
 	-1)
        (t
 	0)))))
+;; jabber-roster-sort-by-status:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-roster-sort-by-displayname][jabber-roster-sort-by-displayname:1]]
 (defun jabber-roster-sort-by-displayname (a b)
   "Sort roster items by displayed name."
   (let ((a-name (jabber-jid-displayname a))
@@ -3355,7 +3843,9 @@ See `jabber-sort-order' for order used."
      ((string-lessp a-name b-name) -1)
      ((string= a-name b-name) 0)
      (t 1))))
+;; jabber-roster-sort-by-displayname:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-roster-sort-by-group][jabber-roster-sort-by-group:1]]
 (defun jabber-roster-sort-by-group (a b)
   "Sort roster items by group membership."
   (cl-flet ((first-group (item) (or (car (get item 'groups)) "")))
@@ -3365,7 +3855,9 @@ See `jabber-sort-order' for order used."
        ((string-lessp a-group b-group) -1)
        ((string= a-group b-group) 0)
        (t 1)))))
+;; jabber-roster-sort-by-group:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-fix-status][jabber-fix-status:1]]
 (defun jabber-fix-status (status)
   "Make status strings more readable."
   (when status
@@ -3375,18 +3867,24 @@ See `jabber-sort-order' for order used."
       (while (string-match "\n" status)
 	(setq status (replace-match " " t t status))))
     status))
+;; jabber-fix-status:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-roster-ewoc][jabber-roster-ewoc:1]]
 (defvar jabber-roster-ewoc nil
   "Ewoc displaying the roster.
 There is only one; we don't rely on buffer-local variables or
 such.")
+;; jabber-roster-ewoc:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-roster-filter-display][jabber-roster-filter-display:1]]
 (defun jabber-roster-filter-display (buddies)
   "Filter BUDDIES for items to be displayed in the roster."
   (cl-remove-if-not (lambda (buddy) (or jabber-show-offline-contacts
 				     (get buddy 'connected)))
 		 buddies))
+;; jabber-roster-filter-display:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-roster-toggle-offline-display][jabber-roster-toggle-offline-display:1]]
 (defun jabber-roster-toggle-offline-display ()
   "Toggle display of offline contacts.
 To change this permanently, customize the `jabber-show-offline-contacts'."
@@ -3394,14 +3892,18 @@ To change this permanently, customize the `jabber-show-offline-contacts'."
   (setq jabber-show-offline-contacts
 	(not jabber-show-offline-contacts))
   (jabber-display-roster))
+;; jabber-roster-toggle-offline-display:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-roster-toggle-binding-display][jabber-roster-toggle-binding-display:1]]
 (defun jabber-roster-toggle-binding-display ()
   "Toggle display of the roster binding text."
   (interactive)
   (setq jabber-roster-show-bindings
 	(not jabber-roster-show-bindings))
   (jabber-display-roster))
+;; jabber-roster-toggle-binding-display:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-display-roster][jabber-display-roster:1]]
 (defun jabber-display-roster ()
   "Switch to the main jabber buffer and refresh the roster display to reflect the current information."
   (interactive)
@@ -3503,7 +4005,9 @@ H        Toggle displaying this text
 	(forward-line (1- current-line))
 	;; ...and go back to previous column
 	(move-to-column current-column)))))
+;; jabber-display-roster:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-display-roster-entry][jabber-display-roster-entry:1]]
 (defun jabber-display-roster-entry (jc group-name buddy)
   "Format and insert a roster entry for BUDDY at point.
 BUDDY is a JID symbol.
@@ -3610,7 +4114,9 @@ JC is the Jabber connection."
 			    'jabber-account jc)
 			   group-name)
       (insert group-name))))
+;; jabber-display-roster-entry:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-roster-update][jabber-roster-update:1]]
 ;;;###autoload
 (defun jabber-roster-update (jc new-items changed-items deleted-items)
   "Update roster, in memory and on display.
@@ -3704,12 +4210,16 @@ JC is the Jabber connection."
 
     ;; recreate roster buffer
     (jabber-display-roster)))
+;; jabber-roster-update:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-roster-update][jabber-roster-update:2]]
 (defalias 'jabber-presence-update-roster 'ignore)
 ;;jabber-presence-update-roster is not needed anymore.
 ;;Its work is done in `jabber-process-presence'."
 (make-obsolete 'jabber-presence-update-roster 'ignore "27.2")
+;; jabber-roster-update:2 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-next-property][jabber-next-property:1]]
 (defun jabber-next-property (&optional prev)
   "Return position of next property appearence or nil if there is none.
 If optional PREV is non-nil, return position of previous property appearence."
@@ -3730,7 +4240,9 @@ If optional PREV is non-nil, return position of previous property appearence."
         (setq found (or (get-text-property pos 'jabber-jid)
                         (get-text-property pos 'jabber-group)))))
     pos))
+;; jabber-next-property:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-go-to-next-roster-item][jabber-go-to-next-roster-item:1]]
 (defun jabber-go-to-next-roster-item ()
   "Move the cursor to the next jid/group in the buffer."
   (interactive)
@@ -3740,7 +4252,9 @@ If optional PREV is non-nil, return position of previous property appearence."
                           (jabber-next-property)) next)))
     (if next (goto-char next)
       (goto-char (point-min)))))
+;; jabber-go-to-next-roster-item:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-go-to-previous-roster-item][jabber-go-to-previous-roster-item:1]]
 (defun jabber-go-to-previous-roster-item ()
   "Move the cursor to the previous jid/group in the buffer."
   (interactive)
@@ -3750,14 +4264,18 @@ If optional PREV is non-nil, return position of previous property appearence."
                               (jabber-next-property 'prev)) previous)))
     (if previous (goto-char previous)
       (goto-char (point-max)))))
+;; jabber-go-to-previous-roster-item:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-roster-restore-groups][jabber-roster-restore-groups:1]]
 (defun jabber-roster-restore-groups (jc)
   "Restore roster's groups rolling state from private storage.
 JC is the Jabber connection."
   (interactive (list (jabber-read-account)))
   (jabber-private-get jc 'roster "emacs-jabber"
                       'jabber-roster-restore-groups-1 'ignore))
+;; jabber-roster-restore-groups:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-roster-restore-groups-1][jabber-roster-restore-groups-1:1]]
 (defun jabber-roster-restore-groups-1 (jc xml-data)
   "Parse roster groups and restore rolling state.
 
@@ -3769,7 +4287,9 @@ obtained from `xml-parse-region'."
            (groups (if (stringp data) (split-string data "\n") nil)))
       (dolist (group groups)
         (jabber-roster-roll-group jc group t)))))
+;; jabber-roster-restore-groups-1:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-roster-save-groups][jabber-roster-save-groups:1]]
 (defun jabber-roster-save-groups ()
   "Save roster's groups rolling state in private storage."
   (interactive)
@@ -3784,11 +4304,17 @@ obtained from `xml-parse-region'."
                                    ,roll-groups)
                           'jabber-report-success "Roster groups saved"
                           'jabber-report-success "Failed to save roster groups"))))
+;; jabber-roster-save-groups:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-export-roster-widget][jabber-export-roster-widget:1]]
 (defvar jabber-export-roster-widget nil)
+;; jabber-export-roster-widget:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-import-subscription-p-widget][jabber-import-subscription-p-widget:1]]
 (defvar jabber-import-subscription-p-widget nil)
+;; jabber-import-subscription-p-widget:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-export-roster][jabber-export-roster:1]]
 ;;;###autoload
 (defun jabber-export-roster (jc)
   "Export roster for connection JC."
@@ -3796,7 +4322,9 @@ obtained from `xml-parse-region'."
   (let ((state-data (fsm-get-state-data jc)))
     (jabber-export-roster-do-it
      (jabber-roster-to-sexp (plist-get state-data :roster)))))
+;; jabber-export-roster:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-export-roster-do-it][jabber-export-roster-do-it:1]]
 (defun jabber-export-roster-do-it (roster)
   "Create buffer from which ROSTER can be exported to a file."
   (interactive)
@@ -3823,7 +4351,9 @@ not affect your actual roster.
     (widget-minor-mode 1)
     (goto-char (point-min))
     (switch-to-buffer (current-buffer))))
+;; jabber-export-roster-do-it:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-import-roster][jabber-import-roster:1]]
 ;;;###autoload
 (defun jabber-import-roster (jc file)
   "Create buffer for roster import for connection JC from FILE."
@@ -3862,7 +4392,9 @@ not affect your actual roster.
       (widget-minor-mode 1)
       (goto-char (point-min))
       (switch-to-buffer (current-buffer)))))
+;; jabber-import-roster:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-export-remove-regexp][jabber-export-remove-regexp:1]]
 (defun jabber-export-remove-regexp (&rest ignore)
   (let* ((value (widget-value jabber-export-roster-widget))
 	 (length-before (length value))
@@ -3874,7 +4406,9 @@ not affect your actual roster.
     (widget-value-set jabber-export-roster-widget value)
     (widget-setup)
     (message "%d items removed" (- length-before (length value)))))
+;; jabber-export-remove-regexp:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-export-save][jabber-export-save:1]]
 (defun jabber-export-save (&rest ignore)
   "Export roster to file."
   (let ((items (mapcar #'jabber-roster-sexp-to-xml (widget-value jabber-export-roster-widget)))
@@ -3885,7 +4419,9 @@ not affect your actual roster.
 	(insert (jabber-sexp2xml item) "\n"))
       (insert "</query></iq>\n"))
     (message "Roster saved")))
+;; jabber-export-save:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-import-doit][jabber-import-doit:1]]
 (defun jabber-import-doit (&rest ignore)
   "Import roster being edited in widget."
   (let* ((state-data (fsm-get-state-data jabber-buffer-connection))
@@ -3945,7 +4481,9 @@ not affect your actual roster.
 		      `(query ((xmlns . "jabber:iq:roster")) ,@roster-delta)
 		      #'jabber-report-success "Roster import"
 		      #'jabber-report-success "Roster import"))))
+;; jabber-import-doit:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-roster-to-sexp][jabber-roster-to-sexp:1]]
 (defun jabber-roster-to-sexp (roster)
   "Convert ROSTER to simpler sexp format.
 Return a list, where each item is a vector:
@@ -3959,7 +4497,9 @@ where groups is a list of strings."
 	(get n 'subscription)
 	(get n 'groups)))
    roster))
+;; jabber-roster-to-sexp:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-roster-sexp-to-xml][jabber-roster-sexp-to-xml:1]]
 (defun jabber-roster-sexp-to-xml (sexp &optional omit-subscription)
   "Convert SEXP to XML format.
 Return an XML node."
@@ -3973,7 +4513,9 @@ Return an XML node."
 	    #'(lambda (g)
 		(list 'group nil g))
 	    (nth 3 sexp))))
+;; jabber-roster-sexp-to-xml:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-roster-xml-to-sexp][jabber-roster-xml-to-sexp:1]]
 (defun jabber-roster-xml-to-sexp (xml-data)
   "Convert XML-DATA to simpler sexp format.
 XML-DATA is an <iq> node with a <query xmlns='jabber:iq:roster'> child.
@@ -3992,7 +4534,9 @@ See `jabber-roster-to-sexp' for description of output format."
 	       (car (jabber-xml-node-children g)))
 	   (jabber-xml-get-children n 'group))))
      (jabber-xml-get-children query 'item))))
+;; jabber-roster-xml-to-sexp:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-export-display][jabber-export-display:1]]
 (defun jabber-export-display (roster)
   (setq jabber-export-roster-widget
 	(widget-create
@@ -4009,30 +4553,44 @@ See `jabber-roster-to-sexp' for description of output format."
 		   (repeat :tag "Groups"
 			   (string :tag "Group"))))
 	 :value roster)))
+;; jabber-export-display:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::**jabber-open-info-queries*][*jabber-open-info-queries*:1]]
 (defvar *jabber-open-info-queries* nil
   "An alist of open query id and their callback functions.")
+;; *jabber-open-info-queries*:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-iq-get-xmlns-alist][jabber-iq-get-xmlns-alist:1]]
 (defvar jabber-iq-get-xmlns-alist nil
   "Mapping from XML namespace to handler for IQ GET requests.")
+;; jabber-iq-get-xmlns-alist:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-iq-set-xmlns-alist][jabber-iq-set-xmlns-alist:1]]
 (defvar jabber-iq-set-xmlns-alist nil
   "Mapping from XML namespace to handler for IQ SET requests.")
+;; jabber-iq-set-xmlns-alist:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-browse-mode-map][jabber-browse-mode-map:1]]
 (defvar jabber-browse-mode-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map jabber-common-keymap)
     (define-key map [mouse-2] 'jabber-popup-combined-menu)
     map))
+;; jabber-browse-mode-map:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-browse-mode-hook][jabber-browse-mode-hook:1]]
 (defcustom jabber-browse-mode-hook nil
   "Hook run when entering Browse mode."
   :group 'jabber
   :type 'hook)
+;; jabber-browse-mode-hook:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-browse][jabber-browse:1]]
 (defgroup jabber-browse nil "browse display options"
   :group 'jabber)
+;; jabber-browse:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-browse-buffer-format][jabber-browse-buffer-format:1]]
 (defcustom jabber-browse-buffer-format "*-jabber-browse:-%n-*"
   "The format specification for the name of browse buffers.
 
@@ -4041,7 +4599,9 @@ These fields are available at this moment:
 %n   JID to browse"
   :type 'string
   :group 'jabber-browse)
+;; jabber-browse-buffer-format:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-browse-mode][jabber-browse-mode:1]]
 (defun jabber-browse-mode ()
 "Jabber browse mode.
 \\{jabber-browse-mode-map}"
@@ -4053,9 +4613,13 @@ These fields are available at this moment:
   (if (fboundp 'run-mode-hooks)
       (run-mode-hooks 'jabber-browse-mode-hook)
     (run-hooks 'jabber-browse-mode-hook)))
+;; jabber-browse-mode:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-browse-mode][jabber-browse-mode:2]]
 (put 'jabber-browse-mode 'mode-class 'special)
+;; jabber-browse-mode:2 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-process-iq][jabber-process-iq:1]]
 (add-to-list 'jabber-iq-chain 'jabber-process-iq)
 (defun jabber-process-iq (jc xml-data)
   "Process an incoming iq stanza.
@@ -4094,7 +4658,9 @@ obtained from `xml-parse-region'."
 	       (apply 'jabber-send-iq-error jc from id query (cdr error-var)))
 	      (error (jabber-send-iq-error jc from id query "wait" 'internal-server-error (error-message-string error-var))))
 	  (jabber-send-iq-error jc from id query "cancel" 'feature-not-implemented)))))))
+;; jabber-process-iq:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-send-iq][jabber-send-iq:1]]
 (defun jabber-send-iq (jc to type query success-callback success-closure-data
 			  error-callback error-closure-data &optional result-id)
   "Send an iq stanza to the specified entity, and optionally set up a callback.
@@ -4126,7 +4692,9 @@ with XML-DATA being the IQ stanza received in response."
 				 (list (cons 'type type))
 				 (list (cons 'id id)))
 			    query))))
+;; jabber-send-iq:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-send-iq-error][jabber-send-iq-error:1]]
 (defun jabber-send-iq-error (jc to id original-query error-type condition
 				&optional text app-specific)
   "Send an error iq stanza in response to a previously sent iq stanza.
@@ -4156,7 +4724,9 @@ See section 9.3 of XMPP Core."
 		    `(text ((xmlns . "urn:ietf:params:xml:ns:xmpp-stanzas"))
 			   ,text))
 	       ,@app-specific))))
+;; jabber-send-iq-error:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-process-data][jabber-process-data:1]]
 (defun jabber-process-data (jc xml-data closure-data)
   "Process random results from various requests.
 
@@ -4192,7 +4762,9 @@ obtained from `xml-parse-region'."
 
 	(dolist (hook '(jabber-info-message-hooks jabber-alert-info-message-hooks))
 	  (run-hook-with-args hook 'browse (current-buffer) (funcall jabber-alert-info-message-function 'browse (current-buffer))))))))
+;; jabber-process-data:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-silent-process-data][jabber-silent-process-data:1]]
 (defun jabber-silent-process-data (jc xml-data closure-data)
   "Process random results from various requests to only alert hooks.
 
@@ -4209,10 +4781,14 @@ obtained from `xml-parse-region'."
     (dolist (hook '(jabber-info-message-hooks jabber-alert-info-message-hooks))
       (run-hook-with-args hook 'browse (current-buffer)
                           text))))
+;; jabber-silent-process-data:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-alerts][jabber-alerts:1]]
 (defgroup jabber-alerts nil "auditory and visual alerts for jabber events"
   :group 'jabber)
+;; jabber-alerts:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-alert-message-hooks][jabber-alert-message-hooks:1]]
 (defcustom jabber-alert-message-hooks '(jabber-message-echo
 					jabber-message-scroll)
   "Hooks run when a new message arrives.
@@ -4233,13 +4809,17 @@ other uses, see `jabber-message-hooks'."
 	     jabber-message-display
 	     jabber-message-scroll)
   :group 'jabber-alerts)
+;; jabber-alert-message-hooks:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-message-hooks][jabber-message-hooks:1]]
 (defvar jabber-message-hooks nil
   "Internal hooks run when a new message arrives.
 
 This hook works just like `jabber-alert-message-hooks', except that
 it's not meant to be customized by the user.")
+;; jabber-message-hooks:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-alert-message-function][jabber-alert-message-function:1]]
 (defcustom jabber-alert-message-function
   'jabber-message-default-message
   "Function for constructing short message alert messages.
@@ -4253,7 +4833,9 @@ and show no message if it returns nil.  Other hooks do what they do
 every time."
   :type 'function
   :group 'jabber-alerts)
+;; jabber-alert-message-function:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-alert-muc-hooks][jabber-alert-muc-hooks:1]]
 (defcustom jabber-alert-muc-hooks '(jabber-muc-echo jabber-muc-scroll)
   "Hooks run when a new MUC message arrives.
 
@@ -4271,13 +4853,17 @@ not have to call it themselves."
 	     jabber-muc-display
 	     jabber-muc-scroll)
   :group 'jabber-alerts)
+;; jabber-alert-muc-hooks:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-hooks][jabber-muc-hooks:1]]
 (defvar jabber-muc-hooks '()
   "Internal hooks run when a new MUC message arrives.
 
 This hook works just like `jabber-alert-muc-hooks', except that
 it's not meant to be customized by the user.")
+;; jabber-muc-hooks:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-alert-muc-function][jabber-alert-muc-function:1]]
 (defcustom jabber-alert-muc-function
   'jabber-muc-default-message
   "Function for constructing short message alert messages.
@@ -4291,7 +4877,9 @@ and show no message if it returns nil.  Other hooks do what they do
 every time."
   :type 'function
   :group 'jabber-alerts)
+;; jabber-alert-muc-function:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-alert-presence-hooks][jabber-alert-presence-hooks:1]]
 (defcustom jabber-alert-presence-hooks
   '(jabber-presence-echo)
   "Hooks run when a user's presence changes.
@@ -4310,13 +4898,17 @@ one of \"subscribe\", \"unsubscribe\", \"subscribed\" and
 	     jabber-presence-display
 	     jabber-presence-echo)
   :group 'jabber-alerts)
+;; jabber-alert-presence-hooks:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-presence-hooks][jabber-presence-hooks:1]]
 (defvar jabber-presence-hooks '(jabber-presence-watch)
   "Internal hooks run when a user's presence changes.
 
 This hook works just like `jabber-alert-presence-hooks', except that
 it's not meant to be customized by the user.")
+;; jabber-presence-hooks:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-alert-presence-message-function][jabber-alert-presence-message-function:1]]
 (defcustom jabber-alert-presence-message-function
   'jabber-presence-default-message
   "Function for constructing title of presence alert messages.
@@ -4330,7 +4922,9 @@ The provided hooks displaying a text message get it from this function.
 All hooks refrain from action if this function returns nil."
   :type 'function
   :group 'jabber-alerts)
+;; jabber-alert-presence-message-function:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-alert-info-message-hooks][jabber-alert-info-message-hooks:1]]
 (defcustom jabber-alert-info-message-hooks '(jabber-info-display jabber-info-echo)
   "Hooks run when an info request is completed.
 
@@ -4346,13 +4940,17 @@ Third argument is PROPOSED-ALERT, containing the string returned by
 	     jabber-info-switch
 	     jabber-info-display)
   :group 'jabber-alerts)
+;; jabber-alert-info-message-hooks:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-info-message-hooks][jabber-info-message-hooks:1]]
 (defvar jabber-info-message-hooks '()
   "Internal hooks run when an info request is completed.
 
 This hook works just like `jabber-alert-info-message-hooks',
 except that it's not meant to be customized by the user.")
+;; jabber-info-message-hooks:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-alert-info-message-function][jabber-alert-info-message-function:1]]
 (defcustom jabber-alert-info-message-function
   'jabber-info-default-message
   "Function for constructing info alert messages.
@@ -4361,7 +4959,9 @@ Arguments are WHAT, a symbol telling the kind of info request completed,
 and BUFFER, a buffer containing the result."
   :type 'function
   :group 'jabber-alerts)
+;; jabber-alert-info-message-function:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-info-message-alist][jabber-info-message-alist:1]]
 (defcustom jabber-info-message-alist
   '((roster . "Roster display updated")
     (browse . "Browse request completed"))
@@ -4369,48 +4969,64 @@ and BUFFER, a buffer containing the result."
   :type '(alist :key-type symbol :value-type string
 		:options (roster browse))
   :group 'jabber-alerts)
+;; jabber-info-message-alist:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-alert-message-wave][jabber-alert-message-wave:1]]
 (defcustom jabber-alert-message-wave ""
   "A sound file to play when a message arrived.
 See `jabber-alert-message-wave-alist' if you want other sounds
 for specific contacts."
   :type 'file
   :group 'jabber-alerts)
+;; jabber-alert-message-wave:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-alert-message-wave-alist][jabber-alert-message-wave-alist:1]]
 (defcustom jabber-alert-message-wave-alist nil
   "Specific sound files for messages from specific contacts.
 The keys are regexps matching the JID, and the values are sound
 files."
   :type '(alist :key-type regexp :value-type file)
   :group 'jabber-alerts)
+;; jabber-alert-message-wave-alist:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-alert-muc-wave][jabber-alert-muc-wave:1]]
 (defcustom jabber-alert-muc-wave ""
   "A sound file to play when a MUC message arrived."
   :type 'file
   :group 'jabber-alerts)
+;; jabber-alert-muc-wave:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-alert-presence-wave][jabber-alert-presence-wave:1]]
 (defcustom jabber-alert-presence-wave ""
   "A sound file to play when a presence arrived."
   :type 'file
   :group 'jabber-alerts)
+;; jabber-alert-presence-wave:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-alert-presence-wave-alist][jabber-alert-presence-wave-alist:1]]
 (defcustom jabber-alert-presence-wave-alist nil
   "Specific sound files for presence from specific contacts.
 The keys are regexps matching the JID, and the values are sound
 files."
   :type '(alist :key-type regexp :value-type file)
   :group 'jabber-alerts)
+;; jabber-alert-presence-wave-alist:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-alert-info-wave][jabber-alert-info-wave:1]]
 (defcustom jabber-alert-info-wave ""
   "A sound file to play when an info query result arrived."
   :type 'file
   :group 'jabber-alerts)
+;; jabber-alert-info-wave:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-play-sound-file][jabber-play-sound-file:1]]
 (defcustom jabber-play-sound-file 'play-sound-file
   "A function to call to play alert sound files."
   :type 'function
   :group 'jabber-alerts)
+;; jabber-play-sound-file:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*define-jabber-alert][define-jabber-alert:1]]
 (defmacro define-jabber-alert (name docstring function)
   "Define a new family of external alert hooks.
 Use this macro when your hooks do nothing except displaying a string
@@ -4455,13 +5071,17 @@ Examples:
 	   (when text
 	     (funcall ,function text)))
 	 (cl-pushnew (quote ,info) (get 'jabber-alert-info-message-hooks 'custom-options))))))
+;; define-jabber-alert:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*define-jabber-alert][define-jabber-alert:2]]
 ;; Alert hooks
 (define-jabber-alert echo "Show a message in the echo area"
   (lambda (text &optional title) (message "%s" (or title text))))
 (define-jabber-alert beep "Beep on event"
   (lambda (&rest ignore) (beep)))
+;; define-jabber-alert:2 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-message-default-message][jabber-message-default-message:1]]
 ;; Message alert hooks
 (defun jabber-message-default-message (from buffer text)
   (when (or jabber-message-alert-same-buffer
@@ -4471,17 +5091,23 @@ Examples:
 		(jabber-jid-resource from)
 		(jabber-jid-displayname (jabber-jid-user from)))
       (format "Message from %s" (jabber-jid-displayname from)))))
+;; jabber-message-default-message:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-message-alert-same-buffer][jabber-message-alert-same-buffer:1]]
 (defcustom jabber-message-alert-same-buffer t
   "If nil, don't display message alerts for the current buffer."
   :type 'boolean
   :group 'jabber-alerts)
+;; jabber-message-alert-same-buffer:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-alert-self][jabber-muc-alert-self:1]]
 (defcustom jabber-muc-alert-self nil
   "If nil, don't display MUC alerts for your own messages."
   :type 'boolean
   :group 'jabber-alerts)
+;; jabber-muc-alert-self:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-message-wave][jabber-message-wave:1]]
 (defun jabber-message-wave (from buffer text title)
   "Play the wave file specified in `jabber-alert-message-wave'."
   (when title
@@ -4493,17 +5119,23 @@ Examples:
 			   jabber-alert-message-wave)))
       (unless (equal sound-file "")
 	(funcall jabber-play-sound-file sound-file)))))
+;; jabber-message-wave:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-message-display][jabber-message-display:1]]
 (defun jabber-message-display (from buffer text title)
   "Display the buffer where a new message has arrived."
   (when title
     (display-buffer buffer)))
+;; jabber-message-display:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-message-switch][jabber-message-switch:1]]
 (defun jabber-message-switch (from buffer text title)
   "Switch to the buffer where a new message has arrived."
   (when title
     (switch-to-buffer buffer)))
+;; jabber-message-switch:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-message-scroll][jabber-message-scroll:1]]
 (defun jabber-message-scroll (from buffer text title)
   "Scroll all nonselected windows where the chat buffer is displayed."
   ;; jabber-chat-buffer-display will DTRT with point in the buffer.
@@ -4524,7 +5156,9 @@ Examples:
     (dolist (w windows)
       (unless (eq w (selected-window))
 	(set-window-point w new-point-max)))))
+;; jabber-message-scroll:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-default-message][jabber-muc-default-message:1]]
 ;; MUC alert hooks
 (defun jabber-muc-default-message (nick group buffer text)
   (when (or jabber-message-alert-same-buffer
@@ -4535,26 +5169,36 @@ Examples:
 	  (format "Message from %s in %s" nick (jabber-jid-displayname
 						group)))
       (format "Message in %s" (jabber-jid-displayname group)))))
+;; jabber-muc-default-message:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-wave][jabber-muc-wave:1]]
 (defun jabber-muc-wave (nick group buffer text title)
   "Play the wave file specified in `jabber-alert-muc-wave'."
   (when title
     (funcall jabber-play-sound-file jabber-alert-muc-wave)))
+;; jabber-muc-wave:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-display][jabber-muc-display:1]]
 (defun jabber-muc-display (nick group buffer text title)
   "Display the buffer where a new message has arrived."
   (when title
     (display-buffer buffer)))
+;; jabber-muc-display:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-switch][jabber-muc-switch:1]]
 (defun jabber-muc-switch (nick group buffer text title)
   "Switch to the buffer where a new message has arrived."
   (when title
     (switch-to-buffer buffer)))
+;; jabber-muc-switch:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-scroll][jabber-muc-scroll:1]]
 (defun jabber-muc-scroll (nick group buffer text title)
   "Scroll buffer even if it is in an unselected window."
   (jabber-message-scroll nil buffer nil nil))
+;; jabber-muc-scroll:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-presence-default-message][jabber-presence-default-message:1]]
 ;; Presence alert hooks
 (defun jabber-presence-default-message (who oldstatus newstatus statustext)
   "Return a string with the status change if OLDSTATUS and NEWSTATUS differs.
@@ -4584,7 +5228,9 @@ This function is not called directly, but is the default for
 		     (cdr (assoc newstatus jabber-presence-strings))
 		     newstatus)))))
       (concat formattedname formattedstatus)))))
+;; jabber-presence-default-message:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-presence-only-chat-open-message][jabber-presence-only-chat-open-message:1]]
 (defun jabber-presence-only-chat-open-message (who oldstatus newstatus statustext)
   "Same as `jabber-presence-default-message' but managing the presence messages.
 
@@ -4596,7 +5242,9 @@ This function is not called directly, but can be used as the value for
 `jabber-alert-presence-message-function'."
   (when (get-buffer (jabber-chat-get-buffer (jabber-xml-get-attribute xml-data 'from)))
     (jabber-presence-default-message who oldstatus newstatus statustext)))
+;; jabber-presence-only-chat-open-message:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-presence-wave][jabber-presence-wave:1]]
 (defun jabber-presence-wave (who oldstatus newstatus statustext proposed-alert)
   "Play the wave file specified in `jabber-alert-presence-wave'."
   (when proposed-alert
@@ -4608,22 +5256,30 @@ This function is not called directly, but can be used as the value for
 			   jabber-alert-presence-wave)))
       (unless (equal sound-file "")
 	(funcall jabber-play-sound-file sound-file)))))
+;; jabber-presence-wave:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*+jabber-presence-update-roster+][+jabber-presence-update-roster+:1]]
 ;; This is now defined in jabber-roster.el.
 ;; (defun jabber-presence-update-roster (who oldstatus newstatus statustext proposed-alert)
 ;;   "Update the roster display by calling `jabber-display-roster'"
 ;;   (jabber-display-roster))
+;; +jabber-presence-update-roster+:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-presence-display][jabber-presence-display:1]]
 (defun jabber-presence-display (who oldstatus newstatus statustext proposed-alert)
   "Display the roster buffer."
   (when proposed-alert
     (display-buffer jabber-roster-buffer)))
+;; jabber-presence-display:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-presence-switch][jabber-presence-switch:1]]
 (defun jabber-presence-switch (who oldstatus newstatus statustext proposed-alert)
   "Switch to the roster buffer."
   (when proposed-alert
     (switch-to-buffer jabber-roster-buffer)))
+;; jabber-presence-switch:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-info-default-message][jabber-info-default-message:1]]
 (defun jabber-info-default-message (infotype buffer)
   "Function for constructing info alert messages.
 
@@ -4631,22 +5287,30 @@ The argument is INFOTYPE, a symbol telling the kind of info request completed.
 This function uses `jabber-info-message-alist' to find a message."
   (concat (cdr (assq infotype jabber-info-message-alist))
 	  " (buffer "(buffer-name buffer) ")"))
+;; jabber-info-default-message:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-info-wave][jabber-info-wave:1]]
 (defun jabber-info-wave (infotype buffer proposed-alert)
   "Play the wave file specified in `jabber-alert-info-wave'."
   (if proposed-alert
       (funcall jabber-play-sound-file jabber-alert-info-wave)))
+;; jabber-info-wave:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-info-display][jabber-info-display:1]]
 (defun jabber-info-display (infotype buffer proposed-alert)
   "Display buffer of completed request."
   (when proposed-alert
     (display-buffer buffer)))
+;; jabber-info-display:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-info-switch][jabber-info-switch:1]]
 (defun jabber-info-switch (infotype buffer proposed-alert)
   "Switch to buffer of completed request."
   (when proposed-alert
     (switch-to-buffer buffer)))
+;; jabber-info-switch:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*define-personal-jabber-alert][define-personal-jabber-alert:1]]
 ;;; Personal alert hooks
 (defmacro define-personal-jabber-alert (name)
   "From ALERT function, make ALERT-personal function.
@@ -4662,20 +5326,26 @@ NAME: the name of the sender."
              (,name nick group buffer text title)))
        (cl-pushnew (quote ,func) (get 'jabber-alert-muc-hooks 'custom-options)))))
   )
+;; define-personal-jabber-alert:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*define-personal-jabber-alert][define-personal-jabber-alert:2]]
 (define-personal-jabber-alert jabber-muc-beep)
 (define-personal-jabber-alert jabber-muc-wave)
 (define-personal-jabber-alert jabber-muc-echo)
 (define-personal-jabber-alert jabber-muc-switch)
 (define-personal-jabber-alert jabber-muc-display)
+;; define-personal-jabber-alert:2 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-autoanswer-alist][jabber-autoanswer-alist:1]]
 (defcustom jabber-autoanswer-alist nil
   "Specific phrases to autoanswer on specific message.
 The keys are regexps matching the incoming message text, and the values are
 autoanswer phrase."
   :type '(alist :key-type regexp :value-type string)
   :group 'jabber-alerts)
+;; jabber-autoanswer-alist:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-autoanswer-answer][jabber-autoanswer-answer:1]]
 (defun jabber-autoanswer-answer (from buffer text proposed-alert)
   "Answer automaticaly when incoming text is in `jabber-autoanswer-alist'.
 Answer automaticaly when incoming text match the first element of
@@ -4689,7 +5359,9 @@ Answer automaticaly when incoming text match the first element of
           (jabber-chat-send jabber-buffer-connection message)))
     ))
 (cl-pushnew 'jabber-autoanswer-answer (get 'jabber-alert-message-hooks 'custom-options))
+;; jabber-autoanswer-answer:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-autoanswer-answer-muc][jabber-autoanswer-answer-muc:1]]
 (defun jabber-autoanswer-answer-muc (nick group buffer text proposed-alert)
   "Answer automaticaly when incoming text is in `jabber-autoanswer-alist'.
 Answer automaticaly when incoming text match first element
@@ -4703,36 +5375,48 @@ of `jabber-autoanswer-alist'."
           (jabber-chat-send jabber-buffer-connection message)))
     ))
 (cl-pushnew 'jabber-autoanswer-answer-muc (get 'jabber-alert-muc-hooks 'custom-options))
+;; jabber-autoanswer-answer-muc:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-history][jabber-history:1]]
 (defgroup jabber-history nil "Customization options for Emacs
 Jabber history files."
   :group 'jabber)
+;; jabber-history:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-history-enabled][jabber-history-enabled:1]]
 (defcustom jabber-history-enabled nil
   "Non-nil means message logging is enabled."
   :type 'boolean
   :group 'jabber-history)
+;; jabber-history-enabled:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-history-muc-enabled][jabber-history-muc-enabled:1]]
 (defcustom jabber-history-muc-enabled nil
   "Non-nil means MUC logging is enabled.
 Default is nil, cause MUC logging may be i/o-intensive."
   :type 'boolean
   :group 'jabber-history)
+;; jabber-history-muc-enabled:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-history-dir][jabber-history-dir:1]]
 (defcustom jabber-history-dir
   (locate-user-emacs-file "jabber-history" ".emacs-jabber")
   "Base directory where per-contact history files are stored.
 Used only when `jabber-use-global-history' is nil."
   :type 'directory
   :group 'jabber-history)
+;; jabber-history-dir:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-global-history-filename][jabber-global-history-filename:1]]
 (defcustom jabber-global-history-filename
   (locate-user-emacs-file "jabber-global-message-log" ".jabber_global_message_log")
   "Global file where all messages are logged.
 Used when `jabber-use-global-history' is non-nil."
   :type 'file
   :group 'jabber-history)
+;; jabber-global-history-filename:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-use-global-history][jabber-use-global-history:1]]
 (defcustom jabber-use-global-history
   ;; Using a global history file by default was a bad idea.  Let's
   ;; default to per-user files unless the global history file already
@@ -4744,7 +5428,9 @@ messages are stored in per-user files under the
 `jabber-history-dir' directory."
   :type 'boolean
   :group 'jabber-history)
+;; jabber-use-global-history:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-history-enable-rotation][jabber-history-enable-rotation:1]]
 (defcustom jabber-history-enable-rotation nil
   "Whether history files should be renamed when reach certain kilobytes.
 Whether history files should be renamed when reach
@@ -4754,7 +5440,9 @@ will grow indefinitely, otherwise they'll be renamed to
 number after the last rotation."
   :type 'boolean
   :group 'jabber-history)
+;; jabber-history-enable-rotation:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-history-size-limit][jabber-history-size-limit:1]]
 (defcustom jabber-history-size-limit 1024
   "Maximum history file size in kilobytes.
 When history file reaches this limit, it is renamed to
@@ -4762,28 +5450,36 @@ When history file reaches this limit, it is renamed to
 number after the last rotation."
   :type 'integer
   :group 'jabber-history)
+;; jabber-history-size-limit:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-history-inhibit-received-message-functions][jabber-history-inhibit-received-message-functions:1]]
 (defvar jabber-history-inhibit-received-message-functions nil
   "Functions determining whether to log an incoming message stanza.
 The functions in this list are called with two arguments,
 the connection and the full message stanza.
 If any of the functions returns non-nil, the stanza is not logged
 in the message history.")
+;; jabber-history-inhibit-received-message-functions:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-rotate-history-p][jabber-rotate-history-p:1]]
 (defun jabber-rotate-history-p (history-file)
   "Return non-nil if HISTORY-FILE should be rotated."
   (when (and jabber-history-enable-rotation
 	     (file-exists-p history-file))
     (> (/ (nth 7 (file-attributes history-file)) 1024)
        jabber-history-size-limit)))
+;; jabber-rotate-history-p:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-history-rotate][jabber-history-rotate:1]]
 (defun jabber-history-rotate (history-file &optional try)
   "Rename HISTORY-FILE to HISTORY-FILE-TRY."
   (let ((suffix (number-to-string (or try 1))))
     (if (file-exists-p (concat history-file "-"  suffix))
 	(jabber-history-rotate history-file (if try (1+ try) 1))
       (rename-file history-file (concat history-file "-" suffix)))))
+;; jabber-history-rotate:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-message-history][jabber-message-history:1]]
 (add-to-list 'jabber-message-chain 'jabber-message-history)
 (defun jabber-message-history (jc xml-data)
   "Log message to log file.
@@ -4808,9 +5504,13 @@ obtained from `xml-parse-region'."
 	      (timestamp (jabber-message-timestamp xml-data)))
 	  (when (and from text)
 	    (jabber-history-log-message "in" from nil text timestamp)))))))
+;; jabber-message-history:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-message-history][jabber-message-history:2]]
 (add-hook 'jabber-chat-send-hooks 'jabber-history-send-hook)
+;; jabber-message-history:2 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-history-send-hook][jabber-history-send-hook:1]]
 (defun jabber-history-send-hook (body id)
   "Log outgoing message to log file."
   (when (and (not jabber-use-global-history)
@@ -4820,7 +5520,9 @@ obtained from `xml-parse-region'."
   ;; contains the desired value.
   (if jabber-history-enabled
       (jabber-history-log-message "out" nil jabber-chatting-with body (current-time))))
+;; jabber-history-send-hook:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-history-filename][jabber-history-filename:1]]
 (defun jabber-history-filename (contact)
   "Return a history filename for CONTACT.
 Return a history filename for CONTACT if the per-user file
@@ -4830,7 +5532,9 @@ loggin strategy is used or the global history filename."
     ;; jabber-jid-symbol is the best canonicalization we have.
     (concat jabber-history-dir
 	    "/" (symbol-name (jabber-jid-symbol contact)))))
+;; jabber-history-filename:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-history-log-message][jabber-history-log-message:1]]
 (defun jabber-history-log-message (direction from to body timestamp)
   "Log a message."
   (with-temp-buffer
@@ -4865,7 +5569,9 @@ loggin strategy is used or the global history filename."
 	  (write-region (point-min) (point-max) history-file t 'quiet)
 	(error
 	 (message "Unable to write history: %s" (error-message-string e)))))))
+;; jabber-history-log-message:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-history-query][jabber-history-query:1]]
 (defun jabber-history-query (start-time
 			     end-time
 			     number
@@ -4938,18 +5644,24 @@ of the log file."
 	      (when (bobp)
 		(throw 'beginning-of-file nil))))
 	collected))))
+;; jabber-history-query:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-backlog-days][jabber-backlog-days:1]]
 (defcustom jabber-backlog-days 3.0
   "Age limit on messages in chat buffer backlog, in days."
   :group 'jabber
   :type '(choice (number :tag "Number of days")
 		 (const :tag "No limit" nil)))
+;; jabber-backlog-days:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-backlog-number][jabber-backlog-number:1]]
 (defcustom jabber-backlog-number 10
   "Maximum number of messages in chat buffer backlog."
   :group 'jabber
   :type 'integer)
+;; jabber-backlog-number:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-history-backlog][jabber-history-backlog:1]]
 (defun jabber-history-backlog (jid &optional before)
   "Fetch context from previous chats with JID.
 Return a list of history entries (vectors), limited by
@@ -4965,7 +5677,9 @@ applies, though."
    t					; both incoming and outgoing
    (concat "^" (regexp-quote (jabber-jid-user jid)) "\\(/.*\\)?$")
    (jabber-history-filename jid)))
+;; jabber-history-backlog:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-history-move-to-per-user][jabber-history-move-to-per-user:1]]
 (defun jabber-history-move-to-per-user ()
   "Migrate global history to per-user files."
   (interactive)
@@ -5007,34 +5721,48 @@ applies, though."
 	  (let ((history-file (jabber-history-filename current-jid)))
 	    (write-region jid-start (point-max) history-file t 'quiet))))))
   (message "Done.  Please change `jabber-use-global-history' now."))
+;; jabber-history-move-to-per-user:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-point-insert][jabber-point-insert:1]]
 (defvar jabber-point-insert nil
   "Position where the message being composed starts.")
+;; jabber-point-insert:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-send-function][jabber-send-function:1]]
 (defvar jabber-send-function nil
   "Function for sending a message from a chat buffer.")
+;; jabber-send-function:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-chat-mode-hook][jabber-chat-mode-hook:1]]
 (defvar jabber-chat-mode-hook nil
   "Hook called at the end of `jabber-chat-mode'.
 Note that functions in this hook have no way of knowing
 what kind of chat buffer is being created.")
+;; jabber-chat-mode-hook:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-chat-fill-long-lines][jabber-chat-fill-long-lines:1]]
 (defcustom jabber-chat-fill-long-lines t
   "If non-nil, fill long lines in chat buffers.
 Lines are broken at word boundaries at the width of the
 window or at `fill-column', whichever is shorter."
   :group 'jabber-chat
   :type 'boolean)
+;; jabber-chat-fill-long-lines:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-chat-ewoc][jabber-chat-ewoc:1]]
 (defvar jabber-chat-ewoc nil
   "The ewoc showing the messages of this chat buffer.")
+;; jabber-chat-ewoc:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-buffer-connection][jabber-buffer-connection:1]]
 ;;;###autoload
 (defvar jabber-buffer-connection nil
   "The connection used by this buffer.")
 ;;;###autoload
 (make-variable-buffer-local 'jabber-buffer-connection)
+;; jabber-buffer-connection:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-chat-mode][jabber-chat-mode:1]]
 (defun jabber-chat-mode (jc ewoc-pp)
   "Jabber chat mode.
 \\{jabber-chat-mode-map}
@@ -5071,7 +5799,9 @@ JC is the Jabber connection."
   (if (fboundp 'run-mode-hooks)
       (run-mode-hooks 'jabber-chat-mode-hook)
     (run-hooks 'jabber-chat-mode-hook)))
+;; jabber-chat-mode:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-chat-mode-flyspell-verify][jabber-chat-mode-flyspell-verify:1]]
 (put 'jabber-chat-mode 'mode-class 'special)
 
 ;; Spell check only what you're currently writing
@@ -5079,13 +5809,17 @@ JC is the Jabber connection."
   (>= (point) jabber-point-insert))
 (put 'jabber-chat-mode 'flyspell-mode-predicate
   'jabber-chat-mode-flyspell-verify)
+;; jabber-chat-mode-flyspell-verify:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-chat-mode-map][jabber-chat-mode-map:1]]
 (defvar jabber-chat-mode-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map jabber-common-keymap)
     (define-key map "\r" 'jabber-chat-buffer-send)
     map))
+;; jabber-chat-mode-map:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-chat-buffer-send][jabber-chat-buffer-send:1]]
 (defun jabber-chat-buffer-send ()
   (interactive)
   ;; If user accidentally hits RET without writing anything, just
@@ -5103,7 +5837,9 @@ JC is the Jabber connection."
 
     (let ((body (delete-and-extract-region jabber-point-insert (point-max))))
       (funcall jabber-send-function jabber-buffer-connection body))))
+;; jabber-chat-buffer-send:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-chat-buffer-fill-long-lines][jabber-chat-buffer-fill-long-lines:1]]
 (defun jabber-chat-buffer-fill-long-lines ()
   "Fill lines that are wider than the window width."
   ;; This was mostly stolen from article-fill-long-lines
@@ -5123,7 +5859,9 @@ JC is the Jabber connection."
 		(fill-paragraph nil)
 		(goto-char (marker-position goback)))))
 	  (forward-line 1))))))
+;; jabber-chat-buffer-fill-long-lines:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-compose][jabber-compose:1]]
 ;;;###autoload
 (defun jabber-compose (jc &optional recipient)
   "Create a buffer for composing a Jabber message.
@@ -5168,7 +5906,9 @@ JC is the Jabber connection."
 
     (switch-to-buffer (current-buffer))
     (goto-char (point-min))))
+;; jabber-compose:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-compose-send][jabber-compose-send:1]]
 (defun jabber-compose-send (&rest ignore)
   (let ((recipients (widget-value (cdr (assq :recipients jabber-widget-alist))))
 	(subject (widget-value (cdr (assq :subject jabber-widget-alist))))
@@ -5181,12 +5921,18 @@ JC is the Jabber connection."
 
     (bury-buffer)
     (message "Message sent")))
+;; jabber-compose-send:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*One-to-one chats][One-to-one chats:1]]
 (require 'ewoc)
+;; One-to-one chats:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-chat][jabber-chat:1]]
 (defgroup jabber-chat nil "chat display options"
   :group 'jabber)
+;; jabber-chat:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-chat-buffer-format][jabber-chat-buffer-format:1]]
 (defcustom jabber-chat-buffer-format "*-jabber-chat-%n-*"
   "The format specification for the name of chat buffers.
 
@@ -5198,7 +5944,9 @@ with):
 %r   Resource"
   :type 'string
   :group 'jabber-chat)
+;; jabber-chat-buffer-format:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-chat-header-line-format][jabber-chat-header-line-format:1]]
 (defcustom jabber-chat-header-line-format
   '("" (jabber-chat-buffer-show-avatar
 	(:eval
@@ -5222,14 +5970,18 @@ with):
 The format is that of `mode-line-format' and `header-line-format'."
   :type 'sexp
   :group 'jabber-chat)
+;; jabber-chat-header-line-format:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-chat-buffer-show-avatar][jabber-chat-buffer-show-avatar:1]]
 (defcustom jabber-chat-buffer-show-avatar t
   "Show avatars in header line of chat buffer?
 This variable might not take effect if you have changed
 `jabber-chat-header-line-format'."
   :type 'boolean
   :group 'jabber-chat)
+;; jabber-chat-buffer-show-avatar:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-chat-time-format][jabber-chat-time-format:1]]
 (defcustom jabber-chat-time-format "%H:%M"
   "The format specification for instant messages in the chat buffer.
 See also `jabber-chat-delayed-time-format'.
@@ -5237,7 +5989,9 @@ See also `jabber-chat-delayed-time-format'.
 See `format-time-string' for valid values."
   :type 'string
   :group 'jabber-chat)
+;; jabber-chat-time-format:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-chat-delayed-time-format][jabber-chat-delayed-time-format:1]]
 (defcustom jabber-chat-delayed-time-format "%Y-%m-%d %H:%M"
   "The format specification for delayed messages in the chat buffer.
 See also `jabber-chat-time-format'.
@@ -5245,13 +5999,17 @@ See also `jabber-chat-time-format'.
 See `format-time-string' for valid values."
   :type 'string
   :group 'jabber-chat)
+;; jabber-chat-delayed-time-format:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-print-rare-time][jabber-print-rare-time:1]]
 (defcustom jabber-print-rare-time t
   "Non-nil means to print \"rare time\" indications in chat buffers.
 The default settings tell every new hour."
   :type 'boolean
   :group 'jabber-chat)
+;; jabber-print-rare-time:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-rare-time-format][jabber-rare-time-format:1]]
 (defcustom jabber-rare-time-format "%a %e %b %Y %H:00"
   "The format specification for the rare time information.
 Rare time information will be printed whenever the current time,
@@ -5259,12 +6017,16 @@ formatted according to this string, is different to the last
 rare time printed."
   :type 'string
   :group 'jabber-chat)
+;; jabber-rare-time-format:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-rare-time-face][jabber-rare-time-face:1]]
 (defface jabber-rare-time-face
   '((t (:foreground "darkgreen" :underline t)))
   "face for displaying the rare time info"
   :group 'jabber-chat)
+;; jabber-rare-time-face:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-chat-local-prompt-format][jabber-chat-local-prompt-format:1]]
 (defcustom jabber-chat-local-prompt-format "[%t] %n> "
   "The format specification for lines you type in the chat buffer.
 
@@ -5278,7 +6040,9 @@ These fields are available:
 %j   Bare JID (without resource)"
   :type 'string
   :group 'jabber-chat)
+;; jabber-chat-local-prompt-format:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-chat-foreign-prompt-format][jabber-chat-foreign-prompt-format:1]]
 (defcustom jabber-chat-foreign-prompt-format "[%t] %n> "
   "The format specification for lines others type in the chat buffer.
 
@@ -5292,44 +6056,62 @@ These fields are available:
 %j   Bare JID (without resource)"
   :type 'string
   :group 'jabber-chat)
+;; jabber-chat-foreign-prompt-format:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-chat-system-prompt-format][jabber-chat-system-prompt-format:1]]
 (defcustom jabber-chat-system-prompt-format "[%t] *** "
   "The format specification for lines from the system or that are special in the chat buffer."
   :type 'string
   :group 'jabber-chat)
+;; jabber-chat-system-prompt-format:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-chat-prompt-local][jabber-chat-prompt-local:1]]
 (defface jabber-chat-prompt-local
   '((t (:foreground "blue" :weight bold)))
   "face for displaying the chat prompt for what you type in"
   :group 'jabber-chat)
+;; jabber-chat-prompt-local:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-chat-prompt-foreign][jabber-chat-prompt-foreign:1]]
 (defface jabber-chat-prompt-foreign
   '((t (:foreground "red" :weight bold)))
   "face for displaying the chat prompt for what they send"
   :group 'jabber-chat)
+;; jabber-chat-prompt-foreign:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-chat-prompt-system][jabber-chat-prompt-system:1]]
 (defface jabber-chat-prompt-system
   '((t (:foreground "green" :weight bold)))
   "face used for system and special messages"
   :group 'jabber-chat)
+;; jabber-chat-prompt-system:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-chat-text-local][jabber-chat-text-local:1]]
 (defface jabber-chat-text-local '((t ()))
   "Face used for text you write"
   :group 'jabber-chat)
+;; jabber-chat-text-local:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-chat-text-foreign][jabber-chat-text-foreign:1]]
 (defface jabber-chat-text-foreign '((t ()))
   "Face used for text others write"
   :group 'jabber-chat)
+;; jabber-chat-text-foreign:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-chat-error][jabber-chat-error:1]]
 (defface jabber-chat-error
   '((t (:foreground "red" :weight bold)))
   "Face used for error messages"
   :group 'jabber-chat)
+;; jabber-chat-error:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-chatting-with][jabber-chatting-with:1]]
 ;;;###autoload
 (defvar jabber-chatting-with nil
   "JID of the person you are chatting with.")
+;; jabber-chatting-with:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-chat-printers][jabber-chat-printers:1]]
 (defvar jabber-chat-printers '(jabber-chat-print-subject
 			       jabber-chat-print-body
 			       jabber-chat-print-url
@@ -5341,7 +6123,9 @@ XML-DATA   The entire message stanza
 WHO        :local or :foreign, for sent or received stanza, respectively
 MODE       :insert or :printp.  For :insert, insert text at point.
            For :printp, return non-nil if function would insert text.")
+;; jabber-chat-printers:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-body-printers][jabber-body-printers:1]]
 (defvar jabber-body-printers '(jabber-chat-normal-body)
   "List of functions that may be able to print a body for a message.
 Each function receives these arguments:
@@ -5356,7 +6140,9 @@ non-nil.
 
 Add a function to the beginning of this list if the tag it handles
 replaces the contents of the <body/> tag.")
+;; jabber-body-printers:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-chat-send-hooks][jabber-chat-send-hooks:1]]
 (defvar jabber-chat-send-hooks nil
   "List of functions called when a chat message is sent.
 The arguments are the text to send, and the id attribute of the
@@ -5364,11 +6150,15 @@ message.
 
 The functions should return a list of XML nodes they want to be
 added to the outgoing message.")
+;; jabber-chat-send-hooks:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-chat-earliest-backlog][jabber-chat-earliest-backlog:1]]
 (defvar jabber-chat-earliest-backlog nil
   "Float-time of earliest backlog entry inserted into buffer.
 nil if no backlog has been inserted.")
+;; jabber-chat-earliest-backlog:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-chat-get-buffer][jabber-chat-get-buffer:1]]
 ;;;###autoload
 (defun jabber-chat-get-buffer (chat-with)
   "Return the chat buffer for chatting with CHAT-WITH (bare or full JID).
@@ -5379,7 +6169,9 @@ Either a string or a buffer is returned, so use `get-buffer' or
 		(cons ?n (jabber-jid-displayname chat-with))
 		(cons ?j (jabber-jid-user chat-with))
 		(cons ?r (or (jabber-jid-resource chat-with) "")))))
+;; jabber-chat-get-buffer:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-chat-create-buffer][jabber-chat-create-buffer:1]]
 (defun jabber-chat-create-buffer (jc chat-with)
   "Prepare a buffer for chatting with CHAT-WITH.
 This function is idempotent.
@@ -5409,7 +6201,9 @@ JC is the Jabber connection."
     (setq jabber-buffer-connection jc)
 
     (current-buffer)))
+;; jabber-chat-create-buffer:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-chat-insert-backlog-entry][jabber-chat-insert-backlog-entry:1]]
 (defun jabber-chat-insert-backlog-entry (msg)
   "Insert backlog entry MSG at beginning of buffer."
   ;; Rare timestamps are especially important in backlog.  We risk
@@ -5433,10 +6227,14 @@ JC is the Jabber connection."
       (ewoc-enter-first jabber-chat-ewoc node-data)
       (when jabber-print-rare-time
 	(ewoc-enter-first jabber-chat-ewoc (list :rare-time message-time))))))
+;; jabber-chat-insert-backlog-entry:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-chat-insert-backlog-entry][jabber-chat-insert-backlog-entry:2]]
 (add-to-list 'jabber-jid-chat-menu
 	     (cons "Display more context" 'jabber-chat-display-more-backlog))
+;; jabber-chat-insert-backlog-entry:2 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-chat-display-more-backlog][jabber-chat-display-more-backlog:1]]
 (defun jabber-chat-display-more-backlog (how-many)
   "Display more context.  HOW-MANY is number of messages.  Specify 0 to display all messages."
   (interactive "nHow many more messages (Specify 0 to display all)? ")
@@ -5452,16 +6250,22 @@ JC is the Jabber connection."
       (save-excursion
 	(goto-char (point-min))
 	(mapc 'jabber-chat-insert-backlog-entry (nreverse backlog-entries))))))
+;; jabber-chat-display-more-backlog:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-chat-display-more-backlog][jabber-chat-display-more-backlog:2]]
 (add-to-list 'jabber-message-chain 'jabber-process-chat)
+;; jabber-chat-display-more-backlog:2 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-get-forwarded-message][jabber-get-forwarded-message:1]]
 (defun jabber-get-forwarded-message (xml-data)
   (let* ((sent (car (jabber-xml-get-children xml-data 'sent)))
          (forwarded (car (jabber-xml-get-children sent 'forwarded)))
          (forwarded-message (car (jabber-xml-get-children forwarded 'message))))
     (when forwarded-message
       forwarded-message)))
+;; jabber-get-forwarded-message:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-process-chat][jabber-process-chat:1]]
 (defun jabber-process-chat (jc xml-data)
   "If XML-DATA is a one-to-one chat message, handle it as such.
 JC is the Jabber connection."
@@ -5508,7 +6312,9 @@ JC is the Jabber connection."
 				  from (current-buffer) body-text
 				  (funcall jabber-alert-message-function
 					   from (current-buffer) body-text)))))))))
+;; jabber-process-chat:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-chat-send][jabber-chat-send:1]]
 (defun jabber-chat-send (jc body)
   "Send BODY through connection JC, and display it in chat buffer.
 JC is the Jabber connection."
@@ -5536,7 +6342,9 @@ JC is the Jabber connection."
        (ewoc-enter-last jabber-chat-ewoc (list :local stanza-to-send :time (current-time)))))
     ;; ...and send it...
     (jabber-send-sexp jc stanza-to-send)))
+;; jabber-chat-send:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-chat-pp][jabber-chat-pp:1]]
 (defun jabber-chat-pp (data)
   "Pretty-print a <message/> stanza.
 \(car data) is either :local, :foreign, :error or :notice.
@@ -5624,12 +6432,16 @@ This function is used as an ewoc prettyprinter."
     (put-text-property beg (point) 'read-only t)
     (put-text-property beg (point) 'front-sticky t)
     (put-text-property beg (point) 'rear-nonsticky t)))
+;; jabber-chat-pp:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-rare-time-needed][jabber-rare-time-needed:1]]
 (defun jabber-rare-time-needed (time1 time2)
   "Return non-nil if a timestamp should be printed between TIME1 and TIME2."
   (not (string= (format-time-string jabber-rare-time-format time1)
 		(format-time-string jabber-rare-time-format time2))))
+;; jabber-rare-time-needed:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-maybe-print-rare-time][jabber-maybe-print-rare-time:1]]
 (defun jabber-maybe-print-rare-time (node)
   "Print rare time before NODE, if appropriate."
   (let* ((prev (ewoc-prev jabber-chat-ewoc node))
@@ -5645,7 +6457,9 @@ This function is used as an ewoc prettyprinter."
 					      (entry-time data))))
 	(ewoc-enter-before jabber-chat-ewoc node
 			   (list :rare-time (entry-time data)))))))
+;; jabber-maybe-print-rare-time:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-chat-print-prompt][jabber-chat-print-prompt:1]]
 (defun jabber-chat-print-prompt (xml-data timestamp delayed dont-print-nick-p)
   "Print prompt for received message in XML-DATA.
 TIMESTAMP is the timestamp to print, or nil to get it
@@ -5671,7 +6485,9 @@ If DONT-PRINT-NICK-P is non-nil, don't include nickname."
 	     'face 'jabber-chat-prompt-foreign
 	     'help-echo
 	     (concat (format-time-string "On %Y-%m-%d %H:%M:%S" timestamp) " from " from)))))
+;; jabber-chat-print-prompt:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-chat-system-prompt][jabber-chat-system-prompt:1]]
 (defun jabber-chat-system-prompt (timestamp)
   (insert (jabber-propertize
 	   (format-spec jabber-chat-foreign-prompt-format
@@ -5685,7 +6501,9 @@ If DONT-PRINT-NICK-P is non-nil, don't include nickname."
 	   'face 'jabber-chat-prompt-system
 	   'help-echo
 	   (concat (format-time-string "System message on %Y-%m-%d %H:%M:%S" timestamp)))))
+;; jabber-chat-system-prompt:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-chat-self-prompt][jabber-chat-self-prompt:1]]
 (defun jabber-chat-self-prompt (timestamp delayed dont-print-nick-p)
   "Print prompt for sent message.
 TIMESTAMP is the timestamp to print, or nil for now.
@@ -5713,7 +6531,9 @@ If DONT-PRINT-NICK-P is non-nil, don't include nickname."
 	     'face 'jabber-chat-prompt-local
 	     'help-echo
 	     (concat (format-time-string "On %Y-%m-%d %H:%M:%S" timestamp) " from you")))))
+;; jabber-chat-self-prompt:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-chat-print-error][jabber-chat-print-error:1]]
 (defun jabber-chat-print-error (xml-data)
   "Print error in given <message/> in a readable way.
 
@@ -5724,7 +6544,9 @@ obtained from `xml-parse-region'."
      (jabber-propertize
       (concat "Error: " (jabber-parse-error the-error))
       'face 'jabber-chat-error))))
+;; jabber-chat-print-error:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-chat-print-subject][jabber-chat-print-subject:1]]
 (defun jabber-chat-print-subject (xml-data who mode)
   "Print subject of given <message/>, if any.
 
@@ -5745,10 +6567,14 @@ obtained from `xml-parse-region'."
 		  subject
 		  'face 'jabber-chat-text-foreign)
 		 "\n"))))))
+;; jabber-chat-print-subject:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-chat-print-body][jabber-chat-print-body:1]]
 (defun jabber-chat-print-body (xml-data who mode)
   (run-hook-with-args-until-success 'jabber-body-printers xml-data who mode))
+;; jabber-chat-print-body:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-chat-normal-body][jabber-chat-normal-body:1]]
 (defun jabber-chat-normal-body (xml-data who mode)
   "Print body for received message in XML-DATA."
   (let ((body (car
@@ -5780,7 +6606,9 @@ obtained from `xml-parse-region'."
 			   ((:foreign :muc-foreign) 'jabber-chat-text-foreign)
 			   ((:local :muc-local) 'jabber-chat-text-local))))))
       t)))
+;; jabber-chat-normal-body:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-chat-print-url][jabber-chat-print-url:1]]
 (defun jabber-chat-print-url (xml-data who mode)
   "Print URLs provided in jabber:x:oob namespace.
 
@@ -5802,7 +6630,9 @@ obtained from `xml-parse-region'."
 		     "URL: " 'face 'jabber-chat-prompt-system)
                     (format "%s <%s>" desc url))))))
     foundp))
+;; jabber-chat-print-url:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-chat-goto-address][jabber-chat-goto-address:1]]
 (defun jabber-chat-goto-address (xml-data who mode)
   "Call `goto-address' on the newly written text.
 
@@ -5819,7 +6649,9 @@ obtained from `xml-parse-region'."
 
 (add-to-list 'jabber-jid-chat-menu
 	     (cons "Compose message" 'jabber-compose))
+;; jabber-chat-goto-address:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-send-message][jabber-send-message:1]]
 (defun jabber-send-message (jc to subject body type)
   "Send a message tag to the server.
 JC is the Jabber connection."
@@ -5838,10 +6670,14 @@ JC is the Jabber connection."
                                    `(body () ,body))))
   (if (and jabber-history-enabled (not (string= type "groupchat")))
       (jabber-history-log-message "out" nil to body (current-time))))
+;; jabber-send-message:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-send-message][jabber-send-message:2]]
 (add-to-list 'jabber-jid-chat-menu
 	     (cons "Start chat" 'jabber-chat-with))
+;; jabber-send-message:2 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-chat-with][jabber-chat-with:1]]
 (defun jabber-chat-with (jc jid &optional other-window)
   "Open an empty chat window for chatting with JID.
 With a prefix argument, open buffer in other window.
@@ -5857,7 +6693,9 @@ JC is the Jabber connection."
     (if other-window
 	(switch-to-buffer-other-window buffer)
       (switch-to-buffer buffer))))
+;; jabber-chat-with:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-chat-with-jid-at-point][jabber-chat-with-jid-at-point:1]]
 (defun jabber-chat-with-jid-at-point (&optional other-window)
   "Start chat with JID at point.
 Signal an error if there is no JID at point.
@@ -5870,16 +6708,22 @@ With a prefix argument, open buffer in other window."
     (if (and jid-at-point account)
 	(jabber-chat-with account jid-at-point other-window)
       (error "No contact at point"))))
+;; jabber-chat-with-jid-at-point:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-presence-element-functions][jabber-presence-element-functions:1]]
 (defvar jabber-presence-element-functions nil
   "List of functions returning extra elements for <presence/> stanzas.
 Each function takes one argument, the connection, and returns a
 possibly empty list of extra child element of the <presence/>
 stanza.")
+;; jabber-presence-element-functions:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-presence-history][jabber-presence-history:1]]
 (defvar jabber-presence-history ()
   "Keeps track of previously used presence status types.")
+;; jabber-presence-history:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-process-roster][jabber-process-roster:1]]
 (add-to-list 'jabber-iq-set-xmlns-alist
 	     (cons "jabber:iq:roster" (function (lambda (jc x) (jabber-process-roster jc x nil)))))
 (defun jabber-process-roster (jc xml-data closure-data)
@@ -5968,7 +6812,9 @@ obtained from `xml-parse-region'."
   ;; before we receive any presence stanzas.
   (when (eq closure-data 'initial)
     (run-hook-with-args 'jabber-post-connect-hooks jc)))
+;; jabber-process-roster:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-initial-roster-failure][jabber-initial-roster-failure:1]]
 (defun jabber-initial-roster-failure (jc xml-data _closure-data)
   "Report the initial roster failure.
 If the initial roster request fails, let's report it, but run
@@ -5980,7 +6826,9 @@ XML-DATA is the parsed tree data from the stream (stanzas)
 obtained from `xml-parse-region'."
   (jabber-report-success jc xml-data "Initial roster retrieval")
   (run-hook-with-args 'jabber-post-connect-hooks jc))
+;; jabber-initial-roster-failure:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-process-presence][jabber-process-presence:1]]
 (add-to-list 'jabber-presence-chain 'jabber-process-presence)
 (defun jabber-process-presence (jc xml-data)
   "Process incoming presence tags.
@@ -6090,7 +6938,9 @@ obtained from `xml-parse-region'."
 					     oldstatus
 					     newstatus
 					     (plist-get resource-plist 'status)))))))))))
+;; jabber-process-presence:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-process-subscription-request][jabber-process-subscription-request:1]]
 (defun jabber-process-subscription-request (jc from presence-status)
   "Process an incoming subscription request.
 JC is the Jabber connection."
@@ -6099,24 +6949,34 @@ JC is the Jabber connection."
 
     (dolist (hook '(jabber-presence-hooks jabber-alert-presence-hooks))
       (run-hook-with-args hook (jabber-jid-symbol from) nil "subscribe" presence-status (funcall jabber-alert-presence-message-function (jabber-jid-symbol from) nil "subscribe" presence-status)))))
+;; jabber-process-subscription-request:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-subscription-accept-mutual][jabber-subscription-accept-mutual:1]]
 (defun jabber-subscription-accept-mutual (&rest ignored)
   (message "Subscription accepted; reciprocal subscription request sent")
   (jabber-subscription-reply "subscribed" "subscribe"))
+;; jabber-subscription-accept-mutual:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-subscription-accept-one-way][jabber-subscription-accept-one-way:1]]
 (defun jabber-subscription-accept-one-way (&rest ignored)
   (message "Subscription accepted")
   (jabber-subscription-reply "subscribed"))
+;; jabber-subscription-accept-one-way:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-subscription-decline][jabber-subscription-decline:1]]
 (defun jabber-subscription-decline (&rest ignored)
   (message "Subscription declined")
   (jabber-subscription-reply "unsubscribed"))
+;; jabber-subscription-decline:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-subscription-reply][jabber-subscription-reply:1]]
 (defun jabber-subscription-reply (&rest types)
   (let ((to (jabber-jid-user jabber-chatting-with)))
     (dolist (type types)
       (jabber-send-sexp jabber-buffer-connection `(presence ((to . ,to) (type . ,type)))))))
+;; jabber-subscription-reply:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-prioritize-resources][jabber-prioritize-resources:1]]
 (defun jabber-prioritize-resources (buddy)
   "Set connected, show and status properties for BUDDY.
 Show status properties from highest-priority resource."
@@ -6149,7 +7009,9 @@ Show status properties from highest-priority resource."
 		    (if (plist-get resource-plist 'show)
 			(put buddy 'show (plist-get resource-plist 'show)))))))
 	  resource-alist)))
+;; jabber-prioritize-resources:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-count-connected-resources][jabber-count-connected-resources:1]]
 (defun jabber-count-connected-resources (buddy)
   "Return the number of connected resources for BUDDY."
   (let ((resource-alist (get buddy 'resources))
@@ -6158,7 +7020,9 @@ Show status properties from highest-priority resource."
       (if (plist-get (cdr resource) 'connected)
 	  (setq count (1+ count))))
     count))
+;; jabber-count-connected-resources:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-send-presence][jabber-send-presence:1]]
 ;;;###autoload
 (defun jabber-send-presence (show status priority)
   "Set presence for all accounts."
@@ -6198,7 +7062,9 @@ Show status properties from highest-priority resource."
 			 ,@subelements))))))
 
   (jabber-display-roster))
+;; jabber-send-presence:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-presence-children][jabber-presence-children:1]]
 (defun jabber-presence-children (jc)
   "Return the children for a <presence/> stanza.
 JC is the Jabber connection."
@@ -6211,7 +7077,9 @@ JC is the Jabber connection."
     ,@(apply 'append (mapcar (lambda (f)
 			       (funcall f jc))
 			     jabber-presence-element-functions))))
+;; jabber-presence-children:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-send-directed-presence][jabber-send-directed-presence:1]]
 (defun jabber-send-directed-presence (jc jid type)
   "Send a directed presence stanza to JID.
 TYPE is one of:
@@ -6264,7 +7132,9 @@ JC is the Jabber connection."
 	  (*jabber-current-status* nil))
       (jabber-send-sexp jc `(presence ((to . ,jid))
 				      ,@(jabber-presence-children jc)))))))
+;; jabber-send-directed-presence:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-send-away-presence][jabber-send-away-presence:1]]
 (defun jabber-send-away-presence (&optional status)
   "Set status to away.
 With prefix argument, ask for status message."
@@ -6275,7 +7145,9 @@ With prefix argument, ask for status message."
        "status message: " *jabber-current-status* '*jabber-status-history*))))
   (jabber-send-presence "away" (if status status *jabber-current-status*)
 			*jabber-current-priority*))
+;; jabber-send-away-presence:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-send-xa-presence][jabber-send-xa-presence:1]]
 ;; XXX code duplication!
 (defun jabber-send-xa-presence (&optional status)
   "Send extended away presence.
@@ -6287,7 +7159,9 @@ With prefix argument, ask for status message."
        "status message: " *jabber-current-status* '*jabber-status-history*))))
   (jabber-send-presence "xa" (if status status *jabber-current-status*)
 			*jabber-current-priority*))
+;; jabber-send-xa-presence:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-send-default-presence][jabber-send-default-presence:1]]
 ;;;###autoload
 (defun jabber-send-default-presence (&optional ignore)
   "Send default presence.
@@ -6296,7 +7170,9 @@ Default presence is specified by `jabber-default-show',
   (interactive)
   (jabber-send-presence
    jabber-default-show jabber-default-status jabber-default-priority))
+;; jabber-send-default-presence:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-send-current-presence][jabber-send-current-presence:1]]
 (defun jabber-send-current-presence (&optional ignore)
   "(Re-)send current presence.
 That is, if presence has already been sent, use current settings,
@@ -6306,7 +7182,9 @@ otherwise send defaults (see `jabber-send-default-presence')."
       (jabber-send-presence *jabber-current-show* *jabber-current-status*
 			    *jabber-current-priority*)
     (jabber-send-default-presence)))
+;; jabber-send-current-presence:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-send-subscription-request][jabber-send-subscription-request:1]]
 (add-to-list 'jabber-jid-roster-menu (cons "Send subscription request"
 					   'jabber-send-subscription-request))
 (defun jabber-send-subscription-request (jc to &optional request)
@@ -6323,10 +7201,14 @@ JC is the Jabber connection."
 		       (type . "subscribe"))
 		      ,@(when (and request (> (length request) 0))
 			  (list `(status () ,request))))))
+;; jabber-send-subscription-request:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-roster-group-history][jabber-roster-group-history:1]]
 (defvar jabber-roster-group-history nil
   "History of entered roster groups.")
+;; jabber-roster-group-history:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-roster-change][jabber-roster-change:1]]
 (add-to-list 'jabber-jid-roster-menu
 	     (cons "Add/modify roster entry" 'jabber-roster-change))
 (defun jabber-roster-change (jc jid name groups)
@@ -6373,7 +7255,9 @@ JC is the Jabber connection."
 				      groups)))
 		  #'jabber-report-success "Roster item change"
 		  #'jabber-report-success "Roster item change"))
+;; jabber-roster-change:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-roster-delete][jabber-roster-delete:1]]
 (add-to-list 'jabber-jid-roster-menu
 	     (cons "Delete roster entry" 'jabber-roster-delete))
 (defun jabber-roster-delete (jc jid)
@@ -6385,7 +7269,9 @@ JC is the Jabber connection."
 				 (subscription . "remove"))))
 		  #'jabber-report-success "Roster item removal"
 		  #'jabber-report-success "Roster item removal"))
+;; jabber-roster-delete:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-roster-delete-jid-at-point][jabber-roster-delete-jid-at-point:1]]
 (defun jabber-roster-delete-jid-at-point ()
   "Delete JID at point from roster.
 Signal an error if there is no JID at point."
@@ -6397,7 +7283,9 @@ Signal an error if there is no JID at point."
 	     (or jabber-silent-mode (yes-or-no-p (format "Really delete %s from roster? " jid-at-point))))
 	(jabber-roster-delete account jid-at-point)
       (error "No contact at point"))))
+;; jabber-roster-delete-jid-at-point:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-roster-delete-group-from-jids][jabber-roster-delete-group-from-jids:1]]
 (defun jabber-roster-delete-group-from-jids (jc jids group)
   "Delete group `group' from all JIDs.
 JC is the Jabber connection."
@@ -6407,7 +7295,9 @@ JC is the Jabber connection."
      jc jid (get jid 'name)
      (cl-remove-if-not (lambda (g) (not (string= g group)))
 		    (get jid 'groups)))))
+;; jabber-roster-delete-group-from-jids:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-roster-edit-group-from-jids][jabber-roster-edit-group-from-jids:1]]
 (defun jabber-roster-edit-group-from-jids (jc jids group)
   "Edit group `group' from all JIDs.
 JC is the Jabber connection."
@@ -6425,13 +7315,19 @@ JC is the Jabber connection."
 		       g))
 	 (get jid 'groups))
 	:test 'string=)))))
+;; jabber-roster-edit-group-from-jids:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*Entity Capabilities ([[https://xmpp.org/extensions/xep-0115.html\][XEP-0115\]])][Entity Capabilities ([[https://xmpp.org/extensions/xep-0115.html][XEP-0115]]):1]]
 ;;;###autoload
 (eval-after-load "jabber-core"
   '(add-to-list 'jabber-presence-chain #'jabber-process-caps))
+;; Entity Capabilities ([[https://xmpp.org/extensions/xep-0115.html][XEP-0115]]):1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-caps-cache][jabber-caps-cache:1]]
 (defvar jabber-caps-cache (make-hash-table :test 'equal))
+;; jabber-caps-cache:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-caps-hash-names][jabber-caps-hash-names:1]]
 (defconst jabber-caps-hash-names
   (if (fboundp 'secure-hash)
       '(("sha-1" . sha1)
@@ -6448,7 +7344,9 @@ Maps names defined in http://www.iana.org/assignments/hash-function-text-names
 to symbols accepted by `secure-hash'.
 
 XEP-0115 currently recommends SHA-1, but let's be future-proof.")
+;; jabber-caps-hash-names:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-caps-get-cached][jabber-caps-get-cached:1]]
 (defun jabber-caps-get-cached (jid)
   "Get disco info from Entity Capabilities cache.
 JID should be a string containing a full JID.
@@ -6461,7 +7359,9 @@ Return (IDENTITIES FEATURES), or nil if not in cache."
       (let ((cache-entry (gethash key jabber-caps-cache)))
 	(when (and (consp cache-entry) (not (floatp (car cache-entry))))
 	  cache-entry)))))
+;; jabber-caps-get-cached:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-process-caps][jabber-process-caps:1]]
 ;;;###autoload
 (defun jabber-process-caps (jc xml-data)
   "Look for entity capabilities in presence stanzas.
@@ -6484,7 +7384,9 @@ obtained from `xml-parse-region'."
 	  ;; No hash attribute.  Use legacy version of XEP-0115.
 	  ;; TODO: do something clever here.
 	  ))))))
+;; jabber-process-caps:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-process-caps-modern][jabber-process-caps-modern:1]]
 (defun jabber-process-caps-modern (jc jid hash node ver)
   (when (assoc hash jabber-caps-hash-names)
     ;; We support the hash function used.
@@ -6531,7 +7433,9 @@ obtained from `xml-parse-region'."
 	  ;; We already know what this hash represents, so we
 	  ;; can cache info for this contact.
 	  (puthash (cons jid nil) cache-entry jabber-disco-info-cache)))))))
+;; jabber-process-caps-modern:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-process-caps-info-result][jabber-process-caps-info-result:1]]
 (defun jabber-process-caps-info-result (jc xml-data closure-data)
   (cl-destructuring-bind (hash node ver) closure-data
     (let* ((key (cons hash ver))
@@ -6542,11 +7446,15 @@ obtained from `xml-parse-region'."
 	  (puthash key (jabber-disco-parse-info xml-data) jabber-caps-cache)
 	;; The hash is incorrect.
 	(jabber-caps-try-next jc hash node ver)))))
+;; jabber-process-caps-info-result:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-process-caps-info-error][jabber-process-caps-info-error:1]]
 (defun jabber-process-caps-info-error (jc xml-data closure-data)
   (cl-destructuring-bind (hash node ver) closure-data
     (jabber-caps-try-next jc hash node ver)))
+;; jabber-process-caps-info-error:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-caps-try-next][jabber-caps-try-next:1]]
 (defun jabber-caps-try-next (jc hash node ver)
   (let* ((key (cons hash ver))
 	 (cache-entry (gethash key jabber-caps-cache)))
@@ -6565,7 +7473,9 @@ obtained from `xml-parse-region'."
 	       #'jabber-process-caps-info-error (list hash node ver)))
 	  ;; No, forget about it for now.
 	  (remhash key jabber-caps-cache))))))
+;; jabber-caps-try-next:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-caps-ver-string][jabber-caps-ver-string:1]]
 (defun jabber-caps-ver-string (query hash)
   ;; XEP-0115, section 5.1
   ;; 1. Initialize an empty string S.
@@ -6643,7 +7553,9 @@ obtained from `xml-parse-region'."
       ;; Section 4 of RFC 4648 [20] (note: the Base64 output MUST NOT
       ;; include whitespace and MUST set padding bits to zero). [21]
       (base64-encode-string (jabber-caps--secure-hash algorithm s) t))))
+;; jabber-caps-ver-string:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-caps--secure-hash][jabber-caps--secure-hash:1]]
 (defun jabber-caps--secure-hash (algorithm string)
   (cond
    ;; `secure-hash' was introduced in Emacs 24
@@ -6654,7 +7566,9 @@ obtained from `xml-parse-region'."
     (sha1 string nil nil t))
    (t
     (error "Cannot use hash algorithm %s!" algorithm))))
+;; jabber-caps--secure-hash:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-caps-identity-<][jabber-caps-identity-<:1]]
 (defun jabber-caps-identity-< (a b)
   (let ((a-category (jabber-xml-get-attribute a 'category))
 	(b-category (jabber-xml-get-attribute b 'category)))
@@ -6667,16 +7581,24 @@ obtained from `xml-parse-region'."
 			(let ((a-xml:lang (jabber-xml-get-attribute a 'xml:lang))
 			      (b-xml:lang (jabber-xml-get-attribute b 'xml:lang)))
 			  (string< a-xml:lang b-xml:lang)))))))))
+;; jabber-caps-identity-<:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-caps-default-hash-function][jabber-caps-default-hash-function:1]]
 (defvar jabber-caps-default-hash-function "sha-1"
   "Hash function to use when sending caps in presence stanzas.
 The value should be a key in `jabber-caps-hash-names'.")
+;; jabber-caps-default-hash-function:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-caps-current-hash][jabber-caps-current-hash:1]]
 (defvar jabber-caps-current-hash nil
   "The current disco hash we're sending out in presence stanzas.")
+;; jabber-caps-current-hash:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-caps-node][jabber-caps-node:1]]
 (defconst jabber-caps-node "http://emacs-jabber.sourceforge.net")
+;; jabber-caps-node:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-disco-advertise-feature][jabber-disco-advertise-feature:1]]
 ;;;###autoload
 (defun jabber-disco-advertise-feature (feature)
   (unless (member feature jabber-advertised-features)
@@ -6686,7 +7608,9 @@ The value should be a key in `jabber-caps-hash-names'.")
       ;; If we're already connected, we need to send updated presence
       ;; for the new feature.
       (mapc #'jabber-send-current-presence jabber-connections))))
+;; jabber-disco-advertise-feature:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-caps-recalculate-hash][jabber-caps-recalculate-hash:1]]
 (defun jabber-caps-recalculate-hash ()
   "Update `jabber-caps-current-hash' for feature list change.
 Also update `jabber-disco-info-nodes', so we return results for
@@ -6704,7 +7628,9 @@ the right node."
     (push (list new-node #'jabber-disco-return-client-info nil)
 	  jabber-disco-info-nodes)
     (setq jabber-caps-current-hash new-hash)))
+;; jabber-caps-recalculate-hash:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-caps-presence-element][jabber-caps-presence-element:1]]
 ;;;###autoload
 (defun jabber-caps-presence-element (_jc)
   (unless jabber-caps-current-hash
@@ -6719,14 +7645,18 @@ the right node."
 ;;;###autoload
 (eval-after-load "jabber-presence"
   '(add-to-list 'jabber-presence-element-functions #'jabber-caps-presence-element))
+;; jabber-caps-presence-element:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-advertised-features][jabber-advertised-features:1]]
 (defvar jabber-advertised-features
   (list "http://jabber.org/protocol/disco#info")
   "Features advertised on service discovery requests.
 
 Don't add your feature to this list directly.  Instead, call
 `jabber-disco-advertise-feature'.")
+;; jabber-advertised-features:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-disco-items-nodes][jabber-disco-items-nodes:1]]
 (defvar jabber-disco-items-nodes
   (list
    (list "" nil nil))
@@ -6746,7 +7676,9 @@ used.  The list should be the XML data to be returned inside the
 Second item is access control function.  That function is passed the
 JID, and returns non-nil if access is granted.  If the second item is
 nil, access is always granted.")
+;; jabber-disco-items-nodes:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-disco-info-nodes][jabber-disco-info-nodes:1]]
 (defvar jabber-disco-info-nodes
   (list
    (list "" #'jabber-disco-return-client-info nil))
@@ -6767,7 +7699,9 @@ used.  The list should be the XML data to be returned inside the
 Second item is access control function.  That function is passed the
 JID, and returns non-nil if access is granted.  If the second item is
 nil, access is always granted.")
+;; jabber-disco-info-nodes:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-return-disco-info][jabber-return-disco-info:1]]
 (add-to-list 'jabber-iq-get-xmlns-alist
 	     (cons "http://jabber.org/protocol/disco#info" 'jabber-return-disco-info))
 (add-to-list 'jabber-iq-get-xmlns-alist
@@ -6809,7 +7743,9 @@ obtained from `xml-parse-region'."
 
       ;; No such node
       (jabber-signal-error "Cancel" 'item-not-found))))
+;; jabber-return-disco-info:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-disco-return-client-info][jabber-disco-return-client-info:1]]
 (defun jabber-disco-return-client-info (&optional jc xml-data)
   `(
     ;; If running under a window system, this is
@@ -6824,7 +7760,9 @@ obtained from `xml-parse-region'."
        #'(lambda (featurename)
 	   `(feature ((var . ,featurename))))
        jabber-advertised-features)))
+;; jabber-disco-return-client-info:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-get-disco-items][jabber-get-disco-items:1]]
 (add-to-list 'jabber-jid-info-menu
 	     (cons "Send items disco query" 'jabber-get-disco-items))
 (defun jabber-get-disco-items (jc to &optional node)
@@ -6841,7 +7779,9 @@ JC is the Jabber connection."
 					   (list (cons 'node node)))))
 		  #'jabber-process-data #'jabber-process-disco-items
 		  #'jabber-process-data "Item discovery failed"))
+;; jabber-get-disco-items:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-get-disco-info][jabber-get-disco-info:1]]
 (add-to-list 'jabber-jid-info-menu
 	     (cons "Send info disco query" 'jabber-get-disco-info))
 (defun jabber-get-disco-info (jc to &optional node)
@@ -6858,7 +7798,9 @@ JC is the Jabber connection."
 					   (list (cons 'node node)))))
 		  #'jabber-process-data #'jabber-process-disco-info
 		  #'jabber-process-data "Info discovery failed"))
+;; jabber-get-disco-info:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-process-disco-info][jabber-process-disco-info:1]]
 (defun jabber-process-disco-info (jc xml-data)
   "Handle results from info disco requests.
 
@@ -6888,7 +7830,9 @@ obtained from `xml-parse-region'."
 		       'jabber-jid (jabber-xml-get-attribute xml-data 'from))
     (put-text-property beginning (point)
 		       'jabber-account jc)))
+;; jabber-process-disco-info:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-process-disco-items][jabber-process-disco-items:1]]
 (defun jabber-process-disco-items (jc xml-data)
   "Handle results from items disco requests.
 
@@ -6913,16 +7857,22 @@ obtained from `xml-parse-region'."
 	      'jabber-account jc
 	      'jabber-node node))))
       (insert "No items found.\n"))))
+;; jabber-process-disco-items:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-disco-info-cache][jabber-disco-info-cache:1]]
 ;; Keys are ("jid" . "node"), where "node" is nil if appropriate.
 ;; Values are (identities features), where each identity is ["name"
 ;; "category" "type"], and each feature is a string.
 (defvar jabber-disco-info-cache (make-hash-table :test 'equal))
+;; jabber-disco-info-cache:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-disco-items-cache][jabber-disco-items-cache:1]]
 ;; Keys are ("jid" . "node").  Values are (items), where each
 ;; item is ["name" "jid" "node"] (some values may be nil).
 (defvar jabber-disco-items-cache (make-hash-table :test 'equal))
+;; jabber-disco-items-cache:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-disco-get-info][jabber-disco-get-info:1]]
 (defun jabber-disco-get-info (jc jid node callback closure-data &optional force)
   "Get disco info for JID and NODE, using connection JC.
 Call CALLBACK with JC and CLOSURE-DATA as first and second
@@ -6947,7 +7897,9 @@ invalidate cache and get fresh data."
 			(when (car callback-data)
 			  (funcall (car callback-data) jc (cdr callback-data) (jabber-iq-error xml-data))))
 		      (cons callback closure-data)))))
+;; jabber-disco-get-info:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-disco-got-info][jabber-disco-got-info:1]]
 (defun jabber-disco-got-info (jc xml-data callback-data)
   (let ((jid (jabber-xml-get-attribute xml-data 'from))
 	(node (jabber-xml-get-attribute (jabber-iq-query xml-data)
@@ -6956,7 +7908,9 @@ invalidate cache and get fresh data."
     (puthash (cons jid node) result jabber-disco-info-cache)
     (when (car callback-data)
       (funcall (car callback-data) jc (cdr callback-data) result))))
+;; jabber-disco-got-info:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-disco-parse-info][jabber-disco-parse-info:1]]
 (defun jabber-disco-parse-info (xml-data)
   "Extract data from an <iq/> stanza containing a disco#info result.
 See `jabber-disco-get-info' for a description of the return value.
@@ -6974,7 +7928,9 @@ obtained from `xml-parse-region'."
     #'(lambda (feature)
 	(jabber-xml-get-attribute feature 'var))
     (jabber-xml-get-children (jabber-iq-query xml-data) 'feature))))
+;; jabber-disco-parse-info:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-disco-get-info-immediately][jabber-disco-get-info-immediately:1]]
 (defun jabber-disco-get-info-immediately (jid node)
   "Get cached disco info for JID and NODE.
 Return nil if no info available.
@@ -6985,7 +7941,9 @@ Fill the cache with `jabber-disco-get-info'."
    (gethash (cons jid node) jabber-disco-info-cache)
    ;; And then check Entity Capabilities.
    (and (null node) (jabber-caps-get-cached jid))))
+;; jabber-disco-get-info-immediately:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-disco-get-items][jabber-disco-get-items:1]]
 (defun jabber-disco-get-items (jc jid node callback closure-data &optional force)
   "Get disco items for JID and NODE, using connection JC.
 Call CALLBACK with JC and CLOSURE-DATA as first and second
@@ -7011,7 +7969,9 @@ invalidate cache and get fresh data."
 			(when (car callback-data)
 			  (funcall (car callback-data) jc (cdr callback-data) (jabber-iq-error xml-data))))
 		      (cons callback closure-data)))))
+;; jabber-disco-get-items:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-disco-got-items][jabber-disco-got-items:1]]
 (defun jabber-disco-got-items (jc xml-data callback-data)
   (let ((jid (jabber-xml-get-attribute xml-data 'from))
 	(node (jabber-xml-get-attribute (jabber-iq-query xml-data)
@@ -7027,10 +7987,14 @@ invalidate cache and get fresh data."
     (puthash (cons jid node) result jabber-disco-items-cache)
     (when (car callback-data)
       (funcall (car callback-data) jc (cdr callback-data) result))))
+;; jabber-disco-got-items:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-disco-get-items-immediately][jabber-disco-get-items-immediately:1]]
 (defun jabber-disco-get-items-immediately (jid node)
   (gethash (cons jid node) jabber-disco-items-cache))
+;; jabber-disco-get-items-immediately:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-disco-publish][jabber-disco-publish:1]]
 (defun jabber-disco-publish (jc node item-name item-jid item-node)
   "Publish the given item under disco node NODE."
   (jabber-send-iq jc nil
@@ -7045,7 +8009,9 @@ invalidate cache and get fresh data."
 				     `((node . ,item-node))))))
 		  'jabber-report-success "Disco publish"
 		  'jabber-report-success "Disco publish"))
+;; jabber-disco-publish:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-disco-publish-remove][jabber-disco-publish-remove:1]]
 (defun jabber-disco-publish-remove (jc node item-jid item-node)
   "Remove the given item from published disco items.
 
@@ -7060,9 +8026,13 @@ JC is the Jabber connection."
 				     `((node . ,item-node))))))
 		  'jabber-report-success "Disco removal"
 		  'jabber-report-success "Disco removal"))
+;; jabber-disco-publish-remove:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*XMPP Ping ([[https://xmpp.org/extensions/xep-0199.html\][XEP-0199\]])][XMPP Ping ([[https://xmpp.org/extensions/xep-0199.html][XEP-0199]]):1]]
 (add-to-list 'jabber-jid-info-menu (cons "Ping" 'jabber-ping))
+;; XMPP Ping ([[https://xmpp.org/extensions/xep-0199.html][XEP-0199]]):1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-ping-send][jabber-ping-send:1]]
 (defun jabber-ping-send (jc to process-func on-success on-error)
   "Send XEP-0199 ping IQ stanza.
 JC is connection to use, TO is full JID, PROCESS-FUNC is fucntion to call to
@@ -7072,14 +8042,18 @@ result."
                   '(ping ((xmlns . "urn:xmpp:ping")))
                   process-func on-success
                   process-func on-error))
+;; jabber-ping-send:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-ping][jabber-ping:1]]
 (defun jabber-ping (to)
   "Ping XMPP entity.
 TO is full JID.  All connected JIDs is used."
   (interactive (list (jabber-read-jid-completing "Send ping to: " nil nil nil 'full)))
   (dolist (jc jabber-connections)
     (jabber-ping-send jc to 'jabber-silent-process-data 'jabber-process-ping "Ping is unsupported")))
+;; jabber-ping:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-process-ping][jabber-process-ping:1]]
 ;; called by jabber-process-data
 (defun jabber-process-ping (jc xml-data)
   "Handle results from ping requests.
@@ -7092,7 +8066,9 @@ obtained from `xml-parse-region'."
 
 (add-to-list 'jabber-iq-get-xmlns-alist (cons "urn:xmpp:ping" 'jabber-pong))
 (jabber-disco-advertise-feature "urn:xmpp:ping")
+;; jabber-process-ping:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-pong][jabber-pong:1]]
 (defun jabber-pong (jc xml-data)
   "Return pong as defined in XEP-0199.
 Sender and Id are determined from the incoming packet passed in XML-DATA.
@@ -7103,34 +8079,50 @@ obtained from `xml-parse-region'."
   (let ((to (jabber-xml-get-attribute xml-data 'from))
 	(id (jabber-xml-get-attribute xml-data 'id)))
     (jabber-send-iq jc to "result" nil nil nil nil nil id)))
+;; jabber-pong:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-keepalive][jabber-keepalive:1]]
 ;;;###autoload
 (defgroup jabber-keepalive nil
   "Keepalive functions try to detect lost connection"
   :group 'jabber)
+;; jabber-keepalive:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-keepalive-interval][jabber-keepalive-interval:1]]
 (defcustom jabber-keepalive-interval 600
   "Interval in seconds between connection checks."
   :type 'integer
   :group 'jabber-keepalive)
+;; jabber-keepalive-interval:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-keepalive-timeout][jabber-keepalive-timeout:1]]
 (defcustom jabber-keepalive-timeout 20
   "Seconds to wait for response from server."
   :type 'integer
   :group 'jabber-keepalive)
+;; jabber-keepalive-timeout:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-keepalive-timer][jabber-keepalive-timer:1]]
 (defvar jabber-keepalive-timer nil
   "Timer object for keepalive function.")
+;; jabber-keepalive-timer:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-keepalive-timeout-timer][jabber-keepalive-timeout-timer:1]]
 (defvar jabber-keepalive-timeout-timer nil
   "Timer object for keepalive timeout function.")
+;; jabber-keepalive-timeout-timer:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-keepalive-pending][jabber-keepalive-pending:1]]
 (defvar jabber-keepalive-pending nil
   "List of outstanding keepalive connections.")
+;; jabber-keepalive-pending:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-keepalive-debug][jabber-keepalive-debug:1]]
 (defvar jabber-keepalive-debug nil
   "Log keepalive traffic when non-nil.")
+;; jabber-keepalive-debug:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-keepalive-start][jabber-keepalive-start:1]]
 ;;;###autoload
 (defun jabber-keepalive-start (&optional jc)
   "Activate keepalive.
@@ -7151,7 +8143,9 @@ for all accounts regardless of the argument."
 			jabber-keepalive-interval
 			'jabber-keepalive-do))
   (add-hook 'jabber-post-disconnect-hook 'jabber-keepalive-stop))
+;; jabber-keepalive-start:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-keepalive-stop][jabber-keepalive-stop:1]]
 (defun jabber-keepalive-stop ()
   "Deactivate keepalive."
   (interactive)
@@ -7159,7 +8153,9 @@ for all accounts regardless of the argument."
   (when jabber-keepalive-timer
     (jabber-cancel-timer jabber-keepalive-timer)
     (setq jabber-keepalive-timer nil)))
+;; jabber-keepalive-stop:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-keepalive-do][jabber-keepalive-do:1]]
 (defun jabber-keepalive-do ()
   (when jabber-keepalive-debug
     (message "%s: sending keepalive packet(s)" (current-time-string)))
@@ -7172,7 +8168,9 @@ for all accounts regardless of the argument."
     ;; Whether we get an error or not is not interesting.
     ;; Getting a response at all is.
     (jabber-ping-send c nil 'jabber-keepalive-got-response nil nil)))
+;; jabber-keepalive-do:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-keepalive-got-response][jabber-keepalive-got-response:1]]
 (defun jabber-keepalive-got-response (jc &rest args)
   (when jabber-keepalive-debug
     (message "%s: got keepalive response from %s"
@@ -7182,7 +8180,9 @@ for all accounts regardless of the argument."
   (when (and (null jabber-keepalive-pending) (timerp jabber-keepalive-timeout-timer))
     (jabber-cancel-timer jabber-keepalive-timeout-timer)
     (setq jabber-keepalive-timeout-timer nil)))
+;; jabber-keepalive-got-response:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-keepalive-timeout][jabber-keepalive-timeout:1]]
 (defun jabber-keepalive-timeout ()
   (jabber-cancel-timer jabber-keepalive-timer)
   (setq jabber-keepalive-timer nil)
@@ -7194,7 +8194,9 @@ for all accounts regardless of the argument."
 
     (run-hook-with-args 'jabber-lost-connection-hooks c)
     (jabber-disconnect-one c nil)))
+;; jabber-keepalive-timeout:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-whitespace-ping-interval][jabber-whitespace-ping-interval:1]]
 (defcustom jabber-whitespace-ping-interval 30
   "Send a space character to the server with this interval, in seconds.
 
@@ -7207,10 +8209,14 @@ If you want to verify that the server is able to answer, see
 `jabber-keepalive-start' for another mechanism."
   :type '(integer :tag "Interval in seconds")
   :group 'jabber-core)
+;; jabber-whitespace-ping-interval:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-whitespace-ping-timer][jabber-whitespace-ping-timer:1]]
 (defvar jabber-whitespace-ping-timer nil
   "Timer object for whitespace pings.")
+;; jabber-whitespace-ping-timer:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-whitespace-ping-start][jabber-whitespace-ping-start:1]]
 ;;;###autoload
 (defun jabber-whitespace-ping-start (&optional jc)
   "Start sending whitespace pings at regular intervals.
@@ -7228,7 +8234,9 @@ accounts."
 			jabber-whitespace-ping-interval
 			'jabber-whitespace-ping-do))
   (add-hook 'jabber-post-disconnect-hook 'jabber-whitespace-ping-stop))
+;; jabber-whitespace-ping-start:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-whitespace-ping-stop][jabber-whitespace-ping-stop:1]]
 (defun jabber-whitespace-ping-stop ()
   "Deactivate whitespace pings."
   (interactive)
@@ -7236,13 +8244,19 @@ accounts."
   (when jabber-whitespace-ping-timer
     (jabber-cancel-timer jabber-whitespace-ping-timer)
     (setq jabber-whitespace-ping-timer nil)))
+;; jabber-whitespace-ping-stop:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-whitespace-ping-do][jabber-whitespace-ping-do:1]]
 (defun jabber-whitespace-ping-do ()
   (dolist (c jabber-connections)
     (ignore-errors (jabber-send-string c " "))))
+;; jabber-whitespace-ping-do:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*Feature Negotiation ([[https://xmpp.org/extensions/xep-0020.html\][XEP-0020\]])][Feature Negotiation ([[https://xmpp.org/extensions/xep-0020.html][XEP-0020]]):1]]
 (jabber-disco-advertise-feature "http://jabber.org/protocol/feature-neg")
+;; Feature Negotiation ([[https://xmpp.org/extensions/xep-0020.html][XEP-0020]]):1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-fn-parse][jabber-fn-parse:1]]
 (defun jabber-fn-parse (xml-data type)
   "Parse a Feature Negotiation request, return alist representation.
 XML-DATA should have one child element, <x/>, in the jabber:x:data
@@ -7279,7 +8293,9 @@ alternatives."
 		       alist))))
       ;; return alist
       alist)))
+;; jabber-fn-parse:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-fn-encode][jabber-fn-encode:1]]
 (defun jabber-fn-encode (alist type)
   "Transform a feature alist into an <x/> node int the jabber:x:data namespace.
 Note that this is not the reverse of `jabber-fn-parse'.
@@ -7299,7 +8315,9 @@ TYPE is either 'request or 'response."
 				 (cdr field))
 			      (list `(value nil ,(cadr field))))))
 		   alist))))
+;; jabber-fn-encode:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-fn-intersection][jabber-fn-intersection:1]]
 (defun jabber-fn-intersection (mine theirs)
   "Find values acceptable to both parties.
 
@@ -7338,24 +8356,36 @@ protocols."
 		;; no match
 		(jabber-signal-error "Modify" 'not-acceptable var)))))
 	alist)))
+;; jabber-fn-intersection:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*widget - display various kinds of forms][widget - display various kinds of forms:1]]
 (require 'widget)
 (require 'wid-edit)
+;; widget - display various kinds of forms:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-widget-alist][jabber-widget-alist:1]]
 (defvar jabber-widget-alist nil
   "Alist of widgets currently used.")
+;; jabber-widget-alist:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-form-type][jabber-form-type:1]]
 (defvar jabber-form-type nil
   "Type of form.
 One of:
 'x-data, jabber:x:data
 'register, as used in jabber:iq:register and jabber:iq:search.")
+;; jabber-form-type:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-submit-to][jabber-submit-to:1]]
 (defvar jabber-submit-to nil
   "JID of the entity to which form data is to be sent.")
+;; jabber-submit-to:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-submit-to][jabber-submit-to:2]]
 (jabber-disco-advertise-feature "jabber:x:data")
+;; jabber-submit-to:2 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-submit-to][jabber-submit-to:3]]
 (define-widget 'jid 'string
   "JID widget."
   :value-to-internal (lambda (widget value)
@@ -7368,7 +8398,9 @@ One of:
 			   (match-string 1 value)
 			 value))
   :complete-function 'jid-complete)
+;; jabber-submit-to:3 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jid-complete][jid-complete:1]]
 (defun jid-complete ()
   "Perform completion on JID preceding point."
   (interactive)
@@ -7395,7 +8427,9 @@ One of:
 	     (display-completion-list (all-completions prefix list nil)
 				      prefix))
 	   (message "Making completion list...done")))))
+;; jid-complete:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-init-widget-buffer][jabber-init-widget-buffer:1]]
 (defun jabber-init-widget-buffer (submit-to)
   "Setup buffer-local variables for widgets."
   (make-local-variable 'jabber-widget-alist)
@@ -7408,7 +8442,9 @@ One of:
   ;; are read-only... or something like that.  Maybe there's a
   ;; better way.
   (rename-uniquely))
+;; jabber-init-widget-buffer:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-render-register-form][jabber-render-register-form:1]]
 (defun jabber-render-register-form (query &optional default-username)
   "Display widgets from <query/> element in IQ register or search namespace.
 Display widgets from <query/> element in jabber:iq:{register,search} namespace.
@@ -7460,7 +8496,9 @@ DEFAULT-USERNAME is the default value for the username field."
 						  field)) default-value)))
 		   jabber-widget-alist)))
 	  (widget-insert "\n"))))))
+;; jabber-render-register-form:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-parse-register-form][jabber-parse-register-form:1]]
 (defun jabber-parse-register-form ()
   "Return children of a <query/> tag containing information entered in the widgets of the current buffer."
   (mapcar
@@ -7469,7 +8507,9 @@ DEFAULT-USERNAME is the default value for the username field."
 	   nil
 	   (widget-value (cdr widget-cons))))
    jabber-widget-alist))
+;; jabber-parse-register-form:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-render-xdata-form][jabber-render-xdata-form:1]]
 (defun jabber-render-xdata-form (x &optional defaults)
   "Display widgets from <x/> element in jabber:x:data namespace.
 DEFAULTS is an alist associating variable names with default values.
@@ -7553,7 +8593,9 @@ DEFAULTS takes precedence over values specified in the form."
       (when (and desc (car (jabber-xml-node-children desc)))
 	(widget-insert "\n" (car (jabber-xml-node-children desc))))
       (widget-insert "\n"))))
+;; jabber-render-xdata-form:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-parse-xdata-form][jabber-parse-xdata-form:1]]
 (defun jabber-parse-xdata-form ()
   "Return an <x/> tag containing information entered in the widgets of the current buffer."
   `(x ((xmlns . "jabber:x:data")
@@ -7569,7 +8611,9 @@ DEFAULTS takes precedence over values specified in the form."
 			    (list 'value nil value))
 			  values)))))
 	 jabber-widget-alist)))
+;; jabber-parse-xdata-form:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-xdata-value-convert][jabber-xdata-value-convert:1]]
 (defun jabber-xdata-value-convert (value type)
   "Convert VALUE from form used by widget library to form required by XEP-0004.
 Return a list of strings, each of which to be included as cdata in a <value/> tag."
@@ -7582,7 +8626,9 @@ Return a list of strings, each of which to be included as cdata in a <value/> ta
     (if (zerop (length value))
 	nil
       (list value)))))
+;; jabber-xdata-value-convert:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-render-xdata-search-results][jabber-render-xdata-search-results:1]]
 (defun jabber-render-xdata-search-results (xdata)
   "Render search results in x:data form."
 
@@ -7593,7 +8639,9 @@ Return a list of strings, each of which to be included as cdata in a <value/> ta
   (if (jabber-xml-get-children xdata 'reported)
       (jabber-render-xdata-search-results-multi xdata)
     (jabber-render-xdata-search-results-single xdata)))
+;; jabber-render-xdata-search-results:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-render-xdata-search-results-multi][jabber-render-xdata-search-results-multi:1]]
 (defun jabber-render-xdata-search-results-multi (xdata)
   "Render multi-record search results."
   (let (fields
@@ -7653,7 +8701,9 @@ Return a list of strings, each of which to be included as cdata in a <value/> ta
 	    (put-text-property start-of-line (point)
 			       'jabber-jid jid))
 	(insert "\n")))))
+;; jabber-render-xdata-search-results-multi:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-render-xdata-search-results-single][jabber-render-xdata-search-results-single:1]]
 (defun jabber-render-xdata-search-results-single (xdata)
   "Render single-record search results."
   (dolist (field (jabber-xml-get-children xdata 'field))
@@ -7666,7 +8716,9 @@ Return a list of strings, each of which to be included as cdata in a <value/> ta
       (insert (jabber-propertize (concat label ": ") 'face 'bold))
       (indent-to 30)
       (insert (apply #'concat values) "\n"))))
+;; jabber-render-xdata-search-results-single:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-xdata-formtype][jabber-xdata-formtype:1]]
 (defun jabber-xdata-formtype (x)
   "Return the form type of the xdata form in X, by XEP-0068.
 Return nil if no form type is specified."
@@ -7676,13 +8728,17 @@ Return nil if no form type is specified."
 		 (string= (jabber-xml-get-attribute field 'type) "hidden"))
 	(throw 'found-formtype (car (jabber-xml-node-children
 				     (car (jabber-xml-get-children field 'value)))))))))
+;; jabber-xdata-formtype:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-bookmarks][jabber-bookmarks:1]]
 (defvar jabber-bookmarks (make-hash-table :test 'equal)
   "Mapping from full JIDs to bookmarks.
 Bookmarks are what has been retrieved from the server, as list of
 XML elements.  This is nil if bookmarks have not been retrieved,
 and t if no bookmarks where found.")
+;; jabber-bookmarks:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-get-conference-data][jabber-get-conference-data:1]]
 ;;;###autoload
 (defun jabber-get-conference-data (jc conference-jid cont &optional key)
   "Get bookmark data for CONFERENCE-JID.
@@ -7704,7 +8760,9 @@ immediately, and return nil if it is not in the cache."
        (lambda (jc result)
 	 (let ((entry (jabber-get-conference-data-internal result conference-jid key)))
 	   (funcall cont jc entry)))))))
+;; jabber-get-conference-data:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-get-conference-data-internal][jabber-get-conference-data-internal:1]]
 (defun jabber-get-conference-data-internal (result conference-jid key)
   (let ((entry (dolist (node result)
 		(when (and (eq (jabber-xml-node-name node) 'conference)
@@ -7713,7 +8771,9 @@ immediately, and return nil if it is not in the cache."
     (if key
 	(plist-get entry key)
       entry)))
+;; jabber-get-conference-data-internal:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-parse-conference-bookmark][jabber-parse-conference-bookmark:1]]
 ;;;###autoload
 (defun jabber-parse-conference-bookmark (node)
   "Convert a <conference/> tag into a plist.
@@ -7728,7 +8788,9 @@ The plist may contain the keys :jid, :name, :autojoin,
 		      (car (jabber-xml-get-children node 'nick))))
 	  :password (car (jabber-xml-node-children
 			  (car (jabber-xml-get-children node 'password)))))))
+;; jabber-parse-conference-bookmark:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-get-bookmarks][jabber-get-bookmarks:1]]
 ;;;###autoload
 (defun jabber-get-bookmarks (jc cont &optional refresh)
   "Retrieve bookmarks (if needed) and call CONT.
@@ -7742,7 +8804,9 @@ If REFRESH is non-nil, always fetch bookmarks."
 		     (callback (lambda (jc result) (jabber-get-bookmarks-1 jc result cont))))
 	(jabber-private-get jc 'storage "storage:bookmarks"
 			    callback callback)))))
+;; jabber-get-bookmarks:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-get-bookmarks-1][jabber-get-bookmarks-1:1]]
 (defun jabber-get-bookmarks-1 (jc result cont)
   (let ((my-jid (jabber-connection-bare-jid jc))
 	(value
@@ -7751,14 +8815,18 @@ If REFRESH is non-nil, always fetch bookmarks."
 	   t)))
     (puthash my-jid value jabber-bookmarks)
     (funcall cont jc (when (listp value) value))))
+;; jabber-get-bookmarks-1:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-get-bookmarks-from-cache][jabber-get-bookmarks-from-cache:1]]
 ;;;###autoload
 (defun jabber-get-bookmarks-from-cache (jc)
   "Return cached bookmarks for JC.
 If bookmarks have not yet been fetched by `jabber-get-bookmarks',
 return nil."
   (gethash (jabber-connection-bare-jid jc) jabber-bookmarks))
+;; jabber-get-bookmarks-from-cache:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-set-bookmarks][jabber-set-bookmarks:1]]
 (defun jabber-set-bookmarks (jc bookmarks &optional callback)
   "Set bookmarks to BOOKMARKS, which is a list of XML elements.
 If CALLBACK is non-nil, call it with JC and t or nil as arguments
@@ -7771,7 +8839,9 @@ on success or failure, respectively."
 	     ,@bookmarks)
    callback t
    callback nil))
+;; jabber-set-bookmarks:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-edit-bookmarks][jabber-edit-bookmarks:1]]
 ;;;###autoload
 (defun jabber-edit-bookmarks (jc)
   "Create a buffer for editing bookmarks interactively.
@@ -7779,7 +8849,9 @@ on success or failure, respectively."
 JC is the Jabber connection."
   (interactive (list (jabber-read-account)))
   (jabber-get-bookmarks jc 'jabber-edit-bookmarks-1 t))
+;; jabber-edit-bookmarks:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-edit-bookmarks-1][jabber-edit-bookmarks-1:1]]
 (defun jabber-edit-bookmarks-1 (jc bookmarks)
   (setq bookmarks
 	(mapcar
@@ -7843,7 +8915,9 @@ JC is the Jabber connection."
     (widget-minor-mode 1)
     (switch-to-buffer (current-buffer))
     (goto-char (point-min))))
+;; jabber-edit-bookmarks-1:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-bookmarks-submit][jabber-bookmarks-submit:1]]
 (defun jabber-bookmarks-submit (&rest ignore)
   (let ((bookmarks (widget-value (cdr (assq 'bookmarks jabber-widget-alist)))))
     (setq bookmarks
@@ -7874,7 +8948,9 @@ JC is the Jabber connection."
 	       ,@bookmarks)
      'jabber-report-success "Storing bookmarks"
      'jabber-report-success "Storing bookmarks")))
+;; jabber-bookmarks-submit:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-bookmarks-import][jabber-bookmarks-import:1]]
 (defun jabber-bookmarks-import (&rest ignore)
   (let* ((value (widget-value (cdr (assq 'bookmarks jabber-widget-alist))))
 	 (conferences (mapcar
@@ -7899,7 +8975,9 @@ JC is the Jabber connection."
 	  (push (cons 'conference entry) value))))
     (widget-value-set (cdr (assq 'bookmarks jabber-widget-alist)) value)
     (widget-setup)))
+;; jabber-bookmarks-import:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-private-get][jabber-private-get:1]]
 ;;;###autoload
 (defun jabber-private-get (jc node-name namespace success-callback error-callback)
   "Retrieve an item from private XML storage.
@@ -7918,12 +8996,16 @@ result."
 		  #'(lambda (jc xml-data error-callback)
 		      (funcall error-callback jc xml-data))
 		  error-callback))
+;; jabber-private-get:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-private-get-1][jabber-private-get-1:1]]
 (defun jabber-private-get-1 (jc xml-data success-callback)
   (funcall success-callback jc
 	   (car (jabber-xml-node-children
 		 (jabber-iq-query xml-data)))))
+;; jabber-private-get-1:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-private-set][jabber-private-set:1]]
 ;;;###autoload
 (defun jabber-private-set (jc fragment &optional
 			      success-callback success-closure-data
@@ -7938,7 +9020,9 @@ JC is the Jabber connection."
 			  ,fragment)
 		  success-callback success-closure-data
 		  error-callback error-closure-data))
+;; jabber-private-set:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*muc-nick-coloring][muc-nick-coloring:1]]
 ;; we need hexrgb-hsv-to-hex:
 (eval-and-compile
   (or (ignore-errors (require 'hexrgb))
@@ -7951,7 +9035,9 @@ JC is the Jabber connection."
           (require 'hexrgb)))
       (error
        "The hexrgb library was not found in `load-path' or jabber-fallback-lib/ directory")))
+;; muc-nick-coloring:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-participant-colors][jabber-muc-participant-colors:1]]
 (defcustom jabber-muc-participant-colors nil
   "Alist of used colors.
 Format is (nick . color).  Color may be
@@ -7959,32 +9045,44 @@ in #RGB or textual (like red or blue) notation.  Colors will be
 added in #RGB notation for unknown nicks."
   :type '(alist :key-type string :value-type color)
   :group 'jabber-chat)
+;; jabber-muc-participant-colors:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-colorize-local][jabber-muc-colorize-local:1]]
 (defcustom jabber-muc-colorize-local nil
   "Colorize MUC messages from you."
   :type 'boolean
   :group 'jabber-chat)
+;; jabber-muc-colorize-local:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-colorize-foreign][jabber-muc-colorize-foreign:1]]
 (defcustom jabber-muc-colorize-foreign nil
   "Colorize MUC messages not from you."
   :type 'boolean
   :group 'jabber-chat)
+;; jabber-muc-colorize-foreign:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-nick-saturation][jabber-muc-nick-saturation:1]]
 (defcustom jabber-muc-nick-saturation 1.0
   "Default saturation for nick coloring."
   :type 'float
   :group 'jabber-chat)
+;; jabber-muc-nick-saturation:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-nick-value][jabber-muc-nick-value:1]]
 (defcustom jabber-muc-nick-value 1.0
   "Default value for nick coloring."
   :type 'float
   :group 'jabber-chat)
+;; jabber-muc-nick-value:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-nick-gen-color][jabber-muc-nick-gen-color:1]]
 (defun jabber-muc-nick-gen-color (nick)
   "Return a good enough color from the available pool."
   (let ((hue (/ (mod (string-to-number (substring (md5 nick) 0 6) 16) 360) 360.0)))
     (hexrgb-hsv-to-hex hue jabber-muc-nick-saturation jabber-muc-nick-value)))
+;; jabber-muc-nick-gen-color:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-nick-get-color][jabber-muc-nick-get-color:1]]
 (defun jabber-muc-nick-get-color (nick)
   "Get NICKs color."
   (let ((color (cdr (assoc nick jabber-muc-participant-colors))))
@@ -7994,42 +9092,62 @@ added in #RGB notation for unknown nicks."
         (unless jabber-muc-participant-colors )
         (push (cons nick (jabber-muc-nick-gen-color nick)) jabber-muc-participant-colors)
         (cdr (assoc nick jabber-muc-participant-colors))))))
+;; jabber-muc-nick-get-color:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*Multi-User Chat (MUC) ([[https://xmpp.org/extensions/xep-0045.html\][XEP-0045\]])][Multi-User Chat (MUC) ([[https://xmpp.org/extensions/xep-0045.html][XEP-0045]]):1]]
 ;; we need jabber-bookmarks for jabber-muc-autojoin (via
 ;; jabber-get-bookmarks and jabber-parse-conference-bookmark):
+;; Multi-User Chat (MUC) ([[https://xmpp.org/extensions/xep-0045.html][XEP-0045]]):1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::**jabber-active-groupchats*][*jabber-active-groupchats*:1]]
 ;;;###autoload
 (defvar *jabber-active-groupchats* nil
   "Alist of groupchats and nicknames.
 Keys are strings, the bare JID of the room.
 Values are strings.")
+;; *jabber-active-groupchats*:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-pending-groupchats][jabber-pending-groupchats:1]]
 (defvar jabber-pending-groupchats (make-hash-table)
   "Hash table of groupchats and nicknames.
 Keys are JID symbols; values are strings.
 This table records the last nickname used to join the particular
 chat room.  Items are thus never removed.")
+;; jabber-pending-groupchats:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-participants][jabber-muc-participants:1]]
 (defvar jabber-muc-participants nil
   "Alist of groupchats and participants.
 Keys are strings, the bare JID of the room.
 Values are lists of nickname strings.")
+;; jabber-muc-participants:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-group][jabber-group:1]]
 (defvar jabber-group nil
   "The groupchat you are participating in.")
+;; jabber-group:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-topic][jabber-muc-topic:1]]
 (defvar jabber-muc-topic ""
   "The topic of the current MUC room.")
+;; jabber-muc-topic:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-role-history][jabber-role-history:1]]
 (defvar jabber-role-history ()
   "Keeps track of previously used roles.")
+;; jabber-role-history:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-affiliation-history][jabber-affiliation-history:1]]
 (defvar jabber-affiliation-history ()
   "Keeps track of previously used affiliations.")
+;; jabber-affiliation-history:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-nickname-history][jabber-muc-nickname-history:1]]
 (defvar jabber-muc-nickname-history ()
   "Keeps track of previously referred-to nicknames.")
+;; jabber-muc-nickname-history:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-default-nicknames][jabber-muc-default-nicknames:1]]
 (defcustom jabber-muc-default-nicknames nil
   "Default nickname for specific MUC rooms."
   :group 'jabber-chat
@@ -8037,7 +9155,9 @@ Values are lists of nickname strings.")
 	  (cons :format "%v"
 		(string :tag "JID of room")
 		(string :tag "Nickname"))))
+;; jabber-muc-default-nicknames:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-autojoin][jabber-muc-autojoin:1]]
 (defcustom jabber-muc-autojoin nil
   "List of MUC rooms to automatically join on connection.
 This list is saved in your Emacs customizations.  You can also store
@@ -8045,7 +9165,9 @@ such a list on the Jabber server, where it is available to every
 client; see `jabber-edit-bookmarks'."
   :group 'jabber-chat
   :type '(repeat (string :tag "JID of room")))
+;; jabber-muc-autojoin:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-disable-disco-check][jabber-muc-disable-disco-check:1]]
 (defcustom jabber-muc-disable-disco-check nil
   "If non-nil, disable checking disco#info of rooms before joining them.
 Disco information can tell whether the room exists and whether it is
@@ -8053,7 +9175,9 @@ password protected, but some servers do not support it.  If you want
 to join chat rooms on such servers, set this variable to t."
   :group 'jabber-chat
   :type 'boolean)
+;; jabber-muc-disable-disco-check:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-groupchat-buffer-format][jabber-groupchat-buffer-format:1]]
 (defcustom jabber-groupchat-buffer-format "*-jabber-groupchat-%n-*"
   "The format specification for the name of groupchat buffers.
 
@@ -8065,7 +9189,9 @@ in):
 %j   Bare JID (without resource)"
   :type 'string
   :group 'jabber-chat)
+;; jabber-groupchat-buffer-format:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-groupchat-prompt-format][jabber-groupchat-prompt-format:1]]
 (defcustom jabber-groupchat-prompt-format "[%t] %n> "
   "The format specification for lines in groupchat.
 
@@ -8077,7 +9203,9 @@ These fields are available:
 %j   Full JID (room@server/nick)"
   :type 'string
   :group 'jabber-chat)
+;; jabber-groupchat-prompt-format:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-header-line-format][jabber-muc-header-line-format:1]]
 (defcustom jabber-muc-header-line-format
   '(" " (:eval (jabber-jid-displayname jabber-group))
     "\t" jabber-muc-topic)
@@ -8086,7 +9214,9 @@ These fields are available:
 The format is that of `mode-line-format' and `header-line-format'."
   :type 'sexp
   :group 'jabber-chat)
+;; jabber-muc-header-line-format:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-private-buffer-format][jabber-muc-private-buffer-format:1]]
 (defcustom jabber-muc-private-buffer-format "*-jabber-muc-priv-%g-%n-*"
   "The format specification for the buffer name for private MUC messages.
 
@@ -8096,7 +9226,9 @@ These fields are available:
 %n   Nickname of the group member you're chatting with"
   :type 'string
   :group 'jabber-chat)
+;; jabber-muc-private-buffer-format:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-private-foreign-prompt-format][jabber-muc-private-foreign-prompt-format:1]]
 (defcustom jabber-muc-private-foreign-prompt-format "[%t] %g/%n> "
   "The format specification for lines others type in a private MUC buffer.
 
@@ -8107,7 +9239,9 @@ These fields are available:
 %g  Short room name (either roster name or username part of JID)"
   :type 'string
   :group 'jabber-chat)
+;; jabber-muc-private-foreign-prompt-format:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-print-names-format][jabber-muc-print-names-format:1]]
 (defcustom jabber-muc-print-names-format "	%n	%a	%j\n"
   "The format specification for MUC list lines.
 
@@ -8118,7 +9252,9 @@ Fields available:
 %j  Full JID (room@server/nick)"
   :type 'string
   :group 'jabber-chat)
+;; jabber-muc-print-names-format:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-private-header-line-format][jabber-muc-private-header-line-format:1]]
 (defcustom jabber-muc-private-header-line-format
   '(" " (:eval (jabber-jid-resource jabber-chatting-with))
     " in " (:eval (jabber-jid-displayname (jabber-jid-user jabber-chatting-with)))
@@ -8129,12 +9265,16 @@ Fields available:
 The format is that of `mode-line-format' and `header-line-format'."
   :type 'sexp
   :group 'jabber-chat)
+;; jabber-muc-private-header-line-format:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-printers][jabber-muc-printers:1]]
 ;;;###autoload
 (defvar jabber-muc-printers '()
   "List of functions that may be able to print part of a MUC message.
 This gets prepended to `jabber-chat-printers', which see.")
+;; jabber-muc-printers:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-printers][jabber-muc-printers:2]]
 ;;;###autoload
 (defun jabber-muc-get-buffer (group)
   "Return the chat buffer for chatroom GROUP.
@@ -8145,7 +9285,9 @@ Either a string or a buffer is returned, so use `get-buffer' or
 		(cons ?n (jabber-jid-displayname group))
                 (cons ?b (jabber-jid-bookmarkname group))
 		(cons ?j (jabber-jid-user group)))))
+;; jabber-muc-printers:2 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-create-buffer][jabber-muc-create-buffer:1]]
 (defun jabber-muc-create-buffer (jc group)
   "Prepare a buffer for chatroom GROUP.
 This function is idempotent.
@@ -8162,7 +9304,9 @@ JC is the Jabber connection."
     (setq jabber-send-function 'jabber-muc-send)
     (setq header-line-format jabber-muc-header-line-format)
     (current-buffer)))
+;; jabber-muc-create-buffer:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-private-get-buffer][jabber-muc-private-get-buffer:1]]
 ;;;###autoload
 (defun jabber-muc-private-get-buffer (group nickname)
   "Return the chat buffer for private chat with NICKNAME in GROUP.
@@ -8172,7 +9316,9 @@ Either a string or a buffer is returned, so use `get-buffer' or
 	       (list
 		(cons ?g (jabber-jid-displayname group))
 		(cons ?n nickname))))
+;; jabber-muc-private-get-buffer:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-private-create-buffer][jabber-muc-private-create-buffer:1]]
 (defun jabber-muc-private-create-buffer (jc group nickname)
   "Prepare a buffer for chatting with NICKNAME in GROUP.
 This function is idempotent.
@@ -8187,7 +9333,9 @@ JC is the Jabber connection."
     (setq header-line-format jabber-muc-private-header-line-format)
 
     (current-buffer)))
+;; jabber-muc-private-create-buffer:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-send][jabber-muc-send:1]]
 (defun jabber-muc-send (jc body)
   "Send BODY to MUC room in current buffer.
 
@@ -8199,14 +9347,18 @@ JC is the Jabber connection."
 		      ((to . ,jabber-group)
 		       (type . "groupchat"))
 		      (body () ,body))))
+;; jabber-muc-send:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-add-groupchat][jabber-muc-add-groupchat:1]]
 (defun jabber-muc-add-groupchat (group nickname)
   "Remember participating in GROUP under NICKNAME."
   (let ((whichgroup (assoc group *jabber-active-groupchats*)))
     (if whichgroup
 	(setcdr whichgroup nickname)
       (add-to-list '*jabber-active-groupchats* (cons group nickname)))))
+;; jabber-muc-add-groupchat:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-remove-groupchat][jabber-muc-remove-groupchat:1]]
 (defun jabber-muc-remove-groupchat (group)
   "Remove GROUP from internal bookkeeping."
   (let ((whichgroup (assoc group *jabber-active-groupchats*))
@@ -8215,7 +9367,9 @@ JC is the Jabber connection."
 	  (delq whichgroup *jabber-active-groupchats*))
     (setq jabber-muc-participants
 	  (delq whichparticipants jabber-muc-participants))))
+;; jabber-muc-remove-groupchat:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-connection-closed][jabber-muc-connection-closed:1]]
 (defun jabber-muc-connection-closed (bare-jid)
   "Remove MUC data for BARE-JID.
 Forget all information about rooms that had been entered with
@@ -8232,14 +9386,18 @@ this JID.  Suitable to call when the connection is closed."
 			   :key #'car :test #'string=))
 	    (setq jabber-muc-participants
 		  (delq room-entry jabber-muc-participants))))))))
+;; jabber-muc-connection-closed:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-participant-plist][jabber-muc-participant-plist:1]]
 (defun jabber-muc-participant-plist (group nickname)
   "Return plist associated with NICKNAME in GROUP.
 Return nil if nothing known about that combination."
   (let ((whichparticipants (assoc group jabber-muc-participants)))
     (when whichparticipants
       (cdr (assoc nickname whichparticipants)))))
+;; jabber-muc-participant-plist:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-modify-participant][jabber-muc-modify-participant:1]]
 (defun jabber-muc-modify-participant (group nickname new-plist)
   "Assign properties in NEW-PLIST to NICKNAME in GROUP."
   (let ((participants (assoc group jabber-muc-participants)))
@@ -8253,7 +9411,9 @@ Return nil if nothing known about that combination."
 	    (push (cons nickname new-plist) (cdr participants))))
       ;; or we don't
       (push (cons group (list (cons nickname new-plist))) jabber-muc-participants))))
+;; jabber-muc-modify-participant:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-report-delta][jabber-muc-report-delta:1]]
 (defun jabber-muc-report-delta (nickname old-plist new-plist reason actor)
   "Compare OLD-PLIST and NEW-PLIST, and return a string explaining the change.
 Return nil if nothing noteworthy has happened.
@@ -8330,14 +9490,18 @@ in the user entering/staying in the room."
 	(concat nickname " has been granted voice" actor-reason))
        ((string= to "visitor")
 	(concat nickname " has been denied voice" actor-reason)))))))
+;; jabber-muc-report-delta:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-remove-participant][jabber-muc-remove-participant:1]]
 (defun jabber-muc-remove-participant (group nickname)
   "Forget everything about NICKNAME in GROUP."
   (let ((participants (assoc group jabber-muc-participants)))
     (when participants
       (let ((participant (assoc nickname (cdr participants))))
 	(setf (cdr participants) (delq participant (cdr participants)))))))
+;; jabber-muc-remove-participant:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-argument-list][jabber-muc-argument-list:1]]
 (defmacro jabber-muc-argument-list (&optional args)
   "Prepend connection and group name to ARGS.
 If the current buffer is not an MUC buffer, signal an error.
@@ -8345,7 +9509,9 @@ This macro is meant for use as an argument to `interactive'."
   `(if (null jabber-group)
        (error "Not in MUC buffer")
      (nconc (list jabber-buffer-connection jabber-group) ,args)))
+;; jabber-muc-argument-list:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-read-completing][jabber-muc-read-completing:1]]
 (defun jabber-muc-read-completing (prompt &optional allow-not-joined)
   "Read the name of a joined chatroom, or use chatroom of current buffer if any.
 If ALLOW-NOT-JOINED is provided and non-nil, permit choosing any
@@ -8358,17 +9524,23 @@ JID; only provide completion as a guide."
 					    *jabber-active-groupchats*))
 				  (not allow-not-joined)
 				  jabber-group)))
+;; jabber-muc-read-completing:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-read-nickname][jabber-muc-read-nickname:1]]
 (defun jabber-muc-read-nickname (group prompt)
   "Read the nickname of a participant in GROUP."
   (let ((nicknames (cdr (assoc group jabber-muc-participants))))
     (unless nicknames
       (error "Unknown group: %s" group))
     (completing-read prompt nicknames nil t nil 'jabber-muc-nickname-history)))
+;; jabber-muc-read-nickname:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-read-nickname][jabber-muc-read-nickname:2]]
 (add-to-list 'jabber-jid-muc-menu
              (cons "Request vcard" 'jabber-muc-vcard-get))
+;; jabber-muc-read-nickname:2 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-vcard-get][jabber-muc-vcard-get:1]]
 ;;;###autoload
 (defun jabber-muc-vcard-get (jc group nickname)
   "Request vcard from chat with NICKNAME in GROUP.
@@ -8379,7 +9551,9 @@ JC is the Jabber connection."
     (list (jabber-muc-read-nickname jabber-group "Nickname: "))))
     (let ((muc-name (format "%s/%s" group nickname)))
 	(jabber-vcard-get jc muc-name)))
+;; jabber-muc-vcard-get:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-instant-config][jabber-muc-instant-config:1]]
 (defun jabber-muc-instant-config (jc group)
   "Accept default configuration for GROUP.
 This can be used for a newly created room, as an alternative to
@@ -8395,10 +9569,14 @@ JC is the Jabber connection."
 			  (x ((xmlns . "jabber:x:data") (type . "submit"))))
 		  #'jabber-report-success "MUC instant configuration"
 		  #'jabber-report-success "MUC instant configuration"))
+;; jabber-muc-instant-config:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-instant-config][jabber-muc-instant-config:2]]
 (add-to-list 'jabber-jid-muc-menu
    (cons "Configure groupchat" 'jabber-muc-get-config))
+;; jabber-muc-instant-config:2 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-get-config][jabber-muc-get-config:1]]
 (defun jabber-muc-get-config (jc group)
   "Ask for MUC configuration form.
 
@@ -8409,10 +9587,14 @@ JC is the Jabber connection."
 		  '(query ((xmlns . "http://jabber.org/protocol/muc#owner")))
 		  #'jabber-process-data #'jabber-muc-render-config
 		  #'jabber-process-data "MUC configuration request failed"))
+;; jabber-muc-get-config:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-get-config][jabber-muc-get-config:2]]
 (defalias 'jabber-groupchat-get-config 'jabber-muc-get-config
   "Deprecated.  See `jabber-muc-get-config' instead.")
+;; jabber-muc-get-config:2 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-render-config][jabber-muc-render-config:1]]
 (defun jabber-muc-render-config (jc xml-data)
   "Render MUC configuration form.
 
@@ -8440,10 +9622,14 @@ obtained from `xml-parse-region'."
 
     (widget-setup)
     (widget-minor-mode 1))))
+;; jabber-muc-render-config:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-render-config][jabber-muc-render-config:2]]
 (defalias 'jabber-groupchat-render-config 'jabber-muc-render-config
   "Deprecated.  See `jabber-muc-render-config' instead.")
+;; jabber-muc-render-config:2 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-submit-config][jabber-muc-submit-config:1]]
 (defun jabber-muc-submit-config (&rest ignore)
   "Submit MUC configuration form."
 
@@ -8453,10 +9639,14 @@ obtained from `xml-parse-region'."
 			  ,(jabber-parse-xdata-form))
 		  #'jabber-report-success "MUC configuration"
 		  #'jabber-report-success "MUC configuration"))
+;; jabber-muc-submit-config:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-submit-config][jabber-muc-submit-config:2]]
 (defalias 'jabber-groupchat-submit-config 'jabber-muc-submit-config
   "Deprecated.  See `jabber-muc-submit-config' instead.")
+;; jabber-muc-submit-config:2 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-cancel-config][jabber-muc-cancel-config:1]]
 (defun jabber-muc-cancel-config (&rest ignore)
   "Cancel MUC configuration form."
 
@@ -8465,13 +9655,19 @@ obtained from `xml-parse-region'."
 		  '(query ((xmlns . "http://jabber.org/protocol/muc#owner"))
 			  (x ((xmlns . "jabber:x:data") (type . "cancel"))))
 		  nil nil nil nil))
+;; jabber-muc-cancel-config:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-cancel-config][jabber-muc-cancel-config:2]]
 (defalias 'jabber-groupchat-cancel-config 'jabber-muc-cancel-config
   "Deprecated.  See `jabber-muc-cancel-config' instead.")
+;; jabber-muc-cancel-config:2 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-cancel-config][jabber-muc-cancel-config:3]]
 (add-to-list 'jabber-jid-muc-menu
 	     (cons "Join groupchat" 'jabber-muc-join))
+;; jabber-muc-cancel-config:3 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-join][jabber-muc-join:1]]
 (defun jabber-muc-join (jc group nickname &optional popup)
   "Join a groupchat, or change nick.
 In interactive calls, or if POPUP is non-nil, switch to the
@@ -8492,10 +9688,14 @@ JC is the Jabber connection."
     ;; to.
     (jabber-disco-get-info jc group nil #'jabber-muc-join-2
 			   (list group nickname popup))))
+;; jabber-muc-join:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-join][jabber-muc-join:2]]
 (defalias 'jabber-groupchat-join 'jabber-muc-join
   "Deprecated.  Use `jabber-muc-join' instead.")
+;; jabber-muc-join:2 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-join-2][jabber-muc-join-2:1]]
 (defun jabber-muc-join-2 (jc closure result)
   (cl-destructuring-bind (group nickname popup) closure
     (let* ( ;; Either success...
@@ -8538,10 +9738,14 @@ JC is the Jabber connection."
 		(read-passwd (format "Password for %s: " (jabber-jid-displayname group)))))))
 
 	(jabber-muc-join-3 jc group nickname password popup))))))
+;; jabber-muc-join-2:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-join-2][jabber-muc-join-2:2]]
 (defalias 'jabber-groupchat-join-2 'jabber-muc-join-2
   "Deprecated.  See `jabber-muc-join-2' instead.")
+;; jabber-muc-join-2:2 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-join-3][jabber-muc-join-3:1]]
 (defun jabber-muc-join-3 (jc group nickname password popup)
 
   ;; Remember that this is a groupchat _before_ sending the stanza.
@@ -8566,10 +9770,14 @@ JC is the Jabber connection."
   (when popup
     (let ((buffer (jabber-muc-create-buffer jc group)))
       (switch-to-buffer buffer))))
+;; jabber-muc-join-3:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-join-3][jabber-muc-join-3:2]]
 (defalias 'jabber-groupchat-join-3 'jabber-muc-join-3
   "Deprecated.  See `jabber-muc-join-3' instead.")
+;; jabber-muc-join-3:2 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-read-my-nickname][jabber-muc-read-my-nickname:1]]
 (defun jabber-muc-read-my-nickname (jc group &optional default)
   "Read nickname for joining GROUP.
 If DEFAULT is non-nil, return default nick without prompting.
@@ -8584,15 +9792,23 @@ JC is the Jabber connection."
         (jabber-read-with-input-method (format "Nickname: (default %s) "
 					   default-nickname)
 				   nil nil default-nickname))))
+;; jabber-muc-read-my-nickname:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-read-my-nickname][jabber-muc-read-my-nickname:2]]
 (add-to-list 'jabber-jid-muc-menu
 	     (cons "Change nickname" 'jabber-muc-nick))
+;; jabber-muc-read-my-nickname:2 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-read-my-nickname][jabber-muc-read-my-nickname:3]]
 (defalias 'jabber-muc-nick 'jabber-muc-join)
+;; jabber-muc-read-my-nickname:3 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-read-my-nickname][jabber-muc-read-my-nickname:4]]
 (add-to-list 'jabber-jid-muc-menu
 	     (cons "Leave groupchat" 'jabber-muc-leave))
+;; jabber-muc-read-my-nickname:4 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-leave][jabber-muc-leave:1]]
 (defun jabber-muc-leave (jc group)
   "Leave a groupchat.
 
@@ -8603,13 +9819,19 @@ JC is the Jabber connection."
     (jabber-send-sexp jc
 		      `(presence ((to . ,(format "%s/%s" group (cdr whichgroup)))
 				  (type . "unavailable"))))))
+;; jabber-muc-leave:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-leave][jabber-muc-leave:2]]
 (defalias 'jabber-groupchat-leave 'jabber-muc-leave
   "Deprecated.  Use `jabber-muc-leave' instead.")
+;; jabber-muc-leave:2 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-leave][jabber-muc-leave:3]]
 (add-to-list 'jabber-jid-muc-menu
 	     (cons "List participants" 'jabber-muc-names))
+;; jabber-muc-leave:3 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-names][jabber-muc-names:1]]
 (defun jabber-muc-names ()
   "Print names, affiliations, and roles of participants in current buffer."
   (interactive)
@@ -8617,7 +9839,9 @@ JC is the Jabber connection."
 					  (jabber-muc-print-names
 					   (cdr (assoc jabber-group jabber-muc-participants)))
 					  :time (current-time))))
+;; jabber-muc-names:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-format-names][jabber-muc-format-names:1]]
 (defun jabber-muc-format-names (participant)
   "Format one participant name."
   (format-spec jabber-muc-print-names-format
@@ -8625,7 +9849,9 @@ JC is the Jabber connection."
                 (cons ?n (car participant))
                 (cons ?a (plist-get (cdr participant) 'affiliation))
                 (cons ?j (or (plist-get (cdr participant) 'jid) "")))))
+;; jabber-muc-format-names:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-print-names][jabber-muc-print-names:1]]
 (defun jabber-muc-print-names (participants)
   "Format and return data in PARTICIPANTS."
   (let ((mlist) (plist) (vlist) (nlist))
@@ -8646,10 +9872,14 @@ JC is the Jabber connection."
      (apply 'concat "\nVisitors:\n" (mapcar 'jabber-muc-format-names vlist))
      (apply 'concat "\nNones:\n" (mapcar 'jabber-muc-format-names nlist)))
     ))
+;; jabber-muc-print-names:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-print-names][jabber-muc-print-names:2]]
 (add-to-list 'jabber-jid-muc-menu
 	     (cons "Set topic" 'jabber-muc-set-topic))
+;; jabber-muc-print-names:2 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-set-topic][jabber-muc-set-topic:1]]
 (defun jabber-muc-set-topic (jc group topic)
   "Set topic of GROUP to TOPIC.
 
@@ -8658,7 +9888,9 @@ JC is the Jabber connection."
    (jabber-muc-argument-list
     (list (jabber-read-with-input-method "New topic: " jabber-muc-topic))))
   (jabber-send-message jc group topic nil "groupchat"))
+;; jabber-muc-set-topic:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-snarf-topic][jabber-muc-snarf-topic:1]]
 (defun jabber-muc-snarf-topic (xml-data)
   "Record subject (topic) of the given <message/>, if any.
 
@@ -8667,10 +9899,14 @@ obtained from `xml-parse-region'."
   (let ((new-topic (jabber-xml-path xml-data '(subject ""))))
     (when new-topic
       (setq jabber-muc-topic new-topic))))
+;; jabber-muc-snarf-topic:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-snarf-topic][jabber-muc-snarf-topic:2]]
 (add-to-list 'jabber-jid-muc-menu
 	     (cons "Set role (kick, voice, op)" 'jabber-muc-set-role))
+;; jabber-muc-snarf-topic:2 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-set-role][jabber-muc-set-role:1]]
 (defun jabber-muc-set-role (jc group nickname role reason)
   "Set role of NICKNAME in GROUP to ROLE, specifying REASON.
 
@@ -8690,10 +9926,14 @@ JC is the Jabber connection."
 				     `(reason () ,reason))))
 		    'jabber-report-success "Role change"
 		    'jabber-report-success "Role change")))
+;; jabber-muc-set-role:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-set-role][jabber-muc-set-role:2]]
 (add-to-list 'jabber-jid-muc-menu
 	     (cons "Set affiliation (ban, member, admin)" 'jabber-muc-set-affiliation))
+;; jabber-muc-set-role:2 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-set-affiliation][jabber-muc-set-affiliation:1]]
 (defun jabber-muc-set-affiliation (jc group nickname-or-jid nickname-p affiliation reason)
   "Set affiliation of NICKNAME-OR-JID in GROUP to AFFILIATION.
 If NICKNAME-P is non-nil, NICKNAME-OR-JID is a nickname in the
@@ -8730,10 +9970,14 @@ JC is the Jabber connection."
 				     `(reason () ,reason))))
 		    'jabber-report-success "Affiliation change"
 		    'jabber-report-success "Affiliation change")))
+;; jabber-muc-set-affiliation:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-set-affiliation][jabber-muc-set-affiliation:2]]
 (add-to-list 'jabber-jid-muc-menu
 	     (cons "Invite someone to chatroom" 'jabber-muc-invite))
+;; jabber-muc-set-affiliation:2 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-invite][jabber-muc-invite:1]]
 (defun jabber-muc-invite (jc jid group reason)
   "Invite JID to GROUP, stating REASON.
 
@@ -8753,9 +9997,13 @@ JC is the Jabber connection."
 		(invite ((to . ,jid))
 			,(unless (zerop (length reason))
 			   `(reason nil ,reason)))))))
+;; jabber-muc-invite:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-invite][jabber-muc-invite:2]]
 (add-to-list 'jabber-body-printers 'jabber-muc-print-invite)
+;; jabber-muc-invite:2 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-print-invite][jabber-muc-print-invite:1]]
 (defun jabber-muc-print-invite (xml-data who mode)
   "Print MUC invitation.
 
@@ -8819,7 +10067,9 @@ obtained from `xml-parse-region'."
 						 'keymap keymap
 						 'face 'highlight))))))))
 	  (cl-return t))))))
+;; jabber-muc-print-invite:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-autojoin][jabber-muc-autojoin:1]]
 (defun jabber-muc-autojoin (jc)
   "Join rooms specified in account bookmarks and global `jabber-muc-autojoin'.
 
@@ -8840,7 +10090,9 @@ JC is the Jabber connection."
 	   (jabber-muc-join jc (plist-get bookmark :jid)
 				  (or (plist-get bookmark :nick)
 				      (plist-get (fsm-get-state-data jc) :username)))))))))
+;; jabber-muc-autojoin:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-message-p][jabber-muc-message-p:1]]
 ;;;###autoload
 (defun jabber-muc-message-p (message)
   "Return non-nil if MESSAGE is a groupchat message.
@@ -8856,13 +10108,17 @@ include groupchat invites."
      (and (string= type "error")
 	  (gethash (jabber-jid-symbol from) jabber-pending-groupchats))
      (jabber-xml-path message '(("http://jabber.org/protocol/muc#user" . "x") invite)))))
+;; jabber-muc-message-p:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-sender-p][jabber-muc-sender-p:1]]
 ;;;###autoload
 (defun jabber-muc-sender-p (jid)
   "Return non-nil if JID is a full JID of an MUC participant."
   (and (assoc (jabber-jid-user jid) *jabber-active-groupchats*)
        (jabber-jid-resource jid)))
+;; jabber-muc-sender-p:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-private-message-p][jabber-muc-private-message-p:1]]
 ;;;###autoload
 (defun jabber-muc-private-message-p (message)
   "Return non-nil if MESSAGE is a private message in a groupchat."
@@ -8871,10 +10127,14 @@ include groupchat invites."
     (and
      (not (string= type "groupchat"))
      (jabber-muc-sender-p from))))
+;; jabber-muc-private-message-p:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-private-message-p][jabber-muc-private-message-p:2]]
 (add-to-list 'jabber-jid-muc-menu
 	     (cons "Open private chat" 'jabber-muc-private))
+;; jabber-muc-private-message-p:2 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-private][jabber-muc-private:1]]
 (defun jabber-muc-private (jc group nickname)
   "Open private chat with NICKNAME in GROUP.
 
@@ -8883,7 +10143,9 @@ JC is the Jabber connection."
    (jabber-muc-argument-list
     (list (jabber-muc-read-nickname jabber-group "Nickname: "))))
   (switch-to-buffer (jabber-muc-private-create-buffer jabber-buffer-connection group nickname)))
+;; jabber-muc-private:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-presence-p][jabber-muc-presence-p:1]]
 (defun jabber-muc-presence-p (presence)
   "Return non-nil if PRESENCE is presence from groupchat."
   (let ((from (jabber-xml-get-attribute presence 'from))
@@ -8897,7 +10159,9 @@ JC is the Jabber connection."
 	;; ...or if it is error presence from a room we tried to join.
 	(and (string= type "error")
 	     (gethash (jabber-jid-symbol from) jabber-pending-groupchats)))))
+;; jabber-muc-presence-p:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-parse-affiliation][jabber-muc-parse-affiliation:1]]
 (defun jabber-muc-parse-affiliation (x-muc)
   "Parse X-MUC in the muc#user namespace and return a plist.
 Return nil if X-MUC is nil."
@@ -8905,7 +10169,9 @@ Return nil if X-MUC is nil."
   (apply 'nconc (mapcar (lambda (prop) (list (car prop) (cdr prop)))
 			(jabber-xml-node-attributes
 			 (car (jabber-xml-get-children x-muc 'item))))))
+;; jabber-muc-parse-affiliation:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-print-prompt][jabber-muc-print-prompt:1]]
 (defun jabber-muc-print-prompt (xml-data &optional local dont-print-nick-p)
   "Print MUC prompt for message in XML-DATA."
   (let ((nick (jabber-jid-resource (jabber-xml-get-attribute xml-data 'from)))
@@ -8937,7 +10203,9 @@ Return nil if X-MUC is nil."
                            'jabber-chat-prompt-foreign))
 		 'help-echo (concat (format-time-string "On %Y-%m-%d %H:%M:%S" timestamp) " from " nick " in " jabber-group)))
       (jabber-muc-system-prompt))))
+;; jabber-muc-print-prompt:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-private-print-prompt][jabber-muc-private-print-prompt:1]]
 (defun jabber-muc-private-print-prompt (xml-data)
   "Print prompt for private MUC message in XML-DATA."
   (let ((nick (jabber-jid-resource (jabber-xml-get-attribute xml-data 'from)))
@@ -8956,7 +10224,9 @@ Return nil if X-MUC is nil."
 					(jabber-jid-username group)))))
 	     'face 'jabber-chat-prompt-foreign
 	     'help-echo (concat (format-time-string "On %Y-%m-%d %H:%M:%S" timestamp) " from " nick " in " jabber-group)))))
+;; jabber-muc-private-print-prompt:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-system-prompt][jabber-muc-system-prompt:1]]
 (defun jabber-muc-system-prompt (&rest ignore)
   "Print system prompt for MUC."
   (insert (jabber-propertize
@@ -8969,9 +10239,13 @@ Return nil if X-MUC is nil."
 			 (cons ?j jabber-group)))
 	   'face 'jabber-chat-prompt-system
 	   'help-echo (format-time-string "System message on %Y-%m-%d %H:%M:%S"))))
+;; jabber-muc-system-prompt:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-system-prompt][jabber-muc-system-prompt:2]]
 (add-to-list 'jabber-message-chain 'jabber-muc-process-message)
+;; jabber-muc-system-prompt:2 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-process-message][jabber-muc-process-message:1]]
 (defun jabber-muc-process-message (jc xml-data)
   "If XML-DATA is a groupchat message, handle it as such.
 
@@ -9012,7 +10286,9 @@ JC is the Jabber connection."
 				    nick group (current-buffer) body-text
 				    (funcall jabber-alert-muc-function
 					     nick group (current-buffer) body-text))))))))))
+;; jabber-muc-process-message:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-process-presence][jabber-muc-process-presence:1]]
 (defun jabber-muc-process-presence (jc presence)
   (let* ((from (jabber-xml-get-attribute presence 'from))
 	 (type (jabber-xml-get-attribute presence 'type))
@@ -9176,22 +10452,30 @@ JC is the Jabber connection."
 			 (insert ".")
 			 (buffer-string))
 		       :time (current-time))))))))))))
+;; jabber-muc-process-presence:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-completion-delimiter][jabber-muc-completion-delimiter:1]]
 (defcustom jabber-muc-completion-delimiter ": "
   "String to add to end of completion line."
   :type 'string
   :group 'jabber-chat)
+;; jabber-muc-completion-delimiter:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-looks-personaling-symbols][jabber-muc-looks-personaling-symbols:1]]
 (defcustom jabber-muc-looks-personaling-symbols '("," ":" ">")
   "Symbols for personaling messages."
   :type '(repeat string)
   :group 'jabber-chat)
+;; jabber-muc-looks-personaling-symbols:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-personal-message-bonus][jabber-muc-personal-message-bonus:1]]
 (defcustom jabber-muc-personal-message-bonus (* 60 20)
   "Bonus for personal message, in seconds."
   :type 'integer
   :group 'jabber-chat)
+;; jabber-muc-personal-message-bonus:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-all-string][jabber-muc-all-string:1]]
 (defcustom jabber-muc-all-string "all"
   "String meaning all conference members (to insert in completion).
 Note that \":\" or alike not needed (it appended in other string)"
@@ -9204,17 +10488,23 @@ Note that \":\" or alike not needed (it appended in other string)"
 ;;; Code:
 
 (require 'hippie-exp)
+;; jabber-muc-all-string:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::**jabber-muc-participant-last-speaking*][*jabber-muc-participant-last-speaking*:1]]
 (defvar *jabber-muc-participant-last-speaking* nil
   "Global alist in form (group . ((member . time-of-last-speaking) ...) ...).")
+;; *jabber-muc-participant-last-speaking*:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-my-nick][jabber-my-nick:1]]
 (defun jabber-my-nick (&optional group)
   "Return my jabber nick in GROUP."
   (let ((room (or group jabber-group)))
     (cdr (or (assoc room *jabber-active-groupchats*)
              (assoc room jabber-muc-default-nicknames)))
     ))
+;; jabber-my-nick:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-looks-like-personal-p][jabber-muc-looks-like-personal-p:1]]
 ;;;###autoload
 (defun jabber-muc-looks-like-personal-p (message &optional group)
   "Return non-nil if jabber MESSAGE is addresed to me.
@@ -9225,13 +10515,17 @@ Optional argument GROUP to look."
 		 (regexp-opt jabber-muc-looks-personaling-symbols))
 		message)
     nil))
+;; jabber-muc-looks-like-personal-p:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-nicknames][jabber-muc-nicknames:1]]
 (defun jabber-muc-nicknames ()
   "List of conference participants, excluding self, or nil if we not in conference."
   (cl-delete-if '(lambda (nick)
 		 (string= nick (jabber-my-nick)))
 	     (append (mapcar 'car (cdr (assoc jabber-group jabber-muc-participants))) (list jabber-muc-all-string))))
+;; jabber-muc-nicknames:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-participant-update-activity][jabber-muc-participant-update-activity:1]]
 (defun jabber-muc-participant-update-activity (group nick time)
   "Update NICK's time of last speaking in GROUP to TIME."
   (let* ((room (assoc group *jabber-muc-participant-last-speaking*))
@@ -9248,7 +10542,9 @@ Optional argument GROUP to look."
           (setq *jabber-muc-participant-last-speaking*
                 (cons (cons group room-activity)
                       *jabber-muc-participant-last-speaking*)))))))
+;; jabber-muc-participant-update-activity:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-track-message-time][jabber-muc-track-message-time:1]]
 (defun jabber-muc-track-message-time (nick group buffer text &optional title)
   "Tracks time of NICK's last speaking in GROUP."
   (when nick
@@ -9259,7 +10555,9 @@ Optional argument GROUP to look."
        (if (jabber-muc-looks-like-personal-p text group)
 	   (+ time jabber-muc-personal-message-bonus)
 	 time)))))
+;; jabber-muc-track-message-time:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-sort-nicks][jabber-sort-nicks:1]]
 (defun jabber-sort-nicks (nicks group)
   "Return list of NICKS in GROUP, sorted."
   (let ((times (cdr (assoc group *jabber-muc-participant-last-speaking*))))
@@ -9274,7 +10572,9 @@ Optional argument GROUP to look."
 		    (> t1 t2)))))
       (mapcar 'car (sort (mapcar #'fetch-time nicks)
 			  'cmp)))))
+;; jabber-sort-nicks:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-beginning-of-line][jabber-muc-beginning-of-line:1]]
 (defun jabber-muc-beginning-of-line ()
   "Return position of line begining."
   (save-excursion
@@ -9282,7 +10582,9 @@ Optional argument GROUP to look."
         (backward-char (+ (length jabber-muc-completion-delimiter) 1)))
     (skip-syntax-backward "^-")
     (point)))
+;; jabber-muc-beginning-of-line:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-muc-beginning-of-line][jabber-muc-beginning-of-line:2]]
 ;;; One big hack:
 (defun jabber-muc-completion-delete-last-tried ()
   "Delete last tried competion variand from line."
@@ -9292,7 +10594,9 @@ Optional argument GROUP to look."
       (delete-char (length last-tried))
       (ignore-errors (delete-char (length jabber-muc-completion-delimiter)))
       )))
+;; jabber-muc-beginning-of-line:2 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*try-expand-jabber-muc][try-expand-jabber-muc:1]]
 (defun try-expand-jabber-muc (old)
   "Try to expand target nick in MUC according to last speaking time.
 OLD is last tried nickname."
@@ -9332,11 +10636,15 @@ OLD is last tried nickname."
     (setq he-tried-table (cons (car he-expand-list) (cdr he-tried-table)))
     (setq he-expand-list (cdr he-expand-list))
     t)))
+;; try-expand-jabber-muc:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*try-expand-jabber-muc][try-expand-jabber-muc:2]]
 (add-hook 'jabber-muc-hooks 'jabber-muc-track-message-time)
 (fset 'jabber-muc-completion (make-hippie-expand-function '(try-expand-jabber-muc)))
 (define-key jabber-chat-mode-map [?\t] 'jabber-muc-completion)
+;; try-expand-jabber-muc:2 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-get-register][jabber-get-register:1]]
 (add-to-list 'jabber-jid-service-menu
 	     (cons "Register with service" 'jabber-get-register))
 (defun jabber-get-register (jc to)
@@ -9350,7 +10658,9 @@ JC is the Jabber connection."
 		  '(query ((xmlns . "jabber:iq:register")))
 		  #'jabber-process-data #'jabber-process-register-or-search
 		  #'jabber-report-success "Registration"))
+;; jabber-get-register:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-process-register-or-search][jabber-process-register-or-search:1]]
 (defun jabber-process-register-or-search (jc xml-data)
   "Display results from jabber:iq:{register,search} query as a form.
 
@@ -9412,7 +10722,9 @@ obtained from `xml-parse-region'."
     (widget-insert "\n")
     (widget-setup)
     (widget-minor-mode 1)))
+;; jabber-process-register-or-search:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-submit-register][jabber-submit-register:1]]
 (defun jabber-submit-register (&rest ignore)
   "Submit registration input.  See `jabber-process-register-or-search'."
 
@@ -9437,7 +10749,9 @@ obtained from `xml-parse-region'."
 		    handler (if registerp 'failure text)))
 
   (message "Registration sent"))
+;; jabber-submit-register:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-process-register-secondtime][jabber-process-register-secondtime:1]]
 (defun jabber-process-register-secondtime (jc xml-data closure-data)
   "Receive registration success or failure.
 CLOSURE-DATA is either 'success or 'error.
@@ -9452,7 +10766,9 @@ obtained from `xml-parse-region'."
     (jabber-report-success jc xml-data "Account registration")))
   (sit-for 3)
     (jabber-disconnect-one jc))
+;; jabber-process-register-secondtime:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-remove-register][jabber-remove-register:1]]
 (defun jabber-remove-register (&rest ignore)
   "Cancel registration.  See `jabber-process-register-or-search'."
 
@@ -9463,7 +10779,9 @@ obtained from `xml-parse-region'."
 			      (remove))
 		      #'jabber-report-success "Unregistration"
 		      #'jabber-report-success "Unregistration")))
+;; jabber-remove-register:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-get-search][jabber-get-search:1]]
 (add-to-list 'jabber-jid-service-menu
 	     (cons "Search directory" 'jabber-get-search))
 (defun jabber-get-search (jc to)
@@ -9477,7 +10795,9 @@ JC is the Jabber connection."
 		  '(query ((xmlns . "jabber:iq:search")))
 		  #'jabber-process-data #'jabber-process-register-or-search
 		  #'jabber-report-success "Search field retrieval"))
+;; jabber-get-search:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-submit-search][jabber-submit-search:1]]
 (defun jabber-submit-search (&rest ignore)
   "Submit search.  See `jabber-process-register-or-search'."
 
@@ -9498,7 +10818,9 @@ JC is the Jabber connection."
 		    #'jabber-report-success text))
 
   (message "Search sent"))
+;; jabber-submit-search:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-process-search-result][jabber-process-search-result:1]]
 (defun jabber-process-search-result (jc xml-data)
   "Receive and display search results.
 
@@ -9552,7 +10874,9 @@ obtained from `xml-parse-region'."
 		(put-text-property start-of-line (point)
 				   'jabber-jid jid))
 	    (insert "\n"))))))
+;; jabber-process-search-result:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-get-browse][jabber-get-browse:1]]
 (add-to-list 'jabber-jid-info-menu
 	     (cons "Send browse query" 'jabber-get-browse))
 (defun jabber-get-browse (jc to)
@@ -9566,7 +10890,9 @@ JC is the Jabber connection."
                   '(query ((xmlns . "jabber:iq:browse")))
                   #'jabber-process-data #'jabber-process-browse
 		  #'jabber-process-data "Browse failed"))
+;; jabber-get-browse:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-process-browse][jabber-process-browse:1]]
 ;; called from jabber-process-data
 (defun jabber-process-browse (jc xml-data)
   "Handle results from jabber:iq:browse requests.
@@ -9628,14 +10954,20 @@ obtained from `xml-parse-region'."
 	;; XXX: Is this kind of recursion really needed?
 	(if (listp (car (jabber-xml-node-children item)))
 	    (jabber-process-browse jc item))))))
+;; jabber-process-browse:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*Software Version ([[https://xmpp.org/extensions/xep-0092.html\][XEP-0092\]])][Software Version ([[https://xmpp.org/extensions/xep-0092.html][XEP-0092]]):1]]
 (require 'jabber-ourversion)
+;; Software Version ([[https://xmpp.org/extensions/xep-0092.html][XEP-0092]]):1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-version-show][jabber-version-show:1]]
 (defcustom jabber-version-show t
   "Show our client version to others.  Acts on loading."
   :type 'boolean
   :group 'jabber)
+;; jabber-version-show:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-get-version][jabber-get-version:1]]
 (add-to-list 'jabber-jid-info-menu
 	     (cons "Request software version" 'jabber-get-version))
 (defun jabber-get-version (jc to)
@@ -9650,7 +10982,9 @@ JC is the Jabber connection."
 		  '(query ((xmlns . "jabber:iq:version")))
 		  #'jabber-process-data #'jabber-process-version
 		  #'jabber-process-data "Version request failed"))
+;; jabber-get-version:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-process-version][jabber-process-version:1]]
 ;; called by jabber-process-data
 (defun jabber-process-version (jc xml-data)
   "Handle results from jabber:iq:version requests.
@@ -9664,12 +10998,16 @@ obtained from `xml-parse-region'."
       (let ((data (car (jabber-xml-node-children (car (jabber-xml-get-children query (car x)))))))
 	(when data
 	  (insert (cdr x) data "\n"))))))
+;; jabber-process-version:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-process-version][jabber-process-version:2]]
 (if jabber-version-show
     (and
      (add-to-list 'jabber-iq-get-xmlns-alist (cons "jabber:iq:version" 'jabber-return-version))
      (jabber-disco-advertise-feature "jabber:iq:version")))
+;; jabber-process-version:2 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-return-version][jabber-return-version:1]]
 (defun jabber-return-version (jc xml-data)
   "Return client version as defined in XEP-0092.
 Sender and ID are determined from the incoming packet passed in XML-DATA.
@@ -9694,13 +11032,19 @@ JC is the Jabber connection."
 			    (os () ,os))
 		    nil nil nil nil
 		    id)))
+;; jabber-return-version:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-ahc-sessionid][jabber-ahc-sessionid:1]]
 (defvar jabber-ahc-sessionid nil
   "Session ID of Ad-Hoc Command session.")
+;; jabber-ahc-sessionid:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-ahc-node][jabber-ahc-node:1]]
 (defvar jabber-ahc-node nil
   "Node to send commands to.")
+;; jabber-ahc-node:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-ahc-commands][jabber-ahc-commands:1]]
 (defvar jabber-ahc-commands nil
   "Commands provided.
 
@@ -9716,7 +11060,9 @@ func	- function taking connection object and entire IQ stanza as
           arguments and returning a <command/> node
 
 Use the function `jabber-ahc-add' to add a command to this list.")
+;; jabber-ahc-commands:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*server][server:1]]
 (add-to-list 'jabber-disco-info-nodes
 	     (list "http://jabber.org/protocol/commands"
 		   '((identity ((category . "automation")
@@ -9726,7 +11072,9 @@ Use the function `jabber-ahc-add' to add a command to this list.")
 		     (feature ((var . "http://jabber.org/protocol/disco#items")))
 		     (feature
 		      ((var . "http://jabber.org/protocol/disco#info"))))))
+;; server:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-ahc-add][jabber-ahc-add:1]]
 (defun jabber-ahc-add (node name func acl)
   "Add a command to internal lists.
 NODE is the node name to be used.  It must be unique.
@@ -9745,7 +11093,9 @@ access allowed.  nil means open for everyone."
 			    (feature ((var . "http://jabber.org/protocol/commands")))
 			    (feature ((var . "http://jabber.org/protocol/disco#info")))
 			    (feature ((var . "jabber:x:data")))))))
+;; jabber-ahc-add:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-ahc-disco-items][jabber-ahc-disco-items:1]]
 (jabber-disco-advertise-feature "http://jabber.org/protocol/commands")
 (add-to-list 'jabber-disco-items-nodes
 	     (list "http://jabber.org/protocol/commands" #'jabber-ahc-disco-items nil))
@@ -9769,7 +11119,9 @@ obtained from `xml-parse-region'."
 			     (jid . ,(jabber-connection-jid jc))
 			     (node . ,node))))))))
 	    jabber-ahc-commands)))
+;; jabber-ahc-disco-items:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-ahc-process][jabber-ahc-process:1]]
 (add-to-list 'jabber-iq-set-xmlns-alist
 	     (cons "http://jabber.org/protocol/commands" 'jabber-ahc-process))
 (defun jabber-ahc-process (jc xml-data)
@@ -9793,7 +11145,9 @@ obtained from `xml-parse-region'."
 	    (jabber-signal-error "Cancel" 'not-allowed))
 	;; No such node
 	(jabber-signal-error "Cancel" 'item-not-found)))))
+;; jabber-ahc-process:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-ahc-get-list][jabber-ahc-get-list:1]]
 (add-to-list 'jabber-jid-service-menu
 	     (cons "Request command list" 'jabber-ahc-get-list))
 (defun jabber-ahc-get-list (jc to)
@@ -9804,7 +11158,9 @@ JC is the Jabber connection."
   (interactive (list (jabber-read-account)
 		     (jabber-read-jid-completing "Request command list from: " nil nil nil nil nil)))
   (jabber-get-disco-items jc to "http://jabber.org/protocol/commands"))
+;; jabber-ahc-get-list:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-ahc-execute-command][jabber-ahc-execute-command:1]]
 (add-to-list 'jabber-jid-service-menu
 	     (cons "Execute command" 'jabber-ahc-execute-command))
 (defun jabber-ahc-execute-command (jc to node)
@@ -9822,7 +11178,9 @@ JC is the Jabber connection."
 			     (action . "execute")))
 		  #'jabber-process-data #'jabber-ahc-display
 		  #'jabber-process-data "Command execution failed"))
+;; jabber-ahc-execute-command:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-ahc-display][jabber-ahc-display:1]]
 (defun jabber-ahc-display (jc xml-data)
   (let* ((from (jabber-xml-get-attribute xml-data 'from))
 	 (query (jabber-iq-query xml-data))
@@ -9889,7 +11247,9 @@ JC is the Jabber connection."
 
       (widget-setup)
       (widget-minor-mode 1))))
+;; jabber-ahc-display:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-ahc-submit][jabber-ahc-submit:1]]
 (defun jabber-ahc-submit (action)
   "Submit Ad-Hoc Command."
 
@@ -9905,13 +11265,19 @@ JC is the Jabber connection."
 
 		  #'jabber-process-data #'jabber-ahc-display
 		  #'jabber-process-data "Command execution failed"))
+;; jabber-ahc-submit:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-ahc-presence-node][jabber-ahc-presence-node:1]]
 (defconst jabber-ahc-presence-node "http://jabber.org/protocol/rc#set-status"
   "Node used by function `jabber-ahc-presence'.")
+;; jabber-ahc-presence-node:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-ahc-presence-node][jabber-ahc-presence-node:2]]
 (jabber-ahc-add jabber-ahc-presence-node "Set presence" 'jabber-ahc-presence
 		'jabber-my-jid-p)
+;; jabber-ahc-presence-node:2 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-ahc-presence][jabber-ahc-presence:1]]
 (defun jabber-ahc-presence (jc xml-data)
   "Process presence change command.
 
@@ -9990,31 +11356,47 @@ obtained from `xml-parse-region'."
 		 (node . ,jabber-ahc-presence-node)
 		 (status . "completed"))
 		(note ((type . "info")) "Presence has been changed."))))))
+;; jabber-ahc-presence:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-mode-line][jabber-mode-line:1]]
 (defgroup jabber-mode-line nil
   "Display Jabber status in mode line"
   :group 'jabber)
+;; jabber-mode-line:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-mode-line-compact][jabber-mode-line-compact:1]]
 (defcustom jabber-mode-line-compact t
   "Count contacts in fewer categories for compact view."
   :group 'jabber-mode-line
   :type 'boolean)
+;; jabber-mode-line-compact:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-mode-line-string][jabber-mode-line-string:1]]
 (defvar jabber-mode-line-string nil)
+;; jabber-mode-line-string:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-mode-line-presence][jabber-mode-line-presence:1]]
 (defvar jabber-mode-line-presence nil)
+;; jabber-mode-line-presence:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-mode-line-contacts][jabber-mode-line-contacts:1]]
 (defvar jabber-mode-line-contacts nil)
+;; jabber-mode-line-contacts:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-mode-line-contacts][jabber-mode-line-contacts:2]]
 (defadvice jabber-send-presence (after jsp-update-mode-line
 				       (show status priority))
   (jabber-mode-line-presence-update))
+;; jabber-mode-line-contacts:2 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-mode-line-presence-update][jabber-mode-line-presence-update:1]]
 (defun jabber-mode-line-presence-update ()
   (setq jabber-mode-line-presence (if (and jabber-connections (not *jabber-disconnecting*))
 				      (cdr (assoc *jabber-current-show* jabber-presence-strings))
 				    "Offline")))
+;; jabber-mode-line-presence-update:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-mode-line-count-contacts][jabber-mode-line-count-contacts:1]]
 (defun jabber-mode-line-count-contacts (&rest ignore)
   (let ((count (list (cons "chat" 0)
 		     (cons "" 0)
@@ -10037,7 +11419,9 @@ obtained from `xml-parse-region'."
 		      (cdr (assoc nil count)))
 	    (apply 'format "(%d/%d/%d/%d/%d/%d)"
 		   (mapcar 'cdr count))))))
+;; jabber-mode-line-count-contacts:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-mode-line-mode][jabber-mode-line-mode:1]]
 (define-minor-mode jabber-mode-line-mode
   "Toggle display of Jabber status in mode lines.
 Display consists of your own status, and six numbers
@@ -10063,7 +11447,9 @@ and offline contacts, respectively."
 		  'jabber-mode-line-presence-update)
 	(add-hook 'jabber-presence-hooks
 		  'jabber-mode-line-count-contacts))))
+;; jabber-mode-line-mode:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-watch-alist][jabber-watch-alist:1]]
 (defcustom jabber-watch-alist nil
   "Alist of buddies for which an extra notification should be sent
 when they come online, with comment strings as values."
@@ -10071,7 +11457,9 @@ when they come online, with comment strings as values."
   ;; documentation
   :type '(alist :key-type symbol :value-type string)
   :group 'jabber-watch)
+;; jabber-watch-alist:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-presence-watch][jabber-presence-watch:1]]
 (defun jabber-presence-watch (who oldstatus newstatus
 				  statustext proposed-alert)
   "Send a message if one of your extra-important buddies comes online.
@@ -10092,7 +11480,9 @@ calling `jabber-watch-add' and `jabber-watch-remove'."
 	    (while (not
 		    (yes-or-no-p (format "%s%s  Got that? " proposed-alert
 					 (if (cdr entry) (format ": %s" (cdr entry)) ""))))))))))
+;; jabber-presence-watch:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-watch-add][jabber-watch-add:1]]
 (defun jabber-watch-add (buddy &optional comment)
   (interactive (list (jabber-read-jid-completing "Add buddy to watch list: ")
 		     (read-string "Comment: ")))
@@ -10102,7 +11492,9 @@ calling `jabber-watch-add' and `jabber-watch-remove'."
 				    (jabber-jid-symbol buddy)
 				    (and (not (zerop (length comment)))
 					 comment))))
+;; jabber-watch-add:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-watch-remove][jabber-watch-remove:1]]
 (defun jabber-watch-remove (buddy)
   (interactive
    (list (jabber-read-jid-completing "Remove buddy from watch list: "
@@ -10112,11 +11504,15 @@ calling `jabber-watch-add' and `jabber-watch-remove'."
   (setq jabber-watch-alist
         (delq (assq (jabber-jid-symbol buddy) jabber-watch-alist)
 	      jabber-watch-alist)))
+;; jabber-watch-remove:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-activity][jabber-activity:1]]
 (defgroup jabber-activity nil
   "Activity tracking options."
   :group 'jabber)
+;; jabber-activity:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-activity-make-string][jabber-activity-make-string:1]]
 (defcustom jabber-activity-make-string 'jabber-activity-make-string-default
   "Function to call to show a string in the modeline.
 Function to call, for making the string to put in the mode
@@ -10129,14 +11525,18 @@ line.  The default function returns the nick of the user."
 	     (jabber-activity-mode-line-update)))
   :type 'function
   :group 'jabber-activity)
+;; jabber-activity-make-string:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-activity-shorten-minimum][jabber-activity-shorten-minimum:1]]
 (defcustom jabber-activity-shorten-minimum 1
   "Length of the strings returned by `jabber-activity-make-strings-shorten'.
 All strings returned by `jabber-activity-make-strings-shorten' will be
 at least this long, when possible."
   :group 'jabber-activity
   :type 'number)
+;; jabber-activity-shorten-minimum:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-activity-make-strings][jabber-activity-make-strings:1]]
 (defcustom jabber-activity-make-strings 'jabber-activity-make-strings-default
   "Function which should return an alist of JID -> string given a list of JIDs."
   :set #'(lambda (var val)
@@ -10151,7 +11551,9 @@ at least this long, when possible."
 				:value jabber-activity-make-strings-shorten)
 		 (function :tag "Other function"))
   :group 'jabber-activity)
+;; jabber-activity-make-strings:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-activity-count-in-title][jabber-activity-count-in-title:1]]
 (defcustom jabber-activity-count-in-title nil
   "If non-nil, display number of active JIDs in frame title."
   :type 'boolean
@@ -10162,7 +11564,9 @@ at least this long, when possible."
 		      (bound-and-true-p jabber-activity-mode))
 	     (jabber-activity-mode -1)
 	     (jabber-activity-mode 1))))
+;; jabber-activity-count-in-title:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-activity-count-in-title-format][jabber-activity-count-in-title-format:1]]
 (defcustom jabber-activity-count-in-title-format
   '(jabber-activity-jids ("[" jabber-activity-count-string "] "))
   "Format string used for displaying activity in frame titles.
@@ -10175,51 +11579,73 @@ Same syntax as `mode-line-format'."
 	     (jabber-activity-mode -1)
 	     (custom-set-default var val)
 	     (jabber-activity-mode 1))))
+;; jabber-activity-count-in-title-format:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-activity-show-p][jabber-activity-show-p:1]]
 (defcustom jabber-activity-show-p 'jabber-activity-show-p-default
   "Function that checks if the given JID should be shown on the mode line.
 Predicate function to call to check if the given JID should be
 shown in the mode line or not."
   :type 'function
   :group 'jabber-activity)
+;; jabber-activity-show-p:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-activity-query-unread][jabber-activity-query-unread:1]]
 (defcustom jabber-activity-query-unread t
   "Cancel Emacs killing when there are unread messages?
 Query the user as to whether killing Emacs should be cancelled when
 there are unread messages which otherwise would be lost."
   :type 'boolean
   :group 'jabber-activity)
+;; jabber-activity-query-unread:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-activity-banned][jabber-activity-banned:1]]
 (defcustom jabber-activity-banned nil
   "List of regexps of banned JID."
   :type '(repeat string)
   :group 'jabber-activity)
+;; jabber-activity-banned:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-activity-face][jabber-activity-face:1]]
 (defface jabber-activity-face
   '((t (:foreground "red" :weight bold)))
   "The face for displaying jabber-activity-string in the mode line."
   :group 'jabber-activity)
+;; jabber-activity-face:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-activity-personal-face][jabber-activity-personal-face:1]]
 (defface jabber-activity-personal-face
   '((t (:foreground "blue" :weight bold)))
   "The face for displaying personal jabber-activity-string in the mode line."
   :group 'jabber-activity)
+;; jabber-activity-personal-face:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-activity-jids][jabber-activity-jids:1]]
 (defvar jabber-activity-jids nil
   "A list of JIDs which have caused activity.")
+;; jabber-activity-jids:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-activity-personal-jids][jabber-activity-personal-jids:1]]
 (defvar jabber-activity-personal-jids nil
   "Subset of `jabber-activity-jids' for JIDs with \"personal\" activity.")
+;; jabber-activity-personal-jids:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-activity-name-alist][jabber-activity-name-alist:1]]
 (defvar jabber-activity-name-alist nil
   "Alist of mode line names for bare JIDs.")
+;; jabber-activity-name-alist:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-activity-mode-string][jabber-activity-mode-string:1]]
 (defvar jabber-activity-mode-string ""
   "The mode string for jabber activity.")
+;; jabber-activity-mode-string:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-activity-count-string][jabber-activity-count-string:1]]
 (defvar jabber-activity-count-string "0"
   "Number of active JIDs as a string.")
+;; jabber-activity-count-string:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-activity-update-hook][jabber-activity-update-hook:1]]
 (defvar jabber-activity-update-hook nil
   "Hook called when `jabber-activity-jids' changes.
 It is called after `jabber-activity-mode-string' and
@@ -10228,7 +11654,9 @@ It is called after `jabber-activity-mode-string' and
 ;; Protect this variable from being set in Local variables etc.
 (put 'jabber-activity-mode-string 'risky-local-variable t)
 (put 'jabber-activity-count-string 'risky-local-variable t)
+;; jabber-activity-update-hook:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-activity-make-string-default][jabber-activity-make-string-default:1]]
 (defun jabber-activity-make-string-default (jid)
   "Return the nick of the JID.
 If no nick is available, return
@@ -10242,12 +11670,16 @@ return the user's nickname."
       (if (and username (string= nick user))
 	  username
 	nick))))
+;; jabber-activity-make-string-default:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-activity-make-strings-default][jabber-activity-make-strings-default:1]]
 (defun jabber-activity-make-strings-default (jids)
   "Apply `jabber-activity-make-string' on JIDS."
   (mapcar #'(lambda (jid) (cons jid (funcall jabber-activity-make-string jid)))
 	  jids))
+;; jabber-activity-make-strings-default:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-activity-common-prefix][jabber-activity-common-prefix:1]]
 (defun jabber-activity-common-prefix (s1 s2)
   "Return length of common prefix string shared by S1 and S2."
   (let ((len (min (length s1) (length s2))))
@@ -10256,7 +11688,9 @@ return the user's nickname."
 	    (cl-return i)))
 	;; Substrings, equal, nil, or empty ("")
 	len)))
+;; jabber-activity-common-prefix:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-activity-make-strings-shorten][jabber-activity-make-strings-shorten:1]]
 (defun jabber-activity-make-strings-shorten (jids)
   "Return an alist of (JID . short-names).
 Return an alist of JID -> names acquired by running
@@ -10280,7 +11714,9 @@ least `jabber-activity-shorten-minimum' long."
 		  (max jabber-activity-shorten-minimum
 		       (1+ (jabber-activity-common-prefix cur prev))
 		       (1+ (jabber-activity-common-prefix cur next)))))))))
+;; jabber-activity-make-strings-shorten:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-activity-find-buffer-name][jabber-activity-find-buffer-name:1]]
 (defun jabber-activity-find-buffer-name (jid)
   "Find the name of the buffer that messages from JID would use."
   (or (and (jabber-jid-resource jid)
@@ -10289,7 +11725,9 @@ least `jabber-activity-shorten-minimum' long."
 			(jabber-jid-resource jid))))
       (get-buffer (jabber-chat-get-buffer jid))
       (get-buffer (jabber-muc-get-buffer jid))))
+;; jabber-activity-find-buffer-name:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-activity-show-p-default][jabber-activity-show-p-default:1]]
 (defun jabber-activity-show-p-default (jid)
   "Return t only if there is an invisible buffer for JID.
 And, JID is not in `jabber-activity-banned'."
@@ -10299,14 +11737,18 @@ And, JID is not in `jabber-activity-banned'."
          (not (dolist (entry jabber-activity-banned)
                 (when (string-match entry jid)
                   (cl-return t)))))))
+;; jabber-activity-show-p-default:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-activity-make-name-alist][jabber-activity-make-name-alist:1]]
 (defun jabber-activity-make-name-alist ()
   "Rebuild `jabber-activity-name-alist' based on currently known JIDs."
   (let ((jids (or (mapcar #'car jabber-activity-name-alist)
 		  (mapcar #'symbol-name *jabber-roster*))))
     (setq jabber-activity-name-alist
 	  (funcall jabber-activity-make-strings jids))))
+;; jabber-activity-make-name-alist:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-activity-lookup-name][jabber-activity-lookup-name:1]]
 (defun jabber-activity-lookup-name (jid)
   "Lookup name in `jabber-activity-name-alist' and return (jid . string).
 Lookup name in `jabber-activity-name-alist', creates an entry
@@ -10320,7 +11762,9 @@ if needed, and returns a (jid . string) pair suitable for the mode line"
 	      (funcall jabber-activity-make-strings
 		       (cons jid (mapcar #'car jabber-activity-name-alist))))
 	(jabber-activity-lookup-name jid)))))
+;; jabber-activity-lookup-name:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-activity-mode-line-update][jabber-activity-mode-line-update:1]]
 (defun jabber-activity-mode-line-update ()
   "Update the string shown in the mode line using `jabber-activity-make-string'.
 Update the string shown in the mode line using `jabber-activity-make-string'
@@ -10358,7 +11802,9 @@ Optional PRESENCE mean personal presence request or alert."
 	(number-to-string (length jabber-activity-jids)))
   (force-mode-line-update 'all)
   (run-hooks 'jabber-activity-update-hook))
+;; jabber-activity-mode-line-update:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-activity-clean][jabber-activity-clean:1]]
 (defun jabber-activity-clean ()
   "Remove JIDs where `jabber-activity-show-p' no longer is true."
   (setq jabber-activity-jids (cl-delete-if-not jabber-activity-show-p
@@ -10367,14 +11813,18 @@ Optional PRESENCE mean personal presence request or alert."
 	(cl-delete-if-not jabber-activity-show-p
 		       jabber-activity-personal-jids))
   (jabber-activity-mode-line-update))
+;; jabber-activity-clean:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-activity-add][jabber-activity-add:1]]
 (defun jabber-activity-add (from buffer text proposed-alert)
   "Add a JID to mode line when `jabber-activity-show-p'."
   (when (funcall jabber-activity-show-p from)
     (add-to-list 'jabber-activity-jids from)
     (add-to-list 'jabber-activity-personal-jids from)
     (jabber-activity-mode-line-update)))
+;; jabber-activity-add:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-activity-add-muc][jabber-activity-add-muc:1]]
 (defun jabber-activity-add-muc (nick group buffer text proposed-alert)
   "Add a JID to mode line when `jabber-activity-show-p'."
   (when (funcall jabber-activity-show-p group)
@@ -10382,14 +11832,18 @@ Optional PRESENCE mean personal presence request or alert."
     (when (jabber-muc-looks-like-personal-p text group)
       (add-to-list 'jabber-activity-personal-jids group))
     (jabber-activity-mode-line-update)))
+;; jabber-activity-add-muc:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-activity-presence][jabber-activity-presence:1]]
 (defun jabber-activity-presence (who oldstatus newstatus statustext proposed-alert)
   "Add a JID to mode line on subscription requests."
   (when (string= newstatus "subscribe")
     (add-to-list 'jabber-activity-jids (symbol-name who))
     (add-to-list 'jabber-activity-personal-jids (symbol-name who))
     (jabber-activity-mode-line-update)))
+;; jabber-activity-presence:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-activity-kill-hook][jabber-activity-kill-hook:1]]
 (defun jabber-activity-kill-hook ()
   "Query the user if is sure to kill Emacs when there are unread messages.
 Query the user as to whether killing Emacs should be cancelled
@@ -10400,10 +11854,14 @@ when there are unread messages which otherwise would be lost, if
       (or jabber-silent-mode (yes-or-no-p
        "You have unread Jabber messages, are you sure you want to quit?"))
     t))
+;; jabber-activity-kill-hook:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-activity-last-buffer][jabber-activity-last-buffer:1]]
 (defvar jabber-activity-last-buffer nil
   "Last non-Jabber buffer used.")
+;; jabber-activity-last-buffer:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-activity-switch-to][jabber-activity-switch-to:1]]
 (defun jabber-activity-switch-to (&optional jid-param)
   "If JID-PARAM is provided, switch to that buffer.
 If JID-PARAM is nil and
@@ -10421,9 +11879,13 @@ buffer exists, switch back to the last non Jabber chat buffer used."
 	  (when (buffer-live-p jabber-activity-last-buffer)
 	    (switch-to-buffer jabber-activity-last-buffer))
 	(message "No new activity"))))
+;; jabber-activity-switch-to:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-activity-idle-timer][jabber-activity-idle-timer:1]]
 (defvar jabber-activity-idle-timer nil "Idle timer used for activity cleaning.")
+;; jabber-activity-idle-timer:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-activity-mode][jabber-activity-mode:1]]
 ;;;###autoload
 (define-minor-mode jabber-activity-mode
   "Toggle display of activity in hidden jabber buffers in the mode line.
@@ -10504,11 +11966,15 @@ With a numeric arg, enable this display if arg is positive."
 
 ;; XXX: define-minor-mode should probably do this for us, but it doesn't.
 (if jabber-activity-mode (jabber-activity-mode 1))
+;; jabber-activity-mode:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-events][jabber-events:1]]
 (defgroup jabber-events nil
   "Message events and notifications."
   :group 'jabber)
+;; jabber-events:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-events-request-these][jabber-events-request-these:1]]
 (defcustom jabber-events-request-these '(offline
 					 delivered
 					 displayed
@@ -10519,11 +11985,15 @@ With a numeric arg, enable this display if arg is positive."
 	      (const :tag "Displayed to user" displayed)
 	      (const :tag "User is typing a reply" composing))
   :group 'jabber-events)
+;; jabber-events-request-these:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-events-composing-p][jabber-events-composing-p:1]]
 (defvar jabber-events-composing-p nil
   "Is the other person composing a message?")
 (make-variable-buffer-local 'jabber-events-composing-p)
+;; jabber-events-composing-p:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-events-arrived][jabber-events-arrived:1]]
 (defvar jabber-events-arrived nil
   "In what way has the message reached the recipient?
 Possible values are nil (no information available), offline
@@ -10531,11 +12001,15 @@ Possible values are nil (no information available), offline
 \(message has reached the client) and displayed (user is
 probably reading the message).")
 (make-variable-buffer-local 'jabber-events-arrived)
+;; jabber-events-arrived:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-events-message][jabber-events-message:1]]
 (defvar jabber-events-message ""
   "Human-readable presentation of event information.")
 (make-variable-buffer-local 'jabber-events-message)
+;; jabber-events-message:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-events-update-message][jabber-events-update-message:1]]
 (defun jabber-events-update-message ()
   (setq jabber-events-message
 	(concat (cdr (assq jabber-events-arrived
@@ -10544,49 +12018,69 @@ probably reading the message).")
 			     (displayed . "Displayed"))))
 		(when jabber-events-composing-p
 		  " (typing a message)"))))
+;; jabber-events-update-message:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-events-when-sending][jabber-events-when-sending:1]]
 (add-hook 'jabber-chat-send-hooks 'jabber-events-when-sending)
 (defun jabber-events-when-sending (text id)
   (setq jabber-events-arrived nil)
   (jabber-events-update-message)
   `((x ((xmlns . "jabber:x:event"))
        ,@(mapcar #'list jabber-events-request-these))))
+;; jabber-events-when-sending:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-events-confirm-delivered][jabber-events-confirm-delivered:1]]
 (defcustom jabber-events-confirm-delivered t
   "Send delivery confirmation if requested?"
   :group 'jabber-events
   :type 'boolean)
+;; jabber-events-confirm-delivered:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-events-confirm-displayed][jabber-events-confirm-displayed:1]]
 (defcustom jabber-events-confirm-displayed t
   "Send display confirmation if requested?"
   :group 'jabber-events
   :type 'boolean)
+;; jabber-events-confirm-displayed:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-events-confirm-composing][jabber-events-confirm-composing:1]]
 (defcustom jabber-events-confirm-composing t
   "Send notifications about typing a reply?"
   :group 'jabber-events
   :type 'boolean)
+;; jabber-events-confirm-composing:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-events-requested][jabber-events-requested:1]]
 (defvar jabber-events-requested ()
   "List of events requested.")
 (make-variable-buffer-local 'jabber-events-requested)
+;; jabber-events-requested:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-events-last-id][jabber-events-last-id:1]]
 (defvar jabber-events-last-id nil
   "Id of last message received, or nil if none.")
 (make-variable-buffer-local 'jabber-events-last-id)
+;; jabber-events-last-id:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-events-delivery-confirmed][jabber-events-delivery-confirmed:1]]
 (defvar jabber-events-delivery-confirmed nil
   "Has delivery confirmation been sent?")
 (make-variable-buffer-local 'jabber-events-delivery-confirmed)
+;; jabber-events-delivery-confirmed:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-events-display-confirmed][jabber-events-display-confirmed:1]]
 (defvar jabber-events-display-confirmed nil
   "Has display confirmation been sent?")
 (make-variable-buffer-local 'jabber-events-display-confirmed)
+;; jabber-events-display-confirmed:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-events-composing-sent][jabber-events-composing-sent:1]]
 (defvar jabber-events-composing-sent nil
   "Has composing notification been sent?
 It can be sent and cancelled several times.")
+;; jabber-events-composing-sent:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-events-confirm-display][jabber-events-confirm-display:1]]
 (add-hook 'window-configuration-change-hook
 	  'jabber-events-confirm-display)
 (defun jabber-events-confirm-display ()
@@ -10594,7 +12088,9 @@ It can be sent and cancelled several times.")
 That is, if user allows it, if the other user requested it,
 and it hasn't been sent before."
   (walk-windows #'jabber-events-confirm-display-in-window))
+;; jabber-events-confirm-display:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-events-confirm-display-in-window][jabber-events-confirm-display-in-window:1]]
 (defun jabber-events-confirm-display-in-window (window)
   (with-current-buffer (window-buffer window)
     (when (and jabber-events-confirm-displayed
@@ -10614,7 +12110,9 @@ and it hasn't been sent before."
 	    (displayed)
 	    (id () ,jabber-events-last-id))))
       (setq jabber-events-display-confirmed t))))
+;; jabber-events-confirm-display-in-window:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-events-after-change][jabber-events-after-change:1]]
 (defun jabber-events-after-change ()
   (let ((composing-now (not (= (point-max) jabber-point-insert))))
     (when (and jabber-events-confirm-composing
@@ -10628,9 +12126,13 @@ and it hasn't been sent before."
 	    ,@(if composing-now '((composing)) nil)
 	    (id () ,jabber-events-last-id))))
       (setq jabber-events-composing-sent composing-now))))
+;; jabber-events-after-change:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*common][common:1]]
 (add-to-list 'jabber-message-chain 'jabber-handle-incoming-message-events t)
+;; common:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-handle-incoming-message-events][jabber-handle-incoming-message-events:1]]
 (defun jabber-handle-incoming-message-events (jc xml-data)
   (when (and (not (jabber-muc-message-p xml-data))
 	     (get-buffer (jabber-chat-get-buffer (jabber-xml-get-attribute xml-data 'from))))
@@ -10713,19 +12215,27 @@ and it hasn't been sent before."
 	      (setq jabber-events-composing-p
 		    (not (null (jabber-xml-get-children x 'composing))))
 	      (jabber-events-update-message)))))))))
+;; jabber-handle-incoming-message-events:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-chatstates][jabber-chatstates:1]]
 (defgroup jabber-chatstates nil
   "Chat state notifications."
   :group 'jabber)
+;; jabber-chatstates:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-chatstates-xmlns][jabber-chatstates-xmlns:1]]
 (defconst jabber-chatstates-xmlns "http://jabber.org/protocol/chatstates"
   "XML namespace for the chatstates feature.")
+;; jabber-chatstates-xmlns:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-chatstates-confirm][jabber-chatstates-confirm:1]]
 (defcustom jabber-chatstates-confirm t
   "Send notifications about chat states?"
   :group 'jabber-chatstates
   :type 'boolean)
+;; jabber-chatstates-confirm:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-chatstates-requested][jabber-chatstates-requested:1]]
 (defvar jabber-chatstates-requested 'first-time
   "Whether or not chat states notification was requested.
 This is one of the following:
@@ -10733,22 +12243,30 @@ first-time - send state in first stanza, then switch to nil
 t - send states
 nil - don't send states")
 (make-variable-buffer-local 'jabber-chatstates-requested)
+;; jabber-chatstates-requested:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-chatstates-last-state][jabber-chatstates-last-state:1]]
 (defvar jabber-chatstates-last-state nil
   "The last seen chat state.")
 (make-variable-buffer-local 'jabber-chatstates-last-state)
+;; jabber-chatstates-last-state:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-chatstates-message][jabber-chatstates-message:1]]
 (defvar jabber-chatstates-message ""
   "Human-readable presentation of chat state information.")
 (make-variable-buffer-local 'jabber-chatstates-message)
+;; jabber-chatstates-message:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-chatstates-update-message][jabber-chatstates-update-message:1]]
 (defun jabber-chatstates-update-message ()
   (setq jabber-chatstates-message
         (if (and jabber-chatstates-last-state
                  (not (eq 'active jabber-chatstates-last-state)))
             (format " (%s)" (symbol-name jabber-chatstates-last-state))
           "")))
+;; jabber-chatstates-update-message:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-chatstates-when-sending][jabber-chatstates-when-sending:1]]
 (add-hook 'jabber-chat-send-hooks 'jabber-chatstates-when-sending)
 (defun jabber-chatstates-when-sending (text id)
   (jabber-chatstates-update-message)
@@ -10760,27 +12278,37 @@ nil - don't send states")
       (setq jabber-chatstates-requested nil))
     (setq jabber-chatstates-composing-sent nil)
     `((active ((xmlns . ,jabber-chatstates-xmlns))))))
+;; jabber-chatstates-when-sending:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-chatstates-composing-sent][jabber-chatstates-composing-sent:1]]
 (defvar jabber-chatstates-composing-sent nil
   "Has composing notification been sent?
 It can be sent and cancelled several times.")
 (make-variable-buffer-local 'jabber-chatstates-composing-sent)
+;; jabber-chatstates-composing-sent:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-chatstates-paused-timer][jabber-chatstates-paused-timer:1]]
 (defvar jabber-chatstates-paused-timer nil
   "Timer that counts down from 'composing state to 'paused.")
 (make-variable-buffer-local 'jabber-chatstates-paused-timer)
+;; jabber-chatstates-paused-timer:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-chatstates-stop-timer][jabber-chatstates-stop-timer:1]]
 (defun jabber-chatstates-stop-timer ()
   "Stop the 'paused timer."
   (when jabber-chatstates-paused-timer
     (cancel-timer jabber-chatstates-paused-timer)))
+;; jabber-chatstates-stop-timer:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-chatstates-kick-timer][jabber-chatstates-kick-timer:1]]
 (defun jabber-chatstates-kick-timer ()
   "Start (or restart) the 'paused timer as approriate."
   (jabber-chatstates-stop-timer)
   (setq jabber-chatstates-paused-timer
         (run-with-timer 5 nil 'jabber-chatstates-send-paused)))
+;; jabber-chatstates-kick-timer:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-chatstates-send-paused][jabber-chatstates-send-paused:1]]
 (defun jabber-chatstates-send-paused ()
   "Send an 'paused state notification."
   (when (and jabber-chatstates-requested jabber-chatting-with)
@@ -10791,7 +12319,9 @@ It can be sent and cancelled several times.")
        ((to . ,jabber-chatting-with)
         (type . "chat"))
        (paused ((xmlns . ,jabber-chatstates-xmlns)))))))
+;; jabber-chatstates-send-paused:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-chatstates-after-change][jabber-chatstates-after-change:1]]
 (defun jabber-chatstates-after-change ()
   (let* ((composing-now (not (= (point-max) jabber-point-insert)))
          (state (if composing-now 'composing 'active)))
@@ -10807,7 +12337,9 @@ It can be sent and cancelled several times.")
          (,state ((xmlns . ,jabber-chatstates-xmlns)))))
       (when (setq jabber-chatstates-composing-sent composing-now)
         (jabber-chatstates-kick-timer)))))
+;; jabber-chatstates-after-change:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-handle-incoming-message-chatstates][jabber-handle-incoming-message-chatstates:1]]
 (defun jabber-handle-incoming-message-chatstates (jc xml-data)
   (when (get-buffer (jabber-chat-get-buffer (jabber-xml-get-attribute xml-data 'from)))
     (with-current-buffer (jabber-chat-get-buffer (jabber-xml-get-attribute xml-data 'from))
@@ -10850,39 +12382,57 @@ It can be sent and cancelled several times.")
 
 ;; Add function last in chain, so a chat buffer is already created.
 (add-to-list 'jabber-message-chain 'jabber-handle-incoming-message-chatstates t)
+;; jabber-handle-incoming-message-chatstates:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-handle-incoming-message-chatstates][jabber-handle-incoming-message-chatstates:2]]
 (jabber-disco-advertise-feature "http://jabber.org/protocol/chatstates")
+;; jabber-handle-incoming-message-chatstates:2 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*Generic functions for avatars][Generic functions for avatars:1]]
 (require 'mailcap)
+;; Generic functions for avatars:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-avatar][jabber-avatar:1]]
 (defgroup jabber-avatar nil
   "Avatar related settings"
   :group 'jabber)
+;; jabber-avatar:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-avatar-cache-directory][jabber-avatar-cache-directory:1]]
 (defcustom jabber-avatar-cache-directory
   (locate-user-emacs-file "jabber-avatar-cache" ".jabber-avatars")
   "Directory to use for cached avatars."
   :group 'jabber-avatar
   :type 'directory)
+;; jabber-avatar-cache-directory:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-avatar-verbose][jabber-avatar-verbose:1]]
 (defcustom jabber-avatar-verbose nil
   "Display messages about irregularities with other people's avatars."
   :group 'jabber-avatar
   :type 'boolean)
+;; jabber-avatar-verbose:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-avatar-max-width][jabber-avatar-max-width:1]]
 (defcustom jabber-avatar-max-width 96
   "Maximum width of avatars."
   :group 'jabber-avatar
   :type 'integer)
+;; jabber-avatar-max-width:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-avatar-max-height][jabber-avatar-max-height:1]]
 (defcustom jabber-avatar-max-height 96
   "Maximum height of avatars."
   :group 'jabber-avatar
   :type 'integer)
+;; jabber-avatar-max-height:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*avatar][avatar:1]]
 (cl-defstruct
     avatar sha1-sum mime-type url base64-data height width bytes)
+;; avatar:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-avatar-from-url][jabber-avatar-from-url:1]]
 (defun jabber-avatar-from-url (url)
   "Construct an avatar structure from the given URL.
 Retrieves the image to find info about it."
@@ -10898,7 +12448,9 @@ Retrieves the image to find info about it."
       (prog1
 	  (jabber-avatar-from-data data nil mime-type)
 	(kill-buffer nil)))))
+;; jabber-avatar-from-url:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-avatar-from-file][jabber-avatar-from-file:1]]
 (defun jabber-avatar-from-file (filename)
   "Construct an avatar structure from FILENAME."
   (require 'mailcap)
@@ -10908,12 +12460,16 @@ Retrieves the image to find info about it."
 	(mime-type (when (string-match "\\.[^.]+$" filename)
 		     (mailcap-extension-to-mime (match-string 0 filename)))))
     (jabber-avatar-from-data data nil mime-type)))
+;; jabber-avatar-from-file:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-avatar-from-base64-string][jabber-avatar-from-base64-string:1]]
 (defun jabber-avatar-from-base64-string (base64-string &optional mime-type)
   "Construct an avatar stucture from BASE64-STRING.
 If MIME-TYPE is not specified, try to find it from the image data."
   (jabber-avatar-from-data nil base64-string mime-type))
+;; jabber-avatar-from-base64-string:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-avatar-from-data][jabber-avatar-from-data:1]]
 (defun jabber-avatar-from-data (raw-data base64-string &optional mime-type)
   "Construct an avatar structure from RAW-DATA and/or BASE64-STRING.
 If either is not provided, it is computed.
@@ -10940,7 +12496,9 @@ If MIME-TYPE is not specified, try to find it from the image data."
 ;;    (let ((base64-data (car (jabber-xml-node-children data-node))))
 ;;      (make-avatar :mime-type content-type :sha1-sum id :bytes bytes
 ;; 		  :height height :width width :base64-data base64-data))))
+;; jabber-avatar-from-data:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-avatar-image][jabber-avatar-image:1]]
 (defun jabber-avatar-image (avatar)
   "Create an image from AVATAR.
 Return nil if images of this type are not supported."
@@ -10953,7 +12511,9 @@ Return nil if images of this type are not supported."
 		    nil
 		    t)
       (error nil)))
+;; jabber-avatar-image:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-avatar-compute-size][jabber-avatar-compute-size:1]]
 (defun jabber-avatar-compute-size (avatar)
   "Compute and set the width and height fields of AVATAR.
 Return AVATAR."
@@ -10968,7 +12528,9 @@ Return AVATAR."
       (setf (avatar-width avatar) (car size))
       (setf (avatar-height avatar) (cdr size)))
     avatar))
+;; jabber-avatar-compute-size:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-avatar-find-cached][jabber-avatar-find-cached:1]]
 (defun jabber-avatar-find-cached (sha1-sum)
   "Return file name of cached image for avatar identified by SHA1-SUM.
 If there is no cached image, return nil."
@@ -10976,7 +12538,9 @@ If there is no cached image, return nil."
     (if (file-exists-p filename)
         filename
       nil)))
+;; jabber-avatar-find-cached:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-avatar-cache][jabber-avatar-cache:1]]
 (defun jabber-avatar-cache (avatar)
   "Cache the AVATAR."
   (let* ((id (avatar-sha1-sum avatar))
@@ -10997,7 +12561,9 @@ If there is no cached image, return nil."
 	  (insert base64-data)
 	  (base64-decode-region (point-min) (point-max))
 	  (write-region (point-min) (point-max) filename nil 'silent))))))
+;; jabber-avatar-cache:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-avatar-set][jabber-avatar-set:1]]
 ;;;; Set avatar for contact
 (defun jabber-avatar-set (jid avatar)
   "Set the avatar of JID to be AVATAR.
@@ -11028,7 +12594,9 @@ AVATAR may be one of:
       (put jid-symbol 'avatar (funcall image))
       (put jid-symbol 'avatar-hash hash)
       (jabber-presence-update-roster jid-symbol))))
+;; jabber-avatar-set:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-create-image][jabber-create-image:1]]
 (defun jabber-create-image (file-or-data &optional type data-p)
   "Create image, scaled down to jabber-avatar-max-width/height.
 If width/height exceeds either of those, and ImageMagick is
@@ -11043,11 +12611,15 @@ available."
       (plist-put spec :width jabber-avatar-max-width)
       (plist-put spec :height jabber-avatar-max-height))
     image))
+;; jabber-create-image:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-vcard-photo][jabber-vcard-photo:1]]
 (defvar jabber-vcard-photo nil
   "The avatar structure for the photo in the vCard edit buffer.")
 (make-variable-buffer-local 'jabber-vcard-photo)
+;; jabber-vcard-photo:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-vcard-parse][jabber-vcard-parse:1]]
 (defun jabber-vcard-parse (vcard)
   "Parse the vCard XML structure given in VCARD.
 The top node should be the `vCard' node."
@@ -11160,7 +12732,9 @@ The top node should be the `vCard' node."
 	    (push (list 'PHOTO type binval) result)))))
 
     result))
+;; jabber-vcard-parse:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-vcard-reassemble][jabber-vcard-reassemble:1]]
 (defun jabber-vcard-reassemble (parsed)
   "Create a vCard XML structure from PARSED."
   ;; Save photo in jabber-vcard-photo, to avoid excessive processing.
@@ -11225,10 +12799,14 @@ The top node should be the `vCard' node."
 	      `((PHOTO ()
 		       (TYPE () ,(avatar-mime-type jabber-vcard-photo))
 		       (BINVAL () ,(avatar-base64-data jabber-vcard-photo)))))))
+;; jabber-vcard-reassemble:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-vcard-reassemble][jabber-vcard-reassemble:2]]
 (add-to-list 'jabber-jid-info-menu
 	     (cons "Request vcard" 'jabber-vcard-get))
+;; jabber-vcard-reassemble:2 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-vcard-get][jabber-vcard-get:1]]
 (defun jabber-vcard-get (jc jid)
   "Request vcard from JID.
 
@@ -11240,7 +12818,9 @@ JC is the Jabber connection."
 		  '(vCard ((xmlns . "vcard-temp")))
 		  #'jabber-process-data #'jabber-vcard-display
 		  #'jabber-process-data "Vcard request failed"))
+;; jabber-vcard-get:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-vcard-edit][jabber-vcard-edit:1]]
 (defun jabber-vcard-edit (jc)
   "Edit your own vcard.
 
@@ -11251,7 +12831,9 @@ JC is the Jabber connection."
 		  '(vCard ((xmlns . "vcard-temp")))
 		  #'jabber-vcard-do-edit nil
 		  #'jabber-report-success "Vcard request failed"))
+;; jabber-vcard-edit:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-vcard-fields][jabber-vcard-fields:1]]
 (defconst jabber-vcard-fields '((FN . "Full name")
 				(NICKNAME . "Nickname")
 				(BDAY . "Birthday")
@@ -11264,13 +12846,17 @@ JC is the Jabber connection."
 				(REV . "Last changed")
 				(DESC . "Description")
 				(NOTE . "Note")))
+;; jabber-vcard-fields:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-vcard-name-fields][jabber-vcard-name-fields:1]]
 (defconst jabber-vcard-name-fields '((PREFIX . "Prefix")
 				     (GIVEN . "Given name")
 				     (MIDDLE . "Middle name")
 				     (FAMILY . "Family name")
 				     (SUFFIX . "Suffix")))
+;; jabber-vcard-name-fields:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-vcard-phone-types][jabber-vcard-phone-types:1]]
 (defconst jabber-vcard-phone-types '((HOME . "Home")
 				     (WORK . "Work")
 				     (VOICE . "Voice")
@@ -11283,13 +12869,17 @@ JC is the Jabber connection."
 				     (MODEM . "Modem")
 				     (ISDN . "ISDN")
 				     (PCS . "PCS")))
+;; jabber-vcard-phone-types:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-vcard-email-types][jabber-vcard-email-types:1]]
 (defconst jabber-vcard-email-types '((HOME . "Home")
 				     (WORK . "Work")
 				     (INTERNET . "Internet")
 				     (X400 . "X400")
 				     (PREF . "Preferred")))
+;; jabber-vcard-email-types:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-vcard-address-types][jabber-vcard-address-types:1]]
 (defconst jabber-vcard-address-types '((HOME . "Home")
 				       (WORK . "Work")
 				       (POSTAL . "Postal")
@@ -11297,7 +12887,9 @@ JC is the Jabber connection."
 				       (DOM . "Domestic")
 				       (INTL . "International")
 				       (PREF . "Preferred")))
+;; jabber-vcard-address-types:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-vcard-address-fields][jabber-vcard-address-fields:1]]
 (defconst jabber-vcard-address-fields '((POBOX . "Post box")
 					(EXTADD . "Ext. address")
 					(STREET . "Street")
@@ -11305,7 +12897,9 @@ JC is the Jabber connection."
 					(REGION . "Region")
 					(PCODE . "Post code")
 					(CTRY . "Country")))
+;; jabber-vcard-address-fields:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-vcard-display][jabber-vcard-display:1]]
 (defun jabber-vcard-display (jc xml-data)
   "Display received vcard.
 
@@ -11384,7 +12978,9 @@ obtained from `xml-parse-region'."
 	      (insert-image image "[Photo]")
 	      (insert "\n"))
 	  (error (insert "Couldn't display photo\n")))))))
+;; jabber-vcard-display:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-vcard-do-edit][jabber-vcard-do-edit:1]]
 (defun jabber-vcard-do-edit (jc xml-data closure-data)
   (let ((parsed (jabber-vcard-parse (jabber-iq-query xml-data)))
 	start-position)
@@ -11514,7 +13110,9 @@ obtained from `xml-parse-region'."
       (widget-minor-mode 1)
       (switch-to-buffer (current-buffer))
       (goto-char start-position))))
+;; jabber-vcard-do-edit:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-vcard-submit][jabber-vcard-submit:1]]
 (defun jabber-vcard-submit (&rest ignore)
   (let ((to-publish (jabber-vcard-reassemble
 		     (mapcar (lambda (entry)
@@ -11529,23 +13127,31 @@ obtained from `xml-parse-region'."
       (jabber-vcard-avatars-update-current
        jabber-buffer-connection
        (and jabber-vcard-photo (avatar-sha1-sum jabber-vcard-photo))))))
+;; jabber-vcard-submit:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*vCard-Based Avatars ([[https://xmpp.org/extensions/xep-0153.html\][XEP-0153\]])][vCard-Based Avatars ([[https://xmpp.org/extensions/xep-0153.html][XEP-0153]]):1]]
 (defcustom jabber-vcard-avatars-retrieve (and (fboundp 'display-images-p)
 					      (display-images-p))
   "Automatically download vCard avatars?"
   :group 'jabber-avatar
   :type 'boolean)
+;; vCard-Based Avatars ([[https://xmpp.org/extensions/xep-0153.html][XEP-0153]]):1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-vcard-avatars-publish][jabber-vcard-avatars-publish:1]]
 (defcustom jabber-vcard-avatars-publish t
   "Publish your vCard photo as avatar?"
   :group 'jabber-avatar
   :type 'boolean)
+;; jabber-vcard-avatars-publish:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-vcard-avatars-current-hash][jabber-vcard-avatars-current-hash:1]]
 (defvar jabber-vcard-avatars-current-hash
   (make-hash-table :test 'equal)
   "For each connection, SHA1 hash of current avatar.
 Keys are full JIDs.")
+;; jabber-vcard-avatars-current-hash:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-vcard-avatars-presence][jabber-vcard-avatars-presence:1]]
 (add-to-list 'jabber-presence-chain 'jabber-vcard-avatars-presence)
 (defun jabber-vcard-avatars-presence (jc xml-data)
   "Look for vCard avatar mark in <presence/> stanza.
@@ -11572,7 +13178,9 @@ obtained from `xml-parse-region'."
        (t
 	;; Avatar is not cached; retrieve it
 	(jabber-vcard-avatars-fetch jc from sha1-hash))))))
+;; jabber-vcard-avatars-presence:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-vcard-avatars-fetch][jabber-vcard-avatars-fetch:1]]
 (defun jabber-vcard-avatars-fetch (jc who sha1-hash)
   "Fetch WHO's vCard, and extract avatar.
 
@@ -11583,7 +13191,9 @@ JC is the Jabber connection."
   (jabber-send-iq jc who "get" '(vCard ((xmlns . "vcard-temp")))
 		  #'jabber-vcard-avatars-vcard (cons who sha1-hash)
 		  #'ignore nil))
+;; jabber-vcard-avatars-fetch:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-vcard-avatars-vcard][jabber-vcard-avatars-vcard:1]]
 (defun jabber-vcard-avatars-vcard (jc iq closure)
   "Get the photo from the vCard, and set the avatar."
   (let ((from (car closure))
@@ -11602,7 +13212,9 @@ JC is the Jabber connection."
 	  (jabber-avatar-cache avatar)
 	  (jabber-avatar-set from avatar))
       (jabber-avatar-set from nil))))
+;; jabber-vcard-avatars-vcard:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-vcard-avatars-find-current][jabber-vcard-avatars-find-current:1]]
 (defun jabber-vcard-avatars-find-current (jc)
   "Request our own vCard, to find hash of avatar.
 
@@ -11611,7 +13223,9 @@ JC is the Jabber connection."
     (jabber-send-iq jc nil "get" '(vCard ((xmlns . "vcard-temp")))
 		    #'jabber-vcard-avatars-find-current-1 t
 		    #'jabber-vcard-avatars-find-current-1 nil)))
+;; jabber-vcard-avatars-find-current:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-vcard-avatars-find-current-1][jabber-vcard-avatars-find-current-1:1]]
 (defun jabber-vcard-avatars-find-current-1 (jc xml-data success)
   (jabber-vcard-avatars-update-current
    jc
@@ -11621,7 +13235,9 @@ JC is the Jabber connection."
 	    (let ((avatar (jabber-avatar-from-base64-string (nth 2 photo)
 							    (nth 1 photo))))
 	      (avatar-sha1-sum avatar)))))))
+;; jabber-vcard-avatars-find-current-1:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-vcard-avatars-update-current][jabber-vcard-avatars-update-current:1]]
 (defun jabber-vcard-avatars-update-current (jc new-hash)
   (let ((old-hash (gethash
 		   (jabber-connection-bare-jid jc)
@@ -11630,7 +13246,9 @@ JC is the Jabber connection."
       (puthash (jabber-connection-bare-jid jc)
 	       new-hash jabber-vcard-avatars-current-hash)
       (jabber-send-current-presence jc))))
+;; jabber-vcard-avatars-update-current:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-vcard-avatars-presence-element][jabber-vcard-avatars-presence-element:1]]
 (add-to-list 'jabber-presence-element-functions 'jabber-vcard-avatars-presence-element)
 (defun jabber-vcard-avatars-presence-element (jc)
   (when jabber-vcard-avatars-publish
@@ -11643,13 +13261,19 @@ JC is the Jabber connection."
 	   ;; that is, we haven't yet checked what avatar we have.
 	   ,(when hash
 	      `(photo () ,hash)))))))
+;; jabber-vcard-avatars-presence-element:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*autoaway][autoaway:1]]
 (require 'time-date)
+;; autoaway:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-autoaway][jabber-autoaway:1]]
 (defgroup jabber-autoaway nil
   "Change status to away after idleness."
   :group 'jabber)
+;; jabber-autoaway:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-autoaway-methods][jabber-autoaway-methods:1]]
 (defcustom jabber-autoaway-methods
   (if (fboundp 'jabber-autoaway-method)
       (list jabber-autoaway-method)
@@ -11663,28 +13287,38 @@ number of seconds since the user was active, or nil on error."
   :options '(jabber-current-idle-time
              jabber-xprintidle-get-idle-time
              jabber-termatime-get-idle-time))
+;; jabber-autoaway-methods:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-autoaway-timeout][jabber-autoaway-timeout:1]]
 (defcustom jabber-autoaway-timeout 5
   "Minutes of inactivity before changing status to away."
   :group 'jabber-autoaway
   :type 'number)
+;; jabber-autoaway-timeout:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-autoaway-xa-timeout][jabber-autoaway-xa-timeout:1]]
 (defcustom jabber-autoaway-xa-timeout 10
   "Minutes of inactivity before changing status to xa.
 Set to 0 to disable."
   :group 'jabber-autoaway
   :type 'number)
+;; jabber-autoaway-xa-timeout:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-autoaway-status][jabber-autoaway-status:1]]
 (defcustom jabber-autoaway-status "Idle"
   "Status string for autoaway."
   :group 'jabber-autoaway
   :type 'string)
+;; jabber-autoaway-status:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-autoaway-xa-status][jabber-autoaway-xa-status:1]]
 (defcustom jabber-autoaway-xa-status "Extended away"
   "Status string for autoaway in xa state."
   :group 'jabber-autoaway
   :type 'string)
+;; jabber-autoaway-xa-status:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-autoaway-priority][jabber-autoaway-priority:1]]
 (defcustom jabber-autoaway-priority nil
   "Priority for autoaway.
 If nil, don't change priority.  See the manual for more
@@ -11693,7 +13327,9 @@ information about priority."
   :type '(choice (const :tag "Don't change")
 		 (integer :tag "Priority"))
   :link '(info-link "(jabber)Presence"))
+;; jabber-autoaway-priority:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-autoaway-xa-priority][jabber-autoaway-xa-priority:1]]
 (defcustom jabber-autoaway-xa-priority nil
   "Priority for autoaway in xa state.
 If nil, don't change priority.  See the manual for more
@@ -11702,27 +13338,39 @@ information about priority."
   :type '(choice (const :tag "Don't change")
 		 (integer :tag "Priority"))
   :link '(info-link "(jabber)Presence"))
+;; jabber-autoaway-xa-priority:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-xprintidle-program][jabber-xprintidle-program:1]]
 (defcustom jabber-xprintidle-program (executable-find "xprintidle")
   "Name of the xprintidle program."
   :group 'jabber-autoaway
   :type 'string)
+;; jabber-xprintidle-program:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-autoaway-verbose][jabber-autoaway-verbose:1]]
 (defcustom jabber-autoaway-verbose nil
   "If nil, don't print autoaway status messages."
   :group 'jabber-autoaway
   :type 'boolean)
+;; jabber-autoaway-verbose:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-autoaway-timer][jabber-autoaway-timer:1]]
 (defvar jabber-autoaway-timer nil)
+;; jabber-autoaway-timer:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-autoaway-last-idle-time][jabber-autoaway-last-idle-time:1]]
 (defvar jabber-autoaway-last-idle-time nil
   "Seconds of idle time the last time we checked.
 This is used to detect whether the user has become unidle.")
+;; jabber-autoaway-last-idle-time:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-autoaway-message][jabber-autoaway-message:1]]
 (defun jabber-autoaway-message (&rest args)
   (when jabber-autoaway-verbose
     (apply #'message args)))
+;; jabber-autoaway-message:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-autoaway-start][jabber-autoaway-start:1]]
 ;;;###autoload
 (defun jabber-autoaway-start (&optional ignored)
   "Start autoaway timer.
@@ -11733,7 +13381,9 @@ The IGNORED argument is there so you can put this function in
     (setq jabber-autoaway-timer
 	  (run-with-timer (* jabber-autoaway-timeout 60) nil #'jabber-autoaway-timer))
     (jabber-autoaway-message "Autoaway timer started")))
+;; jabber-autoaway-start:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-autoaway-stop][jabber-autoaway-stop:1]]
 (defun jabber-autoaway-stop ()
   "Stop autoaway timer."
   (interactive)
@@ -11741,12 +13391,16 @@ The IGNORED argument is there so you can put this function in
     (jabber-cancel-timer jabber-autoaway-timer)
     (setq jabber-autoaway-timer nil)
     (jabber-autoaway-message "Autoaway timer stopped")))
+;; jabber-autoaway-stop:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-autoaway-get-idle-time][jabber-autoaway-get-idle-time:1]]
 (defun jabber-autoaway-get-idle-time ()
   "Get idle time in seconds according to `jabber-autoaway-methods'.
 Return nil on error."
   (car (sort (mapcar 'funcall jabber-autoaway-methods) (lambda (a b) (if a (if b (< a b) t) nil)))))
+;; jabber-autoaway-get-idle-time:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-autoaway-timer][jabber-autoaway-timer:1]]
 (defun jabber-autoaway-timer ()
   ;; We use one-time timers, so reset the variable.
   (setq jabber-autoaway-timer nil)
@@ -11760,7 +13414,9 @@ Return nil on error."
 	(setq jabber-autoaway-timer
 	      (run-with-timer (- (* 60 jabber-autoaway-timeout) idle-time)
 			      nil #'jabber-autoaway-timer))))))
+;; jabber-autoaway-timer:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-autoaway-set-idle][jabber-autoaway-set-idle:1]]
 (defun jabber-autoaway-set-idle (&optional xa)
   (jabber-autoaway-message "Autoaway triggered")
   ;; Send presence, unless the user has set a custom presence
@@ -11775,7 +13431,9 @@ Return nil on error."
   (unless xa
     (setq jabber-autoaway-timer (run-with-timer 10 10
 					      #'jabber-autoaway-maybe-unidle))))
+;; jabber-autoaway-set-idle:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-autoaway-maybe-unidle][jabber-autoaway-maybe-unidle:1]]
 (defun jabber-autoaway-maybe-unidle ()
   (let ((idle-time (jabber-autoaway-get-idle-time)))
     (jabber-autoaway-message "Idle for %d seconds" idle-time)
@@ -11798,7 +13456,9 @@ Return nil on error."
               (jabber-autoaway-message "%S /= %S - not resetting presence" *jabber-current-status* jabber-autoaway-status)))
           (jabber-autoaway-stop)
           (jabber-autoaway-start)))))
+;; jabber-autoaway-maybe-unidle:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-xprintidle-get-idle-time][jabber-xprintidle-get-idle-time:1]]
 (defun jabber-xprintidle-get-idle-time ()
   "Get idle time through the xprintidle program."
   (when jabber-xprintidle-program
@@ -11806,7 +13466,9 @@ Return nil on error."
       (when (zerop (call-process jabber-xprintidle-program
 				 nil t))
 	(/ (string-to-number (buffer-string)) 1000.0)))))
+;; jabber-xprintidle-get-idle-time:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-termatime-get-idle-time][jabber-termatime-get-idle-time:1]]
 (defun jabber-termatime-get-idle-time ()
   "Get idle time through atime of terminal.
 The method for finding the terminal only works on GNU/Linux."
@@ -11820,7 +13482,9 @@ The method for finding the terminal only works on GNU/Linux."
 	     (diff (time-to-seconds (time-since atime-of-tty))))
 	(when (> diff 0)
 	  diff)))))
+;; jabber-termatime-get-idle-time:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-current-idle-time][jabber-current-idle-time:1]]
 (defun jabber-current-idle-time ()
   "Get idle time through `current-idle-time'.
 `current-idle-time' was introduced in Emacs 22."
@@ -11829,11 +13493,17 @@ The method for finding the terminal only works on GNU/Linux."
         (if (null idle-time)
             0
           (float-time idle-time)))))
+;; jabber-current-idle-time:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*Entity Time ([[https://xmpp.org/extensions/xep-0202.html\][XEP-0202\]]), Legacy Entity Time ([[https://xmpp.org/extensions/xep-0090.html\][XEP-0090\]])][Entity Time ([[https://xmpp.org/extensions/xep-0202.html][XEP-0202]]), Legacy Entity Time ([[https://xmpp.org/extensions/xep-0090.html][XEP-0090]]):1]]
 (require 'time-date)
+;; Entity Time ([[https://xmpp.org/extensions/xep-0202.html][XEP-0202]]), Legacy Entity Time ([[https://xmpp.org/extensions/xep-0090.html][XEP-0090]]):1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*Entity Time ([[https://xmpp.org/extensions/xep-0202.html\][XEP-0202\]]), Legacy Entity Time ([[https://xmpp.org/extensions/xep-0090.html\][XEP-0090\]])][Entity Time ([[https://xmpp.org/extensions/xep-0202.html][XEP-0202]]), Legacy Entity Time ([[https://xmpp.org/extensions/xep-0090.html][XEP-0090]]):2]]
 (add-to-list 'jabber-jid-info-menu (cons "Request time" 'jabber-get-time))
+;; Entity Time ([[https://xmpp.org/extensions/xep-0202.html][XEP-0202]]), Legacy Entity Time ([[https://xmpp.org/extensions/xep-0090.html][XEP-0090]]):2 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-get-time][jabber-get-time:1]]
 (defun jabber-get-time (jc to)
   "Request time.
 
@@ -11849,7 +13519,9 @@ JC is the Jabber connection."
                   (lambda (jc xml-data)
                     (let ((from (jabber-xml-get-attribute xml-data 'from)))
                       (jabber-get-legacy-time jc from)))))
+;; jabber-get-time:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-get-legacy-time][jabber-get-legacy-time:1]]
 (defun jabber-get-legacy-time (jc to)
   "Request legacy time.
 
@@ -11865,7 +13537,9 @@ obtained from `xml-parse-region'."
                   '(query ((xmlns . "jabber:iq:time")))
                   'jabber-silent-process-data 'jabber-process-legacy-time
                   'jabber-silent-process-data "Time request failed"))
+;; jabber-get-legacy-time:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-process-time][jabber-process-time:1]]
 ;; called by jabber-process-data
 (defun jabber-process-time (jc xml-data)
   "Handle results from urn:xmpp:time requests.
@@ -11884,7 +13558,9 @@ obtained from `xml-parse-region'."
     (when (and utc tzo)
       (format "%s has time: %s %s"
               from (format-time-string "%Y-%m-%d %T" (jabber-parse-time utc)) tzo))))
+;; jabber-process-time:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-process-legacy-time][jabber-process-legacy-time:1]]
 (defun jabber-process-legacy-time (jc xml-data)
   "Handle results from jabber:iq:time requests.
 
@@ -11913,7 +13589,9 @@ obtained from `xml-parse-region'."
               (format-time-string "%Y-%m-%d %T" (jabber-parse-legacy-time utc))
               (when tz
                 (concat " " tz))))))))
+;; jabber-process-legacy-time:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-get-last-online][jabber-get-last-online:1]]
 (defun jabber-get-last-online (jc to)
   "Request time since a user was last online, or uptime of a component.
 
@@ -11926,7 +13604,9 @@ JC is the Jabber connection."
 		  '(query ((xmlns . "jabber:iq:last")))
 		  #'jabber-silent-process-data #'jabber-process-last
 		  #'jabber-silent-process-data "Last online request failed"))
+;; jabber-get-last-online:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-get-idle-time][jabber-get-idle-time:1]]
 (defun jabber-get-idle-time (jc to)
   "Request idle time of user.
 
@@ -11939,7 +13619,9 @@ JC is the Jabber connection."
 		  '(query ((xmlns . "jabber:iq:last")))
 		  #'jabber-silent-process-data #'jabber-process-last
 		  #'jabber-silent-process-data "Idle time request failed"))
+;; jabber-get-idle-time:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-process-last][jabber-process-last:1]]
 (defun jabber-process-last (jc xml-data)
   "Handle resultts from jabber:iq:last requests.
 
@@ -11971,10 +13653,14 @@ obtained from `xml-parse-region'."
      (t
       ;; Only hostname: uptime
       (format "%s uptime: %s seconds" from seconds)))))
+;; jabber-process-last:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-process-last][jabber-process-last:2]]
 (add-to-list 'jabber-iq-get-xmlns-alist (cons "jabber:iq:time" 'jabber-return-legacy-time))
 (jabber-disco-advertise-feature "jabber:iq:time")
+;; jabber-process-last:2 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-return-legacy-time][jabber-return-legacy-time:1]]
 (defun jabber-return-legacy-time (jc xml-data)
   "Return client time as defined in XEP-0090.
 Sender and ID are determined from the incoming packet passed in XML-DATA.
@@ -11993,10 +13679,14 @@ obtained from `xml-parse-region'."
 			    (utc () ,(jabber-encode-legacy-time nil)))
 		    nil nil nil nil
 		    id)))
+;; jabber-return-legacy-time:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-return-legacy-time][jabber-return-legacy-time:2]]
 (add-to-list 'jabber-iq-get-xmlns-alist (cons "urn:xmpp:time" 'jabber-return-time))
 (jabber-disco-advertise-feature "urn:xmpp:time")
+;; jabber-return-legacy-time:2 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-return-time][jabber-return-time:1]]
 (defun jabber-return-time (jc xml-data)
   "Return client time as defined in XEP-0202.
 Sender and ID are determined from the incoming packet passed in XML-DATA.
@@ -12012,10 +13702,14 @@ obtained from `xml-parse-region'."
                            (tzo () ,(jabber-encode-timezone)))
                     nil nil nil nil
                     id)))
+;; jabber-return-time:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-return-time][jabber-return-time:2]]
 (add-to-list 'jabber-iq-get-xmlns-alist (cons "jabber:iq:last" 'jabber-return-last))
 (jabber-disco-advertise-feature "jabber:iq:last")
+;; jabber-return-time:2 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-return-last][jabber-return-last:1]]
 (defun jabber-return-last (jc xml-data)
   (let ((to (jabber-xml-get-attribute xml-data 'from))
         (id (jabber-xml-get-attribute xml-data 'id)))
@@ -12026,10 +13720,14 @@ obtained from `xml-parse-region'."
 					 (floor (jabber-autoaway-get-idle-time))))))
                     nil nil nil nil
                     id)))
+;; jabber-return-last:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-log-lines-to-keep][jabber-log-lines-to-keep:1]]
 (defvar jabber-log-lines-to-keep 1000
   "Maximum number of lines in chat buffer.")
+;; jabber-log-lines-to-keep:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-truncate-top][jabber-truncate-top:1]]
 (defun jabber-truncate-top (buffer &optional ewoc)
   "Clean old history from a chat BUFFER.
 Optional EWOC is ewoc-widget to work.  Default is `jabber-chat-ewoc'
@@ -12057,13 +13755,17 @@ get it, and then it just gets deleted."
               (prog1
                   (ewoc-prev work-ewoc delete-before)
                 (ewoc-delete work-ewoc delete-before))))))
+;; jabber-truncate-top:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-truncate-muc][jabber-truncate-muc:1]]
 (defun jabber-truncate-muc (nick group buffer text proposed-alert)
   "Clean old history from MUC buffers.
 `jabber-log-lines-to-keep' specifies the number of lines to
 keep."
   (jabber-truncate-top buffer))
+;; jabber-truncate-muc:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-truncate-chat][jabber-truncate-chat:1]]
 (defun jabber-truncate-chat (from buffer text proposed-alert)
   "Clean old history from chat buffers.
 `jabber-log-lines-to-keep' specifies the number of lines to
@@ -12073,14 +13775,20 @@ Note that this might interfer with
 `jabber-chat-display-more-backlog': you ask for more history, you
 get it, and then it just gets deleted."
   (jabber-truncate-top buffer))
+;; jabber-truncate-chat:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-carbon-success][jabber-carbon-success:1]]
 (defun jabber-carbon-success (jc xml-data context)
   (when (equal "result" (jabber-xml-get-attribute xml-data 'type))
     (message "Carbons feature successfully enabled")))
+;; jabber-carbon-success:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-carbon-failure][jabber-carbon-failure:1]]
 (defun jabber-carbon-failure (jc xml-data context)
   (message "Carbons feature could not be enabled: %S" xml-data))
+;; jabber-carbon-failure:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-enable-carbons][jabber-enable-carbons:1]]
 (add-to-list 'jabber-jid-service-menu
              (cons "Enable Carbons" 'jabber-enable-carbons))
 (defun jabber-enable-carbons (jc)
@@ -12094,30 +13802,46 @@ JC is the Jabber connection."
                   `(enable ((xmlns . "urn:xmpp:carbons:2")))
                   #'jabber-carbon-success "Carbons feature enablement"
                   #'jabber-carbon-failure "Carbons feature enablement"))
+;; jabber-enable-carbons:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*Handling incoming events][Handling incoming events:1]]
 ;;;###autoload
 (eval-after-load "jabber-disco"
   '(jabber-disco-advertise-feature "urn:xmpp:rtt:0"))
+;; Handling incoming events:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-rtt-ewoc-node][jabber-rtt-ewoc-node:1]]
 (defvar jabber-rtt-ewoc-node nil)
 (make-variable-buffer-local 'jabber-rtt-ewoc-node)
+;; jabber-rtt-ewoc-node:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-rtt-last-seq][jabber-rtt-last-seq:1]]
 (defvar jabber-rtt-last-seq nil)
 (make-variable-buffer-local 'jabber-rtt-last-seq)
+;; jabber-rtt-last-seq:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-rtt-message][jabber-rtt-message:1]]
 (defvar jabber-rtt-message nil)
 (make-variable-buffer-local 'jabber-rtt-message)
+;; jabber-rtt-message:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-rtt-pending-events][jabber-rtt-pending-events:1]]
 (defvar jabber-rtt-pending-events nil)
 (make-variable-buffer-local 'jabber-rtt-pending-events)
+;; jabber-rtt-pending-events:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-rtt-timer][jabber-rtt-timer:1]]
 (defvar jabber-rtt-timer nil)
 (make-variable-buffer-local 'jabber-rtt-timer)
+;; jabber-rtt-timer:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-rtt-handle-message][jabber-rtt-handle-message:1]]
 ;;;###autoload
 (eval-after-load "jabber-core"
   '(add-to-list 'jabber-message-chain #'jabber-rtt-handle-message t))
+;; jabber-rtt-handle-message:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-rtt-handle-message][jabber-rtt-handle-message:2]]
 ;;;###autoload
 (defun jabber-rtt-handle-message (jc xml-data)
   ;; We could support this for MUC as well, if useful.
@@ -12158,7 +13882,9 @@ JC is the Jabber connection."
 	  ))
 	 ;; TODO: handle event="init"
 	 )))))
+;; jabber-rtt-handle-message:2 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-rtt--reset][jabber-rtt--reset:1]]
 (defun jabber-rtt--reset ()
   (when jabber-rtt-ewoc-node
     (ewoc-delete jabber-chat-ewoc jabber-rtt-ewoc-node))
@@ -12169,7 +13895,9 @@ JC is the Jabber connection."
 	jabber-rtt-message nil
 	jabber-rtt-pending-events nil
 	jabber-rtt-timer nil))
+;; jabber-rtt--reset:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-rtt--enqueue-actions][jabber-rtt--enqueue-actions:1]]
 (defun jabber-rtt--enqueue-actions (new-actions)
   (setq jabber-rtt-pending-events
 	;; Ensure that the queue never contains more than 700 ms worth
@@ -12177,7 +13905,9 @@ JC is the Jabber connection."
 	(jabber-rtt--fix-waits (append jabber-rtt-pending-events new-actions)))
   (unless jabber-rtt-timer
     (jabber-rtt--process-actions (current-buffer))))
+;; jabber-rtt--enqueue-actions:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-rtt--process-actions][jabber-rtt--process-actions:1]]
 (defun jabber-rtt--process-actions (buffer)
   (with-current-buffer buffer
     (setq jabber-rtt-timer nil)
@@ -12222,7 +13952,9 @@ JC is the Jabber connection."
 		    #'jabber-rtt--process-actions
 		    buffer))
 	     (throw 'wait nil))))))))
+;; jabber-rtt--process-actions:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-rtt--fix-waits][jabber-rtt--fix-waits:1]]
 (defun jabber-rtt--fix-waits (actions)
   ;; Ensure that the sum of all wait events is no more than 700 ms.
   (let ((sum 0))
@@ -12245,19 +13977,29 @@ JC is the Jabber connection."
 		 `(w ((n . ,(number-to-string (* scale n)))) nil))
 	     action))
 	 actions)))))
+;; jabber-rtt--fix-waits:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-rtt-send-timer][jabber-rtt-send-timer:1]]
 (defvar jabber-rtt-send-timer nil)
 (make-variable-buffer-local 'jabber-rtt-send-timer)
+;; jabber-rtt-send-timer:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-rtt-send-seq][jabber-rtt-send-seq:1]]
 (defvar jabber-rtt-send-seq nil)
 (make-variable-buffer-local 'jabber-rtt-send-seq)
+;; jabber-rtt-send-seq:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-rtt-outgoing-events][jabber-rtt-outgoing-events:1]]
 (defvar jabber-rtt-outgoing-events nil)
 (make-variable-buffer-local 'jabber-rtt-outgoing-events)
+;; jabber-rtt-outgoing-events:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-rtt-send-last-timestamp][jabber-rtt-send-last-timestamp:1]]
 (defvar jabber-rtt-send-last-timestamp nil)
 (make-variable-buffer-local 'jabber-rtt-send-last-timestamp)
+;; jabber-rtt-send-last-timestamp:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-rtt-send-mode][jabber-rtt-send-mode:1]]
 ;;;###autoload
 (define-minor-mode jabber-rtt-send-mode
   "Show text to recipient as it is being typed.
@@ -12281,7 +14023,9 @@ XEP-0301, In-Band Real Time Text."
     (jabber-rtt--send-current-text nil)
     (add-hook 'after-change-functions #'jabber-rtt--queue-update nil t)
     (add-hook 'jabber-chat-send-hooks #'jabber-rtt--message-sent nil t)))
+;; jabber-rtt-send-mode:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-rtt--cancel-send][jabber-rtt--cancel-send:1]]
 (defun jabber-rtt--cancel-send ()
   (when (timerp jabber-rtt-send-timer)
     (cancel-timer jabber-rtt-send-timer))
@@ -12297,7 +14041,9 @@ XEP-0301, In-Band Real Time Text."
 	jabber-rtt-send-seq nil
 	jabber-rtt-outgoing-events nil
 	jabber-rtt-send-last-timestamp nil))
+;; jabber-rtt--cancel-send:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-rtt--send-current-text][jabber-rtt--send-current-text:1]]
 (defun jabber-rtt--send-current-text (resetp)
   (let ((text (buffer-substring-no-properties jabber-point-insert (point-max))))
     ;; This should give us enough room to avoid wrap-arounds, even
@@ -12310,7 +14056,9 @@ XEP-0301, In-Band Real Time Text."
 				      (seq . ,(number-to-string jabber-rtt-send-seq))
 				      (event . ,(if resetp "reset" "new")))
 				     (t () ,text))))))
+;; jabber-rtt--send-current-text:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-rtt--queue-update][jabber-rtt--queue-update:1]]
 (defun jabber-rtt--queue-update (beg end pre-change-length)
   (unless (or (< beg jabber-point-insert)
 	      (< end jabber-point-insert))
@@ -12354,7 +14102,9 @@ XEP-0301, In-Band Real Time Text."
     (when (null jabber-rtt-send-timer)
       (setq jabber-rtt-send-timer
 	    (run-with-timer 0.7 nil #'jabber-rtt--send-queued-events (current-buffer))))))
+;; jabber-rtt--queue-update:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-rtt--send-queued-events][jabber-rtt--send-queued-events:1]]
 (defun jabber-rtt--send-queued-events (buffer)
   (with-current-buffer buffer
     (setq jabber-rtt-send-timer nil)
@@ -12372,7 +14122,9 @@ XEP-0301, In-Band Real Time Text."
 					  (event . ,event))
 					 ,@(nreverse jabber-rtt-outgoing-events))))
 	(setq jabber-rtt-outgoing-events nil)))))
+;; jabber-rtt--send-queued-events:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-rtt--message-sent][jabber-rtt--message-sent:1]]
 (defun jabber-rtt--message-sent (_text _id)
   ;; We're sending a <body/> element; reset our state
   (when (timerp jabber-rtt-send-timer)
@@ -12381,15 +14133,21 @@ XEP-0301, In-Band Real Time Text."
 	jabber-rtt-send-seq nil
 	jabber-rtt-outgoing-events nil
 	jabber-rtt-send-last-timestamp nil))
+;; jabber-rtt--message-sent:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*Jabber][Jabber:1]]
 ;;; load Unicode tables if this needed
 (when (and (featurep 'xemacs) (not (emacs-version>= 21 5 5)))
     (require 'un-define))
+;; Jabber:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber][jabber:1]]
 ;;; these customize fields should come first
 (defgroup jabber nil "Jabber instant messaging"
   :group 'applications)
+;; jabber:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-account-list][jabber-account-list:1]]
 ;;;###autoload
 (defcustom jabber-account-list nil
   "List of Jabber accounts.
@@ -12452,7 +14210,9 @@ configure a Google Talk account like this:
 				   (const :tag "Unencrypted" network)
 				   (const :tag "Legacy SSL/TLS" ssl))))))
   :group 'jabber)
+;; jabber-account-list:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-default-show][jabber-default-show:1]]
 (defcustom jabber-default-show ""
   "Default show state."
   :type '(choice (const :tag "Online" "")
@@ -12461,53 +14221,77 @@ configure a Google Talk account like this:
 		 (const :tag "Extended away" "xa")
 		 (const :tag "Do not disturb" "dnd"))
   :group 'jabber)
+;; jabber-default-show:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-default-status][jabber-default-status:1]]
 (defcustom jabber-default-status ""
   "Default status string."
   :type 'string
   :group 'jabber)
+;; jabber-default-status:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-default-priority][jabber-default-priority:1]]
 (defcustom jabber-default-priority 10
   "Default priority."
   :type 'integer
   :group 'jabber)
+;; jabber-default-priority:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::**jabber-current-status*][*jabber-current-status*:1]]
 ;;;###autoload
 (defvar *jabber-current-status* nil
   "The users current presence status.")
+;; *jabber-current-status*:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::**jabber-current-show*][*jabber-current-show*:1]]
 ;;;###autoload
 (defvar *jabber-current-show* nil
   "The users current presence show.")
+;; *jabber-current-show*:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::**jabber-current-priority*][*jabber-current-priority*:1]]
 ;;;###autoload
 (defvar *jabber-current-priority* nil
   "The user's current priority.")
+;; *jabber-current-priority*:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::**jabber-status-history*][*jabber-status-history*:1]]
 (defvar *jabber-status-history* nil
   "History of status messages.")
+;; *jabber-status-history*:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-faces][jabber-faces:1]]
 (defgroup jabber-faces nil "Faces for displaying jabber instant messaging."
   :group 'jabber)
+;; jabber-faces:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-title-small][jabber-title-small:1]]
 (defface jabber-title-small
   '((t (:weight bold :width semi-expanded :height 1.0 :inherit variable-pitch)))
   "Face for small titles."
   :group 'jabber-faces)
+;; jabber-title-small:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-title-medium][jabber-title-medium:1]]
 (defface jabber-title-medium
   '((t (:weight bold :width expanded :height 2.0 :inherit variable-pitch)))
   "Face for medium titles."
   :group 'jabber-faces)
+;; jabber-title-medium:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-title-large][jabber-title-large:1]]
 (defface jabber-title-large
   '((t (:weight bold :width ultra-expanded :height 3.0 :inherit variable-pitch)))
   "Face for large titles."
   :group 'jabber-faces)
+;; jabber-title-large:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-debug][jabber-debug:1]]
 (defgroup jabber-debug nil "debugging options"
   :group 'jabber)
+;; jabber-debug:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-debug-log-xml][jabber-debug-log-xml:1]]
 (defcustom jabber-debug-log-xml nil
   "Set to non-nil to log all XML i/o in *-jabber-console-JID-* buffer.
 Set to string to also dump XML i/o in specified file."
@@ -12515,18 +14299,24 @@ Set to string to also dump XML i/o in specified file."
                  (const :tag "Dump XML i/o in console" t)
                  (string :tag "Dump XML i/o in console and this file"))
   :group 'jabber-debug)
+;; jabber-debug-log-xml:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-debug-keep-process-buffers][jabber-debug-keep-process-buffers:1]]
 (defcustom jabber-debug-keep-process-buffers nil
   "If nil, kill process buffers when the process dies.
 Contents of process buffers might be useful for debugging."
   :type 'boolean
   :group 'jabber-debug)
+;; jabber-debug-keep-process-buffers:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-silent-mode][jabber-silent-mode:1]]
 (defcustom jabber-silent-mode nil
   "If non-nil, do not ask for confirmation for some operations.  DANGEROUS!"
   :type 'boolean
   :group 'jabber)
+;; jabber-silent-mode:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-presence-faces][jabber-presence-faces:1]]
 ;;;###autoload
 (defconst jabber-presence-faces
  '(("" . jabber-roster-user-online)
@@ -12537,7 +14327,9 @@ Contents of process buffers might be useful for debugging."
    ("error" . jabber-roster-user-error)
    (nil . jabber-roster-user-offline))
  "Mapping from presence types to faces.")
+;; jabber-presence-faces:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-presence-strings][jabber-presence-strings:1]]
 (defconst jabber-presence-strings
   `(("" . ,(jabber-propertize "Online" 'face 'jabber-roster-user-online))
     ("away" . ,(jabber-propertize "Away" 'face 'jabber-roster-user-away))
@@ -12547,19 +14339,26 @@ Contents of process buffers might be useful for debugging."
     ("error" . ,(jabber-propertize "Error" 'face 'jabber-roster-user-error))
     (nil . ,(jabber-propertize "Offline" 'face 'jabber-roster-user-offline)))
   "Mapping from presence types to readable, colorized strings.")
+;; jabber-presence-strings:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-customize][jabber-customize:1]]
 ;;;###autoload
 (defun jabber-customize ()
   "Customize jabber options."
   (interactive)
   (customize-group 'jabber))
+;; jabber-customize:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-info][jabber-info:1]]
 ;;;###autoload
 (defun jabber-info ()
   "Open jabber.el manual."
   (interactive)
   (info "jabber"))
+;; jabber-info:1 ends here
 
+;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*jabber-info][jabber-info:2]]
 (provide 'jabber)
 
 ;;; jabber.el ends here
+;; jabber-info:2 ends here

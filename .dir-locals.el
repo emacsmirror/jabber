@@ -1,0 +1,26 @@
+;; `nameless-current-name' cannot be detected in Org mode buffers,
+;; IIRC, and thus has to be defined explicitly. To make use of this,
+;; install `nameless' and enable `nameless-mode' in Org mode buffers.
+((nil . ((nameless-current-name . "jabber")
+         (nameless-aliases . (("jaa" . "jabber-autoaway")
+                              ("ja"  . "jabber-avatar")
+                              ("jac" . "jabber-activity")
+                              ("jc"  . "jabber-chat")
+                              ("jco" . "jabber-console")
+                              ("jcs" . "jabber-chatstates")
+                              ("je"  . "jabber-events")
+                              ("jh"  . "jabber-history")
+                              ("jk"  . "jabber-keepalive")
+                              ("jm"  . "jabber-muc")
+                              ("jml" . "jabber-mode-line")
+                              ("jr"  . "jabber-roster")
+                              ("jp"  . "jabber-private")
+                              ("jrt" . "jabber-rtt")
+                              ("js"  . "jabber-socks5")
+                              ("jv"  . "jabber-vcard")
+                              ("jw"  . "jabber-whitespace")
+                              ("jx"  . "jabber-xml")))))
+ (org-mode . ((org-tags-column . -60)
+              (eval . (progn
+                        (make-local-variable 'before-save-hook)
+                        (add-hook 'before-save-hook #'org-align-all-tags nil t))))))
