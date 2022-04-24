@@ -17,8 +17,9 @@ jabber.el:
 	  echo "upgrade it before tangling." ; \
           echo ; \
           emacs --batch \
-          --eval="(require 'ob-tangle)" \
-          --eval='(org-babel-tangle-file "jabber.org")' ; \
+	emacs --batch \
+	--eval="(progn (package-initialize) (require 'ob-tangle))" \
+	--eval='(org-babel-tangle-file "jabber.org")' ; \
         else \
           emacs -q -Q --batch \
           --eval="(add-to-list 'load-path \"${ORG_PATH}\")" \
