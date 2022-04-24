@@ -1278,7 +1278,6 @@ FN is applied to the node and not to the data itself."
       [separator2]
       '(menu-item "--"))
 
-
     (define-key-after map
       [jabber-menu-customize]
       '("Customize" . jabber-customize))
@@ -4186,7 +4185,6 @@ JC is the Jabber connection."
 		     hash)
 	    (setq all-groups (append all-groups (list (list group)))))))
 
-
       (when jabber-roster-debug
 	(message "remove duplicates from new group"))
       (setq all-groups (sort
@@ -4203,7 +4201,6 @@ JC is the Jabber connection."
 				     g2-name)))))
 
       (plist-put (fsm-get-state-data jc) :roster-groups all-groups))
-
 
     (when jabber-roster-debug
       (message "re display roster"))
@@ -5324,8 +5321,7 @@ NAME: the name of the sender."
        (defun ,func (nick group buffer text title)
          (if (jabber-muc-looks-like-personal-p text group)
              (,name nick group buffer text title)))
-       (cl-pushnew (quote ,func) (get 'jabber-alert-muc-hooks 'custom-options)))))
-  )
+       (cl-pushnew (quote ,func) (get 'jabber-alert-muc-hooks 'custom-options))))))
 ;; define-personal-jabber-alert:1 ends here
 
 ;; [[file:~/.emacs.d/elisp-git/emacs-jabber-wgreenhouse/jabber.org::*define-personal-jabber-alert][define-personal-jabber-alert:2]]
