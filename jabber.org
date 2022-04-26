@@ -11314,25 +11314,24 @@ Optional argument GROUP to look."
 	 time)))))
 #+END_SRC
 
-*** jabber-sort-nicks                           :function:
+*** jabber-sort-nicks                             :function:
 #+BEGIN_SRC emacs-lisp
-(defun jabber-sort-nicks (nicks group)
-  "Return list of NICKS in GROUP, sorted."
-  (let ((times (cdr (assoc group *jabber-muc-participant-last-speaking*))))
-    (flet ((fetch-time (nick) (or (assoc nick times) (cons nick 0)))
-	   (cmp (nt1 nt2)
-		(let ((t1 (cdr nt1))
-		      (t2 (cdr nt2)))
-		  (if (and (zerop t1) (zerop t2))
-		      (string<
-                       (car nt1)
-                       (car nt2))
-		    (> t1 t2)))))
-      (mapcar 'car (sort (mapcar #'fetch-time nicks)
-			  'cmp)))))
+  (defun jabber-sort-nicks (nicks group)
+    "Return list of NICKS in GROUP, sorted."
+    (cl-letf* ((times (cdr (assoc group *jabber-muc-participant-last-speaking*)))
+	       ((symbol-function 'fetch-time) (lambda (nick) (or (assoc nick times)
+								 (cons nick 0))))
+	       ((symbol-function 'cmp) (lambda (nt1 nt2)
+					 (let ((t1 (cdr nt1))
+					       (t2 (cdr nt2)))
+					   (if (and (zerop t1) (zerop t2))
+					       (string< (car nt1)
+							(car nt2))
+					     (> t1 t2))))))
+      (mapcar #'car (sort (mapcar #'fetch-time nicks) #'cmp))))
 #+END_SRC
 
-*** jabber-muc-beginning-of-line                :function:
+*** jabber-muc-beginning-of-line                  :function:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-muc-beginning-of-line ()
   "Return position of line begining."
