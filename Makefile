@@ -1,6 +1,6 @@
-.phony: all setup tangle compile lint clean
+.phony: all setup tangle autoload compile lint clean
 
-all: setup tangle compile lint
+all: setup tangle autoload compile lint
 
 setup:
 	emacs --batch --eval="(package-initialize)" \
@@ -28,6 +28,10 @@ jabber.el:
         fi
 
 tangle: jabber.el
+
+autoload:
+	emacs -q --batch --eval="(require 'package)" \
+	--eval="(package-generate-autoloads \"jabber\" default-directory)"
 
 compile: tangle
 	emacs -q -Q --batch --eval='(byte-compile-file "jabber.el")' ; \

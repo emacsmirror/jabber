@@ -88,31 +88,28 @@ If a source block does not have syntax highlighting, press =M-o M-o= (=font-lock
 7. [ ] "Code" has a lot of direct sub-headings, making it somewhat cumbersome to navigate; someone with a better understanding of the program could organize these better
 8. [X] The tangled file currently does not list all the other authors (currently listed in =:COPYRIGHT:= drawers). We could add them all at once in the library headers section...or something else. 🤔
 
-* Getting started
+* Tutorials
 :PROPERTIES:
 :CUSTOM_ID: getting-started
 :END:
 ** Installation
-jabber.el can be installed using the commands:
-#+BEGIN_SRC shell :tangle no :load no
-./configure
-make
-make install
-#+END_SRC
+1. Clone the repository by typing the following into a terminal -
+   #+BEGIN_SRC shell
+   mkdir ~/emacs-jabber/
+   cd ~/emacs-jabber/
+   git clone https://codeberg.org/emacs-jabber/emacs-jabber
+   make
+   #+END_SRC
+2. Add the following lines to your =init.el= -
+   #+BEGIN_SRC emacs-lisp
+   (add-to-list 'load-path "~/emacs-jabber/")
+   (load "~/emacs-jabber/jabber-autoloads")
+   #+END_SRC
+   ...and, while still in your =init.el=, type =M-x eval-buffer=.
 
-You can specify which emacs you want to use:
-: ./configure EMACS=emacs-or-xemacs-21.4
+If all goes well, =jabber.el= commands like =jabber-connect= should now be available in the =M-x= menu.
 
-You can also install jabber.el by hand.  Put all .el files somewhere in your =load-path=, or have your =load-path= include the directory they're in.  To install the Info documentation, copy =jabber.info= to =/usr/local/info= and run ="install-info /usr/local/info/jabber.info"=.
-
-After installation by either method, add (load "jabber-autoloads") to your .emacs file.  (If you got the code from GIT, you still need the makefile to generate jabber-autoloads.el.)
-
-If you are upgrading from 0.7-0.7.x, you need to update your configuration.  See the section "Account settings" in the manual.
-
-*** Special notes for Git version
-If you are running jabber.el from Git, you need to generate the =jabber-autoloads.el= file yourself.  The simplest way to do this is by using the =./configure && make= process.
-
-To generate the configure script, make sure that autoconf and automake are installed and run =autoreconf -i=.
+To install the Info documentation, copy =jabber.info= to =/usr/local/info= and run ="install-info /usr/local/info/jabber.info"=.
 
 ** [Developers] Making your first pull request
 :PROPERTIES:
