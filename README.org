@@ -4,7 +4,7 @@
 
 * Explanation
 :PROPERTIES:
-:CUSTOM_ID: introduction
+:CUSTOM_ID: explanation
 :END:
 This is jabber.el 0.8.92, an XMPP client for Emacs.  XMPP (also known as 'Jabber') is an instant messaging system; see http://xmpp.org for more information.
 
@@ -23,11 +23,17 @@ Old resources
 + chat: jabber.el@conference.jabber.se and emacs@conference.jabber.ru (Russian, English)
 
 ** GNU Emacs
+:PROPERTIES:
+:CUSTOM_ID: gnu-emacs
+:END:
 jabber.el runs on GNU Emacs 23.1 or later.
 
 The file hexrgb.el (http://www.emacswiki.org/emacs/hexrgb.el) is needed for MUC nick coloring feature.  A copy is located in the compat directory, and used if the configure script doesn't find another copy already installed.
 
 ** Encrypted connections
+:PROPERTIES:
+:CUSTOM_ID: encrypted-connections
+:END:
 Many Jabber servers require encrypted connections, and even if yours doesn't it may be good idea.  To get an encrypted connection, the most convenient option is to use GNU Emacs 24 with GnuTLS support compiled in.  You can check whether you have that by typing:
 
 : M-: (gnutls-available-p)
@@ -45,6 +51,9 @@ To use the latter form of encryption, customize =jabber-account-list=.
 Note that only the connection from you to the server is encrypted; there is no guarantee of connections from your server to your contacts' server being encrypted.
 
 ** Usage
+:PROPERTIES:
+:CUSTOM_ID: usage
+:END:
 To connect to a Jabber server, type =C-x C-j C-c= (or equivalently =M-x jabber-connect-all=) and enter your JID.  With prefix argument, register a new account.  You can set your JID permanently with =M-x jabber-customize=.
 
 Your roster is displayed in a buffer called *-jabber-*.  To disconnect, type =C-x C-j C-d= or =M-x jabber-disconnect=.
@@ -56,6 +65,9 @@ For a less terse description, read the enclosed manual.
 For bug reports, help requests and other feedback, use the trackers and forums at the project page mentioned above.
 
 ** Configuration
+:PROPERTIES:
+:CUSTOM_ID: configuration
+:END:
 All available configuration options are described in the manual.  This section only serves to point out the most important ones.
 
 To change how you are notified about incoming events, type =M-x customize-group RET jabber-alerts=.
@@ -65,12 +77,21 @@ To activate logging of all chats, set =jabber-history-enabled= to =t=.  By defau
 By default, jabber.el will send a confirmation when messages sent to you are delivered and displayed, and also send "contact is typing" notifications.  To change this, type =M-x customize-group RET jabber-events=, and set the three =jabber-events-confirm-*= variables to nil.
 
 ** File transfer
+:PROPERTIES:
+:CUSTOM_ID: file-transfer
+:END:
 This release of jabber.el contains support for file transfer.  You may need to configure some variables to make it work; see the manual for details.
 
 ** XMPP URIs
+:PROPERTIES:
+:CUSTOM_ID: xmpp-uris
+:END:
 It is possible to make various web browsers pass links starting with "xmpp:" to jabber.el.  In the ideal case, this works right after running "make install".  Otherwise, see the manual, section "XMPP URIs".
 
 ** Literate program
+:PROPERTIES:
+:CUSTOM_ID: literate-program
+:END:
 jabber.el is an Org literate program. Tangling is done automatically after each save.
 
 Alternatively, it is possible to use =literate-elisp-load= from  [[https://github.com/jingtaozf/literate-elisp][literate-elisp]] to directly load this Org file. This way, links to the source (e.g. =describe-*= buffers, byte-compilation messages) take the user directly to the Org file rather than to the tangled source.
@@ -78,6 +99,9 @@ Alternatively, it is possible to use =literate-elisp-load= from  [[https://githu
 If a source block does not have syntax highlighting, press =M-o M-o= (=font-lock-fontify-block=) in it.
 
 *** TODO literate/organizational tasks [25%]
+:PROPERTIES:
+:CUSTOM_ID: literate-organizational-tasks
+:END:
 1. [ ] (maybe) make dependencies optional and tangle them to separate files, reducing load time for users.
 2. [ ] contemplate [[https://github.com/melpa/melpa/issues/7408][distribution strategies]]
 3. [ ] make headings for remaining definitions - some FSM-related definitions remain.
@@ -90,9 +114,12 @@ If a source block does not have syntax highlighting, press =M-o M-o= (=font-lock
 
 * Tutorials
 :PROPERTIES:
-:CUSTOM_ID: getting-started
+:CUSTOM_ID: tutorials
 :END:
 ** Installation
+:PROPERTIES:
+:CUSTOM_ID: installation
+:END:
 1. Clone the repository by typing the following into a terminal -
    #+BEGIN_SRC shell
    mkdir ~/emacs-jabber/
@@ -113,7 +140,7 @@ To install the Info documentation, copy =jabber.info= to =/usr/local/info= and r
 
 ** [Developers] Making your first pull request
 :PROPERTIES:
-:CUSTOM_ID: getting-started-dev
+:CUSTOM_ID: making-your-first-pull-request
 :END:
 1. Clone the jabber.el repository.
    #+BEGIN_SRC shell :tangle no
@@ -173,6 +200,9 @@ To install the Info documentation, copy =jabber.info= to =/usr/local/info= and r
 7. Push and create your PR, or send a patch using [[https://git-send-email.io/][=git-send-email=]] to wgreenhouse@tilde.club
 
 * TODO maintenance [0%]
+:PROPERTIES:
+:CUSTOM_ID: maintenance
+:END:
 1. [ ] Satisfy =M-x checkdoc=
 2. [ ] Use =rx= where regular expressions get hairy
    * [ ] =jabber-jid-username=
@@ -184,7 +214,13 @@ To install the Info documentation, copy =jabber.info= to =/usr/local/info= and r
 6. [ ] Create testing for tutorial
 
 * Credits
+:PROPERTIES:
+:CUSTOM_ID: credits
+:END:
 ** Developers
+:PROPERTIES:
+:CUSTOM_ID: developers
+:END:
 + Tom Berger
 + Magnus Henoch
 + Kirill A. Korinskiy
@@ -193,6 +229,9 @@ To install the Info documentation, copy =jabber.info= to =/usr/local/info= and r
 + Evgenii Terechkov
 
 ** Contributors
+:PROPERTIES:
+:CUSTOM_ID: contributors
+:END:
 + Georg Lehner
   - network transport functions
 + Anthony Chaumas-Pellet
@@ -231,6 +270,9 @@ To install the Info documentation, copy =jabber.info= to =/usr/local/info= and r
   - tmux support
 
 ** Maintainers
+:PROPERTIES:
+:CUSTOM_ID: maintainers
+:END:
 + wgreenhouse
   - 2021 resurrection
 + contrapunctus
