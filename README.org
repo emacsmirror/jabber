@@ -2,7 +2,7 @@
 #+SUBTITLE: XMPP client for Emacs
 #+DESCRIPTION: Documentation
 
-* Introduction
+* Explanation
 :PROPERTIES:
 :CUSTOM_ID: introduction
 :END:
@@ -69,6 +69,24 @@ This release of jabber.el contains support for file transfer.  You may need to c
 
 ** XMPP URIs
 It is possible to make various web browsers pass links starting with "xmpp:" to jabber.el.  In the ideal case, this works right after running "make install".  Otherwise, see the manual, section "XMPP URIs".
+
+** Literate program
+jabber.el is an Org literate program. Tangling is done automatically after each save.
+
+Alternatively, it is possible to use =literate-elisp-load= from  [[https://github.com/jingtaozf/literate-elisp][literate-elisp]] to directly load this Org file. This way, links to the source (e.g. =describe-*= buffers, byte-compilation messages) take the user directly to the Org file rather than to the tangled source.
+
+If a source block does not have syntax highlighting, press =M-o M-o= (=font-lock-fontify-block=) in it.
+
+*** TODO literate/organizational tasks [25%]
+1. [ ] (maybe) make dependencies optional and tangle them to separate files, reducing load time for users.
+2. [ ] contemplate [[https://github.com/melpa/melpa/issues/7408][distribution strategies]]
+3. [ ] make headings for remaining definitions - some FSM-related definitions remain.
+4. [ ] move tests to this file (probably migrate them to =ert= or =buttercup= first), in sub-headings of their concerned components.
+5. [ ] move dependencies to the Dependencies heading; also make library headers for them
+6. [X] move per-file author information and copyright notice here, and delete the empty .el files
+   * But it will cease to remain applicable as soon as we move anything around...
+7. [ ] "Code" has a lot of direct sub-headings, making it somewhat cumbersome to navigate; someone with a better understanding of the program could organize these better
+8. [X] The tangled file currently does not list all the other authors (currently listed in =:COPYRIGHT:= drawers). We could add them all at once in the library headers section...or something else. 🤔
 
 * Getting started
 :PROPERTIES:
@@ -167,29 +185,6 @@ To generate the configure script, make sure that autoconf and automake are insta
 4. [ ] Migrate tests to ERT/Buttercup/etc
 5. [ ] Add Windows support to developer tutorial
 6. [ ] Create testing for tutorial
-
-* Explanation
-:PROPERTIES:
-:CUSTOM_ID: explanation
-:END:
-
-** About this file
-jabber.el is an Org literate program. Tangling is done automatically after each save.
-
-Alternatively, it is possible to use =literate-elisp-load= from  [[https://github.com/jingtaozf/literate-elisp][literate-elisp]] to directly load this Org file. This way, links to the source (e.g. =describe-*= buffers, byte-compilation messages) take the user directly to the Org file rather than to the tangled source.
-
-If a source block does not have syntax highlighting, press =M-o M-o= (=font-lock-fontify-block=) in it.
-
-*** TODO literate/organizational tasks [25%]
-1. [ ] (maybe) make dependencies optional and tangle them to separate files, reducing load time for users.
-2. [ ] contemplate [[https://github.com/melpa/melpa/issues/7408][distribution strategies]]
-3. [ ] make headings for remaining definitions - some FSM-related definitions remain.
-4. [ ] move tests to this file (probably migrate them to =ert= or =buttercup= first), in sub-headings of their concerned components.
-5. [ ] move dependencies to the Dependencies heading; also make library headers for them
-6. [X] move per-file author information and copyright notice here, and delete the empty .el files
-   * But it will cease to remain applicable as soon as we move anything around...
-7. [ ] "Code" has a lot of direct sub-headings, making it somewhat cumbersome to navigate; someone with a better understanding of the program could organize these better
-8. [X] The tangled file currently does not list all the other authors (currently listed in =:COPYRIGHT:= drawers). We could add them all at once in the library headers section...or something else. 🤔
 
 * Credits
 ** Developers
