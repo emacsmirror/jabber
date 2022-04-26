@@ -26,9 +26,6 @@ jabber.el runs on GNU Emacs 23.1 or later.
 
 The file hexrgb.el (http://www.emacswiki.org/emacs/hexrgb.el) is needed for MUC nick coloring feature.  A copy is located in the compat directory, and used if the configure script doesn't find another copy already installed.
 
-** XEmacs
-You need an XEmacs with Mule support, and recent versions of the gnus, net-utils and mule-ucs packages.  jabber.el basically works on XEmacs, but some features are missing (in particular mouse support).  Testing and patches are very welcome.
-
 ** Encrypted connections
 Many Jabber servers require encrypted connections, and even if yours doesn't it may be good idea.  To get an encrypted connection, the most convenient option is to use GNU Emacs 24 with GnuTLS support compiled in.  You can check whether you have that by typing:
 
