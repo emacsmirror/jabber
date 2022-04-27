@@ -1,4 +1,4 @@
-;;; jabber.el --- a minimal jabber client
+;;; jabber.el --- a minimal jabber client  -*- lexical-binding: t; -*-
 
 ;; Author: Magnus Henoch <mange@freemail.hu>
 ;; Maintainer: wgreenhouse <wgreenhouse@tilde.club>
@@ -40,8 +40,33 @@
 ;;; Code:
 
 ;; [[file:jabber.org::*Dependencies][Dependencies:1]]
+(require 'cl-lib)
 (require 'goto-addr)
 ;; Dependencies:1 ends here
+
+;; [[file:jabber.org::*lexical binding test][lexical binding test:1]]
+(defmacro lexical-p ()
+  "Return non-nil in buffers with lexical binding."
+  '(let* ((ret t)
+          (code (lambda ()
+                  ret)))
+     (let ((ret nil))
+       (funcall code))))
+
+(unless (lexical-p)
+  (message "jabber.org: Lexical binding is off, trying to turn it on.")
+  (setq lexical-binding t))
+
+(eval-when-compile
+  (unless (lexical-p)
+    (message "jabber.org: Lexical binding is off, trying to turn it on.")
+    (setq lexical-binding t)))
+
+(unless (lexical-p)
+  (message "jabber.org: It seems that lexical binding is still off...
+Consider adding the file-local variable prop-line to the tangled jabber.el file
+or try to byte-compile the code."))
+;; lexical binding test:1 ends here
 
 ;; [[file:jabber.org::*custom variables][custom variables:1]]
 (defvar jabber-enable-legacy-features-p nil)
@@ -49,8 +74,6 @@
 
 ;; [[file:jabber.org::*XML functions][XML functions:1]]
 (require 'xml)
-(eval-when-compile
-  (require 'cl))
 ;; XML functions:1 ends here
 
 ;; [[file:jabber.org::*jabber-escape-xml][jabber-escape-xml:1]]
@@ -137,7 +160,7 @@ SEXP should be in the form (tagname ((attribute-name . attribute-value)...) chil
   "Skip to end of tag or matching closing tag if present.
 Return t iff after a closing tag, otherwise throws an 'unfinished
 tag with value nil.
-If DONT-RECURSE-INTO-STREAM is true, stop after an opening
+If DONT-RECURSE-INTO-STREAM is non-nil, stop after an opening
 <stream:stream> tag.
 
 The version of `sgml-skip-tag-forward' in Emacs 21 isn't good
@@ -159,7 +182,7 @@ enough for us."
        ((looking-at ">")
 	(goto-char (match-end 0))
 	(unless (and dont-recurse-into-stream (equal node-name "stream:stream"))
-	  (loop
+	  (cl-loop
 	   do (skip-chars-forward "^<")
 	   until (looking-at (regexp-quote (concat "</" node-name ">")))
 	   do (jabber-xml-skip-tag-forward))
@@ -239,33 +262,33 @@ Return nil if the attribute was not found."
 (defun jabber-xml-path (xml-data path)
   "Find sub-node of XML-DATA according to PATH.
 PATH is a vaguely XPath-inspired list.  Each element can be:
-
 a symbol     go to first child node with this node name
 cons cell    car is string containing namespace URI,
              cdr is string containing node name.  Find
              first matching child node.
-any string   character data of this node"
+any string   character data of this node."
   (let ((node xml-data))
     (while (and path node)
       (let ((step (car path)))
-	(cond
-	 ((symbolp step)
-	  (setq node (car (jabber-xml-get-children node step))))
-	 ((consp step)
-	  ;; This will be easier with namespace-aware use
-	  ;; of xml.el.  It will also be more correct.
-	  ;; Now, it only matches explicit namespace declarations.
-	  (setq node
-		(dolist (x (jabber-xml-get-children node (intern (cdr step))))
-		  (when (string= (jabber-xml-get-attribute x 'xmlns)
-				 (car step))
-		    (return x)))))
-	 ((stringp step)
-	  (setq node (car (jabber-xml-node-children node)))
-	  (unless (stringp node)
-	    (setq node nil)))
-	 (t
-	  (error "Unknown path step: %s" step))))
+        (cond
+         ((symbolp step)
+          (setq node (car (jabber-xml-get-children node step))))
+         ((consp step)
+          ;; This will be easier with namespace-aware use
+          ;; of xml.el.  It will also be more correct.
+          ;; Now, it only matches explicit namespace declarations.
+          (setq node
+                (cl-block dolist-loop
+                (dolist (x (jabber-xml-get-children node (intern (cdr step))))
+                  (when (string= (jabber-xml-get-attribute x 'xmlns)
+                                 (car step))
+                    (cl-return-from dolist-loop  x))))))
+         ((stringp step)
+          (setq node (car (jabber-xml-node-children node)))
+          (unless (stringp node)
+            (setq node nil)))
+         (t
+          (error "Unknown path step: %s" step))))
       (setq path (cdr path)))
     node))
 ;; jabber-xml-path:1 ends here
@@ -335,7 +358,6 @@ ATTRIBUTES must be a list of symbols, as present in XML-DATA."
 ;; jabber-xml-merge-namespace-declarations:1 ends here
 
 ;; [[file:jabber.org::*various utility functions][various utility functions:1]]
-(require 'cl)
 (require 'password-cache)
 (condition-case nil
     (require 'auth-source)
@@ -453,7 +475,7 @@ binding."
 Return nil if none found."
   (dolist (jc jabber-connections)
     (when (string= bare-jid (jabber-connection-bare-jid jc))
-      (return jc))))
+      (cl-return jc))))
 ;; jabber-find-connection:1 ends here
 
 ;; [[file:jabber.org::*jabber-find-active-connection][jabber-find-active-connection:1]]
@@ -499,7 +521,7 @@ JID must be a string."
 
 ;; [[file:jabber.org::*jabber-jid-displayname][jabber-jid-displayname:1]]
 (defun jabber-jid-displayname (string)
-  "Return the name of the user, if given in roster, else username@server."
+  "Return the name of the user from STRING as in roster, else username@server."
   (or (jabber-jid-rostername string)
       (jabber-jid-user (if (symbolp string)
 			   (symbol-name string)
@@ -509,12 +531,13 @@ JID must be a string."
 ;; [[file:jabber.org::*jabber-jid-bookmarkname][jabber-jid-bookmarkname:1]]
 (defvar jabber-bookmarks)
 (defun jabber-jid-bookmarkname (string)
-  "Return the conference name from bookmarks or displayname from roster, or JID if none set."
-  (or (loop for conference in (first (loop for value being the hash-values of jabber-bookmarks
+  "Return from STRING the conference name from boomarks or displayname.
+Use the name according to roster or else the JID if none set."
+  (or (cl-loop for conference in (cl-first (cl-loop for value being the hash-values of jabber-bookmarks
                                            collect value))
             do (let ((ls (cadr conference)))
                  (if (string= (cdr (assoc 'jid ls)) string)
-                     (return (cdr (assoc 'name ls))))))
+                     (cl-return (cdr (assoc 'name ls))))))
       (jabber-jid-displayname string)))
 ;; jabber-jid-bookmarkname:1 ends here
 
@@ -540,7 +563,8 @@ JID must be a string."
 ;; [[file:jabber.org::*jabber-my-jid-p][jabber-my-jid-p:1]]
 (defvar jabber-account-list)
 (defun jabber-my-jid-p (jc jid)
-  "Return non-nil if the specified JID is in jabber-account-list (modulo resource).
+  "Return non-nil if the specified JID is in the `jabber-account-list'.
+Comment: (modulo resource).
 Also return non-nil if JID matches JC, modulo resource."
   (or
    (equal (jabber-jid-user jid)
@@ -604,7 +628,7 @@ If FULLJIDS is non-nil, complete jids with resources."
 		   input))))
 
     (when chosen
-      (case resource
+      (cl-case resource
 	(full
 	 ;; If JID is bare, add the highest-priority resource.
 	 (if (jabber-jid-resource chosen)
@@ -712,7 +736,7 @@ that has that contact in its roster."
 		 (and contact-hint
 		      (setq contact-hint (jabber-jid-symbol contact-hint))
 		      (let ((matching
-			     (find-if
+			     (cl-find-if
 			      (lambda (jc)
 				(memq contact-hint (plist-get (fsm-get-state-data jc) :roster)))
 			      jabber-connections)))
@@ -737,7 +761,10 @@ that has that contact in its roster."
 (defun jabber-iq-query (xml-data)
   "Return the query part of an IQ stanza.
 An IQ stanza may have zero or one query child, and zero or one <error/> child.
-The query child is often but not always <query/>."
+The query child is often but not always <query/>.
+
+XML-DATA is the parsed tree data from the stream (stanzas)
+obtained from `xml-parse-region'."
   (let (query)
     (dolist (x (jabber-xml-node-children xml-data))
       (if (and
@@ -749,19 +776,28 @@ The query child is often but not always <query/>."
 
 ;; [[file:jabber.org::*jabber-iq-error][jabber-iq-error:1]]
 (defun jabber-iq-error (xml-data)
-  "Return the <error/> part of an IQ stanza, if any."
+  "Return the <error/> part of an IQ stanza, if any.
+
+XML-DATA is the parsed tree data from the stream (stanzas)
+obtained from `xml-parse-region'."
   (car (jabber-xml-get-children xml-data 'error)))
 ;; jabber-iq-error:1 ends here
 
 ;; [[file:jabber.org::*jabber-iq-xmlns][jabber-iq-xmlns:1]]
 (defun jabber-iq-xmlns (xml-data)
-  "Return the namespace of an IQ stanza, i.e. the namespace of its query part."
+  "Return the namespace of an IQ stanza, i.e. the namespace of its query part.
+
+XML-DATA is the parsed tree data from the stream (stanzas)
+obtained from `xml-parse-region'."
   (jabber-xml-get-attribute (jabber-iq-query xml-data) 'xmlns))
 ;; jabber-iq-xmlns:1 ends here
 
 ;; [[file:jabber.org::*jabber-message-timestamp][jabber-message-timestamp:1]]
 (defun jabber-message-timestamp (xml-data)
-  "Given a <message/> element, return its timestamp, or nil if none."
+  "Given a <message/> element, return its timestamp, or nil if none.
+
+XML-DATA is the parsed tree data from the stream (stanzas)
+obtained from `xml-parse-region'."
   (jabber-x-delay
    (or
     (jabber-xml-path xml-data '(("urn:xmpp:delay" . "delay")))
@@ -773,7 +809,10 @@ The query child is often but not always <query/>."
   "Return timestamp given a delayed delivery element.
 This can be either a <delay/> tag in namespace urn:xmpp:delay (XEP-0203), or
 a <x/> tag in namespace jabber:x:delay (XEP-0091).
-Return nil if no such data available."
+Return nil if no such data available.
+
+XML-DATA is the parsed tree data from the stream (stanzas)
+obtained from `xml-parse-region'."
   (cond
    ((and (eq (jabber-xml-node-name xml-data) 'x)
 	 (string= (jabber-xml-get-attribute xml-data 'xmlns) "jabber:x:delay"))
@@ -869,7 +908,10 @@ TIME is in a format accepted by `format-time-string'."
   "IQ callback reporting success or failure of the operation.
 CONTEXT is a string describing the action.
 \"CONTEXT succeeded\" or \"CONTEXT failed: REASON\" is displayed in
-the echo area."
+the echo area.
+JC is the Jabber connection.
+XML-DATA is the parsed tree data from the stream (stanzas)
+obtained from `xml-parse-region'."
   (let ((type (jabber-xml-get-attribute xml-data 'type)))
     (message (concat context
 		     (if (string= type "result")
@@ -907,7 +949,7 @@ the echo area."
    (cons 'subscription-required "Subscription required")
    (cons 'undefined-condition "Undefined condition")
    (cons 'unexpected-request "Unexpected request"))
-  "String descriptions of XMPP stanza errors")
+  "String descriptions of XMPP stanza errors.")
 ;; jabber-error-messages:1 ends here
 
 ;; [[file:jabber.org::*jabber-legacy-error-messages][jabber-legacy-error-messages:1]]
@@ -930,7 +972,7 @@ the echo area."
    (cons 503 "Service unavailable")
    (cons 504 "Remote server timeout")
    (cons 510 "Disconnected"))
-  "String descriptions of legacy errors (XEP-0086)")
+  "String descriptions of legacy errors (XEP-0086).")
 ;; jabber-legacy-error-messages:1 ends here
 
 ;; [[file:jabber.org::*jabber-parse-error][jabber-parse-error:1]]
@@ -996,7 +1038,7 @@ See secton 9.3, Stanza Errors, of XMPP Core, and XEP-0086, Legacy Errors."
    (cons 'unsupported-stanza-type "Unsupported stanza type")
    (cons 'unsupported-version "Unsupported version")
    (cons 'xml-not-well-formed "XML not well formed"))
-  "String descriptions of XMPP stream errors")
+  "String descriptions of XMPP stream errors.")
 ;; jabber-stream-error-messages:1 ends here
 
 ;; [[file:jabber.org::*jabber-stream-error-condition][jabber-stream-error-condition:1]]
@@ -1009,7 +1051,7 @@ See secton 9.3, Stanza Errors, of XMPP Core, and XEP-0086, Legacy Errors."
 			"urn:ietf:params:xml:ns:xmpp-streams")
 	       (assq (jabber-xml-node-name node)
 		     jabber-stream-error-messages))
-      (return (jabber-xml-node-name node)))))
+      (cl-return (jabber-xml-node-name node)))))
 ;; jabber-stream-error-condition:1 ends here
 
 ;; [[file:jabber.org::*jabber-parse-stream-error][jabber-parse-stream-error:1]]
@@ -1035,15 +1077,16 @@ See secton 9.3, Stanza Errors, of XMPP Core, and XEP-0086, Legacy Errors."
 ;; [[file:jabber.org::*jabber-signal-error][jabber-signal-error:1]]
 (defun jabber-signal-error (error-type condition &optional text app-specific)
   "Signal an error to be sent by Jabber.
-ERROR-TYPE is one of \"cancel\", \"continue\", \"modify\", \"auth\"
-and \"wait\".
+ERROR-TYPE is one of \"Cancel\", \"Continue\", \"Mmodify\", \"Auth\"
+and \"Wait\" (lowercase versions make `checkdoc' to throw errors).
 CONDITION is a symbol denoting a defined XMPP condition.
 TEXT is a string to be sent in the error message, or nil for no text.
 APP-SPECIFIC is a list of extra XML tags.
 
-See section 9.3 of XMPP Core."
+See section 9.3 of XMPP Core (RFC 3920).
+See section 8.3 of XMPP Core (RFC 6120)."
   (signal 'jabber-error
-	  (list error-type condition text app-specific)))
+	  (list (downcase error-type) condition text app-specific)))
 ;; jabber-signal-error:1 ends here
 
 ;; [[file:jabber.org::*jabber-unhex][jabber-unhex:1]]
@@ -1082,7 +1125,7 @@ See Info node `(jabber)XMPP URIs'."
 		  (let ((pairs (split-string text ";")))
 		    (mapcar (lambda (pair)
 			      ;; ...and split keys from values by '='.
-			      (destructuring-bind (key value)
+			      (cl-destructuring-bind (key value)
 				  (split-string pair "=")
 				;; Values can be hex-coded.
 				(cons key (jabber-unhex value))))
@@ -1129,7 +1172,7 @@ See Info node `(jabber)XMPP URIs'."
 
 ;; [[file:jabber.org::*jabber-append-string-to-file][jabber-append-string-to-file:1]]
 (defun jabber-append-string-to-file (string file &optional func &rest args)
-  "Append STRING (may be nil) to FILE. Create FILE if needed.
+  "Append STRING (may be nil) to FILE.  Create FILE if needed.
 If FUNC is non-nil, then call FUNC with ARGS at beginning of
 temporaly buffer _before_ inserting STRING."
   (when (or (stringp string) (functionp func))
@@ -1141,10 +1184,10 @@ temporaly buffer _before_ inserting STRING."
 
 ;; [[file:jabber.org::*jabber-tree-map][jabber-tree-map:1]]
 (defun jabber-tree-map (fn tree)
-  "Apply FN to all nodes in the TREE starting with root. FN is
-applied to the node and not to the data itself."
+  "Apply FN to all nodes in the TREE starting with root.
+FN is applied to the node and not to the data itself."
   (let ((result (cons nil nil)))
-    (do ((tail tree (cdr tail))
+    (cl-do ((tail tree (cdr tail))
 	 (prev result end)
 	 (end result (let* ((x (car tail))
 			    (val (if (atom x)
@@ -1157,10 +1200,6 @@ applied to the node and not to the data itself."
 	   (setf (cdr prev) (if tail (funcall fn tail) nil))
 	   result)))))
 ;; jabber-tree-map:1 ends here
-
-;; [[file:jabber.org::*menu][menu:1]]
-(eval-when-compile (require 'cl))
-;; menu:1 ends here
 
 ;; [[file:jabber.org::*jabber-menu][jabber-menu:1]]
 ;;;###autoload
@@ -1245,7 +1284,6 @@ applied to the node and not to the data itself."
       [separator2]
       '(menu-item "--"))
 
-
     (define-key-after map
       [jabber-menu-customize]
       '("Customize" . jabber-customize))
@@ -1278,7 +1316,7 @@ With prefix argument, remove it."
   (interactive "P")
   (setq jabber-display-menu (if remove nil t))
   (force-mode-line-update))
-(make-obsolete 'jabber-menu "set the variable `jabber-display-menu' instead.")
+(make-obsolete 'jabber-menu "set the variable `jabber-display-menu' instead." "27.2")
 ;; jabber-menu:1 ends here
 
 ;; [[file:jabber.org::*jabber-menu][jabber-menu:2]]
@@ -1372,8 +1410,6 @@ With prefix argument, remove it."
 ;; jabber-popup-combined-menu:1 ends here
 
 ;; [[file:jabber.org::*Network transport functions][Network transport functions:1]]
-(eval-when-compile (require 'cl))
-
 ;; Emacs 24 can be linked with GnuTLS
 (ignore-errors (require 'gnutls))
 
@@ -1392,17 +1428,17 @@ With prefix argument, remove it."
                                load-path)))
           (require 'srv)))
       (error
-       "srv not found in `load-path' or jabber-fallback-lib/ directory.")))
+       "The srv library was not found in `load-path' or jabber-fallback-lib/ directory")))
 ;; Network transport functions:1 ends here
 
 ;; [[file:jabber.org::*jabber-conn][jabber-conn:1]]
-(defgroup jabber-conn nil "Jabber Connection Settings"
+(defgroup jabber-conn nil "Jabber Connection Settings."
   :group 'jabber)
 ;; jabber-conn:1 ends here
 
 ;; [[file:jabber.org::*jabber-have-starttls][jabber-have-starttls:1]]
 (defun jabber-have-starttls ()
-  "Return true if we can use STARTTLS."
+  "Return non-nil if we can use STARTTLS."
   (or (and (fboundp 'gnutls-available-p)
 	   (gnutls-available-p))
       (and (featurep 'starttls)
@@ -1517,16 +1553,16 @@ connection fails."
 ;; [[file:jabber.org::*jabber-network-connect-async][jabber-network-connect-async:1]]
 (defun jabber-network-connect-async (fsm server network-server port)
   ;; Get all potential targets...
-  (lexical-let ((targets (jabber-srv-targets server network-server port))
+  (let ((targets (jabber-srv-targets server network-server port))
 		errors
 		(fsm fsm))
     ;; ...and connect to them one after another, asynchronously, until
     ;; connection succeeds.
-    (labels
+    (cl-labels
 	((connect
 	  (target remaining-targets)
-	  (lexical-let ((target target) (remaining-targets remaining-targets))
-	    (labels ((connection-successful
+	  (let ((target target) (remaining-targets remaining-targets))
+	    (cl-labels ((connection-successful
 		      (c)
 		      ;; This mustn't be `fsm-send-sync', because the FSM
 		      ;; needs to change the sentinel, which cannot be done
@@ -1558,7 +1594,7 @@ connection fails."
 		   :coding 'utf-8
 		   :nowait t
 		   :sentinel
-		   (lexical-let ((target target) (remaining-targets remaining-targets))
+		   (let ((target target) (remaining-targets remaining-targets))
 		     (lambda (connection status)
 		       (cond
 			((string-match "^open" status)
@@ -1698,7 +1734,7 @@ connection fails."
 	(targets (jabber-srv-targets server network-server port))
 	errors)
     (unless (fboundp 'starttls-open-stream)
-      (error "starttls.el not available"))
+      (error "The starttls.el library is not available"))
     (catch 'connected
       (dolist (target targets)
 	(condition-case e
@@ -1741,14 +1777,17 @@ connection fails."
 ;; [[file:jabber.org::*jabber-starttls-process-input][jabber-starttls-process-input:1]]
 (defun jabber-starttls-process-input (fsm xml-data)
   "Process result of starttls request.
-On failure, signal error."
+On failure, signal error.
+
+XML-DATA is the parsed tree data from the stream (stanzas)
+obtained from `xml-parse-region'."
   (cond
    ((eq (car xml-data) 'proceed)
     (let* ((state-data (fsm-get-state-data fsm))
 	   (connection (plist-get state-data :connection)))
       ;; Did we use open-network-stream or starttls-open-stream?  We
       ;; can tell by process-type.
-      (case (process-type connection)
+      (cl-case (process-type connection)
 	(network
 	 (let* ((hostname (plist-get state-data :server))
 		(verifyp (not (member hostname jabber-invalid-certificate-servers))))
@@ -1792,8 +1831,6 @@ Use `*jabber-virtual-server-function*' as send function."
 ;; jabber-virtual-send:1 ends here
 
 ;; [[file:jabber.org::*SASL authentication][SASL authentication:1]]
-(require 'cl)
-
 ;;; This file uses sasl.el from FLIM or Gnus.  If it can't be found,
 ;;; jabber-core.el won't use the SASL functions.
 (eval-and-compile
@@ -1809,6 +1846,10 @@ Use `*jabber-virtual-server-function*' as send function."
 
 ;; [[file:jabber.org::*jabber-sasl-start-auth][jabber-sasl-start-auth:1]]
 (defun jabber-sasl-start-auth (jc stream-features)
+"Start the SASL authentication mechanism.
+JC is The Jabber Connection.
+STREAM-FEATURES the XML parsed \"stream features\" answer (it is used
+with `jabber-xml-get-chidlren')."
   ;; Find a suitable common mechanism.
   (let* ((mechanism-elements (car (jabber-xml-get-children stream-features 'mechanisms)))
 	 (mechanisms (mapcar
@@ -1824,12 +1865,12 @@ Use `*jabber-virtual-server-function*' as send function."
     ;; No suitable mechanism?
     (if (null mechanism)
 	;; Maybe we can use legacy authentication
-	(let ((iq-auth (find "http://jabber.org/features/iq-auth"
+	(let ((iq-auth (cl-find "http://jabber.org/features/iq-auth"
 			  (jabber-xml-get-children stream-features 'auth)
 			  :key #'jabber-xml-get-xmlns
 			  :test #'string=))
 	      ;; Or maybe we have to use STARTTLS, but can't
-	      (starttls (find "urn:ietf:params:xml:ns:xmpp-tls"
+	      (starttls (cl-find "urn:ietf:params:xml:ns:xmpp-tls"
 			      (jabber-xml-get-children stream-features 'starttls)
 			      :key #'jabber-xml-get-xmlns
 			      :test #'string=)))
@@ -1873,7 +1914,7 @@ Use `*jabber-virtual-server-function*' as send function."
 (defun jabber-sasl-read-passphrase-closure (jc remember)
   "Return a lambda function suitable for `sasl-read-passphrase' for JC.
 Call REMEMBER with the password.  REMEMBER is expected to return it as well."
-  (lexical-let ((password (plist-get (fsm-get-state-data jc) :password))
+  (let ((password (plist-get (fsm-get-state-data jc) :password))
 		(bare-jid (jabber-connection-bare-jid jc))
 		(remember remember))
     (if password
@@ -1883,9 +1924,14 @@ Call REMEMBER with the password.  REMEMBER is expected to return it as well."
 
 ;; [[file:jabber.org::*jabber-sasl-process-input][jabber-sasl-process-input:1]]
 (defun jabber-sasl-process-input (jc xml-data sasl-data)
-  (let* ((client (first sasl-data))
-	 (step (second sasl-data))
-	 (passphrase (third sasl-data))
+"SASL protocol input processing.
+
+JC is the Jabber connection.
+XML-DATA is the parsed tree data from the stream (stanzas)
+obtained from `xml-parse-region'."
+  (let* ((client (cl-first sasl-data))
+	 (step (cl-second sasl-data))
+	 (passphrase (cl-third sasl-data))
 	 (sasl-read-passphrase (jabber-sasl-read-passphrase-closure
 				jc
 				(lambda (p) (setq passphrase (copy-sequence p)) p))))
@@ -1969,7 +2015,7 @@ Call REMEMBER with the password.  REMEMBER is expected to return it as well."
     (define-key map "\C-x" 'jabber-send-xa-presence)
     (define-key map "\C-p" 'jabber-send-presence)
     map)
-  "Global Jabber keymap (usually under C-x C-j)")
+  "Global Jabber keymap (usually under C-x C-j).")
 ;; jabber-global-keymap:1 ends here
 
 ;; [[file:jabber.org::*jabber-global-keymap][jabber-global-keymap:2]]
@@ -1984,7 +2030,7 @@ Call REMEMBER with the password.  REMEMBER is expected to return it as well."
 
 ;; [[file:jabber.org::*jabber-console-name-format][jabber-console-name-format:1]]
 (defcustom jabber-console-name-format "*-jabber-console-%s-*"
-  "Format for console buffer name. %s mean connection jid."
+  "Format for console buffer name.  %s mean connection jid."
   :type 'string
   :group 'jabber-debug)
 ;; jabber-console-name-format:1 ends here
@@ -1992,14 +2038,14 @@ Call REMEMBER with the password.  REMEMBER is expected to return it as well."
 ;; [[file:jabber.org::*jabber-console-truncate-lines][jabber-console-truncate-lines:1]]
 (defcustom jabber-console-truncate-lines 3000
   "Maximum number of lines in console buffer.
-Not truncate if set to 0"
+Not truncate if set to 0."
   :type 'integer
   :group 'jabber-debug)
 ;; jabber-console-truncate-lines:1 ends here
 
 ;; [[file:jabber.org::*jabber-point-insert][jabber-point-insert:1]]
 (defvar jabber-point-insert nil
-  "Position where the message being composed starts")
+  "Position where the message being composed starts.")
 ;; jabber-point-insert:1 ends here
 
 ;; [[file:jabber.org::*jabber-send-function][jabber-send-function:1]]
@@ -2059,7 +2105,7 @@ what kind of chat buffer is being created.")
 
 ;; [[file:jabber.org::*jabber-console-pp][jabber-console-pp:1]]
 (defun jabber-console-pp (data)
-  "Pretty Printer for XML-sexp and raw data"
+  "Pretty Printer for XML-sexp and raw data."
   (let ((direction (car data))
         (xml-list (cdr data))
         (raw (cadr data)))
@@ -2080,7 +2126,7 @@ what kind of chat buffer is being created.")
 
 ;; [[file:jabber.org::*jabber-console-mode][jabber-console-mode:1]]
 (define-derived-mode jabber-console-mode sgml-mode "Jabber Console"
-  "Major mode for debug XMPP protocol"
+  "Major mode for debug XMPP protocol."
   ;; Make sure to set this variable somewhere
   (make-local-variable 'jabber-send-function)
   (make-local-variable 'jabber-point-insert)
@@ -2105,7 +2151,7 @@ what kind of chat buffer is being created.")
 
 ;; [[file:jabber.org::*jabber-console-sanitize][jabber-console-sanitize:1]]
 (defun jabber-console-sanitize (xml-data)
-  "Sanitize XML-DATA for jabber-process-console"
+  "Sanitize XML-DATA for `jabber-process-console'."
   (if (listp xml-data)
       (jabber-tree-map (lambda (x) (if (numberp x) (format "%s" x) x)) xml-data)
     xml-data))
@@ -2114,7 +2160,7 @@ what kind of chat buffer is being created.")
 ;; [[file:jabber.org::*jabber-process-console][jabber-process-console:1]]
 ;;;###autoload
 (defun jabber-process-console (jc direction xml-data)
-  "Log XML-DATA i/o as XML in \"*-jabber-console-JID-*\" buffer"
+  "Log XML-DATA i/o as XML in \"*-jabber-console-JID-*\" buffer."
   (let ((buffer (get-buffer-create (jabber-console-create-buffer jc))))
     (with-current-buffer buffer
       (progn
@@ -2125,8 +2171,6 @@ what kind of chat buffer is being created.")
 ;; jabber-process-console:1 ends here
 
 ;; [[file:jabber.org::*core][core:1]]
-(require 'cl)
-
 (eval-and-compile
   (or (ignore-errors (require 'fsm))
       (ignore-errors
@@ -2136,7 +2180,7 @@ what kind of chat buffer is being created.")
                                load-path)))
           (require 'fsm)))
       (error
-       "fsm not found in `load-path' or jabber-fallback-lib/ directory.")))
+       "The fsm library was not found in `load-path' or jabber-fallback-lib/ directory")))
 ;; core:1 ends here
 
 ;; [[file:jabber.org::*jabber-connections][jabber-connections:1]]
@@ -2146,17 +2190,17 @@ what kind of chat buffer is being created.")
 
 ;; [[file:jabber.org::**jabber-roster*][*jabber-roster*:1]]
 (defvar *jabber-roster* nil
-  "the roster list")
+  "The roster list.")
 ;; *jabber-roster*:1 ends here
 
 ;; [[file:jabber.org::*jabber-jid-obarray][jabber-jid-obarray:1]]
 (defvar jabber-jid-obarray (make-vector 127 0)
-  "obarray for keeping JIDs")
+  "Obarray for keeping JIDs.")
 ;; jabber-jid-obarray:1 ends here
 
 ;; [[file:jabber.org::**jabber-disconnecting*][*jabber-disconnecting*:1]]
 (defvar *jabber-disconnecting* nil
-  "boolean - are we in the process of disconnecting by free will")
+  "Boolean - are we in the process of disconnecting by free will.")
 ;; *jabber-disconnecting*:1 ends here
 
 ;; [[file:jabber.org::*jabber-message-chain][jabber-message-chain:1]]
@@ -2181,7 +2225,7 @@ what kind of chat buffer is being created.")
 ;; jabber-namespace-prefixes:1 ends here
 
 ;; [[file:jabber.org::*jabber-core][jabber-core:1]]
-(defgroup jabber-core nil "customize core functionality"
+(defgroup jabber-core nil "customize core functionality."
   :group 'jabber)
 ;; jabber-core:1 ends here
 
@@ -2204,7 +2248,7 @@ The functions should accept one argument, the connection object."
 
 ;; [[file:jabber.org::*jabber-pre-disconnect-hook][jabber-pre-disconnect-hook:1]]
 (defcustom jabber-pre-disconnect-hook nil
-  "*Hooks run just before voluntary disconnection
+  "*Hooks run just before voluntary disconnection.
 This might be due to failed authentication."
   :type 'hook
   :group 'jabber-core)
@@ -2220,7 +2264,7 @@ The functions are called with one argument: the connection object."
 
 ;; [[file:jabber.org::*jabber-post-disconnect-hook][jabber-post-disconnect-hook:1]]
 (defcustom jabber-post-disconnect-hook nil
-  "*Hooks run after disconnection"
+  "*Hooks run after disconnection."
   :type 'hook
   :group 'jabber-core)
 ;; jabber-post-disconnect-hook:1 ends here
@@ -2237,21 +2281,21 @@ indefinitely.  See `password-cache' and `password-cache-expiry'."
 
 ;; [[file:jabber.org::*jabber-reconnect-delay][jabber-reconnect-delay:1]]
 (defcustom jabber-reconnect-delay 5
-  "Seconds to wait before reconnecting"
+  "Seconds to wait before reconnecting."
   :type 'integer
   :group 'jabber-core)
 ;; jabber-reconnect-delay:1 ends here
 
 ;; [[file:jabber.org::*jabber-roster-buffer][jabber-roster-buffer:1]]
 (defcustom jabber-roster-buffer "*-jabber-roster-*"
-  "The name of the roster buffer"
+  "The name of the roster buffer."
   :type 'string
   :group 'jabber-core)
 ;; jabber-roster-buffer:1 ends here
 
 ;; [[file:jabber.org::*jabber-process-buffer][jabber-process-buffer:1]]
 (defvar jabber-process-buffer " *-jabber-process-*"
-  "The name of the process buffer")
+  "The name of the process buffer.")
 ;; jabber-process-buffer:1 ends here
 
 ;; [[file:jabber.org::*jabber-use-sasl][jabber-use-sasl:1]]
@@ -2274,12 +2318,12 @@ problems."
 
 ;; [[file:jabber.org::*jabber-account-history][jabber-account-history:1]]
 (defvar jabber-account-history ()
-  "Keeps track of previously used jabber accounts")
+  "Keeps track of previously used jabber accounts.")
 ;; jabber-account-history:1 ends here
 
 ;; [[file:jabber.org::*jabber-connection-type-history][jabber-connection-type-history:1]]
 (defvar jabber-connection-type-history ()
-  "Keeps track of previously used connection types")
+  "Keeps track of previously used connection types.")
 ;; jabber-connection-type-history:1 ends here
 
 ;; [[file:jabber.org::*jabber-connect-all][jabber-connect-all:1]]
@@ -2287,11 +2331,12 @@ problems."
 (defun jabber-connect-all (&optional arg)
   "Connect to all configured Jabber accounts.
 See `jabber-account-list'.
-If no accounts are configured (or with prefix argument), call `jabber-connect' interactively.
+If no accounts are configured (or with prefix argument), call `jabber-connect'
+interactively.
 With many prefix arguments, one less is passed to `jabber-connect'."
   (interactive "P")
   (let ((accounts
-	 (remove-if (lambda (account)
+	 (cl-remove-if (lambda (account)
 		      (cdr (assq :disabled (cdr account))))
 		    jabber-account-list)))
     (if (or (null accounts) arg)
@@ -2478,7 +2523,7 @@ With double prefix argument, specify more connection details."
   ;; In the `nil' state, the connection is dead.  We wait for a
   ;; :timeout message, meaning to reconnect, or :do-disconnect,
   ;; meaning to cancel reconnection.
-  (case event
+  (cl-case event
     (:timeout
      (list :connecting state-data))
     (:do-disconnect
@@ -2502,7 +2547,7 @@ With double prefix argument, specify more connection details."
 ;; [[file:jabber.org::*jabber-connection][jabber-connection:5]]
 (define-state jabber-connection :connecting
   (fsm state-data event callback)
-  (case (or (car-safe event) event)
+  (cl-case (or (car-safe event) event)
     (:connected
      (let ((connection (cadr event))
 	   (registerp (plist-get state-data :registerp)))
@@ -2565,7 +2610,7 @@ With double prefix argument, specify more connection details."
 ;; [[file:jabber.org::*jabber-fsm-handle-sentinel][jabber-fsm-handle-sentinel:3]]
 (define-state jabber-connection :connected
   (fsm state-data event callback)
-  (case (or (car-safe event) event)
+  (cl-case (or (car-safe event) event)
     (:filter
      (let ((process (cadr event))
 	   (string (car (cddr event))))
@@ -2636,7 +2681,7 @@ With double prefix argument, specify more connection details."
 ;; [[file:jabber.org::*jabber-fsm-handle-sentinel][jabber-fsm-handle-sentinel:5]]
 (define-state jabber-connection :starttls
   (fsm state-data event callback)
-  (case (or (car-safe event) event)
+  (cl-case (or (car-safe event) event)
     (:filter
      (let ((process (cadr event))
 	   (string (car (cddr event))))
@@ -2675,7 +2720,7 @@ With double prefix argument, specify more connection details."
 (define-state jabber-connection :register-account
   (fsm state-data event callback)
   ;; The connection will be closed in jabber-register
-  (case (or (car-safe event) event)
+  (cl-case (or (car-safe event) event)
     (:filter
      (let ((process (cadr event))
 	   (string (car (cddr event))))
@@ -2709,7 +2754,7 @@ With double prefix argument, specify more connection details."
 ;; [[file:jabber.org::*jabber-fsm-handle-sentinel][jabber-fsm-handle-sentinel:9]]
 (define-state jabber-connection :legacy-auth
   (fsm state-data event callback)
-  (case (or (car-safe event) event)
+  (cl-case (or (car-safe event) event)
     (:filter
      (let ((process (cadr event))
 	   (string (car (cddr event))))
@@ -2758,7 +2803,7 @@ With double prefix argument, specify more connection details."
 ;; [[file:jabber.org::*jabber-fsm-handle-sentinel][jabber-fsm-handle-sentinel:11]]
 (define-state jabber-connection :sasl-auth
   (fsm state-data event callback)
-  (case (or (car-safe event) event)
+  (cl-case (or (car-safe event) event)
     (:filter
      (let ((process (cadr event))
 	   (string (car (cddr event))))
@@ -2804,7 +2849,7 @@ With double prefix argument, specify more connection details."
 ;; [[file:jabber.org::*jabber-fsm-handle-sentinel][jabber-fsm-handle-sentinel:13]]
 (define-state jabber-connection :bind
   (fsm state-data event callback)
-  (case (or (car-safe event) event)
+  (cl-case (or (car-safe event) event)
     (:filter
      (let ((process (cadr event))
 	   (string (car (cddr event))))
@@ -2914,7 +2959,7 @@ With double prefix argument, specify more connection details."
 ;; [[file:jabber.org::*jabber-pending-presence-timeout][jabber-pending-presence-timeout:2]]
 (define-state jabber-connection :session-established
   (fsm state-data event callback)
-  (case (or (car-safe event) event)
+  (cl-case (or (car-safe event) event)
     (:filter
      (let ((process (cadr event))
 	   (string (car (cddr event))))
@@ -2971,7 +3016,7 @@ With double prefix argument, specify more connection details."
 
 ;; [[file:jabber.org::*jabber-disconnect][jabber-disconnect:1]]
 (defun jabber-disconnect (&optional arg)
-  "Disconnect from all Jabber servers. If ARG supplied, disconnect one account."
+  "Disconnect from all Jabber servers.  If ARG supplied, disconnect one account."
   (interactive "P")
   (if arg
       (jabber-disconnect-one (jabber-read-account))
@@ -2992,7 +3037,8 @@ With double prefix argument, specify more connection details."
 ;; [[file:jabber.org::*jabber-disconnect-one][jabber-disconnect-one:1]]
 (defun jabber-disconnect-one (jc &optional dont-redisplay)
   "Disconnect from one Jabber server.
-If DONT-REDISPLAY is non-nil, don't update roster buffer."
+If DONT-REDISPLAY is non-nil, don't update roster buffer.
+JC is the Jabber connection."
   (interactive (list (jabber-read-account)))
   (fsm-send-sync jc :do-disconnect)
   (when (called-interactively-p 'interactive)
@@ -3040,12 +3086,12 @@ DATA is any sexp."
 
 ;; [[file:jabber.org::*jabber-filter][jabber-filter:1]]
 (defun jabber-filter (process fsm)
-  "the filter function for the jabber process"
+  "The filter function for the jabber process."
   (with-current-buffer (process-buffer process)
     ;; Start from the beginning
     (goto-char (point-min))
     (let (xml-data)
-      (loop
+      (cl-loop
        do
        ;; Skip whitespace
        (unless (zerop (skip-chars-forward " \t\r\n"))
@@ -3056,7 +3102,7 @@ DATA is any sexp."
 
        ;; Stream end?
        (when (looking-at "</stream:stream>")
-	 (return (fsm-send fsm :stream-end)))
+	 (cl-return (fsm-send fsm :stream-end)))
 
        ;; Stream header?
        (when (looking-at "<stream:stream[^>]*\\(>\\)")
@@ -3117,7 +3163,11 @@ DATA is any sexp."
 
 ;; [[file:jabber.org::*jabber-process-input][jabber-process-input:1]]
 (defun jabber-process-input (jc xml-data)
-  "process an incoming parsed tag"
+  "Process an incoming parsed tag.
+
+JC is the Jabber connection.
+XML-DATA is the parsed tree data from the stream (stanzas)
+obtained from `xml-parse-region'."
   (let* ((tag (jabber-xml-node-name xml-data))
 	 (functions (eval (cdr (assq tag '((iq . jabber-iq-chain)
 					   (presence . jabber-presence-chain)
@@ -3199,7 +3249,7 @@ Return an fsm result list if it is."
 
 ;; [[file:jabber.org::*jabber-send-string][jabber-send-string:1]]
 (defun jabber-send-string (jc string)
-  "Send STRING to the connection JC."
+  "Send STRING through the connection JC."
   (let* ((state-data (fsm-get-state-data jc))
 	 (connection (plist-get state-data :connection))
 	 (send-function (plist-get state-data :send-function)))
@@ -3215,7 +3265,8 @@ Return an fsm result list if it is."
 
 ;; [[file:jabber.org::*jabber-get-auth][jabber-get-auth:1]]
 (defun jabber-get-auth (jc to session-id)
-  "Send IQ get request in namespace \"jabber:iq:auth\"."
+  "Send IQ get request in namespace \"jabber:iq:auth\".
+JC is the Jabber connection."
   (jabber-send-iq jc to
 		  "get"
 		  `(query ((xmlns . "jabber:iq:auth"))
@@ -3226,7 +3277,11 @@ Return an fsm result list if it is."
 
 ;; [[file:jabber.org::*jabber-do-logon][jabber-do-logon:1]]
 (defun jabber-do-logon (jc xml-data session-id)
-  "Send username and password in logon attempt."
+  "Send username and password in logon attempt.
+
+JC is the Jabber connection.
+XML-DATA is the parsed tree data from the stream (stanzas)
+obtained from `xml-parse-region'."
   (let* ((digest-allowed (jabber-xml-get-children (jabber-iq-query xml-data) 'digest))
 	 (passwd (when
 		     (or digest-allowed
@@ -3258,8 +3313,12 @@ Return an fsm result list if it is."
 
 ;; [[file:jabber.org::*jabber-process-logon][jabber-process-logon:1]]
 (defun jabber-process-logon (jc xml-data closure-data)
-  "receive login success or failure, and request roster.
-CLOSURE-DATA should be the password on success and nil on failure."
+  "Receive login success or failure, and request roster.
+CLOSURE-DATA should be the password on success and nil on failure.
+
+JC is the Jabber connection.
+XML-DATA is the parsed tree data from the stream (stanzas)
+obtained from `xml-parse-region'."
   (if closure-data
       ;; Logon success
       (fsm-send jc (cons :authentication-success closure-data))
@@ -3271,7 +3330,6 @@ CLOSURE-DATA should be the password on success and nil on failure."
 
 ;; [[file:jabber.org::*Displaying the roster][Displaying the roster:1]]
 (require 'format-spec)
-(require 'cl)				;for `find'
 ;; Displaying the roster:1 ends here
 
 ;; [[file:jabber.org::*jabber-roster][jabber-roster:1]]
@@ -3318,7 +3376,7 @@ Having a \"presence subscription\" means being able to see the
 other person's presence.
 
 Some fancy arrows you might want to use, if your system can
-display them: ← → ⇄ ↔"
+display them: ← → ⇄ ↔."
   :type '(list (cons :format "%v" (const :format "" "none") (string :tag "None"))
 	       (cons :format "%v" (const :format "" "from") (string :tag "From"))
 	       (cons :format "%v" (const :format "" "to") (string :tag "To"))
@@ -3339,7 +3397,7 @@ These fields are available:
 %p   Priority of this resource
 %r   Name of this resource
 %s   Availability of resource as string (\"Online\", \"Away\" etc)
-%S   Status string specified by resource"
+%S   Status string specified by resource."
   :type 'string
   :group 'jabber-roster)
 ;; jabber-resource-line-format:1 ends here
@@ -3352,7 +3410,7 @@ These fields are available:
 These functions should take two roster items A and B, and return:
 <0 if A < B
 0  if A = B
->0 if A > B"
+>0 if A > B."
   :type 'hook
   :options '(jabber-roster-sort-by-status
 	     jabber-roster-sort-by-displayname
@@ -3375,7 +3433,7 @@ This can be one of the following symbols:
 
 nil       Never show resources
 sometimes Show resources when there are more than one
-always    Always show resources"
+always    Always show resources."
   :type '(radio (const :tag "Never" nil)
 		(const :tag "When more than one connected resource" sometimes)
 		(const :tag "Always" always))
@@ -3384,7 +3442,7 @@ always    Always show resources"
 
 ;; [[file:jabber.org::*jabber-show-offline-contacts][jabber-show-offline-contacts:1]]
 (defcustom jabber-show-offline-contacts t
-  "Show offline contacts in roster when non-nil"
+  "Show offline contacts in roster when non-nil."
   :type 'boolean
   :group 'jabber-roster)
 ;; jabber-show-offline-contacts:1 ends here
@@ -3403,14 +3461,14 @@ Trailing newlines are always removed, regardless of this variable."
 
 ;; [[file:jabber.org::*jabber-roster-show-bindings][jabber-roster-show-bindings:1]]
 (defcustom jabber-roster-show-bindings t
-  "Show keybindings in roster buffer?"
+  "Show keybindings in roster buffer?."
   :type 'boolean
   :group 'jabber-roster)
 ;; jabber-roster-show-bindings:1 ends here
 
 ;; [[file:jabber.org::*jabber-roster-show-title][jabber-roster-show-title:1]]
 (defcustom jabber-roster-show-title t
-  "Show title in roster buffer?"
+  "Show title in roster buffer?."
   :type 'boolean
   :group 'jabber-roster)
 ;; jabber-roster-show-title:1 ends here
@@ -3441,14 +3499,14 @@ Trailing newlines are always removed, regardless of this variable."
 
 ;; [[file:jabber.org::*jabber-roster-show-empty-group][jabber-roster-show-empty-group:1]]
 (defcustom jabber-roster-show-empty-group nil
-  "Show empty groups in roster?"
+  "Show empty groups in roster?."
   :group 'jabber-roster
   :type 'boolean)
 ;; jabber-roster-show-empty-group:1 ends here
 
 ;; [[file:jabber.org::*jabber-roster-roll-up-group][jabber-roster-roll-up-group:1]]
 (defcustom jabber-roster-roll-up-group nil
-  "Show empty groups in roster?"
+  "Show empty groups in roster?."
   :group 'jabber-roster
   :type 'boolean)
 ;; jabber-roster-roll-up-group:1 ends here
@@ -3456,7 +3514,7 @@ Trailing newlines are always removed, regardless of this variable."
 ;; [[file:jabber.org::*jabber-roster-user-online][jabber-roster-user-online:1]]
 (defface jabber-roster-user-online
   '((t (:foreground "blue" :weight bold :slant normal)))
-  "face for displaying online users"
+  "face for displaying online users."
   :group 'jabber-roster)
 ;; jabber-roster-user-online:1 ends here
 
@@ -3464,48 +3522,48 @@ Trailing newlines are always removed, regardless of this variable."
 (defface jabber-roster-user-xa
   '((((background dark)) (:foreground "magenta" :weight normal :slant italic))
     (t (:foreground "black" :weight normal :slant italic)))
-  "face for displaying extended away users"
+  "face for displaying extended away users."
   :group 'jabber-roster)
 ;; jabber-roster-user-xa:1 ends here
 
 ;; [[file:jabber.org::*jabber-roster-user-dnd][jabber-roster-user-dnd:1]]
 (defface jabber-roster-user-dnd
   '((t (:foreground "red" :weight normal :slant italic)))
-  "face for displaying do not disturb users"
+  "face for displaying do not disturb users."
   :group 'jabber-roster)
 ;; jabber-roster-user-dnd:1 ends here
 
 ;; [[file:jabber.org::*jabber-roster-user-away][jabber-roster-user-away:1]]
 (defface jabber-roster-user-away
   '((t (:foreground "dark green" :weight normal :slant italic)))
-  "face for displaying away users"
+  "face for displaying away users."
   :group 'jabber-roster)
 ;; jabber-roster-user-away:1 ends here
 
 ;; [[file:jabber.org::*jabber-roster-user-chatty][jabber-roster-user-chatty:1]]
 (defface jabber-roster-user-chatty
   '((t (:foreground "dark orange" :weight bold :slant normal)))
-  "face for displaying chatty users"
+  "face for displaying chatty users."
   :group 'jabber-roster)
 ;; jabber-roster-user-chatty:1 ends here
 
 ;; [[file:jabber.org::*jabber-roster-user-error][jabber-roster-user-error:1]]
 (defface jabber-roster-user-error
   '((t (:foreground "red" :weight light :slant italic)))
-  "face for displaying users sending presence errors"
+  "face for displaying users sending presence errors."
   :group 'jabber-roster)
 ;; jabber-roster-user-error:1 ends here
 
 ;; [[file:jabber.org::*jabber-roster-user-offline][jabber-roster-user-offline:1]]
 (defface jabber-roster-user-offline
   '((t (:foreground "dark grey" :weight light :slant italic)))
-  "face for displaying offline users"
+  "face for displaying offline users."
   :group 'jabber-roster)
 ;; jabber-roster-user-offline:1 ends here
 
 ;; [[file:jabber.org::*jabber-roster-debug][jabber-roster-debug:1]]
 (defvar jabber-roster-debug nil
-  "debug roster draw")
+  "Debug roster draw.")
 ;; jabber-roster-debug:1 ends here
 
 ;; [[file:jabber.org::*jabber-roster-mode-map][jabber-roster-mode-map:1]]
@@ -3540,8 +3598,9 @@ Trailing newlines are always removed, regardless of this variable."
 
 ;; [[file:jabber.org::*jabber-roster-ret-action-at-point][jabber-roster-ret-action-at-point:1]]
 (defun jabber-roster-ret-action-at-point ()
-  "Action for ret. Before try to roll up/down group. Eval
-chat-with-jid-at-point is no group at point"
+  "Action for ret.
+Before try to roll up/down group.  Eval `chat-with-jid-at-point' is no group at
+point."
   (interactive)
   (let ((group-at-point (get-text-property (point)
 					   'jabber-group))
@@ -3565,7 +3624,7 @@ chat-with-jid-at-point is no group at point"
       (jabber-chat-with jc jid)
     ;; Otherwise, let's check whether it has a groupchat identity.
     (let ((identities (car result)))
-      (if (find "conference" (if (sequencep identities) identities nil)
+      (if (cl-find "conference" (if (sequencep identities) identities nil)
 		:key (lambda (i) (aref i 1))
 		:test #'string=)
 	  ;; Yes!  Let's join it.
@@ -3578,8 +3637,9 @@ chat-with-jid-at-point is no group at point"
 
 ;; [[file:jabber.org::*jabber-roster-mouse-2-action-at-point][jabber-roster-mouse-2-action-at-point:1]]
 (defun jabber-roster-mouse-2-action-at-point (e)
-  "Action for mouse-2. Before try to roll up/down group. Eval
-chat-with-jid-at-point is no group at point"
+  "Action for mouse 2.
+Before try to roll up/down group.  Eval `chat-with-jid-at-point' is no group
+at point."
   (interactive "e")
   (mouse-set-point e)
   (let ((group-at-point (get-text-property (point)
@@ -3615,8 +3675,8 @@ Delete a jid if there is no group at point."
 
 ;; [[file:jabber.org::*jabber-roster-edit-action-at-point][jabber-roster-edit-action-at-point:1]]
 (defun jabber-roster-edit-action-at-point ()
-  "Action for e. Before try to edit group name.
-Eval `jabber-roster-change' is no group at point"
+  "Action for e.  Before try to edit group name.
+Eval `jabber-roster-change' is no group at point."
   (interactive)
   (let ((group-at-point (get-text-property (point)
 					   'jabber-group))
@@ -3641,10 +3701,10 @@ If optional SET is t, roll up group.
 If SET is nor t or nil, roll down group."
   (let* ((state-data (fsm-get-state-data jc))
 	 (roll-groups (plist-get state-data :roster-roll-groups))
-         (new-roll-groups (if (find group-name roll-groups :test 'string=)
+         (new-roll-groups (if (cl-find group-name roll-groups :test 'string=)
                               ;; group is rolled up, roll it down if needed
                               (if (or (not set) (and set (not (eq set t))))
-                                  (remove-if-not (lambda (group-name-in-list)
+                                  (cl-remove-if-not (lambda (group-name-in-list)
                                                    (not (string= group-name
                                                                  group-name-in-list)))
                                                  roll-groups)
@@ -3694,7 +3754,8 @@ be used in `jabber-post-connection-hooks'."
 
 ;; [[file:jabber.org::*jabber-sort-roster][jabber-sort-roster:1]]
 (defun jabber-sort-roster (jc)
-  "sort roster according to online status"
+  "Sort roster according to online status.
+JC is the Jabber connection."
   (let ((state-data (fsm-get-state-data jc)))
     (dolist (group (plist-get state-data :roster-groups))
       (let ((group-name (car group)))
@@ -3708,7 +3769,8 @@ be used in `jabber-post-connection-hooks'."
 
 ;; [[file:jabber.org::*jabber-roster-prepare-roster][jabber-roster-prepare-roster:1]]
 (defun jabber-roster-prepare-roster (jc)
-  "make a hash based roster"
+  "Make a hash based roster.
+JC is the Jabber connection."
   (let* ((state-data (fsm-get-state-data jc))
 	 (hash (make-hash-table :test 'equal))
 	 (buddies (plist-get state-data :roster))
@@ -3734,7 +3796,7 @@ be used in `jabber-post-connection-hooks'."
 
     ;; remove duplicates name of group
     (setq all-groups (sort
-		      (remove-duplicates all-groups
+		      (cl-remove-duplicates all-groups
 					 :test 'string=)
 		      'string<))
 
@@ -3755,16 +3817,16 @@ Return t if A is less than B."
     (let ((comparison (funcall fn a b)))
       (cond
        ((< comparison 0)
-	(return t))
+        t)
        ((> comparison 0)
-	(return nil))))))
+        nil)))))
 ;; jabber-roster-sort-items:1 ends here
 
 ;; [[file:jabber.org::*jabber-roster-sort-by-status][jabber-roster-sort-by-status:1]]
 (defun jabber-roster-sort-by-status (a b)
   "Sort roster items by online status.
 See `jabber-sort-order' for order used."
-  (flet ((order (item) (length (member (get item 'show) jabber-sort-order))))
+  (cl-flet ((order (item) (length (member (get item 'show) jabber-sort-order))))
     (let ((a-order (order a))
 	  (b-order (order b)))
       ;; Note reversed test.  Items with longer X-order go first.
@@ -3791,7 +3853,7 @@ See `jabber-sort-order' for order used."
 ;; [[file:jabber.org::*jabber-roster-sort-by-group][jabber-roster-sort-by-group:1]]
 (defun jabber-roster-sort-by-group (a b)
   "Sort roster items by group membership."
-  (flet ((first-group (item) (or (car (get item 'groups)) "")))
+  (cl-flet ((first-group (item) (or (car (get item 'groups)) "")))
     (let ((a-group (first-group a))
 	  (b-group (first-group b)))
       (cond
@@ -3802,7 +3864,7 @@ See `jabber-sort-order' for order used."
 
 ;; [[file:jabber.org::*jabber-fix-status][jabber-fix-status:1]]
 (defun jabber-fix-status (status)
-  "Make status strings more readable"
+  "Make status strings more readable."
   (when status
     (when (string-match "\n+$" status)
       (setq status (replace-match "" t t status)))
@@ -3821,8 +3883,8 @@ such.")
 
 ;; [[file:jabber.org::*jabber-roster-filter-display][jabber-roster-filter-display:1]]
 (defun jabber-roster-filter-display (buddies)
-  "Filter BUDDIES for items to be displayed in the roster"
-  (remove-if-not (lambda (buddy) (or jabber-show-offline-contacts
+  "Filter BUDDIES for items to be displayed in the roster."
+  (cl-remove-if-not (lambda (buddy) (or jabber-show-offline-contacts
 				     (get buddy 'connected)))
 		 buddies))
 ;; jabber-roster-filter-display:1 ends here
@@ -3848,7 +3910,7 @@ To change this permanently, customize the `jabber-show-offline-contacts'."
 
 ;; [[file:jabber.org::*jabber-display-roster][jabber-display-roster:1]]
 (defun jabber-display-roster ()
-  "switch to the main jabber buffer and refresh the roster display to reflect the current information"
+  "Switch to the main jabber buffer and refresh the roster display to reflect the current information."
   (interactive)
   (with-current-buffer (get-buffer-create jabber-roster-buffer)
     (if (not (eq major-mode 'jabber-roster-mode))
@@ -3901,7 +3963,7 @@ H        Toggle displaying this text
 	(jabber-sort-roster jc)
 	(let ((before-ewoc (point))
 	      (ewoc (ewoc-create
-		       (lexical-let ((jc jc))
+		       (let ((jc jc))
 			 (lambda (data)
 			   (let* ((group (car data))
 				  (group-name (car group))
@@ -3925,7 +3987,7 @@ H        Toggle displaying this text
 	      (when (or jabber-roster-show-empty-group
 			(> (length buddies) 0))
 		(let ((group-node (ewoc-enter-last ewoc (list group nil))))
-		  (if (not (find
+		  (if (not (cl-find
 			    group-name
 			    (plist-get (fsm-get-state-data jc) :roster-roll-groups)
 			    :test 'string=))
@@ -3953,7 +4015,8 @@ H        Toggle displaying this text
 ;; [[file:jabber.org::*jabber-display-roster-entry][jabber-display-roster-entry:1]]
 (defun jabber-display-roster-entry (jc group-name buddy)
   "Format and insert a roster entry for BUDDY at point.
-BUDDY is a JID symbol."
+BUDDY is a JID symbol.
+JC is the Jabber connection."
   (if buddy
       (let ((buddy-str (format-spec
 			jabber-roster-line-format
@@ -4063,7 +4126,8 @@ BUDDY is a JID symbol."
 (defun jabber-roster-update (jc new-items changed-items deleted-items)
   "Update roster, in memory and on display.
 Add NEW-ITEMS, update CHANGED-ITEMS and remove DELETED-ITEMS, all
-three being lists of JID symbols."
+three being lists of JID symbols.
+JC is the Jabber connection."
   (let* ((roster (plist-get (fsm-get-state-data jc) :roster))
 	 (hash (plist-get (fsm-get-state-data jc) :roster-hash))
 	 (ewoc (plist-get (fsm-get-state-data jc) :roster-ewoc))
@@ -4127,11 +4191,10 @@ three being lists of JID symbols."
 		     hash)
 	    (setq all-groups (append all-groups (list (list group)))))))
 
-
       (when jabber-roster-debug
 	(message "remove duplicates from new group"))
       (setq all-groups (sort
-			(remove-duplicates all-groups
+			(cl-remove-duplicates all-groups
 					   :test (lambda (g1 g2)
 						   (let ((g1-name (car g1))
 							 (g2-name (car g2)))
@@ -4145,7 +4208,6 @@ three being lists of JID symbols."
 
       (plist-put (fsm-get-state-data jc) :roster-groups all-groups))
 
-
     (when jabber-roster-debug
       (message "re display roster"))
 
@@ -4157,7 +4219,7 @@ three being lists of JID symbols."
 (defalias 'jabber-presence-update-roster 'ignore)
 ;;jabber-presence-update-roster is not needed anymore.
 ;;Its work is done in `jabber-process-presence'."
-(make-obsolete 'jabber-presence-update-roster 'ignore)
+(make-obsolete 'jabber-presence-update-roster 'ignore "27.2")
 ;; jabber-roster-update:2 ends here
 
 ;; [[file:jabber.org::*jabber-next-property][jabber-next-property:1]]
@@ -4185,7 +4247,7 @@ If optional PREV is non-nil, return position of previous property appearence."
 
 ;; [[file:jabber.org::*jabber-go-to-next-roster-item][jabber-go-to-next-roster-item:1]]
 (defun jabber-go-to-next-roster-item ()
-  "Move the cursor to the next jid/group in the buffer"
+  "Move the cursor to the next jid/group in the buffer."
   (interactive)
   (let* ((next (jabber-next-property))
          (next (if (not next)
@@ -4197,7 +4259,7 @@ If optional PREV is non-nil, return position of previous property appearence."
 
 ;; [[file:jabber.org::*jabber-go-to-previous-roster-item][jabber-go-to-previous-roster-item:1]]
 (defun jabber-go-to-previous-roster-item ()
-  "Move the cursor to the previous jid/group in the buffer"
+  "Move the cursor to the previous jid/group in the buffer."
   (interactive)
   (let* ((previous (jabber-next-property 'prev))
          (previous (if (not previous)
@@ -4209,7 +4271,8 @@ If optional PREV is non-nil, return position of previous property appearence."
 
 ;; [[file:jabber.org::*jabber-roster-restore-groups][jabber-roster-restore-groups:1]]
 (defun jabber-roster-restore-groups (jc)
-  "Restore roster's groups rolling state from private storage"
+  "Restore roster's groups rolling state from private storage.
+JC is the Jabber connection."
   (interactive (list (jabber-read-account)))
   (jabber-private-get jc 'roster "emacs-jabber"
                       'jabber-roster-restore-groups-1 'ignore))
@@ -4217,7 +4280,11 @@ If optional PREV is non-nil, return position of previous property appearence."
 
 ;; [[file:jabber.org::*jabber-roster-restore-groups-1][jabber-roster-restore-groups-1:1]]
 (defun jabber-roster-restore-groups-1 (jc xml-data)
-  "Parse roster groups and restore rolling state"
+  "Parse roster groups and restore rolling state.
+
+JC is the Jabber connection.
+XML-DATA is the parsed tree data from the stream (stanzas)
+obtained from `xml-parse-region'."
   (when (string= (jabber-xml-get-xmlns xml-data) "emacs-jabber")
     (let* ((data (car (last xml-data)))
            (groups (if (stringp data) (split-string data "\n") nil)))
@@ -4227,7 +4294,7 @@ If optional PREV is non-nil, return position of previous property appearence."
 
 ;; [[file:jabber.org::*jabber-roster-save-groups][jabber-roster-save-groups:1]]
 (defun jabber-roster-save-groups ()
-  "Save roster's groups rolling state in private storage"
+  "Save roster's groups rolling state in private storage."
   (interactive)
   (dolist (jc jabber-connections)
     (let* ((groups (plist-get (fsm-get-state-data jc) :roster-roll-groups))
@@ -4241,10 +4308,6 @@ If optional PREV is non-nil, return position of previous property appearence."
                           'jabber-report-success "Roster groups saved"
                           'jabber-report-success "Failed to save roster groups"))))
 ;; jabber-roster-save-groups:1 ends here
-
-;; [[file:jabber.org::*export Jabber roster to file][export Jabber roster to file:1]]
-(require 'cl)
-;; export Jabber roster to file:1 ends here
 
 ;; [[file:jabber.org::*jabber-export-roster-widget][jabber-export-roster-widget:1]]
 (defvar jabber-export-roster-widget nil)
@@ -4339,7 +4402,7 @@ not affect your actual roster.
   (let* ((value (widget-value jabber-export-roster-widget))
 	 (length-before (length value))
 	 (regexp (read-string "Remove JIDs matching regexp: ")))
-    (setq value (delete-if
+    (setq value (cl-delete-if
 		 #'(lambda (a)
 		     (string-match regexp (nth 0 a)))
 		 value))
@@ -4388,9 +4451,9 @@ not affect your actual roster.
 	       ;; or changes a name,
 	       (and name jid-name (not (string= name jid-name)))
 	       ;; or introduces new groups.
-	       (set-difference groups jid-groups :test #'string=))
+	       (cl-set-difference groups jid-groups :test #'string=))
 	  (push (jabber-roster-sexp-to-xml
-		 (list jid (or name jid-name) nil (union groups jid-groups :test #'string=))
+		 (list jid (or name jid-name) nil (cl-union groups jid-groups :test #'string=))
 		 t)
 		roster-delta))
 	;; And adujst subscription.
@@ -4399,7 +4462,7 @@ not affect your actual roster.
 		(want-from (member subscription '("from" "both")))
 		(have-to (member jid-subscription '("to" "both")))
 		(have-from (member jid-subscription '("from" "both"))))
-	    (flet ((request-subscription
+	    (cl-flet ((request-subscription
 		    (type)
 		    (jabber-send-sexp jabber-buffer-connection
 				      `(presence ((to . ,jid)
@@ -4460,9 +4523,9 @@ Return an XML node."
   "Convert XML-DATA to simpler sexp format.
 XML-DATA is an <iq> node with a <query xmlns='jabber:iq:roster'> child.
 See `jabber-roster-to-sexp' for description of output format."
-  (assert (eq (jabber-xml-node-name xml-data) 'iq))
+  (cl-assert (eq (jabber-xml-node-name xml-data) 'iq))
   (let ((query (car (jabber-xml-get-children xml-data 'query))))
-    (assert query)
+    (cl-assert query)
     (mapcar
      #'(lambda (n)
 	 (list
@@ -4497,7 +4560,7 @@ See `jabber-roster-to-sexp' for description of output format."
 
 ;; [[file:jabber.org::**jabber-open-info-queries*][*jabber-open-info-queries*:1]]
 (defvar *jabber-open-info-queries* nil
-  "an alist of open query id and their callback functions")
+  "An alist of open query id and their callback functions.")
 ;; *jabber-open-info-queries*:1 ends here
 
 ;; [[file:jabber.org::*jabber-iq-get-xmlns-alist][jabber-iq-get-xmlns-alist:1]]
@@ -4543,7 +4606,8 @@ These fields are available at this moment:
 
 ;; [[file:jabber.org::*jabber-browse-mode][jabber-browse-mode:1]]
 (defun jabber-browse-mode ()
-"\\{jabber-browse-mode-map}"
+"Jabber browse mode.
+\\{jabber-browse-mode-map}"
   (kill-all-local-variables)
   (setq major-mode 'jabber-browse-mode
         mode-name "jabber-browse")
@@ -4561,7 +4625,11 @@ These fields are available at this moment:
 ;; [[file:jabber.org::*jabber-process-iq][jabber-process-iq:1]]
 (add-to-list 'jabber-iq-chain 'jabber-process-iq)
 (defun jabber-process-iq (jc xml-data)
-  "process an incoming iq stanza"
+  "Process an incoming iq stanza.
+
+JC is the Jabber Connection.
+XML-DATA is the parsed tree data from the stream (stanzas)
+obtained from `xml-parse-region'."
   (let* ((id (jabber-xml-get-attribute xml-data 'id))
          (type (jabber-xml-get-attribute xml-data 'type))
          (from (jabber-xml-get-attribute xml-data 'from))
@@ -4602,8 +4670,8 @@ These fields are available at this moment:
 JC is the Jabber connection.
 TO is the addressee.
 TYPE is one of \"get\", \"set\", \"result\" or \"error\".
-QUERY is a list containing the child of the iq node in the format `jabber-sexp2xml'
-accepts.
+QUERY is a list containing the child of the iq node in the format
+`jabber-sexp2xml' accepts.
 SUCCESS-CALLBACK is the function to be called when a successful result arrives.
 SUCCESS-CLOSURE-DATA is an extra argument to SUCCESS-CALLBACK.
 ERROR-CALLBACK is the function to be called when an error arrives.
@@ -4613,7 +4681,7 @@ RESULT-ID is the id to be used for a response to a received iq message.
 
 The callback functions are called like this:
 \(funcall CALLBACK JC XML-DATA CLOSURE-DATA)
-with XML-DATA being the IQ stanza received in response. "
+with XML-DATA being the IQ stanza received in response."
   (let ((id (or result-id (apply 'format "emacs-iq-%d.%d.%d" (current-time)))))
     (if (or success-callback error-callback)
 	(setq *jabber-open-info-queries* (cons (list id
@@ -4632,7 +4700,8 @@ with XML-DATA being the IQ stanza received in response. "
 ;; [[file:jabber.org::*jabber-send-iq-error][jabber-send-iq-error:1]]
 (defun jabber-send-iq-error (jc to id original-query error-type condition
 				&optional text app-specific)
-  "Send an error iq stanza to the specified entity in response to a
+  "Send an error iq stanza in response to a previously sent iq stanza.
+Send an error iq stanza to the specified entity in response to a
 previously sent iq stanza.
 TO is the addressee.
 ID is the id of the iq stanza that caused the error.
@@ -4643,6 +4712,7 @@ and \"wait\".
 CONDITION is a symbol denoting a defined XMPP condition.
 TEXT is a string to be sent in the error message, or nil for no text.
 APP-SPECIFIC is a list of extra XML tags.
+JC is the Jabber connection.
 
 See section 9.3 of XMPP Core."
   (jabber-send-sexp
@@ -4661,7 +4731,11 @@ See section 9.3 of XMPP Core."
 
 ;; [[file:jabber.org::*jabber-process-data][jabber-process-data:1]]
 (defun jabber-process-data (jc xml-data closure-data)
-  "Process random results from various requests."
+  "Process random results from various requests.
+
+JC is the Jabber connection.
+XML-DATA is the parsed tree data from the stream (stanzas)
+obtained from `xml-parse-region'."
   (let ((from (or (jabber-xml-get-attribute xml-data 'from) (plist-get (fsm-get-state-data jc) :server)))
 	(xmlns (jabber-iq-xmlns xml-data))
 	(type (jabber-xml-get-attribute xml-data 'type)))
@@ -4695,7 +4769,11 @@ See section 9.3 of XMPP Core."
 
 ;; [[file:jabber.org::*jabber-silent-process-data][jabber-silent-process-data:1]]
 (defun jabber-silent-process-data (jc xml-data closure-data)
-  "Process random results from various requests to only alert hooks."
+  "Process random results from various requests to only alert hooks.
+
+JC is the Jabber connection.
+XML-DATA is the parsed tree data from the stream (stanzas)
+obtained from `xml-parse-region'."
   (let ((text (cond
                ((functionp closure-data)
                 (funcall closure-data jc xml-data))
@@ -4707,10 +4785,6 @@ See section 9.3 of XMPP Core."
       (run-hook-with-args hook 'browse (current-buffer)
                           text))))
 ;; jabber-silent-process-data:1 ends here
-
-;; [[file:jabber.org::*Alert hooks][Alert hooks:1]]
-(require 'cl)
-;; Alert hooks:1 ends here
 
 ;; [[file:jabber.org::*jabber-alerts][jabber-alerts:1]]
 (defgroup jabber-alerts nil "auditory and visual alerts for jabber events"
@@ -4843,7 +4917,7 @@ it's not meant to be customized by the user.")
   "Function for constructing title of presence alert messages.
 
 Arguments are WHO, OLDSTATUS, NEWSTATUS and STATUSTEXT.  See
-`jabber-alert-presence-hooks' for documentation. This function
+`jabber-alert-presence-hooks' for documentation.  This function
 should return a string containing an appropriate text message, or nil
 if no message should be displayed.
 
@@ -4920,14 +4994,14 @@ files."
 
 ;; [[file:jabber.org::*jabber-alert-muc-wave][jabber-alert-muc-wave:1]]
 (defcustom jabber-alert-muc-wave ""
-  "a sound file to play when a MUC message arrived"
+  "A sound file to play when a MUC message arrived."
   :type 'file
   :group 'jabber-alerts)
 ;; jabber-alert-muc-wave:1 ends here
 
 ;; [[file:jabber.org::*jabber-alert-presence-wave][jabber-alert-presence-wave:1]]
 (defcustom jabber-alert-presence-wave ""
-  "a sound file to play when a presence arrived"
+  "A sound file to play when a presence arrived."
   :type 'file
   :group 'jabber-alerts)
 ;; jabber-alert-presence-wave:1 ends here
@@ -4943,14 +5017,14 @@ files."
 
 ;; [[file:jabber.org::*jabber-alert-info-wave][jabber-alert-info-wave:1]]
 (defcustom jabber-alert-info-wave ""
-  "a sound file to play when an info query result arrived"
+  "A sound file to play when an info query result arrived."
   :type 'file
   :group 'jabber-alerts)
 ;; jabber-alert-info-wave:1 ends here
 
 ;; [[file:jabber.org::*jabber-play-sound-file][jabber-play-sound-file:1]]
 (defcustom jabber-play-sound-file 'play-sound-file
-  "a function to call to play alert sound files"
+  "A function to call to play alert sound files."
   :type 'function
   :group 'jabber-alerts)
 ;; jabber-play-sound-file:1 ends here
@@ -4984,22 +5058,22 @@ Examples:
 	   ,docstring
 	   (when title
 	     (funcall ,function text title)))
-	 (pushnew (quote ,msg) (get 'jabber-alert-message-hooks 'custom-options))
+	 (cl-pushnew (quote ,msg) (get 'jabber-alert-message-hooks 'custom-options))
 	 (defun ,muc (nick group buffer text title)
 	   ,docstring
 	   (when title
 	     (funcall ,function text title)))
-	 (pushnew (quote ,muc) (get 'jabber-alert-muc-hooks 'custom-options))
+	 (cl-pushnew (quote ,muc) (get 'jabber-alert-muc-hooks 'custom-options))
 	 (defun ,pres (who oldstatus newstatus statustext title)
 	   ,docstring
 	   (when title
 	     (funcall ,function statustext title)))
-	 (pushnew (quote ,pres) (get 'jabber-alert-presence-hooks 'custom-options))
+	 (cl-pushnew (quote ,pres) (get 'jabber-alert-presence-hooks 'custom-options))
 	 (defun ,info (infotype buffer text)
 	   ,docstring
 	   (when text
 	     (funcall ,function text)))
-	 (pushnew (quote ,info) (get 'jabber-alert-info-message-hooks 'custom-options))))))
+	 (cl-pushnew (quote ,info) (get 'jabber-alert-info-message-hooks 'custom-options))))))
 ;; define-jabber-alert:1 ends here
 
 ;; [[file:jabber.org::*define-jabber-alert][define-jabber-alert:2]]
@@ -5038,13 +5112,13 @@ Examples:
 
 ;; [[file:jabber.org::*jabber-message-wave][jabber-message-wave:1]]
 (defun jabber-message-wave (from buffer text title)
-  "Play the wave file specified in `jabber-alert-message-wave'"
+  "Play the wave file specified in `jabber-alert-message-wave'."
   (when title
     (let* ((case-fold-search t)
 	   (bare-jid (jabber-jid-user from))
 	   (sound-file (or (dolist (entry jabber-alert-message-wave-alist)
 			     (when (string-match (car entry) bare-jid)
-			       (return (cdr entry))))
+			       (cl-return (cdr entry))))
 			   jabber-alert-message-wave)))
       (unless (equal sound-file "")
 	(funcall jabber-play-sound-file sound-file)))))
@@ -5102,7 +5176,7 @@ Examples:
 
 ;; [[file:jabber.org::*jabber-muc-wave][jabber-muc-wave:1]]
 (defun jabber-muc-wave (nick group buffer text title)
-  "Play the wave file specified in `jabber-alert-muc-wave'"
+  "Play the wave file specified in `jabber-alert-muc-wave'."
   (when title
     (funcall jabber-play-sound-file jabber-alert-muc-wave)))
 ;; jabber-muc-wave:1 ends here
@@ -5130,7 +5204,9 @@ Examples:
 ;; [[file:jabber.org::*jabber-presence-default-message][jabber-presence-default-message:1]]
 ;; Presence alert hooks
 (defun jabber-presence-default-message (who oldstatus newstatus statustext)
-  "This function returns nil if OLDSTATUS and NEWSTATUS are equal, and in other
+  "Return a string with the status change if OLDSTATUS and NEWSTATUS differs.
+
+Return nil if OLDSTATUS and NEWSTATUS are equal, and in other
 cases a string of the form \"'name' (jid) is now NEWSTATUS (STATUSTEXT)\".
 
 This function is not called directly, but is the default for
@@ -5159,7 +5235,9 @@ This function is not called directly, but is the default for
 
 ;; [[file:jabber.org::*jabber-presence-only-chat-open-message][jabber-presence-only-chat-open-message:1]]
 (defun jabber-presence-only-chat-open-message (who oldstatus newstatus statustext)
-  "This function returns the same as `jabber-presence-default-message' but only
+  "Same as `jabber-presence-default-message' but managing the presence messages.
+
+Return the same as `jabber-presence-default-message' but only
 if there is a chat buffer open for WHO, keeping the amount of presence messages
 at a more manageable level when there are lots of users.
 
@@ -5171,13 +5249,13 @@ This function is not called directly, but can be used as the value for
 
 ;; [[file:jabber.org::*jabber-presence-wave][jabber-presence-wave:1]]
 (defun jabber-presence-wave (who oldstatus newstatus statustext proposed-alert)
-  "Play the wave file specified in `jabber-alert-presence-wave'"
+  "Play the wave file specified in `jabber-alert-presence-wave'."
   (when proposed-alert
     (let* ((case-fold-search t)
 	   (bare-jid (symbol-name who))
 	   (sound-file (or (dolist (entry jabber-alert-presence-wave-alist)
 			     (when (string-match (car entry) bare-jid)
-			       (return (cdr entry))))
+			       (cl-return (cdr entry))))
 			   jabber-alert-presence-wave)))
       (unless (equal sound-file "")
 	(funcall jabber-play-sound-file sound-file)))))
@@ -5192,14 +5270,14 @@ This function is not called directly, but can be used as the value for
 
 ;; [[file:jabber.org::*jabber-presence-display][jabber-presence-display:1]]
 (defun jabber-presence-display (who oldstatus newstatus statustext proposed-alert)
-  "Display the roster buffer"
+  "Display the roster buffer."
   (when proposed-alert
     (display-buffer jabber-roster-buffer)))
 ;; jabber-presence-display:1 ends here
 
 ;; [[file:jabber.org::*jabber-presence-switch][jabber-presence-switch:1]]
 (defun jabber-presence-switch (who oldstatus newstatus statustext proposed-alert)
-  "Switch to the roster buffer"
+  "Switch to the roster buffer."
   (when proposed-alert
     (switch-to-buffer jabber-roster-buffer)))
 ;; jabber-presence-switch:1 ends here
@@ -5216,21 +5294,21 @@ This function uses `jabber-info-message-alist' to find a message."
 
 ;; [[file:jabber.org::*jabber-info-wave][jabber-info-wave:1]]
 (defun jabber-info-wave (infotype buffer proposed-alert)
-  "Play the wave file specified in `jabber-alert-info-wave'"
+  "Play the wave file specified in `jabber-alert-info-wave'."
   (if proposed-alert
       (funcall jabber-play-sound-file jabber-alert-info-wave)))
 ;; jabber-info-wave:1 ends here
 
 ;; [[file:jabber.org::*jabber-info-display][jabber-info-display:1]]
 (defun jabber-info-display (infotype buffer proposed-alert)
-  "Display buffer of completed request"
+  "Display buffer of completed request."
   (when proposed-alert
     (display-buffer buffer)))
 ;; jabber-info-display:1 ends here
 
 ;; [[file:jabber.org::*jabber-info-switch][jabber-info-switch:1]]
 (defun jabber-info-switch (infotype buffer proposed-alert)
-  "Switch to buffer of completed request"
+  "Switch to buffer of completed request."
   (when proposed-alert
     (switch-to-buffer buffer)))
 ;; jabber-info-switch:1 ends here
@@ -5238,15 +5316,18 @@ This function uses `jabber-info-message-alist' to find a message."
 ;; [[file:jabber.org::*define-personal-jabber-alert][define-personal-jabber-alert:1]]
 ;;; Personal alert hooks
 (defmacro define-personal-jabber-alert (name)
-  "From ALERT function, make ALERT-personal function. Makes sence only for MUC."
+  "From ALERT function, make ALERT-personal function.
+
+This makes sense only for MUC.
+
+NAME: the name of the sender."
   (let ((sn (symbol-name name)))
     (let ((func (intern (format "%s-personal" sn))))
     `(progn
        (defun ,func (nick group buffer text title)
          (if (jabber-muc-looks-like-personal-p text group)
              (,name nick group buffer text title)))
-       (pushnew (quote ,func) (get 'jabber-alert-muc-hooks 'custom-options)))))
-  )
+       (cl-pushnew (quote ,func) (get 'jabber-alert-muc-hooks 'custom-options))))))
 ;; define-personal-jabber-alert:1 ends here
 
 ;; [[file:jabber.org::*define-personal-jabber-alert][define-personal-jabber-alert:2]]
@@ -5268,32 +5349,34 @@ autoanswer phrase."
 
 ;; [[file:jabber.org::*jabber-autoanswer-answer][jabber-autoanswer-answer:1]]
 (defun jabber-autoanswer-answer (from buffer text proposed-alert)
-  "Answer automaticaly when incoming text matches first element
-of `jabber-autoanswer-alist'"
+  "Answer automaticaly when incoming text is in `jabber-autoanswer-alist'.
+Answer automaticaly when incoming text match the first element of
+`jabber-autoanswer-alist'"
   (when (and from buffer text proposed-alert jabber-autoanswer-alist)
     (let ((message
            (dolist (entry jabber-autoanswer-alist)
              (when (string-match (car entry) text)
-               (return (cdr entry))))))
+               (cl-return (cdr entry))))))
       (if message
           (jabber-chat-send jabber-buffer-connection message)))
     ))
-(pushnew 'jabber-autoanswer-answer (get 'jabber-alert-message-hooks 'custom-options))
+(cl-pushnew 'jabber-autoanswer-answer (get 'jabber-alert-message-hooks 'custom-options))
 ;; jabber-autoanswer-answer:1 ends here
 
 ;; [[file:jabber.org::*jabber-autoanswer-answer-muc][jabber-autoanswer-answer-muc:1]]
 (defun jabber-autoanswer-answer-muc (nick group buffer text proposed-alert)
-  "Answer automaticaly when incoming text matches first element
-of `jabber-autoanswer-alist'"
+  "Answer automaticaly when incoming text is in `jabber-autoanswer-alist'.
+Answer automaticaly when incoming text match first element
+of `jabber-autoanswer-alist'."
   (when (and nick group buffer text proposed-alert jabber-autoanswer-alist)
     (let ((message
            (dolist (entry jabber-autoanswer-alist)
              (when (string-match (car entry) text)
-               (return (cdr entry))))))
+               (cl-return (cdr entry))))))
       (if message
           (jabber-chat-send jabber-buffer-connection message)))
     ))
-(pushnew 'jabber-autoanswer-answer-muc (get 'jabber-alert-muc-hooks 'custom-options))
+(cl-pushnew 'jabber-autoanswer-answer-muc (get 'jabber-alert-muc-hooks 'custom-options))
 ;; jabber-autoanswer-answer-muc:1 ends here
 
 ;; [[file:jabber.org::*jabber-history][jabber-history:1]]
@@ -5351,7 +5434,8 @@ messages are stored in per-user files under the
 
 ;; [[file:jabber.org::*jabber-history-enable-rotation][jabber-history-enable-rotation:1]]
 (defcustom jabber-history-enable-rotation nil
-  "Whether history files should be renamed when reach
+  "Whether history files should be renamed when reach certain kilobytes.
+Whether history files should be renamed when reach
 `jabber-history-size-limit' kilobytes.  If nil, history files
 will grow indefinitely, otherwise they'll be renamed to
 <history-file>-<number>, where <number> is 1 or the smallest
@@ -5381,7 +5465,7 @@ in the message history.")
 
 ;; [[file:jabber.org::*jabber-rotate-history-p][jabber-rotate-history-p:1]]
 (defun jabber-rotate-history-p (history-file)
-  "Return true if HISTORY-FILE should be rotated."
+  "Return non-nil if HISTORY-FILE should be rotated."
   (when (and jabber-history-enable-rotation
 	     (file-exists-p history-file))
     (> (/ (nth 7 (file-attributes history-file)) 1024)
@@ -5400,7 +5484,11 @@ in the message history.")
 ;; [[file:jabber.org::*jabber-message-history][jabber-message-history:1]]
 (add-to-list 'jabber-message-chain 'jabber-message-history)
 (defun jabber-message-history (jc xml-data)
-  "Log message to log file."
+  "Log message to log file.
+
+JC is the Jabber connection.
+XML-DATA is the parsed tree data from the stream (stanzas)
+obtained from `xml-parse-region'."
   (when (and (not jabber-use-global-history)
 	     (not (file-directory-p jabber-history-dir)))
     (make-directory jabber-history-dir))
@@ -5438,8 +5526,9 @@ in the message history.")
 
 ;; [[file:jabber.org::*jabber-history-filename][jabber-history-filename:1]]
 (defun jabber-history-filename (contact)
-  "Return a history filename for CONTACT if the per-user file
-  loggin strategy is used or the global history filename."
+  "Return a history filename for CONTACT.
+Return a history filename for CONTACT if the per-user file
+loggin strategy is used or the global history filename."
   (if jabber-use-global-history
       jabber-global-history-filename
     ;; jabber-jid-symbol is the best canonicalization we have.
@@ -5449,7 +5538,7 @@ in the message history.")
 
 ;; [[file:jabber.org::*jabber-history-log-message][jabber-history-log-message:1]]
 (defun jabber-history-log-message (direction from to body timestamp)
-  "Log a message"
+  "Log a message."
   (with-temp-buffer
     ;; Remove properties
     (set-text-properties 0 (length body) nil body)
@@ -5561,7 +5650,7 @@ of the log file."
 
 ;; [[file:jabber.org::*jabber-backlog-days][jabber-backlog-days:1]]
 (defcustom jabber-backlog-days 3.0
-  "Age limit on messages in chat buffer backlog, in days"
+  "Age limit on messages in chat buffer backlog, in days."
   :group 'jabber
   :type '(choice (number :tag "Number of days")
 		 (const :tag "No limit" nil)))
@@ -5569,7 +5658,7 @@ of the log file."
 
 ;; [[file:jabber.org::*jabber-backlog-number][jabber-backlog-number:1]]
 (defcustom jabber-backlog-number 10
-  "Maximum number of messages in chat buffer backlog"
+  "Maximum number of messages in chat buffer backlog."
   :group 'jabber
   :type 'integer)
 ;; jabber-backlog-number:1 ends here
@@ -5638,7 +5727,7 @@ applies, though."
 
 ;; [[file:jabber.org::*jabber-point-insert][jabber-point-insert:1]]
 (defvar jabber-point-insert nil
-  "Position where the message being composed starts")
+  "Position where the message being composed starts.")
 ;; jabber-point-insert:1 ends here
 
 ;; [[file:jabber.org::*jabber-send-function][jabber-send-function:1]]
@@ -5677,7 +5766,10 @@ window or at `fill-column', whichever is shorter."
 
 ;; [[file:jabber.org::*jabber-chat-mode][jabber-chat-mode:1]]
 (defun jabber-chat-mode (jc ewoc-pp)
-  "\\{jabber-chat-mode-map}"
+  "Jabber chat mode.
+\\{jabber-chat-mode-map}
+
+JC is the Jabber connection."
   (kill-all-local-variables)
   ;; Make sure to set this variable somewhere
   (make-local-variable 'jabber-send-function)
@@ -5734,7 +5826,7 @@ window or at `fill-column', whichever is shorter."
   (interactive)
   ;; If user accidentally hits RET without writing anything, just
   ;; ignore it.
-  (when (plusp (- (point-max) jabber-point-insert))
+  (when (cl-plusp (- (point-max) jabber-point-insert))
     ;; If connection was lost...
     (unless (memq jabber-buffer-connection jabber-connections)
       ;; ...maybe there is a new connection to the same account.
@@ -5774,7 +5866,9 @@ window or at `fill-column', whichever is shorter."
 ;; [[file:jabber.org::*jabber-compose][jabber-compose:1]]
 ;;;###autoload
 (defun jabber-compose (jc &optional recipient)
-  "Create a buffer for composing a Jabber message."
+  "Create a buffer for composing a Jabber message.
+
+JC is the Jabber connection."
   (interactive (list (jabber-read-account)
 		     (jabber-read-jid-completing "To whom? ")))
 
@@ -5833,7 +5927,6 @@ window or at `fill-column', whichever is shorter."
 
 ;; [[file:jabber.org::*One-to-one chats][One-to-one chats:1]]
 (require 'ewoc)
-(eval-when-compile (require 'cl))
 ;; One-to-one chats:1 ends here
 
 ;; [[file:jabber.org::*jabber-chat][jabber-chat:1]]
@@ -6017,7 +6110,7 @@ These fields are available:
 ;; [[file:jabber.org::*jabber-chatting-with][jabber-chatting-with:1]]
 ;;;###autoload
 (defvar jabber-chatting-with nil
-  "JID of the person you are chatting with")
+  "JID of the person you are chatting with.")
 ;; jabber-chatting-with:1 ends here
 
 ;; [[file:jabber.org::*jabber-chat-printers][jabber-chat-printers:1]]
@@ -6083,7 +6176,8 @@ Either a string or a buffer is returned, so use `get-buffer' or
 ;; [[file:jabber.org::*jabber-chat-create-buffer][jabber-chat-create-buffer:1]]
 (defun jabber-chat-create-buffer (jc chat-with)
   "Prepare a buffer for chatting with CHAT-WITH.
-This function is idempotent."
+This function is idempotent.
+JC is the Jabber connection."
   (with-current-buffer (get-buffer-create (jabber-chat-get-buffer chat-with))
     (unless (eq major-mode 'jabber-chat-mode)
       (jabber-chat-mode jc #'jabber-chat-pp)
@@ -6144,7 +6238,7 @@ This function is idempotent."
 
 ;; [[file:jabber.org::*jabber-chat-display-more-backlog][jabber-chat-display-more-backlog:1]]
 (defun jabber-chat-display-more-backlog (how-many)
-  "Display more context. HOW-MANY is number of messages. Specify 0 to display all messages."
+  "Display more context.  HOW-MANY is number of messages.  Specify 0 to display all messages."
   (interactive "nHow many more messages (Specify 0 to display all)? ")
   (let* ((inhibit-read-only t)
 	 (jabber-backlog-days nil)
@@ -6175,7 +6269,8 @@ This function is idempotent."
 
 ;; [[file:jabber.org::*jabber-process-chat][jabber-process-chat:1]]
 (defun jabber-process-chat (jc xml-data)
-  "If XML-DATA is a one-to-one chat message, handle it as such."
+  "If XML-DATA is a one-to-one chat message, handle it as such.
+JC is the Jabber connection."
   ;; For now, everything that is not a public MUC message is
   ;; potentially a 1to1 chat message.
   (when (not (jabber-muc-message-p xml-data))
@@ -6223,7 +6318,8 @@ This function is idempotent."
 
 ;; [[file:jabber.org::*jabber-chat-send][jabber-chat-send:1]]
 (defun jabber-chat-send (jc body)
-  "Send BODY through connection JC, and display it in chat buffer."
+  "Send BODY through connection JC, and display it in chat buffer.
+JC is the Jabber connection."
   ;; Build the stanza...
   (let* ((id (apply 'format "emacs-msg-%d.%d.%d" (current-time)))
 	 (stanza-to-send `(message
@@ -6257,83 +6353,83 @@ This function is idempotent."
 \(cadr data) is the <message/> stanza.
 This function is used as an ewoc prettyprinter."
   (let* ((beg (point))
-	 (original-timestamp (when (listp (cadr data))
-			       (jabber-message-timestamp (cadr data))))
-	 (internal-time
-	  (plist-get (cddr data) :time))
-	 (body (ignore-errors (car
-	       (jabber-xml-node-children
-		(car
-		 (jabber-xml-get-children (cadr data) 'body))))))
-	 (/me-p
-	  (and (> (length body) 4)
-	       (string= (substring body 0 4) "/me "))))
+         (original-timestamp (when (listp (cadr data))
+                               (jabber-message-timestamp (cadr data))))
+         (internal-time
+          (plist-get (cddr data) :time))
+         (body (ignore-errors (car
+               (jabber-xml-node-children
+                (car
+                 (jabber-xml-get-children (cadr data) 'body))))))
+         (/me-p
+          (and (> (length body) 4)
+               (string= (substring body 0 4) "/me "))))
 
     ;; Print prompt...
     (let ((delayed (or original-timestamp (plist-get (cddr data) :delayed)))
-	  (prompt-start (point)))
-      (case (car data)
-	(:local
-	 (jabber-chat-self-prompt (or original-timestamp internal-time)
-				  delayed
-				  /me-p))
-	(:foreign
-	 (if (and (listp (cadr data))
-		  (jabber-muc-private-message-p (cadr data)))
-	     (jabber-muc-private-print-prompt (cadr data))
-	   ;; For :error and :notice, this might be a string... beware
-	   (jabber-chat-print-prompt (when (listp (cadr data)) (cadr data))
-				     (or original-timestamp internal-time)
-				     delayed
-				     /me-p)))
-	((:error :notice :subscription-request)
-	 (jabber-chat-system-prompt (or original-timestamp internal-time)))
-	(:muc-local
-	 (jabber-muc-print-prompt (cadr data) t /me-p))
+          (prompt-start (point)))
+      (cl-case (car data)
+        (:local
+         (jabber-chat-self-prompt (or original-timestamp internal-time)
+                                  delayed
+                                  /me-p))
+        (:foreign
+         (if (and (listp (cadr data))
+                  (jabber-muc-private-message-p (cadr data)))
+             (jabber-muc-private-print-prompt (cadr data))
+           ;; For :error and :notice, this might be a string... beware
+           (jabber-chat-print-prompt (when (listp (cadr data)) (cadr data))
+                                     (or original-timestamp internal-time)
+                                     delayed
+                                     /me-p)))
+        ((:error :notice :subscription-request)
+         (jabber-chat-system-prompt (or original-timestamp internal-time)))
+        (:muc-local
+         (jabber-muc-print-prompt (cadr data) t /me-p))
         (:muc-foreign
          (jabber-muc-print-prompt (cadr data) nil /me-p))
-	((:muc-notice :muc-error)
-	 (jabber-muc-system-prompt)))
+        ((:muc-notice :muc-error)
+         (jabber-muc-system-prompt)))
       (put-text-property prompt-start (point) 'field 'jabber-prompt))
 
     ;; ...and body
-    (case (car data)
+    (cl-case (car data)
       ((:local :foreign)
        (run-hook-with-args 'jabber-chat-printers (cadr data) (car data) :insert))
       ((:muc-local :muc-foreign)
-       (let ((printers (append jabber-muc-printers jabber-chat-printers)))
-	 (run-hook-with-args 'printers (cadr data) (car data) :insert)))
+       (dolist (hook '(jabber-muc-printers jabber-chat-printers))
+         (run-hook-with-args hook (cadr data) (car data) :insert)))
       ((:error :muc-error)
        (if (stringp (cadr data))
-	    (insert (jabber-propertize (cadr data) 'face 'jabber-chat-error))
-	 (jabber-chat-print-error (cadr data))))
+            (insert (jabber-propertize (cadr data) 'face 'jabber-chat-error))
+         (jabber-chat-print-error (cadr data))))
       ((:notice :muc-notice)
        (insert (cadr data)))
       (:rare-time
        (insert (jabber-propertize (format-time-string jabber-rare-time-format (cadr data))
-				  'face 'jabber-rare-time-face)))
+                                  'face 'jabber-rare-time-face)))
       (:subscription-request
        (insert "This user requests subscription to your presence.\n")
        (when (and (stringp (cadr data)) (not (zerop (length (cadr data)))))
-	 (insert "Message: " (cadr data) "\n"))
+         (insert "Message: " (cadr data) "\n"))
        (insert "Accept?\n\n")
-       (flet ((button
-	       (text action)
-	       (if (fboundp 'insert-button)
-		   (insert-button text 'action action)
-		 ;; simple button replacement
-		 (let ((keymap (make-keymap)))
-		   (define-key keymap "\r" action)
-		   (insert (jabber-propertize text 'keymap keymap 'face 'highlight))))
-	       (insert "\t")))
-	 (button "Mutual" 'jabber-subscription-accept-mutual)
-	 (button "One-way" 'jabber-subscription-accept-one-way)
-	 (button "Decline" 'jabber-subscription-decline))))
+       (cl-flet ((button
+               (text action)
+               (if (fboundp 'insert-button)
+                   (insert-button text 'action action)
+                 ;; simple button replacement
+                 (let ((keymap (make-keymap)))
+                   (define-key keymap "\r" action)
+                   (insert (jabber-propertize text 'keymap keymap 'face 'highlight))))
+               (insert "\t")))
+         (button "Mutual" 'jabber-subscription-accept-mutual)
+         (button "One-way" 'jabber-subscription-accept-one-way)
+         (button "Decline" 'jabber-subscription-decline))))
 
     (when jabber-chat-fill-long-lines
       (save-restriction
-	(narrow-to-region beg (point))
-	(jabber-chat-buffer-fill-long-lines)))
+        (narrow-to-region beg (point))
+        (jabber-chat-buffer-fill-long-lines)))
 
     (put-text-property beg (point) 'read-only t)
     (put-text-property beg (point) 'front-sticky t)
@@ -6353,7 +6449,7 @@ This function is used as an ewoc prettyprinter."
   (let* ((prev (ewoc-prev jabber-chat-ewoc node))
 	 (data (ewoc-data node))
 	 (prev-data (when prev (ewoc-data prev))))
-    (flet ((entry-time (entry)
+    (cl-flet ((entry-time (entry)
 		       (or (when (listp (cadr entry))
 			     (jabber-message-timestamp (cadr entry)))
 			   (plist-get (cddr entry) :time))))
@@ -6370,10 +6466,10 @@ This function is used as an ewoc prettyprinter."
   "Print prompt for received message in XML-DATA.
 TIMESTAMP is the timestamp to print, or nil to get it
 from a jabber:x:delay element.
-If DELAYED is true, print long timestamp
+If DELAYED is non-nil, print long timestamp
 \(`jabber-chat-delayed-time-format' as opposed to
 `jabber-chat-time-format').
-If DONT-PRINT-NICK-P is true, don't include nickname."
+If DONT-PRINT-NICK-P is non-nil, don't include nickname."
   (let ((from (jabber-xml-get-attribute xml-data 'from))
 	(timestamp (or timestamp (jabber-message-timestamp xml-data))))
     (insert (jabber-propertize
@@ -6413,10 +6509,10 @@ If DONT-PRINT-NICK-P is true, don't include nickname."
 (defun jabber-chat-self-prompt (timestamp delayed dont-print-nick-p)
   "Print prompt for sent message.
 TIMESTAMP is the timestamp to print, or nil for now.
-If DELAYED is true, print long timestamp
+If DELAYED is non-nil, print long timestamp
 \(`jabber-chat-delayed-time-format' as opposed to
 `jabber-chat-time-format').
-If DONT-PRINT-NICK-P is true, don't include nickname."
+If DONT-PRINT-NICK-P is non-nil, don't include nickname."
   (let* ((state-data (fsm-get-state-data jabber-buffer-connection))
 	 (username (plist-get state-data :username))
 	 (server (plist-get state-data :server))
@@ -6441,7 +6537,10 @@ If DONT-PRINT-NICK-P is true, don't include nickname."
 
 ;; [[file:jabber.org::*jabber-chat-print-error][jabber-chat-print-error:1]]
 (defun jabber-chat-print-error (xml-data)
-  "Print error in given <message/> in a readable way."
+  "Print error in given <message/> in a readable way.
+
+XML-DATA is the parsed tree data from the stream (stanzas)
+obtained from `xml-parse-region'."
   (let ((the-error (car (jabber-xml-get-children xml-data 'error))))
     (insert
      (jabber-propertize
@@ -6451,13 +6550,16 @@ If DONT-PRINT-NICK-P is true, don't include nickname."
 
 ;; [[file:jabber.org::*jabber-chat-print-subject][jabber-chat-print-subject:1]]
 (defun jabber-chat-print-subject (xml-data who mode)
-  "Print subject of given <message/>, if any."
+  "Print subject of given <message/>, if any.
+
+XML-DATA is the parsed tree data from the stream (stanzas)
+obtained from `xml-parse-region'."
   (let ((subject (car
 		  (jabber-xml-node-children
 		   (car
 		    (jabber-xml-get-children xml-data 'subject))))))
     (when (not (zerop (length subject)))
-      (case mode
+      (cl-case mode
 	(:printp
 	 t)
 	(:insert
@@ -6502,7 +6604,7 @@ If DONT-PRINT-NICK-P is true, don't include nickname."
 		       'face 'jabber-chat-prompt-system)))
 	  (insert (jabber-propertize
 		   body
-		   'face (case who
+		   'face (cl-case who
 			   ((:foreign :muc-foreign) 'jabber-chat-text-foreign)
 			   ((:local :muc-local) 'jabber-chat-text-local))))))
       t)))
@@ -6510,7 +6612,10 @@ If DONT-PRINT-NICK-P is true, don't include nickname."
 
 ;; [[file:jabber.org::*jabber-chat-print-url][jabber-chat-print-url:1]]
 (defun jabber-chat-print-url (xml-data who mode)
-  "Print URLs provided in jabber:x:oob namespace."
+  "Print URLs provided in jabber:x:oob namespace.
+
+XML-DATA is the parsed tree data from the stream (stanzas)
+obtained from `xml-parse-region'."
   (let ((foundp nil))
     (dolist (x (jabber-xml-node-children xml-data))
       (when (and (listp x) (eq (jabber-xml-node-name x) 'x)
@@ -6531,7 +6636,10 @@ If DONT-PRINT-NICK-P is true, don't include nickname."
 
 ;; [[file:jabber.org::*jabber-chat-goto-address][jabber-chat-goto-address:1]]
 (defun jabber-chat-goto-address (xml-data who mode)
-  "Call `goto-address' on the newly written text."
+  "Call `goto-address' on the newly written text.
+
+XML-DATA is the parsed tree data from the stream (stanzas)
+obtained from `xml-parse-region'."
   (when (eq mode :insert)
     (ignore-errors
       (let ((end (point))
@@ -6547,7 +6655,8 @@ If DONT-PRINT-NICK-P is true, don't include nickname."
 
 ;; [[file:jabber.org::*jabber-send-message][jabber-send-message:1]]
 (defun jabber-send-message (jc to subject body type)
-  "send a message tag to the server"
+  "Send a message tag to the server.
+JC is the Jabber connection."
   (interactive (list (jabber-read-account)
 		     (jabber-read-jid-completing "to: ")
 		     (jabber-read-with-input-method "subject: ")
@@ -6574,7 +6683,8 @@ If DONT-PRINT-NICK-P is true, don't include nickname."
 (defun jabber-chat-with (jc jid &optional other-window)
   "Open an empty chat window for chatting with JID.
 With a prefix argument, open buffer in other window.
-Returns the chat buffer."
+Returns the chat buffer.
+JC is the Jabber connection."
   (interactive (let* ((jid
 		      (jabber-read-jid-completing "chat with:"))
 		      (account
@@ -6612,15 +6722,18 @@ stanza.")
 
 ;; [[file:jabber.org::*jabber-presence-history][jabber-presence-history:1]]
 (defvar jabber-presence-history ()
-  "Keeps track of previously used presence status types")
+  "Keeps track of previously used presence status types.")
 ;; jabber-presence-history:1 ends here
 
 ;; [[file:jabber.org::*jabber-process-roster][jabber-process-roster:1]]
 (add-to-list 'jabber-iq-set-xmlns-alist
 	     (cons "jabber:iq:roster" (function (lambda (jc x) (jabber-process-roster jc x nil)))))
 (defun jabber-process-roster (jc xml-data closure-data)
-  "process an incoming roster infoquery result
-CLOSURE-DATA should be 'initial if initial roster push, nil otherwise."
+  "Process an incoming roster infoquery result.
+CLOSURE-DATA should be 'initial if initial roster push, nil otherwise.
+JC is the Jabber connection.
+XML-DATA is the parsed tree data from the stream (stanzas)
+obtained from `xml-parse-region'."
   (let ((roster (plist-get (fsm-get-state-data jc) :roster))
 	(from (jabber-xml-get-attribute xml-data 'from))
 	(type (jabber-xml-get-attribute xml-data 'type))
@@ -6705,9 +6818,14 @@ CLOSURE-DATA should be 'initial if initial roster push, nil otherwise."
 
 ;; [[file:jabber.org::*jabber-initial-roster-failure][jabber-initial-roster-failure:1]]
 (defun jabber-initial-roster-failure (jc xml-data _closure-data)
-  ;; If the initial roster request fails, let's report it, but run
-  ;; jabber-post-connect-hooks anyway.  According to the spec, there
-  ;; is nothing exceptional about the server not returning a roster.
+  "Report the initial roster failure.
+If the initial roster request fails, let's report it, but run
+`jabber-post-connect-hooks' anyway.  According to the spec, there
+is nothing exceptional about the server not returning a roster.
+
+JC is the Jabber connection.
+XML-DATA is the parsed tree data from the stream (stanzas)
+obtained from `xml-parse-region'."
   (jabber-report-success jc xml-data "Initial roster retrieval")
   (run-hook-with-args 'jabber-post-connect-hooks jc))
 ;; jabber-initial-roster-failure:1 ends here
@@ -6715,7 +6833,11 @@ CLOSURE-DATA should be 'initial if initial roster push, nil otherwise."
 ;; [[file:jabber.org::*jabber-process-presence][jabber-process-presence:1]]
 (add-to-list 'jabber-presence-chain 'jabber-process-presence)
 (defun jabber-process-presence (jc xml-data)
-  "process incoming presence tags"
+  "Process incoming presence tags.
+
+JC is the Jabber connection.
+XML-DATA is the parsed tree data from the stream (stanzas)
+obtained from `xml-parse-region'."
   ;; XXX: use JC argument
   (let ((roster (plist-get (fsm-get-state-data jc) :roster))
 	(from (jabber-xml-get-attribute xml-data 'from))
@@ -6822,7 +6944,8 @@ CLOSURE-DATA should be 'initial if initial roster push, nil otherwise."
 
 ;; [[file:jabber.org::*jabber-process-subscription-request][jabber-process-subscription-request:1]]
 (defun jabber-process-subscription-request (jc from presence-status)
-  "process an incoming subscription request"
+  "Process an incoming subscription request.
+JC is the Jabber connection."
   (with-current-buffer (jabber-chat-create-buffer jc from)
     (ewoc-enter-last jabber-chat-ewoc (list :subscription-request presence-status :time (current-time)))
 
@@ -6857,7 +6980,8 @@ CLOSURE-DATA should be 'initial if initial roster push, nil otherwise."
 
 ;; [[file:jabber.org::*jabber-prioritize-resources][jabber-prioritize-resources:1]]
 (defun jabber-prioritize-resources (buddy)
-  "Set connected, show and status properties for BUDDY from highest-priority resource."
+  "Set connected, show and status properties for BUDDY.
+Show status properties from highest-priority resource."
   (let ((resource-alist (get buddy 'resources))
 	(highest-priority nil))
     ;; Reset to nil at first, for cases (a) resource-alist is nil
@@ -6944,7 +7068,8 @@ CLOSURE-DATA should be 'initial if initial roster push, nil otherwise."
 
 ;; [[file:jabber.org::*jabber-presence-children][jabber-presence-children:1]]
 (defun jabber-presence-children (jc)
-  "Return the children for a <presence/> stanza."
+  "Return the children for a <presence/> stanza.
+JC is the Jabber connection."
   `(,(when (> (length *jabber-current-status*) 0)
        `(status () ,*jabber-current-status*))
     ,(when (> (length *jabber-current-show*) 0)
@@ -6975,7 +7100,9 @@ TYPE is one of:
   Accept contact's request for presence subscription.
   (this is usually done within a chat buffer)
 \"unsubscribed\":
-  Cancel contact's subscription to your presence."
+  Cancel contact's subscription to your presence.
+
+JC is the Jabber connection."
   (interactive
    (list (jabber-read-account)
 	 (jabber-read-jid-completing "Send directed presence to: ")
@@ -7063,8 +7190,10 @@ otherwise send defaults (see `jabber-send-default-presence')."
 (add-to-list 'jabber-jid-roster-menu (cons "Send subscription request"
 					   'jabber-send-subscription-request))
 (defun jabber-send-subscription-request (jc to &optional request)
-  "send a subscription request to jid, showing him your request
-text, if specified"
+  "Send a subscription request to jid.
+Show him your request text, if specified.
+
+JC is the Jabber connection."
   (interactive (list (jabber-read-account)
 		     (jabber-read-jid-completing "to: ")
 		     (jabber-read-with-input-method "request: ")))
@@ -7078,14 +7207,15 @@ text, if specified"
 
 ;; [[file:jabber.org::*jabber-roster-group-history][jabber-roster-group-history:1]]
 (defvar jabber-roster-group-history nil
-  "History of entered roster groups")
+  "History of entered roster groups.")
 ;; jabber-roster-group-history:1 ends here
 
 ;; [[file:jabber.org::*jabber-roster-change][jabber-roster-change:1]]
 (add-to-list 'jabber-jid-roster-menu
 	     (cons "Add/modify roster entry" 'jabber-roster-change))
 (defun jabber-roster-change (jc jid name groups)
-  "Add or change a roster item."
+  "Add or change a roster item.
+JC is the Jabber connection."
   (interactive (let* ((jid (jabber-jid-symbol
 			    (jabber-read-jid-completing "Add/change JID: ")))
 		      (account (jabber-read-account))
@@ -7159,18 +7289,20 @@ Signal an error if there is no JID at point."
 
 ;; [[file:jabber.org::*jabber-roster-delete-group-from-jids][jabber-roster-delete-group-from-jids:1]]
 (defun jabber-roster-delete-group-from-jids (jc jids group)
-  "Delete group `group' from all JIDs"
+  "Delete group `group' from all JIDs.
+JC is the Jabber connection."
   (interactive)
   (dolist (jid jids)
     (jabber-roster-change
      jc jid (get jid 'name)
-     (remove-if-not (lambda (g) (not (string= g group)))
+     (cl-remove-if-not (lambda (g) (not (string= g group)))
 		    (get jid 'groups)))))
 ;; jabber-roster-delete-group-from-jids:1 ends here
 
 ;; [[file:jabber.org::*jabber-roster-edit-group-from-jids][jabber-roster-edit-group-from-jids:1]]
 (defun jabber-roster-edit-group-from-jids (jc jids group)
-  "Edit group `group' from all JIDs"
+  "Edit group `group' from all JIDs.
+JC is the Jabber connection."
   (interactive)
   (let ((new-group
 	 (jabber-read-with-input-method
@@ -7178,7 +7310,7 @@ Signal an error if there is no JID at point."
     (dolist (jid jids)
       (jabber-roster-change
        jc jid (get jid 'name)
-       (remove-duplicates
+       (cl-remove-duplicates
 	(mapcar
 	 (lambda (g) (if (string= g group)
 			 new-group
@@ -7234,7 +7366,11 @@ Return (IDENTITIES FEATURES), or nil if not in cache."
 ;; [[file:jabber.org::*jabber-process-caps][jabber-process-caps:1]]
 ;;;###autoload
 (defun jabber-process-caps (jc xml-data)
-  "Look for entity capabilities in presence stanzas."
+  "Look for entity capabilities in presence stanzas.
+
+JC is the Jabber connection.
+XML-DATA is the parsed tree data from the stream (stanzas)
+obtained from `xml-parse-region'."
   (let* ((from (jabber-xml-get-attribute xml-data 'from))
 	 (type (jabber-xml-get-attribute xml-data 'type))
 	 (c (jabber-xml-path xml-data '(("http://jabber.org/protocol/caps" . "c")))))
@@ -7267,7 +7403,7 @@ Return (IDENTITIES FEATURES), or nil if not in cache."
 	    (setf (cdr resource-entry) new-resource-plist)
 	  (push (cons resource new-resource-plist) (get symbol 'resources))))
 
-      (flet ((request-disco-info
+      (cl-flet ((request-disco-info
 	      ()
 	      (jabber-send-iq
 	       jc jid
@@ -7284,7 +7420,7 @@ Return (IDENTITIES FEATURES), or nil if not in cache."
 	      ;; We asked someone about this hash less than 10 seconds ago.
 	      ;; Let's add the new JID to the entry, just in case that
 	      ;; doesn't work out.
-	      (pushnew jid (cdr cache-entry) :test #'string=)
+	      (cl-pushnew jid (cdr cache-entry) :test #'string=)
 	    ;; We asked someone about it more than 10 seconds ago.
 	    ;; They're probably not going to answer.  Let's ask
 	    ;; this contact about it instead.
@@ -7303,7 +7439,7 @@ Return (IDENTITIES FEATURES), or nil if not in cache."
 
 ;; [[file:jabber.org::*jabber-process-caps-info-result][jabber-process-caps-info-result:1]]
 (defun jabber-process-caps-info-result (jc xml-data closure-data)
-  (destructuring-bind (hash node ver) closure-data
+  (cl-destructuring-bind (hash node ver) closure-data
     (let* ((key (cons hash ver))
 	   (query (jabber-iq-query xml-data))
 	   (verification-string (jabber-caps-ver-string query hash)))
@@ -7316,7 +7452,7 @@ Return (IDENTITIES FEATURES), or nil if not in cache."
 
 ;; [[file:jabber.org::*jabber-process-caps-info-error][jabber-process-caps-info-error:1]]
 (defun jabber-process-caps-info-error (jc xml-data closure-data)
-  (destructuring-bind (hash node ver) closure-data
+  (cl-destructuring-bind (hash node ver) closure-data
     (jabber-caps-try-next jc hash node ver)))
 ;; jabber-process-caps-info-error:1 ends here
 
@@ -7350,7 +7486,7 @@ Return (IDENTITIES FEATURES), or nil if not in cache."
 	   (disco-features (mapcar (lambda (f) (jabber-xml-get-attribute f 'var))
 			     (jabber-xml-get-children query 'feature)))
 	   (maybe-forms (jabber-xml-get-children query 'x))
-	   (forms (remove-if-not
+	   (forms (cl-remove-if-not
 		   (lambda (x)
 		     ;; Keep elements that are forms and have a FORM_TYPE,
 		     ;; according to XEP-0128.
@@ -7516,7 +7652,7 @@ the right node."
 ;; [[file:jabber.org::*jabber-advertised-features][jabber-advertised-features:1]]
 (defvar jabber-advertised-features
   (list "http://jabber.org/protocol/disco#info")
-  "Features advertised on service discovery requests
+  "Features advertised on service discovery requests.
 
 Don't add your feature to this list directly.  Instead, call
 `jabber-disco-advertise-feature'.")
@@ -7574,7 +7710,11 @@ nil, access is always granted.")
 	     (cons "http://jabber.org/protocol/disco#items" 'jabber-return-disco-info))
 (defun jabber-return-disco-info (jc xml-data)
   "Respond to a service discovery request.
-See XEP-0030."
+See XEP-0030.
+
+JC is the Jabber connection.
+XML-DATA is the parsed tree data from the stream (stanzas)
+obtained from `xml-parse-region'."
   (let* ((to (jabber-xml-get-attribute xml-data 'from))
 	 (id (jabber-xml-get-attribute xml-data 'id))
 	 (xmlns (jabber-iq-xmlns xml-data))
@@ -7591,7 +7731,7 @@ See XEP-0030."
     (if return-list
 	(if (and (functionp access-control)
 		 (not (funcall access-control jc to)))
-	    (jabber-signal-error "cancel" 'not-allowed)
+	    (jabber-signal-error "Cancel" 'not-allowed)
 	  ;; Access control passed
 	  (let ((result (if (functionp func)
 			    (funcall func jc xml-data)
@@ -7604,7 +7744,7 @@ See XEP-0030."
 			    nil nil nil nil id)))
 
       ;; No such node
-      (jabber-signal-error "cancel" 'item-not-found))))
+      (jabber-signal-error "Cancel" 'item-not-found))))
 ;; jabber-return-disco-info:1 ends here
 
 ;; [[file:jabber.org::*jabber-disco-return-client-info][jabber-disco-return-client-info:1]]
@@ -7628,7 +7768,9 @@ See XEP-0030."
 (add-to-list 'jabber-jid-info-menu
 	     (cons "Send items disco query" 'jabber-get-disco-items))
 (defun jabber-get-disco-items (jc to &optional node)
-  "Send a service discovery request for items"
+  "Send a service discovery request for items.
+
+JC is the Jabber connection."
   (interactive (list (jabber-read-account)
 		     (jabber-read-jid-completing "Send items disco request to: " nil nil nil 'full t)
 		     (jabber-read-node "Node (or leave empty): ")))
@@ -7645,7 +7787,9 @@ See XEP-0030."
 (add-to-list 'jabber-jid-info-menu
 	     (cons "Send info disco query" 'jabber-get-disco-info))
 (defun jabber-get-disco-info (jc to &optional node)
-  "Send a service discovery request for info"
+  "Send a service discovery request for info.
+
+JC is the Jabber connection."
   (interactive (list (jabber-read-account)
 		     (jabber-read-jid-completing "Send info disco request to: " nil nil nil 'full t)
 		     (jabber-read-node "Node (or leave empty): ")))
@@ -7660,7 +7804,11 @@ See XEP-0030."
 
 ;; [[file:jabber.org::*jabber-process-disco-info][jabber-process-disco-info:1]]
 (defun jabber-process-disco-info (jc xml-data)
-  "Handle results from info disco requests."
+  "Handle results from info disco requests.
+
+JC is the Jabber connection.
+XML-DATA is the parsed tree data from the stream (stanzas)
+obtained from `xml-parse-region'."
 
   (let ((beginning (point)))
     (dolist (x (jabber-xml-node-children (jabber-iq-query xml-data)))
@@ -7688,7 +7836,11 @@ See XEP-0030."
 
 ;; [[file:jabber.org::*jabber-process-disco-items][jabber-process-disco-items:1]]
 (defun jabber-process-disco-items (jc xml-data)
-  "Handle results from items disco requests."
+  "Handle results from items disco requests.
+
+JC is the Jabber connection.
+XML-DATA is the parsed tree data from the stream (stanzas)
+obtained from `xml-parse-region'."
 
   (let ((items (jabber-xml-get-children (jabber-iq-query xml-data) 'item)))
     (if items
@@ -7763,7 +7915,10 @@ invalidate cache and get fresh data."
 ;; [[file:jabber.org::*jabber-disco-parse-info][jabber-disco-parse-info:1]]
 (defun jabber-disco-parse-info (xml-data)
   "Extract data from an <iq/> stanza containing a disco#info result.
-See `jabber-disco-get-info' for a description of the return value."
+See `jabber-disco-get-info' for a description of the return value.
+
+XML-DATA is the parsed tree data from the stream (stanzas)
+obtained from `xml-parse-region'."
   (list
    (mapcar
     #'(lambda (id)
@@ -7860,7 +8015,9 @@ invalidate cache and get fresh data."
 
 ;; [[file:jabber.org::*jabber-disco-publish-remove][jabber-disco-publish-remove:1]]
 (defun jabber-disco-publish-remove (jc node item-jid item-node)
-  "Remove the given item from published disco items."
+  "Remove the given item from published disco items.
+
+JC is the Jabber connection."
   (jabber-send-iq jc nil
 		  "set"
 		  `(query ((xmlns . "http://jabber.org/protocol/disco#items")
@@ -7879,10 +8036,10 @@ invalidate cache and get fresh data."
 
 ;; [[file:jabber.org::*jabber-ping-send][jabber-ping-send:1]]
 (defun jabber-ping-send (jc to process-func on-success on-error)
-  "Send XEP-0199 ping IQ stanza. JC is connection to use, TO is
-  full JID, PROCESS-FUNC is fucntion to call to process result,
-  ON-SUCCESS and ON-ERROR is arg for this function depending on
-  result."
+  "Send XEP-0199 ping IQ stanza.
+JC is connection to use, TO is full JID, PROCESS-FUNC is fucntion to call to
+process result, ON-SUCCESS and ON-ERROR is arg for this function depending on
+result."
   (jabber-send-iq jc to "get"
                   '(ping ((xmlns . "urn:xmpp:ping")))
                   process-func on-success
@@ -7891,7 +8048,8 @@ invalidate cache and get fresh data."
 
 ;; [[file:jabber.org::*jabber-ping][jabber-ping:1]]
 (defun jabber-ping (to)
-  "Ping XMPP entity. TO is full JID. All connected JIDs is used."
+  "Ping XMPP entity.
+TO is full JID.  All connected JIDs is used."
   (interactive (list (jabber-read-jid-completing "Send ping to: " nil nil nil 'full)))
   (dolist (jc jabber-connections)
     (jabber-ping-send jc to 'jabber-silent-process-data 'jabber-process-ping "Ping is unsupported")))
@@ -7900,7 +8058,11 @@ invalidate cache and get fresh data."
 ;; [[file:jabber.org::*jabber-process-ping][jabber-process-ping:1]]
 ;; called by jabber-process-data
 (defun jabber-process-ping (jc xml-data)
-  "Handle results from ping requests."
+  "Handle results from ping requests.
+
+JC is the Jabber connection.
+XML-DATA is the parsed tree data from the stream (stanzas)
+obtained from `xml-parse-region'."
   (let ((to (jabber-xml-get-attribute xml-data 'from)))
     (format "%s is alive" to)))
 
@@ -7910,8 +8072,12 @@ invalidate cache and get fresh data."
 
 ;; [[file:jabber.org::*jabber-pong][jabber-pong:1]]
 (defun jabber-pong (jc xml-data)
-  "Return pong as defined in XEP-0199. Sender and Id are
-determined from the incoming packet passed in XML-DATA."
+  "Return pong as defined in XEP-0199.
+Sender and Id are determined from the incoming packet passed in XML-DATA.
+
+JC is the Jabber connection.
+XML-DATA is the parsed tree data from the stream (stanzas)
+obtained from `xml-parse-region'."
   (let ((to (jabber-xml-get-attribute xml-data 'from))
 	(id (jabber-xml-get-attribute xml-data 'id)))
     (jabber-send-iq jc to "result" nil nil nil nil nil id)))
@@ -7940,22 +8106,22 @@ determined from the incoming packet passed in XML-DATA."
 
 ;; [[file:jabber.org::*jabber-keepalive-timer][jabber-keepalive-timer:1]]
 (defvar jabber-keepalive-timer nil
-  "Timer object for keepalive function")
+  "Timer object for keepalive function.")
 ;; jabber-keepalive-timer:1 ends here
 
 ;; [[file:jabber.org::*jabber-keepalive-timeout-timer][jabber-keepalive-timeout-timer:1]]
 (defvar jabber-keepalive-timeout-timer nil
-  "Timer object for keepalive timeout function")
+  "Timer object for keepalive timeout function.")
 ;; jabber-keepalive-timeout-timer:1 ends here
 
 ;; [[file:jabber.org::*jabber-keepalive-pending][jabber-keepalive-pending:1]]
 (defvar jabber-keepalive-pending nil
-  "List of outstanding keepalive connections")
+  "List of outstanding keepalive connections.")
 ;; jabber-keepalive-pending:1 ends here
 
 ;; [[file:jabber.org::*jabber-keepalive-debug][jabber-keepalive-debug:1]]
 (defvar jabber-keepalive-debug nil
-  "Log keepalive traffic when non-nil")
+  "Log keepalive traffic when non-nil.")
 ;; jabber-keepalive-debug:1 ends here
 
 ;; [[file:jabber.org::*jabber-keepalive-start][jabber-keepalive-start:1]]
@@ -7963,8 +8129,8 @@ determined from the incoming packet passed in XML-DATA."
 (defun jabber-keepalive-start (&optional jc)
   "Activate keepalive.
 That is, regularly send a ping request to the server, and
-disconnect if it doesn't answer.  See `jabber-keepalive-interval'
-and `jabber-keepalive-timeout'.
+disconnect it if it doesn't answer.  See variable `jabber-keepalive-interval'
+and variable `jabber-keepalive-timeout'.
 
 The JC argument makes it possible to add this function to
 `jabber-post-connect-hooks'; it is ignored.  Keepalive is activated
@@ -7983,7 +8149,7 @@ for all accounts regardless of the argument."
 
 ;; [[file:jabber.org::*jabber-keepalive-stop][jabber-keepalive-stop:1]]
 (defun jabber-keepalive-stop ()
-  "Deactivate keepalive"
+  "Deactivate keepalive."
   (interactive)
 
   (when jabber-keepalive-timer
@@ -8039,7 +8205,7 @@ for all accounts regardless of the argument."
 This is a traditional remedy for a number of problems: to keep NAT
 boxes from considering the connection dead, to have the OS discover
 earlier that the connection is lost, and to placate servers which rely
-on the client doing this, e.g. Openfire.
+on the client doing this, e.g.  Openfire.
 
 If you want to verify that the server is able to answer, see
 `jabber-keepalive-start' for another mechanism."
@@ -8049,7 +8215,7 @@ If you want to verify that the server is able to answer, see
 
 ;; [[file:jabber.org::*jabber-whitespace-ping-timer][jabber-whitespace-ping-timer:1]]
 (defvar jabber-whitespace-ping-timer nil
-  "Timer object for whitespace pings")
+  "Timer object for whitespace pings.")
 ;; jabber-whitespace-ping-timer:1 ends here
 
 ;; [[file:jabber.org::*jabber-whitespace-ping-start][jabber-whitespace-ping-start:1]]
@@ -8074,7 +8240,7 @@ accounts."
 
 ;; [[file:jabber.org::*jabber-whitespace-ping-stop][jabber-whitespace-ping-stop:1]]
 (defun jabber-whitespace-ping-stop ()
-  "Deactivate whitespace pings"
+  "Deactivate whitespace pings."
   (interactive)
 
   (when jabber-whitespace-ping-timer
@@ -8089,12 +8255,8 @@ accounts."
 ;; jabber-whitespace-ping-do:1 ends here
 
 ;; [[file:jabber.org::*Feature Negotiation (\[\[https:/xmpp.org/extensions/xep-0020.html\]\[XEP-0020\]\])][Feature Negotiation ([[https://xmpp.org/extensions/xep-0020.html][XEP-0020]]):1]]
-(require 'cl)
-;; Feature Negotiation ([[https://xmpp.org/extensions/xep-0020.html][XEP-0020]]):1 ends here
-
-;; [[file:jabber.org::*Feature Negotiation (\[\[https:/xmpp.org/extensions/xep-0020.html\]\[XEP-0020\]\])][Feature Negotiation ([[https://xmpp.org/extensions/xep-0020.html][XEP-0020]]):2]]
 (jabber-disco-advertise-feature "http://jabber.org/protocol/feature-neg")
-;; Feature Negotiation ([[https://xmpp.org/extensions/xep-0020.html][XEP-0020]]):2 ends here
+;; Feature Negotiation ([[https://xmpp.org/extensions/xep-0020.html][XEP-0020]]):1 ends here
 
 ;; [[file:jabber.org::*jabber-fn-parse][jabber-fn-parse:1]]
 (defun jabber-fn-parse (xml-data type)
@@ -8109,7 +8271,7 @@ alternatives."
   (let ((x (car (jabber-xml-get-children xml-data 'x))))
     (unless (and x
 		 (string= (jabber-xml-get-attribute x 'xmlns) "jabber:x:data"))
-      (jabber-signal-error "modify" 'bad-request "Malformed Feature Negotiation"))
+      (jabber-signal-error "Modify" 'bad-request "Malformed Feature Negotiation"))
 
     (let (alist
 	  (fields (jabber-xml-get-children x 'field)))
@@ -8175,18 +8337,18 @@ protocols."
     ;; are the same variables being negotiated?
     (sort vars 'string-lessp)
     (sort their-vars 'string-lessp)
-    (let ((mine-but-not-theirs (set-difference vars their-vars :test 'string=))
-	  (theirs-but-not-mine (set-difference their-vars vars :test 'string=)))
+    (let ((mine-but-not-theirs (cl-set-difference vars their-vars :test 'string=))
+	  (theirs-but-not-mine (cl-set-difference their-vars vars :test 'string=)))
       (when mine-but-not-theirs
-	(jabber-signal-error "modify" 'not-acceptable (car mine-but-not-theirs)))
+	(jabber-signal-error "Modify" 'not-acceptable (car mine-but-not-theirs)))
       (when theirs-but-not-mine
-	(jabber-signal-error "cancel" 'feature-not-implemented (car theirs-but-not-mine))))
+	(jabber-signal-error "Cancel" 'feature-not-implemented (car theirs-but-not-mine))))
 
       (let (alist)
 	(dolist (var vars)
 	  (let ((my-options (cdr (assoc var mine)))
 		(their-options (cdr (assoc var theirs))))
-	    (let ((common-options (intersection my-options their-options :test 'string=)))
+	    (let ((common-options (cl-intersection my-options their-options :test 'string=)))
 	      (if common-options
 		  ;; we have a match; but which one to use?
 		  ;; the first one will probably work
@@ -8194,7 +8356,7 @@ protocols."
 			(cons (list var (car common-options))
 			      alist))
 		;; no match
-		(jabber-signal-error "modify" 'not-acceptable var)))))
+		(jabber-signal-error "Modify" 'not-acceptable var)))))
 	alist)))
 ;; jabber-fn-intersection:1 ends here
 
@@ -8205,19 +8367,20 @@ protocols."
 
 ;; [[file:jabber.org::*jabber-widget-alist][jabber-widget-alist:1]]
 (defvar jabber-widget-alist nil
-  "Alist of widgets currently used")
+  "Alist of widgets currently used.")
 ;; jabber-widget-alist:1 ends here
 
 ;; [[file:jabber.org::*jabber-form-type][jabber-form-type:1]]
 (defvar jabber-form-type nil
-  "Type of form.  One of:
+  "Type of form.
+One of:
 'x-data, jabber:x:data
-'register, as used in jabber:iq:register and jabber:iq:search")
+'register, as used in jabber:iq:register and jabber:iq:search.")
 ;; jabber-form-type:1 ends here
 
 ;; [[file:jabber.org::*jabber-submit-to][jabber-submit-to:1]]
 (defvar jabber-submit-to nil
-  "JID of the entity to which form data is to be sent")
+  "JID of the entity to which form data is to be sent.")
 ;; jabber-submit-to:1 ends here
 
 ;; [[file:jabber.org::*jabber-submit-to][jabber-submit-to:2]]
@@ -8285,7 +8448,8 @@ protocols."
 
 ;; [[file:jabber.org::*jabber-render-register-form][jabber-render-register-form:1]]
 (defun jabber-render-register-form (query &optional default-username)
-  "Display widgets from <query/> element in jabber:iq:{register,search} namespace.
+  "Display widgets from <query/> element in IQ register or search namespace.
+Display widgets from <query/> element in jabber:iq:{register,search} namespace.
 DEFAULT-USERNAME is the default value for the username field."
   (make-local-variable 'jabber-widget-alist)
   (setq jabber-widget-alist nil)
@@ -8568,10 +8732,6 @@ Return nil if no form type is specified."
 				     (car (jabber-xml-get-children field 'value)))))))))
 ;; jabber-xdata-formtype:1 ends here
 
-;; [[file:jabber.org::*Bookmarks (\[\[https:/xmpp.org/extensions/xep-0048.html\]\[XEP-0048\]\])][Bookmarks ([[https://xmpp.org/extensions/xep-0048.html][XEP-0048]]):1]]
-(require 'cl)
-;; Bookmarks ([[https://xmpp.org/extensions/xep-0048.html][XEP-0048]]):1 ends here
-
 ;; [[file:jabber.org::*jabber-bookmarks][jabber-bookmarks:1]]
 (defvar jabber-bookmarks (make-hash-table :test 'equal)
   "Mapping from full JIDs to bookmarks.
@@ -8596,7 +8756,7 @@ immediately, and return nil if it is not in the cache."
          cache conference-jid key)))
     (jabber-get-bookmarks
      jc
-     (lexical-let ((conference-jid conference-jid)
+     (let ((conference-jid conference-jid)
 		   (key key)
 		   (cont cont))
        (lambda (jc result)
@@ -8609,7 +8769,7 @@ immediately, and return nil if it is not in the cache."
   (let ((entry (dolist (node result)
 		(when (and (eq (jabber-xml-node-name node) 'conference)
 			   (string= (jabber-xml-get-attribute node 'jid) conference-jid))
-		  (return (jabber-parse-conference-bookmark node))))))
+		  (cl-return (jabber-parse-conference-bookmark node))))))
     (if key
 	(plist-get entry key)
       entry)))
@@ -8642,7 +8802,7 @@ If REFRESH is non-nil, always fetch bookmarks."
   (let ((bookmarks (gethash (jabber-connection-bare-jid jc) jabber-bookmarks)))
     (if (and (not refresh) bookmarks)
 	(run-with-timer 0 nil cont jc (when (listp bookmarks) bookmarks))
-      (lexical-let* ((cont cont)
+      (let* ((cont cont)
 		     (callback (lambda (jc result) (jabber-get-bookmarks-1 jc result cont))))
 	(jabber-private-get jc 'storage "storage:bookmarks"
 			    callback callback)))))
@@ -8686,7 +8846,9 @@ on success or failure, respectively."
 ;; [[file:jabber.org::*jabber-edit-bookmarks][jabber-edit-bookmarks:1]]
 ;;;###autoload
 (defun jabber-edit-bookmarks (jc)
-  "Create a buffer for editing bookmarks interactively."
+  "Create a buffer for editing bookmarks interactively.
+
+JC is the Jabber connection."
   (interactive (list (jabber-read-account)))
   (jabber-get-bookmarks jc 'jabber-edit-bookmarks-1 t))
 ;; jabber-edit-bookmarks:1 ends here
@@ -8696,7 +8858,7 @@ on success or failure, respectively."
   (setq bookmarks
 	(mapcar
 	 (lambda (e)
-	   (case (jabber-xml-node-name e)
+	   (cl-case (jabber-xml-node-name e)
 	     (url
 	      (list 'url (or (jabber-xml-get-attribute e 'url) "")
 		    (or (jabber-xml-get-attribute e 'name) "")))
@@ -8763,13 +8925,13 @@ on success or failure, respectively."
     (setq bookmarks
 	  (mapcar
 	   (lambda (entry)
-	     (case (car entry)
+	     (cl-case (car entry)
 	       (url
-		(destructuring-bind (symbol url name) entry
+		(cl-destructuring-bind (symbol url name) entry
 		  `(url ((url . ,url)
 			 (name . ,name)))))
 	       (conference
-		(destructuring-bind (symbol jid name autojoin nick password)
+		(cl-destructuring-bind (symbol jid name autojoin nick password)
 		    entry
 		  `(conference ((jid . ,jid)
 				(name . ,name)
@@ -8795,22 +8957,22 @@ on success or failure, respectively."
   (let* ((value (widget-value (cdr (assq 'bookmarks jabber-widget-alist))))
 	 (conferences (mapcar
 		       'cdr
-		       (remove-if-not
+		       (cl-remove-if-not
 			(lambda (entry)
 			  (eq (car entry) 'conference))
 			value))))
     (dolist (default-nickname jabber-muc-default-nicknames)
-      (destructuring-bind (muc-jid . nick) default-nickname
+      (cl-destructuring-bind (muc-jid . nick) default-nickname
 	(let ((entry (assoc muc-jid conferences)))
 	  (if entry
-	      (setf (fourth entry) nick)
+	      (setf (cl-fourth entry) nick)
 	    (setq entry (list muc-jid "" nil nick ""))
 	    (push entry conferences)
 	    (push (cons 'conference entry) value)))))
     (dolist (autojoin jabber-muc-autojoin)
       (let ((entry (assoc autojoin conferences)))
 	(if entry
-	    (setf (third entry) t)
+	    (setf (cl-third entry) t)
 	  (setq entry (list autojoin "" t "" ""))
 	  (push (cons 'conference entry) value))))
     (widget-value-set (cdr (assq 'bookmarks jabber-widget-alist)) value)
@@ -8852,7 +9014,9 @@ result."
 			      error-callback error-closure-data)
   "Store FRAGMENT in private XML storage.
 SUCCESS-CALLBACK, SUCCESS-CLOSURE-DATA, ERROR-CALLBACK and
-ERROR-CLOSURE-DATA are used as in `jabber-send-iq'."
+ERROR-CLOSURE-DATA are used as in `jabber-send-iq'.
+
+JC is the Jabber connection."
   (jabber-send-iq jc nil "set"
 		  `(query ((xmlns . "jabber:iq:private"))
 			  ,fragment)
@@ -8861,7 +9025,6 @@ ERROR-CLOSURE-DATA are used as in `jabber-send-iq'."
 ;; jabber-private-set:1 ends here
 
 ;; [[file:jabber.org::*muc-nick-coloring][muc-nick-coloring:1]]
-(eval-when-compile (require 'cl))	;for ignore-errors
 ;; we need hexrgb-hsv-to-hex:
 (eval-and-compile
   (or (ignore-errors (require 'hexrgb))
@@ -8873,14 +9036,15 @@ ERROR-CLOSURE-DATA are used as in `jabber-send-iq'."
                                load-path)))
           (require 'hexrgb)))
       (error
-       "hexrgb not found in `load-path' or jabber-fallback-lib/ directory.")))
+       "The hexrgb library was not found in `load-path' or jabber-fallback-lib/ directory")))
 ;; muc-nick-coloring:1 ends here
 
 ;; [[file:jabber.org::*jabber-muc-participant-colors][jabber-muc-participant-colors:1]]
 (defcustom jabber-muc-participant-colors nil
-  "Alist of used colors. Format is (nick . color). Color may be
-  in #RGB or textual (like red or blue) notation. Colors will be
-  added in #RGB notation for unknown nicks."
+  "Alist of used colors.
+Format is (nick . color).  Color may be
+in #RGB or textual (like red or blue) notation.  Colors will be
+added in #RGB notation for unknown nicks."
   :type '(alist :key-type string :value-type color)
   :group 'jabber-chat)
 ;; jabber-muc-participant-colors:1 ends here
@@ -8915,14 +9079,14 @@ ERROR-CLOSURE-DATA are used as in `jabber-send-iq'."
 
 ;; [[file:jabber.org::*jabber-muc-nick-gen-color][jabber-muc-nick-gen-color:1]]
 (defun jabber-muc-nick-gen-color (nick)
-  "Return good enough color from available pool"
+  "Return a good enough color from the available pool."
   (let ((hue (/ (mod (string-to-number (substring (md5 nick) 0 6) 16) 360) 360.0)))
     (hexrgb-hsv-to-hex hue jabber-muc-nick-saturation jabber-muc-nick-value)))
 ;; jabber-muc-nick-gen-color:1 ends here
 
 ;; [[file:jabber.org::*jabber-muc-nick-get-color][jabber-muc-nick-get-color:1]]
 (defun jabber-muc-nick-get-color (nick)
-  "Get NICKs color"
+  "Get NICKs color."
   (let ((color (cdr (assoc nick jabber-muc-participant-colors))))
     (if color
         color
@@ -8935,14 +9099,12 @@ ERROR-CLOSURE-DATA are used as in `jabber-send-iq'."
 ;; [[file:jabber.org::*Multi-User Chat (MUC) (\[\[https:/xmpp.org/extensions/xep-0045.html\]\[XEP-0045\]\])][Multi-User Chat (MUC) ([[https://xmpp.org/extensions/xep-0045.html][XEP-0045]]):1]]
 ;; we need jabber-bookmarks for jabber-muc-autojoin (via
 ;; jabber-get-bookmarks and jabber-parse-conference-bookmark):
-
-(require 'cl)
 ;; Multi-User Chat (MUC) ([[https://xmpp.org/extensions/xep-0045.html][XEP-0045]]):1 ends here
 
 ;; [[file:jabber.org::**jabber-active-groupchats*][*jabber-active-groupchats*:1]]
 ;;;###autoload
 (defvar *jabber-active-groupchats* nil
-  "alist of groupchats and nicknames
+  "Alist of groupchats and nicknames.
 Keys are strings, the bare JID of the room.
 Values are strings.")
 ;; *jabber-active-groupchats*:1 ends here
@@ -8957,14 +9119,14 @@ chat room.  Items are thus never removed.")
 
 ;; [[file:jabber.org::*jabber-muc-participants][jabber-muc-participants:1]]
 (defvar jabber-muc-participants nil
-  "alist of groupchats and participants
+  "Alist of groupchats and participants.
 Keys are strings, the bare JID of the room.
 Values are lists of nickname strings.")
 ;; jabber-muc-participants:1 ends here
 
 ;; [[file:jabber.org::*jabber-group][jabber-group:1]]
 (defvar jabber-group nil
-  "the groupchat you are participating in")
+  "The groupchat you are participating in.")
 ;; jabber-group:1 ends here
 
 ;; [[file:jabber.org::*jabber-muc-topic][jabber-muc-topic:1]]
@@ -8974,17 +9136,17 @@ Values are lists of nickname strings.")
 
 ;; [[file:jabber.org::*jabber-role-history][jabber-role-history:1]]
 (defvar jabber-role-history ()
-  "Keeps track of previously used roles")
+  "Keeps track of previously used roles.")
 ;; jabber-role-history:1 ends here
 
 ;; [[file:jabber.org::*jabber-affiliation-history][jabber-affiliation-history:1]]
 (defvar jabber-affiliation-history ()
-  "Keeps track of previously used affiliations")
+  "Keeps track of previously used affiliations.")
 ;; jabber-affiliation-history:1 ends here
 
 ;; [[file:jabber.org::*jabber-muc-nickname-history][jabber-muc-nickname-history:1]]
 (defvar jabber-muc-nickname-history ()
-  "Keeps track of previously referred-to nicknames")
+  "Keeps track of previously referred-to nicknames.")
 ;; jabber-muc-nickname-history:1 ends here
 
 ;; [[file:jabber.org::*jabber-muc-default-nicknames][jabber-muc-default-nicknames:1]]
@@ -9130,7 +9292,9 @@ Either a string or a buffer is returned, so use `get-buffer' or
 ;; [[file:jabber.org::*jabber-muc-create-buffer][jabber-muc-create-buffer:1]]
 (defun jabber-muc-create-buffer (jc group)
   "Prepare a buffer for chatroom GROUP.
-This function is idempotent."
+This function is idempotent.
+
+JC is the Jabber connection."
   (with-current-buffer (get-buffer-create (jabber-muc-get-buffer group))
     (unless (eq major-mode 'jabber-chat-mode)
       (jabber-chat-mode jc #'jabber-chat-pp))
@@ -9159,7 +9323,9 @@ Either a string or a buffer is returned, so use `get-buffer' or
 ;; [[file:jabber.org::*jabber-muc-private-create-buffer][jabber-muc-private-create-buffer:1]]
 (defun jabber-muc-private-create-buffer (jc group nickname)
   "Prepare a buffer for chatting with NICKNAME in GROUP.
-This function is idempotent."
+This function is idempotent.
+
+JC is the Jabber connection."
   (with-current-buffer (get-buffer-create (jabber-muc-private-get-buffer group nickname))
     (unless (eq major-mode 'jabber-chat-mode)
       (jabber-chat-mode jc #'jabber-chat-pp))
@@ -9173,7 +9339,9 @@ This function is idempotent."
 
 ;; [[file:jabber.org::*jabber-muc-send][jabber-muc-send:1]]
 (defun jabber-muc-send (jc body)
-  "Send BODY to MUC room in current buffer."
+  "Send BODY to MUC room in current buffer.
+
+JC is the Jabber connection."
   ;; There is no need to display the sent message in the buffer, as
   ;; we will get it back from the MUC server.
   (jabber-send-sexp jc
@@ -9216,7 +9384,7 @@ this JID.  Suitable to call when the connection is closed."
 	  (when (string= bare-jid
 			 (jabber-connection-bare-jid jabber-buffer-connection))
 	    (setq *jabber-active-groupchats*
-		  (delete* room *jabber-active-groupchats*
+		  (cl-delete room *jabber-active-groupchats*
 			   :key #'car :test #'string=))
 	    (setq jabber-muc-participants
 		  (delq room-entry jabber-muc-participants))))))))
@@ -9347,8 +9515,8 @@ This macro is meant for use as an argument to `interactive'."
 
 ;; [[file:jabber.org::*jabber-muc-read-completing][jabber-muc-read-completing:1]]
 (defun jabber-muc-read-completing (prompt &optional allow-not-joined)
-  "Read the name of a joined chatroom, or use chatroom of current buffer, if any.
-If ALLOW-NOT-JOINED is provided and true, permit choosing any
+  "Read the name of a joined chatroom, or use chatroom of current buffer if any.
+If ALLOW-NOT-JOINED is provided and non-nil, permit choosing any
 JID; only provide completion as a guide."
   (or jabber-group
       (jabber-read-jid-completing prompt
@@ -9377,7 +9545,9 @@ JID; only provide completion as a guide."
 ;; [[file:jabber.org::*jabber-muc-vcard-get][jabber-muc-vcard-get:1]]
 ;;;###autoload
 (defun jabber-muc-vcard-get (jc group nickname)
-  "Request vcard from chat with NICKNAME in GROUP."
+  "Request vcard from chat with NICKNAME in GROUP.
+
+JC is the Jabber connection."
   (interactive
    (jabber-muc-argument-list
     (list (jabber-muc-read-nickname jabber-group "Nickname: "))))
@@ -9391,7 +9561,9 @@ JID; only provide completion as a guide."
 This can be used for a newly created room, as an alternative to
 filling out the configuration form with `jabber-muc-get-config'.
 Both of these methods unlock the room, so that other users can
-enter it."
+enter it.
+
+JC is the Jabber connection."
   (interactive (jabber-muc-argument-list))
   (jabber-send-iq jc group
 		  "set"
@@ -9408,7 +9580,9 @@ enter it."
 
 ;; [[file:jabber.org::*jabber-muc-get-config][jabber-muc-get-config:1]]
 (defun jabber-muc-get-config (jc group)
-  "Ask for MUC configuration form"
+  "Ask for MUC configuration form.
+
+JC is the Jabber connection."
   (interactive (jabber-muc-argument-list))
   (jabber-send-iq jc group
 		  "get"
@@ -9419,12 +9593,16 @@ enter it."
 
 ;; [[file:jabber.org::*jabber-muc-get-config][jabber-muc-get-config:2]]
 (defalias 'jabber-groupchat-get-config 'jabber-muc-get-config
-  "Deprecated. See `jabber-muc-get-config' instead.")
+  "Deprecated.  See `jabber-muc-get-config' instead.")
 ;; jabber-muc-get-config:2 ends here
 
 ;; [[file:jabber.org::*jabber-muc-render-config][jabber-muc-render-config:1]]
 (defun jabber-muc-render-config (jc xml-data)
-  "Render MUC configuration form"
+  "Render MUC configuration form.
+
+JC is the Jabber connection.
+XML-DATA is the parsed tree data from the stream (stanzas)
+obtained from `xml-parse-region'."
 
   (let ((query (jabber-iq-query xml-data))
 	xdata)
@@ -9450,7 +9628,7 @@ enter it."
 
 ;; [[file:jabber.org::*jabber-muc-render-config][jabber-muc-render-config:2]]
 (defalias 'jabber-groupchat-render-config 'jabber-muc-render-config
-  "Deprecated. See `jabber-muc-render-config' instead.")
+  "Deprecated.  See `jabber-muc-render-config' instead.")
 ;; jabber-muc-render-config:2 ends here
 
 ;; [[file:jabber.org::*jabber-muc-submit-config][jabber-muc-submit-config:1]]
@@ -9467,7 +9645,7 @@ enter it."
 
 ;; [[file:jabber.org::*jabber-muc-submit-config][jabber-muc-submit-config:2]]
 (defalias 'jabber-groupchat-submit-config 'jabber-muc-submit-config
-  "Deprecated. See `jabber-muc-submit-config' instead.")
+  "Deprecated.  See `jabber-muc-submit-config' instead.")
 ;; jabber-muc-submit-config:2 ends here
 
 ;; [[file:jabber.org::*jabber-muc-cancel-config][jabber-muc-cancel-config:1]]
@@ -9483,7 +9661,7 @@ enter it."
 
 ;; [[file:jabber.org::*jabber-muc-cancel-config][jabber-muc-cancel-config:2]]
 (defalias 'jabber-groupchat-cancel-config 'jabber-muc-cancel-config
-  "Deprecated. See `jabber-muc-cancel-config' instead.")
+  "Deprecated.  See `jabber-muc-cancel-config' instead.")
 ;; jabber-muc-cancel-config:2 ends here
 
 ;; [[file:jabber.org::*jabber-muc-cancel-config][jabber-muc-cancel-config:3]]
@@ -9493,9 +9671,11 @@ enter it."
 
 ;; [[file:jabber.org::*jabber-muc-join][jabber-muc-join:1]]
 (defun jabber-muc-join (jc group nickname &optional popup)
-  "join a groupchat, or change nick.
-In interactive calls, or if POPUP is true, switch to the
-groupchat buffer."
+  "Join a groupchat, or change nick.
+In interactive calls, or if POPUP is non-nil, switch to the
+groupchat buffer.
+
+JC is the Jabber connection."
   (interactive
    (let ((account (jabber-read-account))
 	 (group (jabber-read-jid-completing "group: ")))
@@ -9514,12 +9694,12 @@ groupchat buffer."
 
 ;; [[file:jabber.org::*jabber-muc-join][jabber-muc-join:2]]
 (defalias 'jabber-groupchat-join 'jabber-muc-join
-  "Deprecated. Use `jabber-muc-join' instead.")
+  "Deprecated.  Use `jabber-muc-join' instead.")
 ;; jabber-muc-join:2 ends here
 
 ;; [[file:jabber.org::*jabber-muc-join-2][jabber-muc-join-2:1]]
 (defun jabber-muc-join-2 (jc closure result)
-  (destructuring-bind (group nickname popup) closure
+  (cl-destructuring-bind (group nickname popup) closure
     (let* ( ;; Either success...
 	  (identities (car result))
 	  (features (cadr result))
@@ -9549,7 +9729,7 @@ groupchat buffer."
       ;; error, give the chat room the benefit of the doubt.  (Needed
       ;; for ejabberd's mod_irc, for example)
       (when (or condition
-                (find "conference" (if (sequencep identities) identities nil)
+                (cl-find "conference" (if (sequencep identities) identities nil)
                       :key (lambda (i) (aref i 1))
                       :test #'string=))
         (let ((password
@@ -9564,7 +9744,7 @@ groupchat buffer."
 
 ;; [[file:jabber.org::*jabber-muc-join-2][jabber-muc-join-2:2]]
 (defalias 'jabber-groupchat-join-2 'jabber-muc-join-2
-  "Deprecated. See `jabber-muc-join-2' instead.")
+  "Deprecated.  See `jabber-muc-join-2' instead.")
 ;; jabber-muc-join-2:2 ends here
 
 ;; [[file:jabber.org::*jabber-muc-join-3][jabber-muc-join-3:1]]
@@ -9596,12 +9776,15 @@ groupchat buffer."
 
 ;; [[file:jabber.org::*jabber-muc-join-3][jabber-muc-join-3:2]]
 (defalias 'jabber-groupchat-join-3 'jabber-muc-join-3
-  "Deprecated. See `jabber-muc-join-3' instead.")
+  "Deprecated.  See `jabber-muc-join-3' instead.")
 ;; jabber-muc-join-3:2 ends here
 
 ;; [[file:jabber.org::*jabber-muc-read-my-nickname][jabber-muc-read-my-nickname:1]]
 (defun jabber-muc-read-my-nickname (jc group &optional default)
-  "Read nickname for joining GROUP. If DEFAULT is non-nil, return default nick without prompting."
+  "Read nickname for joining GROUP.
+If DEFAULT is non-nil, return default nick without prompting.
+
+JC is the Jabber connection."
   (let ((default-nickname (or
 			   (jabber-get-conference-data jc group nil :nick)
 			   (cdr (assoc group jabber-muc-default-nicknames))
@@ -9629,7 +9812,9 @@ groupchat buffer."
 
 ;; [[file:jabber.org::*jabber-muc-leave][jabber-muc-leave:1]]
 (defun jabber-muc-leave (jc group)
-  "leave a groupchat"
+  "Leave a groupchat.
+
+JC is the Jabber connection."
   (interactive (jabber-muc-argument-list))
   (let ((whichgroup (assoc group *jabber-active-groupchats*)))
     ;; send unavailable presence to our own nick in room
@@ -9640,7 +9825,7 @@ groupchat buffer."
 
 ;; [[file:jabber.org::*jabber-muc-leave][jabber-muc-leave:2]]
 (defalias 'jabber-groupchat-leave 'jabber-muc-leave
-  "Deprecated. Use `jabber-muc-leave' instead.")
+  "Deprecated.  Use `jabber-muc-leave' instead.")
 ;; jabber-muc-leave:2 ends here
 
 ;; [[file:jabber.org::*jabber-muc-leave][jabber-muc-leave:3]]
@@ -9660,7 +9845,7 @@ groupchat buffer."
 
 ;; [[file:jabber.org::*jabber-muc-format-names][jabber-muc-format-names:1]]
 (defun jabber-muc-format-names (participant)
-  "Format one participant name"
+  "Format one participant name."
   (format-spec jabber-muc-print-names-format
                (list
                 (cons ?n (car participant))
@@ -9698,7 +9883,9 @@ groupchat buffer."
 
 ;; [[file:jabber.org::*jabber-muc-set-topic][jabber-muc-set-topic:1]]
 (defun jabber-muc-set-topic (jc group topic)
-  "Set topic of GROUP to TOPIC."
+  "Set topic of GROUP to TOPIC.
+
+JC is the Jabber connection."
   (interactive
    (jabber-muc-argument-list
     (list (jabber-read-with-input-method "New topic: " jabber-muc-topic))))
@@ -9707,7 +9894,10 @@ groupchat buffer."
 
 ;; [[file:jabber.org::*jabber-muc-snarf-topic][jabber-muc-snarf-topic:1]]
 (defun jabber-muc-snarf-topic (xml-data)
-  "Record subject (topic) of the given <message/>, if any."
+  "Record subject (topic) of the given <message/>, if any.
+
+XML-DATA is the parsed tree data from the stream (stanzas)
+obtained from `xml-parse-region'."
   (let ((new-topic (jabber-xml-path xml-data '(subject ""))))
     (when new-topic
       (setq jabber-muc-topic new-topic))))
@@ -9720,7 +9910,9 @@ groupchat buffer."
 
 ;; [[file:jabber.org::*jabber-muc-set-role][jabber-muc-set-role:1]]
 (defun jabber-muc-set-role (jc group nickname role reason)
-  "Set role of NICKNAME in GROUP to ROLE, specifying REASON."
+  "Set role of NICKNAME in GROUP to ROLE, specifying REASON.
+
+JC is the Jabber connection."
   (interactive
    (jabber-muc-argument-list
     (let ((nickname (jabber-muc-read-nickname jabber-group "Nickname: ")))
@@ -9747,7 +9939,9 @@ groupchat buffer."
 (defun jabber-muc-set-affiliation (jc group nickname-or-jid nickname-p affiliation reason)
   "Set affiliation of NICKNAME-OR-JID in GROUP to AFFILIATION.
 If NICKNAME-P is non-nil, NICKNAME-OR-JID is a nickname in the
-group, else it is a JID."
+group, else it is a JID.
+
+JC is the Jabber connection."
   (interactive
    (jabber-muc-argument-list
     (let ((nickname-p (y-or-n-p "Specify user by room nickname? ")))
@@ -9787,7 +9981,9 @@ group, else it is a JID."
 
 ;; [[file:jabber.org::*jabber-muc-invite][jabber-muc-invite:1]]
 (defun jabber-muc-invite (jc jid group reason)
-  "Invite JID to GROUP, stating REASON."
+  "Invite JID to GROUP, stating REASON.
+
+JC is the Jabber connection."
   (interactive
    (list (jabber-read-account)
 	 (jabber-read-jid-completing
@@ -9811,7 +10007,10 @@ group, else it is a JID."
 
 ;; [[file:jabber.org::*jabber-muc-print-invite][jabber-muc-print-invite:1]]
 (defun jabber-muc-print-invite (xml-data who mode)
-  "Print MUC invitation"
+  "Print MUC invitation.
+
+XML-DATA is the parsed tree data from the stream (stanzas)
+obtained from `xml-parse-region'."
   (dolist (x (jabber-xml-get-children xml-data 'x))
     (when (string= (jabber-xml-get-attribute x 'xmlns) "http://jabber.org/protocol/muc#user")
       (let ((invitation (car (jabber-xml-get-children x 'invite))))
@@ -9869,12 +10068,14 @@ group, else it is a JID."
 		      (insert (jabber-propertize "Decline"
 						 'keymap keymap
 						 'face 'highlight))))))))
-	  (return t))))))
+	  (cl-return t))))))
 ;; jabber-muc-print-invite:1 ends here
 
 ;; [[file:jabber.org::*jabber-muc-autojoin][jabber-muc-autojoin:1]]
 (defun jabber-muc-autojoin (jc)
-  "Join rooms specified in account bookmarks and global `jabber-muc-autojoin'."
+  "Join rooms specified in account bookmarks and global `jabber-muc-autojoin'.
+
+JC is the Jabber connection."
   (interactive (list (jabber-read-account)))
   (let ((nickname (plist-get (fsm-get-state-data jc) :username)))
     (when (bound-and-true-p jabber-muc-autojoin)
@@ -9937,7 +10138,9 @@ include groupchat invites."
 
 ;; [[file:jabber.org::*jabber-muc-private][jabber-muc-private:1]]
 (defun jabber-muc-private (jc group nickname)
-  "Open private chat with NICKNAME in GROUP."
+  "Open private chat with NICKNAME in GROUP.
+
+JC is the Jabber connection."
   (interactive
    (jabber-muc-argument-list
     (list (jabber-muc-read-nickname jabber-group "Nickname: "))))
@@ -9949,7 +10152,7 @@ include groupchat invites."
   "Return non-nil if PRESENCE is presence from groupchat."
   (let ((from (jabber-xml-get-attribute presence 'from))
 	(type (jabber-xml-get-attribute presence 'type))
-	(muc-marker (find-if
+	(muc-marker (cl-find-if
 		     (lambda (x) (equal (jabber-xml-get-attribute x 'xmlns)
 				   "http://jabber.org/protocol/muc#user"))
 		     (jabber-xml-get-children presence 'x))))
@@ -10046,8 +10249,11 @@ Return nil if X-MUC is nil."
 
 ;; [[file:jabber.org::*jabber-muc-process-message][jabber-muc-process-message:1]]
 (defun jabber-muc-process-message (jc xml-data)
-  "If XML-DATA is a groupchat message, handle it as such."
+  "If XML-DATA is a groupchat message, handle it as such.
+
+JC is the Jabber connection."
   (when (jabber-muc-message-p xml-data)
+    (defvar printers nil)
     (let* ((from (jabber-xml-get-attribute xml-data 'from))
 	   (group (jabber-jid-user from))
 	   (nick (jabber-jid-resource from))
@@ -10088,7 +10294,7 @@ Return nil if X-MUC is nil."
 (defun jabber-muc-process-presence (jc presence)
   (let* ((from (jabber-xml-get-attribute presence 'from))
 	 (type (jabber-xml-get-attribute presence 'type))
-	 (x-muc (find-if
+	 (x-muc (cl-find-if
 		 (lambda (x) (equal (jabber-xml-get-attribute x 'xmlns)
 			       "http://jabber.org/protocol/muc#user"))
 		 (jabber-xml-get-children presence 'x)))
@@ -10259,7 +10465,7 @@ Return nil if X-MUC is nil."
 
 ;; [[file:jabber.org::*jabber-muc-looks-personaling-symbols][jabber-muc-looks-personaling-symbols:1]]
 (defcustom jabber-muc-looks-personaling-symbols '("," ":" ">")
-  "Symbols for personaling messages"
+  "Symbols for personaling messages."
   :type '(repeat string)
   :group 'jabber-chat)
 ;; jabber-muc-looks-personaling-symbols:1 ends here
@@ -10273,7 +10479,8 @@ Return nil if X-MUC is nil."
 
 ;; [[file:jabber.org::*jabber-muc-all-string][jabber-muc-all-string:1]]
 (defcustom jabber-muc-all-string "all"
-  "String meaning all conference members (to insert in completion). Note that \":\" or alike not needed (it appended in other string)"
+  "String meaning all conference members (to insert in completion).
+Note that \":\" or alike not needed (it appended in other string)"
   :type 'string
   :group 'jabber-chat)
 
@@ -10282,7 +10489,6 @@ Return nil if X-MUC is nil."
 
 ;;; Code:
 
-(require 'cl)
 (require 'hippie-exp)
 ;; jabber-muc-all-string:1 ends here
 
@@ -10316,14 +10522,14 @@ Optional argument GROUP to look."
 ;; [[file:jabber.org::*jabber-muc-nicknames][jabber-muc-nicknames:1]]
 (defun jabber-muc-nicknames ()
   "List of conference participants, excluding self, or nil if we not in conference."
-  (delete-if '(lambda (nick)
+  (cl-delete-if '(lambda (nick)
 		 (string= nick (jabber-my-nick)))
 	     (append (mapcar 'car (cdr (assoc jabber-group jabber-muc-participants))) (list jabber-muc-all-string))))
 ;; jabber-muc-nicknames:1 ends here
 
 ;; [[file:jabber.org::*jabber-muc-participant-update-activity][jabber-muc-participant-update-activity:1]]
 (defun jabber-muc-participant-update-activity (group nick time)
-  "Updates NICK's time of last speaking in GROUP to TIME."
+  "Update NICK's time of last speaking in GROUP to TIME."
   (let* ((room (assoc group *jabber-muc-participant-last-speaking*))
          (room-activity (cdr room))
          (entry (assoc nick room-activity))
@@ -10366,7 +10572,7 @@ Optional argument GROUP to look."
                        (car nt1)
                        (car nt2))
 		    (> t1 t2)))))
-      (mapcar 'car (sort (mapcar 'fetch-time nicks)
+      (mapcar 'car (sort (mapcar #'fetch-time nicks)
 			  'cmp)))))
 ;; jabber-sort-nicks:1 ends here
 
@@ -10403,7 +10609,7 @@ OLD is last tried nickname."
       (setq he-expand-list (jabber-sort-nicks (all-completions he-search-string (mapcar 'list nicknames)) jabber-group))))
 
   (setq he-expand-list
-	(delete-if '(lambda (x)
+	(cl-delete-if '(lambda (x)
 		       (he-string-member x he-tried-table))
 		   he-expand-list))
   (if (null he-expand-list)
@@ -10444,7 +10650,9 @@ OLD is last tried nickname."
 (add-to-list 'jabber-jid-service-menu
 	     (cons "Register with service" 'jabber-get-register))
 (defun jabber-get-register (jc to)
-  "Send IQ get request in namespace \"jabber:iq:register\"."
+  "Send IQ get request in namespace \"jabber:iq:register\".
+
+JC is the Jabber connection."
   (interactive (list (jabber-read-account)
 		     (jabber-read-jid-completing "Register with: ")))
   (jabber-send-iq jc to
@@ -10456,7 +10664,11 @@ OLD is last tried nickname."
 
 ;; [[file:jabber.org::*jabber-process-register-or-search][jabber-process-register-or-search:1]]
 (defun jabber-process-register-or-search (jc xml-data)
-  "Display results from jabber:iq:{register,search} query as a form."
+  "Display results from jabber:iq:{register,search} query as a form.
+
+JC is the Jabber connection.
+XML-DATA is the parsed tree data from the stream (stanzas)
+obtained from `xml-parse-region'."
 
   (let ((query (jabber-iq-query xml-data))
 	(have-xdata nil)
@@ -10544,7 +10756,11 @@ OLD is last tried nickname."
 ;; [[file:jabber.org::*jabber-process-register-secondtime][jabber-process-register-secondtime:1]]
 (defun jabber-process-register-secondtime (jc xml-data closure-data)
   "Receive registration success or failure.
-CLOSURE-DATA is either 'success or 'error."
+CLOSURE-DATA is either 'success or 'error.
+
+JC is the Jabber connection.
+XML-DATA is the parsed tree data from the stream (stanzas)
+obtained from `xml-parse-region'."
   (cond
    ((eq closure-data 'success)
     (message "Registration successful.  You may now connect to the server."))
@@ -10571,7 +10787,9 @@ CLOSURE-DATA is either 'success or 'error."
 (add-to-list 'jabber-jid-service-menu
 	     (cons "Search directory" 'jabber-get-search))
 (defun jabber-get-search (jc to)
-  "Send IQ get request in namespace \"jabber:iq:search\"."
+  "Send IQ get request in namespace \"jabber:iq:search\".
+
+JC is the Jabber connection."
   (interactive (list (jabber-read-account)
 		     (jabber-read-jid-completing "Search what database: ")))
   (jabber-send-iq jc to
@@ -10606,7 +10824,11 @@ CLOSURE-DATA is either 'success or 'error."
 
 ;; [[file:jabber.org::*jabber-process-search-result][jabber-process-search-result:1]]
 (defun jabber-process-search-result (jc xml-data)
-  "Receive and display search results."
+  "Receive and display search results.
+
+JC is the Jabber connection.
+XML-DATA is the parsed tree data from the stream (stanzas)
+obtained from `xml-parse-region'."
 
   ;; This function assumes that all search results come in one packet,
   ;; which is not necessarily the case.
@@ -10660,7 +10882,9 @@ CLOSURE-DATA is either 'success or 'error."
 (add-to-list 'jabber-jid-info-menu
 	     (cons "Send browse query" 'jabber-get-browse))
 (defun jabber-get-browse (jc to)
-  "send a browse infoquery request to someone"
+  "Send a browse infoquery request to someone.
+
+JC is the Jabber connection."
   (interactive (list (jabber-read-account)
 		     (jabber-read-jid-completing "browse: " nil nil nil nil t)))
   (jabber-send-iq jc to
@@ -10673,7 +10897,11 @@ CLOSURE-DATA is either 'success or 'error."
 ;; [[file:jabber.org::*jabber-process-browse][jabber-process-browse:1]]
 ;; called from jabber-process-data
 (defun jabber-process-browse (jc xml-data)
-  "Handle results from jabber:iq:browse requests."
+  "Handle results from jabber:iq:browse requests.
+
+JC is the Jabber connection.
+XML-DATA is the parsed tree data from the stream (stanzas)
+obtained from `xml-parse-region'."
   (dolist (item (jabber-xml-node-children xml-data))
     (when (and (listp item)
 	       (not (eq (jabber-xml-node-name item) 'ns)))
@@ -10736,7 +10964,7 @@ CLOSURE-DATA is either 'success or 'error."
 
 ;; [[file:jabber.org::*jabber-version-show][jabber-version-show:1]]
 (defcustom jabber-version-show t
-  "Show our client version to others. Acts on loading."
+  "Show our client version to others.  Acts on loading."
   :type 'boolean
   :group 'jabber)
 ;; jabber-version-show:1 ends here
@@ -10745,7 +10973,9 @@ CLOSURE-DATA is either 'success or 'error."
 (add-to-list 'jabber-jid-info-menu
 	     (cons "Request software version" 'jabber-get-version))
 (defun jabber-get-version (jc to)
-  "Request software version"
+  "Request software version.
+
+JC is the Jabber connection."
   (interactive (list
 		(jabber-read-account)
 		(jabber-read-jid-completing "Request version of: " nil nil nil 'full t)))
@@ -10759,7 +10989,11 @@ CLOSURE-DATA is either 'success or 'error."
 ;; [[file:jabber.org::*jabber-process-version][jabber-process-version:1]]
 ;; called by jabber-process-data
 (defun jabber-process-version (jc xml-data)
-  "Handle results from jabber:iq:version requests."
+  "Handle results from jabber:iq:version requests.
+
+JC is the Jabber connection.
+XML-DATA is the parsed tree data from the stream (stanzas)
+obtained from `xml-parse-region'."
 
   (let ((query (jabber-iq-query xml-data)))
     (dolist (x '((name . "Name:\t\t") (version . "Version:\t") (os . "OS:\t\t")))
@@ -10777,8 +11011,10 @@ CLOSURE-DATA is either 'success or 'error."
 
 ;; [[file:jabber.org::*jabber-return-version][jabber-return-version:1]]
 (defun jabber-return-version (jc xml-data)
-  "Return client version as defined in XEP-0092.  Sender and ID are
-determined from the incoming packet passed in XML-DATA."
+  "Return client version as defined in XEP-0092.
+Sender and ID are determined from the incoming packet passed in XML-DATA.
+
+JC is the Jabber connection."
   ;; Things we might check: does this iq message really have type='get' and
   ;; exactly one child, namely query with xmlns='jabber:iq:version'?
   ;; Then again, jabber-process-iq should take care of that.
@@ -10866,7 +11102,11 @@ access allowed.  nil means open for everyone."
 (add-to-list 'jabber-disco-items-nodes
 	     (list "http://jabber.org/protocol/commands" #'jabber-ahc-disco-items nil))
 (defun jabber-ahc-disco-items (jc xml-data)
-  "Return commands in response to disco#items request"
+  "Return commands in response to disco#items request.
+
+JC is the Jabber connection.
+XML-DATA is the parsed tree data from the stream (stanzas)
+obtained from `xml-parse-region'."
   (let ((jid (jabber-xml-get-attribute xml-data 'from)))
     (mapcar (function
 	     (lambda (command)
@@ -10904,16 +11144,19 @@ access allowed.  nil means open for everyone."
 			      (funcall func jc xml-data)
 			      nil nil nil nil id)
 	    ;; ...or failed
-	    (jabber-signal-error "cancel" 'not-allowed))
+	    (jabber-signal-error "Cancel" 'not-allowed))
 	;; No such node
-	(jabber-signal-error "cancel" 'item-not-found)))))
+	(jabber-signal-error "Cancel" 'item-not-found)))))
 ;; jabber-ahc-process:1 ends here
 
 ;; [[file:jabber.org::*jabber-ahc-get-list][jabber-ahc-get-list:1]]
 (add-to-list 'jabber-jid-service-menu
 	     (cons "Request command list" 'jabber-ahc-get-list))
 (defun jabber-ahc-get-list (jc to)
-  "Request list of ad-hoc commands.  (XEP-0050)"
+  "Request list of ad-hoc commands.
+
+See XEP-0050.
+JC is the Jabber connection."
   (interactive (list (jabber-read-account)
 		     (jabber-read-jid-completing "Request command list from: " nil nil nil nil nil)))
   (jabber-get-disco-items jc to "http://jabber.org/protocol/commands"))
@@ -10923,7 +11166,10 @@ access allowed.  nil means open for everyone."
 (add-to-list 'jabber-jid-service-menu
 	     (cons "Execute command" 'jabber-ahc-execute-command))
 (defun jabber-ahc-execute-command (jc to node)
-  "Execute ad-hoc command.  (XEP-0050)"
+  "Execute ad-hoc command.
+
+See XEP-0050.
+JC is the Jabber connection."
   (interactive (list (jabber-read-account)
 		     (jabber-read-jid-completing "Execute command of: " nil nil nil nil nil)
 		     (jabber-read-node "Node of command: ")))
@@ -11025,7 +11271,7 @@ access allowed.  nil means open for everyone."
 
 ;; [[file:jabber.org::*jabber-ahc-presence-node][jabber-ahc-presence-node:1]]
 (defconst jabber-ahc-presence-node "http://jabber.org/protocol/rc#set-status"
-  "Node used by jabber-ahc-presence")
+  "Node used by function `jabber-ahc-presence'.")
 ;; jabber-ahc-presence-node:1 ends here
 
 ;; [[file:jabber.org::*jabber-ahc-presence-node][jabber-ahc-presence-node:2]]
@@ -11035,7 +11281,11 @@ access allowed.  nil means open for everyone."
 
 ;; [[file:jabber.org::*jabber-ahc-presence][jabber-ahc-presence:1]]
 (defun jabber-ahc-presence (jc xml-data)
-  "Process presence change command."
+  "Process presence change command.
+
+JC is the Jabber connection.
+XML-DATA is the parsed tree data from the stream (stanzas)
+obtained from `xml-parse-region'."
 
   (let* ((query (jabber-iq-query xml-data))
 	 (sessionid (jabber-xml-get-attribute query 'sessionid))
@@ -11110,10 +11360,6 @@ access allowed.  nil means open for everyone."
 		(note ((type . "info")) "Presence has been changed."))))))
 ;; jabber-ahc-presence:1 ends here
 
-;; [[file:jabber.org::*Mode line][Mode line:1]]
-(eval-when-compile (require 'cl))
-;; Mode line:1 ends here
-
 ;; [[file:jabber.org::*jabber-mode-line][jabber-mode-line:1]]
 (defgroup jabber-mode-line nil
   "Display Jabber status in mode line"
@@ -11122,7 +11368,7 @@ access allowed.  nil means open for everyone."
 
 ;; [[file:jabber.org::*jabber-mode-line-compact][jabber-mode-line-compact:1]]
 (defcustom jabber-mode-line-compact t
-  "Count contacts in fewer categories for compact view"
+  "Count contacts in fewer categories for compact view."
   :group 'jabber-mode-line
   :type 'boolean)
 ;; jabber-mode-line-compact:1 ends here
@@ -11163,7 +11409,7 @@ access allowed.  nil means open for everyone."
     (dolist (jc jabber-connections)
       (dolist (buddy (plist-get (fsm-get-state-data jc) :roster))
 	(when (assoc (get buddy 'show) count)
-	  (incf (cdr (assoc (get buddy 'show) count))))))
+	  (cl-incf (cdr (assoc (get buddy 'show) count))))))
     (setq jabber-mode-line-contacts
 	  (if jabber-mode-line-compact
 	      (format "(%d/%d/%d)"
@@ -11218,10 +11464,9 @@ when they come online, with comment strings as values."
 ;; [[file:jabber.org::*jabber-presence-watch][jabber-presence-watch:1]]
 (defun jabber-presence-watch (who oldstatus newstatus
 				  statustext proposed-alert)
-  "Checks if one of your extra-important buddies comes online and
-sends a message if that happens. The buddies are stored in
-`jabber-watch-alist' and are added and removed by calling
-`jabber-watch-add' and `jabber-watch-remove.'"
+  "Send a message if one of your extra-important buddies comes online.
+The buddies are stored in `jabber-watch-alist' and are added and removed by
+calling `jabber-watch-add' and `jabber-watch-remove'."
   ;; check that buddy was previously offline and now online
   (if (and (null oldstatus)
            (not (null newstatus)))
@@ -11244,7 +11489,7 @@ sends a message if that happens. The buddies are stored in
   (interactive (list (jabber-read-jid-completing "Add buddy to watch list: ")
 		     (read-string "Comment: ")))
   (unless (memq 'jabber-presence-watch jabber-presence-hooks)
-    (error "jabber-presence-watch is not in jabber-presence-hooks"))
+    (error "The jabber-presence-watch function is not in jabber-presence-hooks"))
   (add-to-list 'jabber-watch-alist (cons
 				    (jabber-jid-symbol buddy)
 				    (and (not (zerop (length comment)))
@@ -11263,19 +11508,16 @@ sends a message if that happens. The buddies are stored in
 	      jabber-watch-alist)))
 ;; jabber-watch-remove:1 ends here
 
-;; [[file:jabber.org::*][No heading:1]]
-(require 'cl)
-;; No heading:1 ends here
-
 ;; [[file:jabber.org::*jabber-activity][jabber-activity:1]]
 (defgroup jabber-activity nil
-  "activity tracking options"
+  "Activity tracking options."
   :group 'jabber)
 ;; jabber-activity:1 ends here
 
 ;; [[file:jabber.org::*jabber-activity-make-string][jabber-activity-make-string:1]]
 (defcustom jabber-activity-make-string 'jabber-activity-make-string-default
-  "Function to call, for making the string to put in the mode
+  "Function to call to show a string in the modeline.
+Function to call, for making the string to put in the mode
 line.  The default function returns the nick of the user."
   :set #'(lambda (var val)
 	   (custom-set-default var val)
@@ -11289,7 +11531,8 @@ line.  The default function returns the nick of the user."
 
 ;; [[file:jabber.org::*jabber-activity-shorten-minimum][jabber-activity-shorten-minimum:1]]
 (defcustom jabber-activity-shorten-minimum 1
-  "All strings returned by `jabber-activity-make-strings-shorten' will be
+  "Length of the strings returned by `jabber-activity-make-strings-shorten'.
+All strings returned by `jabber-activity-make-strings-shorten' will be
 at least this long, when possible."
   :group 'jabber-activity
   :type 'number)
@@ -11297,8 +11540,7 @@ at least this long, when possible."
 
 ;; [[file:jabber.org::*jabber-activity-make-strings][jabber-activity-make-strings:1]]
 (defcustom jabber-activity-make-strings 'jabber-activity-make-strings-default
-  "Function which should return an alist of JID -> string when given a list of
-JIDs."
+  "Function which should return an alist of JID -> string given a list of JIDs."
   :set #'(lambda (var val)
 	   (custom-set-default var val)
 	   (when (and (featurep 'jabber-activity)
@@ -11343,7 +11585,8 @@ Same syntax as `mode-line-format'."
 
 ;; [[file:jabber.org::*jabber-activity-show-p][jabber-activity-show-p:1]]
 (defcustom jabber-activity-show-p 'jabber-activity-show-p-default
-  "Predicate function to call to check if the given JID should be
+  "Function that checks if the given JID should be shown on the mode line.
+Predicate function to call to check if the given JID should be
 shown in the mode line or not."
   :type 'function
   :group 'jabber-activity)
@@ -11351,7 +11594,8 @@ shown in the mode line or not."
 
 ;; [[file:jabber.org::*jabber-activity-query-unread][jabber-activity-query-unread:1]]
 (defcustom jabber-activity-query-unread t
-  "Query the user as to whether killing Emacs should be cancelled when
+  "Cancel Emacs killing when there are unread messages?
+Query the user as to whether killing Emacs should be cancelled when
 there are unread messages which otherwise would be lost."
   :type 'boolean
   :group 'jabber-activity)
@@ -11359,7 +11603,7 @@ there are unread messages which otherwise would be lost."
 
 ;; [[file:jabber.org::*jabber-activity-banned][jabber-activity-banned:1]]
 (defcustom jabber-activity-banned nil
-  "List of regexps of banned JID"
+  "List of regexps of banned JID."
   :type '(repeat string)
   :group 'jabber-activity)
 ;; jabber-activity-banned:1 ends here
@@ -11367,20 +11611,20 @@ there are unread messages which otherwise would be lost."
 ;; [[file:jabber.org::*jabber-activity-face][jabber-activity-face:1]]
 (defface jabber-activity-face
   '((t (:foreground "red" :weight bold)))
-  "The face for displaying jabber-activity-string in the mode line"
+  "The face for displaying jabber-activity-string in the mode line."
   :group 'jabber-activity)
 ;; jabber-activity-face:1 ends here
 
 ;; [[file:jabber.org::*jabber-activity-personal-face][jabber-activity-personal-face:1]]
 (defface jabber-activity-personal-face
   '((t (:foreground "blue" :weight bold)))
-  "The face for displaying personal jabber-activity-string in the mode line"
+  "The face for displaying personal jabber-activity-string in the mode line."
   :group 'jabber-activity)
 ;; jabber-activity-personal-face:1 ends here
 
 ;; [[file:jabber.org::*jabber-activity-jids][jabber-activity-jids:1]]
 (defvar jabber-activity-jids nil
-  "A list of JIDs which have caused activity")
+  "A list of JIDs which have caused activity.")
 ;; jabber-activity-jids:1 ends here
 
 ;; [[file:jabber.org::*jabber-activity-personal-jids][jabber-activity-personal-jids:1]]
@@ -11390,12 +11634,12 @@ there are unread messages which otherwise would be lost."
 
 ;; [[file:jabber.org::*jabber-activity-name-alist][jabber-activity-name-alist:1]]
 (defvar jabber-activity-name-alist nil
-  "Alist of mode line names for bare JIDs")
+  "Alist of mode line names for bare JIDs.")
 ;; jabber-activity-name-alist:1 ends here
 
 ;; [[file:jabber.org::*jabber-activity-mode-string][jabber-activity-mode-string:1]]
 (defvar jabber-activity-mode-string ""
-  "The mode string for jabber activity")
+  "The mode string for jabber activity.")
 ;; jabber-activity-mode-string:1 ends here
 
 ;; [[file:jabber.org::*jabber-activity-count-string][jabber-activity-count-string:1]]
@@ -11416,7 +11660,8 @@ It is called after `jabber-activity-mode-string' and
 
 ;; [[file:jabber.org::*jabber-activity-make-string-default][jabber-activity-make-string-default:1]]
 (defun jabber-activity-make-string-default (jid)
-  "Return the nick of the JID.	If no nick is available, return
+  "Return the nick of the JID.
+If no nick is available, return
 the user name part of the JID.  In private MUC conversations,
 return the user's nickname."
   (if (jabber-muc-sender-p jid)
@@ -11431,25 +11676,26 @@ return the user's nickname."
 
 ;; [[file:jabber.org::*jabber-activity-make-strings-default][jabber-activity-make-strings-default:1]]
 (defun jabber-activity-make-strings-default (jids)
-  "Apply `jabber-activity-make-string' on JIDS"
+  "Apply `jabber-activity-make-string' on JIDS."
   (mapcar #'(lambda (jid) (cons jid (funcall jabber-activity-make-string jid)))
 	  jids))
 ;; jabber-activity-make-strings-default:1 ends here
 
 ;; [[file:jabber.org::*jabber-activity-common-prefix][jabber-activity-common-prefix:1]]
 (defun jabber-activity-common-prefix (s1 s2)
-  "Return length of common prefix string shared by S1 and S2"
+  "Return length of common prefix string shared by S1 and S2."
   (let ((len (min (length s1) (length s2))))
     (or (dotimes (i len)
 	  (when (not (eq (aref s1 i) (aref s2 i)))
-	    (return i)))
+	    (cl-return i)))
 	;; Substrings, equal, nil, or empty ("")
 	len)))
 ;; jabber-activity-common-prefix:1 ends here
 
 ;; [[file:jabber.org::*jabber-activity-make-strings-shorten][jabber-activity-make-strings-shorten:1]]
 (defun jabber-activity-make-strings-shorten (jids)
-  "Return an alist of JID -> names acquired by running
+  "Return an alist of (JID . short-names).
+Return an alist of JID -> names acquired by running
 `jabber-activity-make-string' on JIDS, and then shortening the names
 as much as possible such that all strings still are unique and at
 least `jabber-activity-shorten-minimum' long."
@@ -11458,7 +11704,7 @@ least `jabber-activity-shorten-minimum' long."
 		#'(lambda (x) (cons x (funcall jabber-activity-make-string x)))
 		jids)
 	       #'(lambda (x y) (string-lessp (cdr x) (cdr y))))))
-    (loop for ((prev-jid . prev) (cur-jid . cur) (next-jid . next))
+    (cl-loop for ((prev-jid . prev) (cur-jid . cur) (next-jid . next))
 	  on (cons nil alist)
 	  until (null cur)
 	  collect
@@ -11485,19 +11731,19 @@ least `jabber-activity-shorten-minimum' long."
 
 ;; [[file:jabber.org::*jabber-activity-show-p-default][jabber-activity-show-p-default:1]]
 (defun jabber-activity-show-p-default (jid)
-  "Returns t only if there is an invisible buffer for JID
-and JID not in jabber-activity-banned"
+  "Return t only if there is an invisible buffer for JID.
+And, JID is not in `jabber-activity-banned'."
   (let ((buffer (jabber-activity-find-buffer-name jid)))
     (and (buffer-live-p buffer)
 	 (not (get-buffer-window buffer 'visible))
          (not (dolist (entry jabber-activity-banned)
                 (when (string-match entry jid)
-                  (return t)))))))
+                  (cl-return t)))))))
 ;; jabber-activity-show-p-default:1 ends here
 
 ;; [[file:jabber.org::*jabber-activity-make-name-alist][jabber-activity-make-name-alist:1]]
 (defun jabber-activity-make-name-alist ()
-  "Rebuild `jabber-activity-name-alist' based on currently known JIDs"
+  "Rebuild `jabber-activity-name-alist' based on currently known JIDs."
   (let ((jids (or (mapcar #'car jabber-activity-name-alist)
 		  (mapcar #'symbol-name *jabber-roster*))))
     (setq jabber-activity-name-alist
@@ -11506,7 +11752,8 @@ and JID not in jabber-activity-banned"
 
 ;; [[file:jabber.org::*jabber-activity-lookup-name][jabber-activity-lookup-name:1]]
 (defun jabber-activity-lookup-name (jid)
-  "Lookup name in `jabber-activity-name-alist', creates an entry
+  "Lookup name in `jabber-activity-name-alist' and return (jid . string).
+Lookup name in `jabber-activity-name-alist', creates an entry
 if needed, and returns a (jid . string) pair suitable for the mode line"
   (let ((elm (assoc jid jabber-activity-name-alist)))
     (if elm
@@ -11521,9 +11768,12 @@ if needed, and returns a (jid . string) pair suitable for the mode line"
 
 ;; [[file:jabber.org::*jabber-activity-mode-line-update][jabber-activity-mode-line-update:1]]
 (defun jabber-activity-mode-line-update ()
-  "Update the string shown in the mode line using `jabber-activity-make-string'
-on JIDs where `jabber-activity-show-p'. Optional not-nil GROUP mean that message come from MUC.
-Optional TEXT used with one-to-one or MUC chats and may be used to identify personal MUC message.
+  "Update the string shown in the mode line using `jabber-activity-make-string'.
+Update the string shown in the mode line using `jabber-activity-make-string'
+on JIDs where `jabber-activity-show-p'.  Optional not-nil GROUP mean that
+message come from MUC.
+Optional TEXT used with one-to-one or MUC chats and may be used to identify
+personal MUC message.
 Optional PRESENCE mean personal presence request or alert."
   (setq jabber-activity-mode-string
   	(if jabber-activity-jids
@@ -11558,18 +11808,18 @@ Optional PRESENCE mean personal presence request or alert."
 
 ;; [[file:jabber.org::*jabber-activity-clean][jabber-activity-clean:1]]
 (defun jabber-activity-clean ()
-  "Remove JIDs where `jabber-activity-show-p' no longer is true"
-  (setq jabber-activity-jids (delete-if-not jabber-activity-show-p
+  "Remove JIDs where `jabber-activity-show-p' no longer is true."
+  (setq jabber-activity-jids (cl-delete-if-not jabber-activity-show-p
 					    jabber-activity-jids))
   (setq jabber-activity-personal-jids
-	(delete-if-not jabber-activity-show-p
+	(cl-delete-if-not jabber-activity-show-p
 		       jabber-activity-personal-jids))
   (jabber-activity-mode-line-update))
 ;; jabber-activity-clean:1 ends here
 
 ;; [[file:jabber.org::*jabber-activity-add][jabber-activity-add:1]]
 (defun jabber-activity-add (from buffer text proposed-alert)
-  "Add a JID to mode line when `jabber-activity-show-p'"
+  "Add a JID to mode line when `jabber-activity-show-p'."
   (when (funcall jabber-activity-show-p from)
     (add-to-list 'jabber-activity-jids from)
     (add-to-list 'jabber-activity-personal-jids from)
@@ -11578,7 +11828,7 @@ Optional PRESENCE mean personal presence request or alert."
 
 ;; [[file:jabber.org::*jabber-activity-add-muc][jabber-activity-add-muc:1]]
 (defun jabber-activity-add-muc (nick group buffer text proposed-alert)
-  "Add a JID to mode line when `jabber-activity-show-p'"
+  "Add a JID to mode line when `jabber-activity-show-p'."
   (when (funcall jabber-activity-show-p group)
     (add-to-list 'jabber-activity-jids group)
     (when (jabber-muc-looks-like-personal-p text group)
@@ -11597,7 +11847,8 @@ Optional PRESENCE mean personal presence request or alert."
 
 ;; [[file:jabber.org::*jabber-activity-kill-hook][jabber-activity-kill-hook:1]]
 (defun jabber-activity-kill-hook ()
-  "Query the user as to whether killing Emacs should be cancelled
+  "Query the user if is sure to kill Emacs when there are unread messages.
+Query the user as to whether killing Emacs should be cancelled
 when there are unread messages which otherwise would be lost, if
 `jabber-activity-query-unread' is t"
   (if (and jabber-activity-jids
@@ -11614,7 +11865,8 @@ when there are unread messages which otherwise would be lost, if
 
 ;; [[file:jabber.org::*jabber-activity-switch-to][jabber-activity-switch-to:1]]
 (defun jabber-activity-switch-to (&optional jid-param)
-  "If JID-PARAM is provided, switch to that buffer.  If JID-PARAM is nil and
+  "If JID-PARAM is provided, switch to that buffer.
+If JID-PARAM is nil and
 there has been activity in another buffer, switch to that buffer.  If no such
 buffer exists, switch back to the last non Jabber chat buffer used."
     (interactive)
@@ -11632,7 +11884,7 @@ buffer exists, switch back to the last non Jabber chat buffer used."
 ;; jabber-activity-switch-to:1 ends here
 
 ;; [[file:jabber.org::*jabber-activity-idle-timer][jabber-activity-idle-timer:1]]
-(defvar jabber-activity-idle-timer nil "Idle timer used for activity cleaning")
+(defvar jabber-activity-idle-timer nil "Idle timer used for activity cleaning.")
 ;; jabber-activity-idle-timer:1 ends here
 
 ;; [[file:jabber.org::*jabber-activity-mode][jabber-activity-mode:1]]
@@ -11718,10 +11970,6 @@ With a numeric arg, enable this display if arg is positive."
 (if jabber-activity-mode (jabber-activity-mode 1))
 ;; jabber-activity-mode:1 ends here
 
-;; [[file:jabber.org::*Message Events (\[\[https:/xmpp.org/extensions/xep-0022.html\]\[XEP-0022\]\])][Message Events ([[https://xmpp.org/extensions/xep-0022.html][XEP-0022]]):1]]
-(require 'cl)
-;; Message Events ([[https://xmpp.org/extensions/xep-0022.html][XEP-0022]]):1 ends here
-
 ;; [[file:jabber.org::*jabber-events][jabber-events:1]]
 (defgroup jabber-events nil
   "Message events and notifications."
@@ -11759,7 +12007,7 @@ probably reading the message).")
 
 ;; [[file:jabber.org::*jabber-events-message][jabber-events-message:1]]
 (defvar jabber-events-message ""
-  "Human-readable presentation of event information")
+  "Human-readable presentation of event information.")
 (make-variable-buffer-local 'jabber-events-message)
 ;; jabber-events-message:1 ends here
 
@@ -11806,7 +12054,7 @@ probably reading the message).")
 
 ;; [[file:jabber.org::*jabber-events-requested][jabber-events-requested:1]]
 (defvar jabber-events-requested ()
-  "List of events requested")
+  "List of events requested.")
 (make-variable-buffer-local 'jabber-events-requested)
 ;; jabber-events-requested:1 ends here
 
@@ -11891,7 +12139,7 @@ and it hasn't been sent before."
   (when (and (not (jabber-muc-message-p xml-data))
 	     (get-buffer (jabber-chat-get-buffer (jabber-xml-get-attribute xml-data 'from))))
     (with-current-buffer (jabber-chat-get-buffer (jabber-xml-get-attribute xml-data 'from))
-      (let ((x (find "jabber:x:event"
+      (let ((x (cl-find "jabber:x:event"
 		     (jabber-xml-get-children xml-data 'x)
 		     :key #'(lambda (x) (jabber-xml-get-attribute x 'xmlns))
 		     :test #'string=)))
@@ -11923,7 +12171,7 @@ and it hasn't been sent before."
 				       xml-data 'id))
 
 	  ;; Send notifications we already know about
-	  (flet ((send-notification
+	  (cl-flet ((send-notification
 		  (type)
 		  (jabber-send-sexp
 		   jc
@@ -11964,16 +12212,12 @@ and it hasn't been sent before."
 		  (when (jabber-xml-get-children x possible-node)
 		    (setq jabber-events-arrived possible-node)
 		    (jabber-events-update-message)
-		    (return t)))
+		    (cl-return t)))
 	      ;; Or maybe even zero, which is a negative composing node.
 	      (setq jabber-events-composing-p
 		    (not (null (jabber-xml-get-children x 'composing))))
 	      (jabber-events-update-message)))))))))
 ;; jabber-handle-incoming-message-events:1 ends here
-
-;; [[file:jabber.org::*][No heading:1]]
-(require 'cl)
-;; No heading:1 ends here
 
 ;; [[file:jabber.org::*jabber-chatstates][jabber-chatstates:1]]
 (defgroup jabber-chatstates nil
@@ -12011,7 +12255,7 @@ nil - don't send states")
 
 ;; [[file:jabber.org::*jabber-chatstates-message][jabber-chatstates-message:1]]
 (defvar jabber-chatstates-message ""
-  "Human-readable presentation of chat state information")
+  "Human-readable presentation of chat state information.")
 (make-variable-buffer-local 'jabber-chatstates-message)
 ;; jabber-chatstates-message:1 ends here
 
@@ -12112,7 +12356,7 @@ It can be sent and cancelled several times.")
 	(let ((state
 	       (or
 		(let ((node
-		       (find jabber-chatstates-xmlns
+		       (cl-find jabber-chatstates-xmlns
 			     (jabber-xml-node-children xml-data)
 			     :key #'(lambda (x) (jabber-xml-get-attribute x 'xmlns))
 			     :test #'string=)))
@@ -12121,7 +12365,7 @@ It can be sent and cancelled several times.")
 		       ;; XXX: this is how we interoperate with
 		       ;; Google Talk.  We should really use a
 		       ;; namespace-aware XML parser.
-		       (find jabber-chatstates-xmlns
+		       (cl-find jabber-chatstates-xmlns
 			     (jabber-xml-node-children xml-data)
 			     :key #'(lambda (x) (jabber-xml-get-attribute x 'xmlns:cha))
 			     :test #'string=)))
@@ -12148,7 +12392,6 @@ It can be sent and cancelled several times.")
 
 ;; [[file:jabber.org::*Generic functions for avatars][Generic functions for avatars:1]]
 (require 'mailcap)
-(eval-when-compile (require 'cl))
 ;; Generic functions for avatars:1 ends here
 
 ;; [[file:jabber.org::*jabber-avatar][jabber-avatar:1]]
@@ -12160,7 +12403,7 @@ It can be sent and cancelled several times.")
 ;; [[file:jabber.org::*jabber-avatar-cache-directory][jabber-avatar-cache-directory:1]]
 (defcustom jabber-avatar-cache-directory
   (locate-user-emacs-file "jabber-avatar-cache" ".jabber-avatars")
-  "Directory to use for cached avatars"
+  "Directory to use for cached avatars."
   :group 'jabber-avatar
   :type 'directory)
 ;; jabber-avatar-cache-directory:1 ends here
@@ -12187,7 +12430,8 @@ It can be sent and cancelled several times.")
 ;; jabber-avatar-max-height:1 ends here
 
 ;; [[file:jabber.org::*avatar][avatar:1]]
-(defstruct avatar sha1-sum mime-type url base64-data height width bytes)
+(cl-defstruct
+    avatar sha1-sum mime-type url base64-data height width bytes)
 ;; avatar:1 ends here
 
 ;; [[file:jabber.org::*jabber-avatar-from-url][jabber-avatar-from-url:1]]
@@ -12356,8 +12600,8 @@ AVATAR may be one of:
 
 ;; [[file:jabber.org::*jabber-create-image][jabber-create-image:1]]
 (defun jabber-create-image (file-or-data &optional type data-p)
-  "Create image, scaled down to jabber-avatar-max-width/height,
-if width/height exceeds either of those, and ImageMagick is
+  "Create image, scaled down to jabber-avatar-max-width/height.
+If width/height exceeds either of those, and ImageMagick is
 available."
   (let* ((image (create-image file-or-data type data-p))
          (size (image-size image t))
@@ -12566,7 +12810,9 @@ The top node should be the `vCard' node."
 
 ;; [[file:jabber.org::*jabber-vcard-get][jabber-vcard-get:1]]
 (defun jabber-vcard-get (jc jid)
-  "Request vcard from JID."
+  "Request vcard from JID.
+
+JC is the Jabber connection."
   (interactive (list (jabber-read-account)
 		     (jabber-read-jid-completing "Request vcard from: " nil nil nil 'bare-or-muc)))
   (jabber-send-iq jc jid
@@ -12578,7 +12824,9 @@ The top node should be the `vCard' node."
 
 ;; [[file:jabber.org::*jabber-vcard-edit][jabber-vcard-edit:1]]
 (defun jabber-vcard-edit (jc)
-  "Edit your own vcard."
+  "Edit your own vcard.
+
+JC is the Jabber connection."
   (interactive (list (jabber-read-account)))
   (jabber-send-iq jc nil
 		  "get"
@@ -12655,7 +12903,11 @@ The top node should be the `vCard' node."
 
 ;; [[file:jabber.org::*jabber-vcard-display][jabber-vcard-display:1]]
 (defun jabber-vcard-display (jc xml-data)
-  "Display received vcard."
+  "Display received vcard.
+
+JC is the Jabber connection.
+XML-DATA is the parsed tree data from the stream (stanzas)
+obtained from `xml-parse-region'."
   (let ((parsed (jabber-vcard-parse (jabber-iq-query xml-data))))
     (dolist (simple-field jabber-vcard-fields)
       (let ((field (assq (car simple-field) parsed)))
@@ -12904,7 +13156,11 @@ Keys are full JIDs.")
 ;; [[file:jabber.org::*jabber-vcard-avatars-presence][jabber-vcard-avatars-presence:1]]
 (add-to-list 'jabber-presence-chain 'jabber-vcard-avatars-presence)
 (defun jabber-vcard-avatars-presence (jc xml-data)
-  "Look for vCard avatar mark in <presence/> stanza."
+  "Look for vCard avatar mark in <presence/> stanza.
+
+JC is the Jabber connection.
+XML-DATA is the parsed tree data from the stream (stanzas)
+obtained from `xml-parse-region'."
   ;; Only look at ordinary presence
   (when (and jabber-vcard-avatars-retrieve
 	     (null (jabber-xml-get-attribute xml-data 'type)))
@@ -12928,7 +13184,9 @@ Keys are full JIDs.")
 
 ;; [[file:jabber.org::*jabber-vcard-avatars-fetch][jabber-vcard-avatars-fetch:1]]
 (defun jabber-vcard-avatars-fetch (jc who sha1-hash)
-  "Fetch WHO's vCard, and extract avatar."
+  "Fetch WHO's vCard, and extract avatar.
+
+JC is the Jabber connection."
   (interactive (list (jabber-read-account)
 		     (jabber-read-jid-completing "Fetch whose vCard avatar: ")
 		     nil))
@@ -12960,7 +13218,9 @@ Keys are full JIDs.")
 
 ;; [[file:jabber.org::*jabber-vcard-avatars-find-current][jabber-vcard-avatars-find-current:1]]
 (defun jabber-vcard-avatars-find-current (jc)
-  "Request our own vCard, to find hash of avatar."
+  "Request our own vCard, to find hash of avatar.
+
+JC is the Jabber connection."
   (when jabber-vcard-avatars-publish
     (jabber-send-iq jc nil "get" '(vCard ((xmlns . "vcard-temp")))
 		    #'jabber-vcard-avatars-find-current-1 t
@@ -13006,13 +13266,12 @@ Keys are full JIDs.")
 ;; jabber-vcard-avatars-presence-element:1 ends here
 
 ;; [[file:jabber.org::*autoaway][autoaway:1]]
-(eval-when-compile (require 'cl))
 (require 'time-date)
 ;; autoaway:1 ends here
 
 ;; [[file:jabber.org::*jabber-autoaway][jabber-autoaway:1]]
 (defgroup jabber-autoaway nil
-  "Change status to away after idleness"
+  "Change status to away after idleness."
   :group 'jabber)
 ;; jabber-autoaway:1 ends here
 
@@ -13034,28 +13293,29 @@ number of seconds since the user was active, or nil on error."
 
 ;; [[file:jabber.org::*jabber-autoaway-timeout][jabber-autoaway-timeout:1]]
 (defcustom jabber-autoaway-timeout 5
-  "Minutes of inactivity before changing status to away"
+  "Minutes of inactivity before changing status to away."
   :group 'jabber-autoaway
   :type 'number)
 ;; jabber-autoaway-timeout:1 ends here
 
 ;; [[file:jabber.org::*jabber-autoaway-xa-timeout][jabber-autoaway-xa-timeout:1]]
 (defcustom jabber-autoaway-xa-timeout 10
-  "Minutes of inactivity before changing status to xa. Set to 0 to disable."
+  "Minutes of inactivity before changing status to xa.
+Set to 0 to disable."
   :group 'jabber-autoaway
   :type 'number)
 ;; jabber-autoaway-xa-timeout:1 ends here
 
 ;; [[file:jabber.org::*jabber-autoaway-status][jabber-autoaway-status:1]]
 (defcustom jabber-autoaway-status "Idle"
-  "Status string for autoaway"
+  "Status string for autoaway."
   :group 'jabber-autoaway
   :type 'string)
 ;; jabber-autoaway-status:1 ends here
 
 ;; [[file:jabber.org::*jabber-autoaway-xa-status][jabber-autoaway-xa-status:1]]
 (defcustom jabber-autoaway-xa-status "Extended away"
-  "Status string for autoaway in xa state"
+  "Status string for autoaway in xa state."
   :group 'jabber-autoaway
   :type 'string)
 ;; jabber-autoaway-xa-status:1 ends here
@@ -13084,7 +13344,7 @@ information about priority."
 
 ;; [[file:jabber.org::*jabber-xprintidle-program][jabber-xprintidle-program:1]]
 (defcustom jabber-xprintidle-program (executable-find "xprintidle")
-  "Name of the xprintidle program"
+  "Name of the xprintidle program."
   :group 'jabber-autoaway
   :type 'string)
 ;; jabber-xprintidle-program:1 ends here
@@ -13137,7 +13397,7 @@ The IGNORED argument is there so you can put this function in
 
 ;; [[file:jabber.org::*jabber-autoaway-get-idle-time][jabber-autoaway-get-idle-time:1]]
 (defun jabber-autoaway-get-idle-time ()
-  "Get idle time in seconds according to jabber-autoaway-methods.
+  "Get idle time in seconds according to `jabber-autoaway-methods'.
 Return nil on error."
   (car (sort (mapcar 'funcall jabber-autoaway-methods) (lambda (a b) (if a (if b (< a b) t) nil)))))
 ;; jabber-autoaway-get-idle-time:1 ends here
@@ -13247,7 +13507,9 @@ The method for finding the terminal only works on GNU/Linux."
 
 ;; [[file:jabber.org::*jabber-get-time][jabber-get-time:1]]
 (defun jabber-get-time (jc to)
-  "Request time."
+  "Request time.
+
+JC is the Jabber connection."
   (interactive (list (jabber-read-account)
                      (jabber-read-jid-completing "Request time of: "
                                                  nil nil nil 'full t)))
@@ -13263,7 +13525,11 @@ The method for finding the terminal only works on GNU/Linux."
 
 ;; [[file:jabber.org::*jabber-get-legacy-time][jabber-get-legacy-time:1]]
 (defun jabber-get-legacy-time (jc to)
-  "Request legacy time."
+  "Request legacy time.
+
+JC is the Jabber connection.
+XML-DATA is the parsed tree data from the stream (stanzas)
+obtained from `xml-parse-region'."
   (interactive (list (jabber-read-account)
                      (jabber-read-jid-completing "Request time of: "
                                                  nil nil nil 'full t)))
@@ -13278,7 +13544,11 @@ The method for finding the terminal only works on GNU/Linux."
 ;; [[file:jabber.org::*jabber-process-time][jabber-process-time:1]]
 ;; called by jabber-process-data
 (defun jabber-process-time (jc xml-data)
-  "Handle results from urn:xmpp:time requests."
+  "Handle results from urn:xmpp:time requests.
+
+JC is the Jabber Connection.
+XML-DATA is the parsed tree data from the stream (stanzas)
+obtained from `xml-parse-region'."
   (let* ((from (jabber-xml-get-attribute xml-data 'from))
          (time (or (car (jabber-xml-get-children xml-data 'time))
                    ;; adium response of qeury
@@ -13294,7 +13564,11 @@ The method for finding the terminal only works on GNU/Linux."
 
 ;; [[file:jabber.org::*jabber-process-legacy-time][jabber-process-legacy-time:1]]
 (defun jabber-process-legacy-time (jc xml-data)
-  "Handle results from jabber:iq:time requests."
+  "Handle results from jabber:iq:time requests.
+
+JC is the Jabber connection.
+XML-DATA is the parsed tree data from the stream (stanzas)
+obtained from `xml-parse-region'."
   (let* ((from (jabber-xml-get-attribute xml-data 'from))
          (query (jabber-iq-query xml-data))
          (display
@@ -13321,7 +13595,9 @@ The method for finding the terminal only works on GNU/Linux."
 
 ;; [[file:jabber.org::*jabber-get-last-online][jabber-get-last-online:1]]
 (defun jabber-get-last-online (jc to)
-  "Request time since a user was last online, or uptime of a component."
+  "Request time since a user was last online, or uptime of a component.
+
+JC is the Jabber connection."
   (interactive (list (jabber-read-account)
 		     (jabber-read-jid-completing "Get last online for: "
 						 nil nil nil 'bare-or-muc)))
@@ -13334,7 +13610,9 @@ The method for finding the terminal only works on GNU/Linux."
 
 ;; [[file:jabber.org::*jabber-get-idle-time][jabber-get-idle-time:1]]
 (defun jabber-get-idle-time (jc to)
-  "Request idle time of user."
+  "Request idle time of user.
+
+JC is the Jabber connection."
   (interactive (list (jabber-read-account)
 		     (jabber-read-jid-completing "Get idle time for: "
 						 nil nil nil 'full t)))
@@ -13347,7 +13625,11 @@ The method for finding the terminal only works on GNU/Linux."
 
 ;; [[file:jabber.org::*jabber-process-last][jabber-process-last:1]]
 (defun jabber-process-last (jc xml-data)
-  "Handle resultts from jabber:iq:last requests."
+  "Handle resultts from jabber:iq:last requests.
+
+JC is the Jabber connection.
+XML-DATA is the parsed tree data from the stream (stanzas)
+obtained from `xml-parse-region'."
   (let* ((from (jabber-xml-get-attribute xml-data 'from))
 	 (query (jabber-iq-query xml-data))
 	 (seconds (jabber-xml-get-attribute query 'seconds))
@@ -13382,8 +13664,12 @@ The method for finding the terminal only works on GNU/Linux."
 
 ;; [[file:jabber.org::*jabber-return-legacy-time][jabber-return-legacy-time:1]]
 (defun jabber-return-legacy-time (jc xml-data)
-  "Return client time as defined in XEP-0090.  Sender and ID are
-determined from the incoming packet passed in XML-DATA."
+  "Return client time as defined in XEP-0090.
+Sender and ID are determined from the incoming packet passed in XML-DATA.
+
+JC is the Jabber connection.
+XML-DATA is the parsed tree data from the stream (stanzas)
+obtained from `xml-parse-region'."
   (let ((to (jabber-xml-get-attribute xml-data 'from))
 	(id (jabber-xml-get-attribute xml-data 'id)))
     (jabber-send-iq jc to "result"
@@ -13404,8 +13690,12 @@ determined from the incoming packet passed in XML-DATA."
 
 ;; [[file:jabber.org::*jabber-return-time][jabber-return-time:1]]
 (defun jabber-return-time (jc xml-data)
-  "Return client time as defined in XEP-0202.  Sender and ID are
-determined from the incoming packet passed in XML-DATA."
+  "Return client time as defined in XEP-0202.
+Sender and ID are determined from the incoming packet passed in XML-DATA.
+
+JC is the Jabber connection.
+XML-DATA is the parsed tree data from the stream (stanzas)
+obtained from `xml-parse-region'."
   (let ((to (jabber-xml-get-attribute xml-data 'from))
         (id (jabber-xml-get-attribute xml-data 'id)))
     (jabber-send-iq jc to "result"
@@ -13434,10 +13724,6 @@ determined from the incoming packet passed in XML-DATA."
                     id)))
 ;; jabber-return-last:1 ends here
 
-;; [[file:jabber.org::*truncate - cleanup top lines in chatbuffers][truncate - cleanup top lines in chatbuffers:1]]
-(require 'cl)
-;; truncate - cleanup top lines in chatbuffers:1 ends here
-
 ;; [[file:jabber.org::*jabber-log-lines-to-keep][jabber-log-lines-to-keep:1]]
 (defvar jabber-log-lines-to-keep 1000
   "Maximum number of lines in chat buffer.")
@@ -13446,7 +13732,7 @@ determined from the incoming packet passed in XML-DATA."
 ;; [[file:jabber.org::*jabber-truncate-top][jabber-truncate-top:1]]
 (defun jabber-truncate-top (buffer &optional ewoc)
   "Clean old history from a chat BUFFER.
-Optional EWOC is ewoc-widget to work. Default is jabber-chat-ewoc
+Optional EWOC is ewoc-widget to work.  Default is `jabber-chat-ewoc'
 `jabber-log-lines-to-keep' specifies the number of lines to
 keep.
 
@@ -13508,7 +13794,9 @@ get it, and then it just gets deleted."
 (add-to-list 'jabber-jid-service-menu
              (cons "Enable Carbons" 'jabber-enable-carbons))
 (defun jabber-enable-carbons (jc)
-  "Send request to enable XEP-0280 Message Carbons."
+  "Send request to enable XEP-0280 Message Carbons.
+
+JC is the Jabber connection."
   (interactive (list (jabber-read-account)))
   (jabber-send-iq jc
                   nil
@@ -13517,355 +13805,6 @@ get it, and then it just gets deleted."
                   #'jabber-carbon-success "Carbons feature enablement"
                   #'jabber-carbon-failure "Carbons feature enablement"))
 ;; jabber-enable-carbons:1 ends here
-
-;; [[file:jabber.org::*jabber-si-stream-methods][jabber-si-stream-methods:1]]
-(defvar jabber-si-stream-methods nil
-  "Supported SI stream methods.
-
-Each entry is a list, containing:
- * The namespace URI of the stream method
- * Active initiation function
- * Passive initiation function
-
-The active initiation function should initiate the connection,
-while the passive initiation function should wait for an incoming
-connection.  Both functions take the same arguments:
-
- * JID of peer
- * SID
- * \"connection established\" function
-
-The \"connection established\" function should be called when the
-stream has been established and data can be transferred.  It is part
-of the profile, and takes the following arguments:
-
- * JID of peer
- * SID
- * Either:
-    - \"send data\" function, with one string argument
-    - an error message, when connection failed
-
-It returns an \"incoming data\" function.
-
-The \"incoming data\" function should be called when data arrives on
-the stream.  It takes these arguments:
-
- * JID of peer
- * SID
- * A string containing the received data, or nil on EOF
-
-If it returns nil, the stream should be closed.")
-;; jabber-si-stream-methods:1 ends here
-
-;; [[file:jabber.org::*jabber-si-initiate][jabber-si-initiate:1]]
-(defun jabber-si-initiate (jc jid profile-namespace profile-data profile-function &optional mime-type)
-  "Try to initiate a stream to JID.
-PROFILE-NAMESPACE is, well, the namespace of the profile to use.
-PROFILE-DATA is the XML data to send within the SI request.
-PROFILE-FUNCTION is the \"connection established\" function.
-See `jabber-si-stream-methods'.
-MIME-TYPE is the MIME type to specify.
-Returns the SID."
-
-  (let ((sid (apply 'format "emacs-sid-%d.%d.%d" (current-time))))
-    (jabber-send-iq jc jid "set"
-		    `(si ((xmlns . "http://jabber.org/protocol/si")
-			  (id . ,sid)
-			  ,(if mime-type
-			       (cons 'mime-type mime-type))
-			  (profile . ,profile-namespace))
-			 ,profile-data
-			 (feature ((xmlns . "http://jabber.org/protocol/feature-neg"))
-				  ,(jabber-fn-encode (list
-						      (cons "stream-method"
-							    (mapcar 'car jabber-si-stream-methods)))
-						     'request)))
-		    #'jabber-si-initiate-process (cons profile-function sid)
-		    ;; XXX: use other function here?
-		    #'jabber-report-success "Stream initiation")
-    sid))
-;; jabber-si-initiate:1 ends here
-
-;; [[file:jabber.org::*jabber-si-initiate-process][jabber-si-initiate-process:1]]
-(defun jabber-si-initiate-process (jc xml-data closure-data)
-  "Act on response to our SI query."
-
-  (let* ((profile-function (car closure-data))
-	 (sid (cdr closure-data))
-	 (from (jabber-xml-get-attribute xml-data 'from))
-	 (query (jabber-iq-query xml-data))
-	 (feature-node (car (jabber-xml-get-children query 'feature)))
-	 (feature-alist (jabber-fn-parse feature-node 'response))
-	 (chosen-method (cadr (assoc "stream-method" feature-alist)))
-	 (method-data (assoc chosen-method jabber-si-stream-methods)))
-    ;; Our work is done.  Hand it over to the stream method.
-    (let ((stream-negotiate (nth 1 method-data)))
-      (funcall stream-negotiate jc from sid profile-function))))
-;; jabber-si-initiate-process:1 ends here
-
-;; [[file:jabber.org::*server][server:1]]
-(jabber-disco-advertise-feature "http://jabber.org/protocol/si")
-;; server:1 ends here
-
-;; [[file:jabber.org::*jabber-si-profiles][jabber-si-profiles:1]]
-(defvar jabber-si-profiles nil
-  "Supported SI profiles.
-
-Each entry is a list, containing:
- * The namespace URI of the profile
- * Accept function, taking entire IQ stanza, and signalling a 'forbidden'
-   error if request is declined; returning an XML node to return in
-   response, or nil of none needed
- * \"Connection established\" function.  See `jabber-si-stream-methods'.")
-;; jabber-si-profiles:1 ends here
-
-;; [[file:jabber.org::*jabber-si-process][jabber-si-process:1]]
-(add-to-list 'jabber-iq-set-xmlns-alist
-	     (cons "http://jabber.org/protocol/si" 'jabber-si-process))
-(defun jabber-si-process (jc xml-data)
-
-  (let* ((to (jabber-xml-get-attribute xml-data 'from))
-	 (id (jabber-xml-get-attribute xml-data 'id))
-	 (query (jabber-iq-query xml-data))
-	 (profile (jabber-xml-get-attribute query 'profile))
-	 (si-id (jabber-xml-get-attribute query 'id))
-	 (feature (car (jabber-xml-get-children query 'feature))))
-    (message "Receiving SI with profile '%s'" profile)
-
-    (let (stream-method
-	  ;; Find profile
-	  (profile-data (assoc profile jabber-si-profiles)))
-      ;; Now, feature negotiation for stream type (errors
-      ;; don't match XEP-0095, so convert)
-      (condition-case err
-	  (setq stream-method (jabber-fn-intersection
-			       (jabber-fn-parse feature 'request)
-			       (list (cons "stream-method" (mapcar 'car jabber-si-stream-methods)))))
-	(jabber-error
-	 (jabber-signal-error "cancel" 'bad-request nil
-			      '((no-valid-streams ((xmlns . "http://jabber.org/protocol/si")))))))
-      (unless profile-data
-	;; profile not understood
-	(jabber-signal-error "cancel" 'bad-request nil
-			     '((bad-profile ((xmlns . "http://jabber.org/protocol/si"))))))
-      (let* ((profile-accept-function (nth 1 profile-data))
-	     ;; accept-function might throw a "forbidden" error
-	     ;; on user cancel
-	     (profile-response (funcall profile-accept-function jc xml-data))
-	     (profile-connected-function (nth 2 profile-data))
-	     (stream-method-id (nth 1 (assoc "stream-method" stream-method)))
-	     (stream-data (assoc stream-method-id jabber-si-stream-methods))
-	     (stream-accept-function (nth 2 stream-data)))
-	;; prepare stream for the transfer
-	(funcall stream-accept-function jc to si-id profile-connected-function)
-	;; return result of feature negotiation of stream type
-	(jabber-send-iq jc to "result"
-			`(si ((xmlns . "http://jabber.org/protocol/si"))
-			     ,@profile-response
-			     (feature ((xmlns . "http://jabber.org/protocol/feature-neg"))
-				      ,(jabber-fn-encode stream-method 'response)))
-			nil nil nil nil
-			id)
-	))))
-;; jabber-si-process:1 ends here
-
-;; [[file:jabber.org::*jabber-ft-md5sum-program][jabber-ft-md5sum-program:1]]
-(defcustom jabber-ft-md5sum-program (or (when (executable-find "md5")
-					  (list (executable-find "md5") "-n"))
-					(when (executable-find "md5sum")
-					  (list (executable-find "md5sum"))))
-  "The program to use to calculate MD5 sums of files.
-The first item should be the name of the program, and the remaing
-items the arguments.  The file name is appended as the last
-argument."
-  :type '(repeat string)
-  :group 'jabber)
-;; jabber-ft-md5sum-program:1 ends here
-
-;; [[file:jabber.org::*jabber-ft-get-md5][jabber-ft-get-md5:1]]
-(defun jabber-ft-get-md5 (file-name)
-  "Get MD5 sum of FILE-NAME, and return as hex string.
-Return nil if no MD5 summing program is available."
-  (when jabber-ft-md5sum-program
-    (with-temp-buffer
-      (apply 'call-process (car jabber-ft-md5sum-program) nil t nil
-	     (append (cdr jabber-ft-md5sum-program) (list file-name)))
-      ;; Output is "hexsum filename"
-      (goto-char (point-min))
-      (forward-word 1)
-      (buffer-substring (point-min) (point)))))
-;; jabber-ft-get-md5:1 ends here
-
-;; [[file:jabber.org::*client][client:1]]
-(eval-when-compile (require 'cl))
-;; client:1 ends here
-
-;; [[file:jabber.org::*jabber-ft-send][jabber-ft-send:1]]
-(defun jabber-ft-send (jc jid filename desc)
-  "Attempt to send FILENAME to JID."
-  (interactive (list (jabber-read-account)
-		     (jabber-read-jid-completing "Send file to: " nil nil nil 'full t)
-		     (read-file-name "Send which file: " nil nil t)
-		     (jabber-read-with-input-method "Description (optional): ")))
-  (if (zerop (length desc)) (setq desc nil))
-  (setq filename (expand-file-name filename))
-  (access-file filename "Couldn't open file")
-
-  (let* ((attributes (file-attributes filename))
-	 (size (nth 7 attributes))
-	 (date (nth 5 attributes))
-	 (hash (jabber-ft-get-md5 filename)))
-    (jabber-si-initiate jc jid "http://jabber.org/protocol/si/profile/file-transfer"
-			`(file ((xmlns . "http://jabber.org/protocol/si/profile/file-transfer")
-				(name . ,(file-name-nondirectory filename))
-				(size . ,size)
-				(date . ,(jabber-encode-time date))
-				,@(when hash
-				    (list (cons 'hash hash))))
-			       (desc () ,desc))
-			(lexical-let ((filename filename))
-			  (lambda (jc jid sid send-data-function)
-			    (jabber-ft-do-send
-			     jid sid send-data-function filename))))))
-;; jabber-ft-send:1 ends here
-
-;; [[file:jabber.org::*jabber-ft-do-send][jabber-ft-do-send:1]]
-(defun jabber-ft-do-send (jid sid send-data-function filename)
-  (if (stringp send-data-function)
-      (message "File sending failed: %s" send-data-function)
-    (with-temp-buffer
-      (insert-file-contents-literally filename)
-
-      ;; Ever heard of buffering?
-      (funcall send-data-function (buffer-string))
-      (message "File transfer completed")))
-  ;; File transfer is monodirectional, so ignore received data.
-  #'ignore)
-;; jabber-ft-do-send:1 ends here
-
-;; [[file:jabber.org::*jabber-ft-sessions][jabber-ft-sessions:1]]
-(defvar jabber-ft-sessions nil
-  "Alist, where keys are (sid jid), and values are buffers of the files.")
-;; jabber-ft-sessions:1 ends here
-
-;; [[file:jabber.org::*jabber-ft-size][jabber-ft-size:1]]
-(defvar jabber-ft-size nil
-  "Size of the file that is being downloaded")
-;; jabber-ft-size:1 ends here
-
-;; [[file:jabber.org::*jabber-ft-md5-hash][jabber-ft-md5-hash:1]]
-(defvar jabber-ft-md5-hash nil
-  "MD5 hash of the file that is being downloaded")
-;; jabber-ft-md5-hash:1 ends here
-
-;; [[file:jabber.org::*jabber-ft-md5-hash][jabber-ft-md5-hash:2]]
-(jabber-disco-advertise-feature "http://jabber.org/protocol/si/profile/file-transfer")
-;; jabber-ft-md5-hash:2 ends here
-
-;; [[file:jabber.org::*jabber-ft-md5-hash][jabber-ft-md5-hash:3]]
-(add-to-list 'jabber-si-profiles
-	     (list "http://jabber.org/protocol/si/profile/file-transfer"
-		   'jabber-ft-accept
-		   'jabber-ft-server-connected))
-;; jabber-ft-md5-hash:3 ends here
-
-;; [[file:jabber.org::*jabber-ft-accept][jabber-ft-accept:1]]
-(defun jabber-ft-accept (jc xml-data)
-  "Receive IQ stanza containing file transfer request, ask user"
-  (let* ((from (jabber-xml-get-attribute xml-data 'from))
-	 (query (jabber-iq-query xml-data))
-	 (si-id (jabber-xml-get-attribute query 'id))
-	 ;; TODO: check namespace
-	 (file (car (jabber-xml-get-children query 'file)))
-	 (name (jabber-xml-get-attribute file 'name))
-	 (size (jabber-xml-get-attribute file 'size))
-	 (date (jabber-xml-get-attribute file 'date))
-	 (md5-hash (jabber-xml-get-attribute file 'hash))
-	 (desc (car (jabber-xml-node-children
-		     (car (jabber-xml-get-children file 'desc)))))
-	 (range (car (jabber-xml-get-children file 'range))))
-    (unless (and name size)
-      ;; both name and size must be present
-      (jabber-signal-error "modify" 'bad-request))
-
-    (let ((question (format
-		     "%s is sending you the file %s (%s bytes).%s  Accept? "
-		     (jabber-jid-displayname from)
-		     name
-		     size
-		     (if (not (zerop (length desc)))
-			 (concat "  Description: '" desc "'")
-		       ""))))
-      (unless (yes-or-no-p question)
-	(jabber-signal-error "cancel" 'forbidden)))
-
-    ;; default is to save with given name, in current directory.
-    ;; maybe that's bad; maybe should be customizable.
-    (let* ((file-name (read-file-name "Download to: " nil nil nil name))
-	   (buffer (create-file-buffer file-name)))
-      (message "Starting download of %s..." (file-name-nondirectory file-name))
-      (with-current-buffer buffer
-	(kill-all-local-variables)
-	(setq buffer-file-coding-system 'binary)
-	;; For Emacs, switch buffer to unibyte _before_ anything goes into it,
-	;; otherwise binary files are corrupted.  For XEmacs, it isn't needed,
-	;; and it also doesn't have set-buffer-multibyte.
-	(if (fboundp 'set-buffer-multibyte)
-	    (set-buffer-multibyte nil))
-	(set-visited-file-name file-name t)
-	(set (make-local-variable 'jabber-ft-size)
-	     (string-to-number size))
-	(set (make-local-variable 'jabber-ft-md5-hash)
-	     md5-hash))
-      (add-to-list 'jabber-ft-sessions
-		   (cons (list si-id from) buffer)))
-
-    ;; to support range, return something sensible here
-    nil))
-;; jabber-ft-accept:1 ends here
-
-;; [[file:jabber.org::*jabber-ft-server-connected][jabber-ft-server-connected:1]]
-(defun jabber-ft-server-connected (jc jid sid send-data-function)
-  ;; We don't really care about the send-data-function.  But if it's
-  ;; a string, it means that we have no connection.
-  (if (stringp send-data-function)
-      (message "File receiving failed: %s" send-data-function)
-    ;; On success, we just return our data receiving function.
-    'jabber-ft-data))
-;; jabber-ft-server-connected:1 ends here
-
-;; [[file:jabber.org::*jabber-ft-data][jabber-ft-data:1]]
-(defun jabber-ft-data (jc jid sid data)
-  "Receive chunk of transferred file."
-  (let ((buffer (cdr (assoc (list sid jid) jabber-ft-sessions))))
-    (with-current-buffer buffer
-      ;; If data is nil, there is no more data.
-      ;; But maybe the remote entity doesn't close the stream -
-      ;; then we have to keep track of file size to know when to stop.
-      ;; Return value is whether to keep connection open.
-      (when data
-	(insert data))
-      (if (and data (< (buffer-size) jabber-ft-size))
-	  t
-	(basic-save-buffer)
-	(if (and jabber-ft-md5-hash
-		 (let ((file-hash (jabber-ft-get-md5 buffer-file-name)))
-		   (and file-hash
-			(not (string= file-hash jabber-ft-md5-hash)))))
-	    ;; hash mismatch!
-	    (progn
-	      (message "%s downloaded - CHECKSUM MISMATCH!"
-		       (file-name-nondirectory buffer-file-name))
-	      (sleep-for 5))
-	  ;; all is fine
-	  (message "%s downloaded" (file-name-nondirectory buffer-file-name)))
-	(kill-buffer buffer)
-	nil))))
-;; jabber-ft-data:1 ends here
-
-;; [[file:jabber.org::*In-Band Real Time Text (RTT) (\[\[https:/xmpp.org/extensions/xep-0301.html\]\[XEP-0301\]\])][In-Band Real Time Text (RTT) ([[https://xmpp.org/extensions/xep-0301.html][XEP-0301]]):1]]
-(eval-when-compile (require 'cl))
-;; In-Band Real Time Text (RTT) ([[https://xmpp.org/extensions/xep-0301.html][XEP-0301]]):1 ends here
 
 ;; [[file:jabber.org::*Handling incoming events][Handling incoming events:1]]
 ;;;###autoload
@@ -13977,7 +13916,7 @@ Return nil if no MD5 summing program is available."
     (catch 'wait
       (while jabber-rtt-pending-events
 	(let ((action (pop jabber-rtt-pending-events)))
-	  (case (jabber-xml-node-name action)
+	  (cl-case (jabber-xml-node-name action)
 	    ((t)
 	     ;; insert text
 	     (let* ((p (jabber-xml-get-attribute action 'p))
@@ -14217,8 +14156,8 @@ XEP-0301, In-Band Real Time Text."
 Each element of the list is a cons cell describing a Jabber account,
 where the car is a JID and the CDR is an alist.
 
-JID is a full Jabber ID string (e.g. foo@bar.tld). You can also
-specify the resource (e.g. foo@bar.tld/emacs).
+JID is a full Jabber ID string (e.g.  foo@bar.tld).  You can also
+specify the resource (e.g.  foo@bar.tld/emacs).
 The following keys can be present in the alist:
 
   :password is a string to authenticate ourself against the server.
@@ -14230,7 +14169,7 @@ The following keys can be present in the alist:
 
   :port is the port to use (default depends on connection type).
 
-  :connection-type is a symbol. Valid symbols are `starttls',
+  :connection-type is a symbol.  Valid symbols are `starttls',
   `network' and `ssl'.
 
 Only JID is mandatory.  The rest can be guessed at run-time.
@@ -14374,7 +14313,7 @@ Contents of process buffers might be useful for debugging."
 
 ;; [[file:jabber.org::*jabber-silent-mode][jabber-silent-mode:1]]
 (defcustom jabber-silent-mode nil
-  "If non-nil, do not ask for confirmation for some operations. DANGEROUS!"
+  "If non-nil, do not ask for confirmation for some operations.  DANGEROUS!"
   :type 'boolean
   :group 'jabber)
 ;; jabber-silent-mode:1 ends here

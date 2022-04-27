@@ -1,0 +1,119 @@
+#+TODO: TODO WIP EXTEND CLEANUP FIXME REVIEW |
+#+PROPERTY: header-args :tangle yes
+
+This file implements the HTTP Upload [[https://xmpp.org/extensions/xep-0363.html][XEP-0363]] extension.
+
+It is separated from the jabber.org file in order to implement and test it without affecting the original implementation.
+
+
+* Headers and commentary
+#+BEGIN_SRC emacs-lisp
+;;; jabber-httpupload.el --- Emacs Jabber HTTP Upload Implementation -*- lexical-binding: t; -*-
+
+;; Copyright 2021 cnngimenez
+;;
+;; Author: cnngimenez
+;; Maintainer: cnngimenez
+;; Version: 0.1.0
+;; Keywords: comm
+;; URL: https://github.com/cnngimenez/emacs-jabber
+;; Package-Requires: ((emacs "24.1"))
+
+;; This program is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+
+;;; Commentary:
+
+;; 
+
+;;; Code:
+#+END_SRC
+
+* Discovering support
+Disco is used to discover if HTTP Upload is supported on the server side. Two queries are used:
+
+1. An IQ Disco items request to get all items supported by the server. 
+2. For each item, an IQ Disco info request to test if the item is the Upload service.
+
+The namespace of the HTTP Upload feature is ~urn:xmpp:http:upload:0~. This will be used on the second query to detect which item is the upload service.
+
+For more information, see XML examples at the [[https://xmpp.org/extensions/xep-0363.html#disco][Discovering Support section of XEP-0363]].
+
+** jabber-httpupload-has-support
+#+BEGIN_SRC emacs-lisp
+  (defun jabber-httpupload-server-has-support (jc)
+    "Check if the server has HTTP Upload support.
+  Return non-nil when there is support from the server.
+
+  JC is the Jabber Connection to use."
+    (seq-find (lambda (iri)
+                (jabber-httpupload-is-upload-item jc iri))
+              (jabber-httpupload-get-items jc)))
+#+END_SRC
+
+** jabber-httpupload-is-upload-item
+#+BEGIN_SRC emacs-lisp
+  (defun jabber-httpupload-is-upload-item (jc iri)
+    "Return non-nil if IRI Disco item supports HTTP Upload.
+  Get the Disco Info from the provided IRI at the current JC jabber connection,
+  if the HTTP Upload namespace feature is in the list, return non-nil.")
+#+END_SRC
+** jabber-httpupload-get-items
+#+BEGIN_SRC emacs-lisp
+  (defun jabber-httpupload-get-items (jc)
+    "Retrieve al Disco IRIs from the server connected in JC.
+  Return a list of IRI strings.
+
+  JC is a jabber connection.")
+#+END_SRC
+
+* Requesting a slot
+* Uploading the file
+* Providing the package name
+#+BEGIN_SRC emacs-lisp
+  (provide 'jabber-httpupload)
+
+  ;;; jabber-httpupload.el ends here
+
+#+END_SRC
+
+
+
+* Meta     :noexport:
+
+# ----------------------------------------------------------------------
+#+TITLE:  Emacs Jabber HTTP Upload implementation
+#+EMAIL:
+#+DESCRIPTION: 
+#+KEYWORDS: jabber, xmpp, xep-0363, http upload
+  
+#+STARTUP: inlineimages hidestars content hideblocks entitiespretty
+#+STARTUP: indent fninline latexpreview
+
+#+OPTIONS: H:3 num:t toc:t \n:nil @:t ::t |:t ^:{} -:t f:t *:t <:t
+#+OPTIONS: TeX:t LaTeX:t skip:nil d:nil todo:t pri:nil tags:not-in-toc
+#+OPTIONS: tex:imagemagick
+
+# -- Export
+#+LANGUAGE: en
+#+LINK_UP: jabber.org
+#+LINK_HOME: jabber.org
+#+EXPORT_SELECT_TAGS: export
+#+EXPORT_EXCLUDE_TAGS: noexport
+
+# -- HTML Export
+#+INFOJS_OPT: view:info toc:t ftoc:t ltoc:t mouse:underline buttons:t
+#+HTML_LINK_UP: jabber.html
+#+HTML_LINK_HOME: jabber.html
+#+XSLT:

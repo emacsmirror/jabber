@@ -1,6 +1,6 @@
-.phony: all setup tangle compile lint clean
+.phony: all setup tangle autoload compile lint clean
 
-all: setup tangle compile lint
+all: setup tangle autoload compile lint
 
 setup:
 	emacs --batch --eval="(package-initialize)" \
@@ -17,8 +17,9 @@ jabber.el:
 	  echo "upgrade it before tangling." ; \
           echo ; \
           emacs --batch \
-          --eval="(require 'ob-tangle)" \
-          --eval='(org-babel-tangle-file "jabber.org")' ; \
+	emacs --batch \
+	--eval="(progn (package-initialize) (require 'ob-tangle))" \
+	--eval='(org-babel-tangle-file "jabber.org")' ; \
         else \
           emacs -q -Q --batch \
           --eval="(add-to-list 'load-path \"${ORG_PATH}\")" \
@@ -27,6 +28,10 @@ jabber.el:
         fi
 
 tangle: jabber.el
+
+autoload:
+	emacs -q --batch --eval="(require 'package)" \
+	--eval="(package-generate-autoloads \"jabber\" default-directory)"
 
 compile: tangle
 	emacs -q -Q --batch --eval='(byte-compile-file "jabber.el")' ; \
