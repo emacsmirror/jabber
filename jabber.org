@@ -3990,7 +3990,7 @@ Return an fsm result list if it is."
 (defun jabber-send-stream-header (jc)
   "Send stream header to connection JC."
   (let ((stream-header
-	 (concat "<?xml version='1.0'?><stream:stream to='"
+         (concat "<?xml version='1.0'?><stream:stream to='"
 		 (plist-get (fsm-get-state-data jc) :server)
 		 "' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'"
 		 ;; Not supporting SASL is not XMPP compliant,
@@ -4012,8 +4012,8 @@ Return an fsm result list if it is."
 (defun jabber-send-string (jc string)
   "Send STRING through the connection JC."
   (let* ((state-data (fsm-get-state-data jc))
-	 (connection (plist-get state-data :connection))
-	 (send-function (plist-get state-data :send-function)))
+         (connection (plist-get state-data :connection))
+         (send-function (plist-get state-data :send-function)))
     (unless connection
       (error "%s has no connection" (jabber-connection-jid jc)))
     (funcall send-function connection string)))
@@ -4059,32 +4059,30 @@ JC is the Jabber connection.
 XML-DATA is the parsed tree data from the stream (stanzas)
 obtained from `xml-parse-region'."
   (let* ((digest-allowed (jabber-xml-get-children (jabber-iq-query xml-data) 'digest))
-	 (passwd (when
+         (passwd (when
 		     (or digest-allowed
 			 (plist-get (fsm-get-state-data jc) :encrypted)
 			 (yes-or-no-p "Jabber server only allows cleartext password transmission!  Continue? "))
 		   (or (plist-get (fsm-get-state-data jc) :password)
 		       (jabber-read-password (jabber-connection-bare-jid jc)))))
-	 auth)
+         auth)
     (if (null passwd)
-	(fsm-send jc :authentication-failure)
+        (fsm-send jc :authentication-failure)
       (if digest-allowed
-	  (setq auth `(digest () ,(sha1 (concat session-id passwd))))
-	(setq auth `(password () ,passwd)))
-
+          (setq auth `(digest () ,(sha1 (concat session-id passwd))))
+        (setq auth `(password () ,passwd)))
       ;; For legacy authentication we must specify a resource.
       (unless (plist-get (fsm-get-state-data jc) :resource)
 	;; Yes, this is ugly.  Where is my encapsulation?
 	(plist-put (fsm-get-state-data jc) :resource "emacs-jabber"))
-
       (jabber-send-iq jc (plist-get (fsm-get-state-data jc) :server)
-		      "set"
-		      `(query ((xmlns . "jabber:iq:auth"))
-			      (username () ,(plist-get (fsm-get-state-data jc) :username))
-			      ,auth
-			      (resource () ,(plist-get (fsm-get-state-data jc) :resource)))
-		      #'jabber-process-logon passwd
-		      #'jabber-process-logon nil))))
+		"set"
+		`(query ((xmlns . "jabber:iq:auth"))
+			(username () ,(plist-get (fsm-get-state-data jc) :username))
+			,auth
+			(resource () ,(plist-get (fsm-get-state-data jc) :resource)))
+		#'jabber-process-logon passwd
+		#'jabber-process-logon nil))))
 #+END_SRC
 
 *** jabber-process-logon                        :function:
@@ -4330,8 +4328,7 @@ Trailing newlines are always removed, regardless of this variable."
   :set '(lambda (var val)
           (when (stringp val)
 	    (set-text-properties 0 (length val) nil val))
-          (custom-set-default var val))
-  )
+          (custom-set-default var val)))
 #+END_SRC
 
 *** jabber-roster-show-empty-group       :custom:variable:
@@ -4617,7 +4614,7 @@ If SET is nor t or nil, roll down group."
                             ;; group is rolled down, roll it up if needed
                             (if (or (not set) (and set (eq set t)))
                                 (append roll-groups (list group-name))
-                              roll-groups))) )
+                              roll-groups))))
     (unless (equal roll-groups new-roll-groups)
       (plist-put
        state-data :roster-roll-groups
@@ -4984,29 +4981,25 @@ BUDDY is a JID symbol.
 JC is the Jabber connection."
   (if buddy
       (let ((buddy-str (format-spec
-			jabber-roster-line-format
-			(list
-			 (cons ?a (jabber-propertize
-				   " "
-				   'display (get buddy 'avatar)))
-			 (cons ?c (if (get buddy 'connected) "*" " "))
-			 (cons ?u (cdr (assoc
-					(or
-					 (get buddy 'subscription) "none")
-					jabber-roster-subscription-display)))
-			 (cons ?n (if (> (length (get buddy 'name)) 0)
-				      (get buddy 'name)
-				    (symbol-name buddy)))
-			 (cons ?j (symbol-name buddy))
-			 (cons ?r (or (get buddy 'resource) ""))
-			 (cons ?s (or
-				   (cdr (assoc (get buddy 'show)
-					       jabber-presence-strings))
-				   (get buddy 'show)))
-			 (cons ?S (if (get buddy 'status)
-				      (jabber-fix-status (get buddy 'status))
-				    ""))
-			 ))))
+                        jabber-roster-line-format
+                        (list
+                         (cons ?a (jabber-propertize " " 'display (get buddy 'avatar)))
+                         (cons ?c (if (get buddy 'connected) "*" " "))
+                         (cons ?u (cdr (assoc
+                                        (or
+                                         (get buddy 'subscription) "none")
+                                        jabber-roster-subscription-display)))
+                         (cons ?n (if (> (length (get buddy 'name)) 0)
+                                      (get buddy 'name)
+                                    (symbol-name buddy)))
+                         (cons ?j (symbol-name buddy))
+                         (cons ?r (or (get buddy 'resource) ""))
+                         (cons ?s (or (cdr (assoc (get buddy 'show)
+					          jabber-presence-strings))
+                                      (get buddy 'show)))
+                         (cons ?S (if (get buddy 'status)
+                                      (jabber-fix-status (get buddy 'status))
+                                    ""))))))
 	(add-text-properties 0
 			     (length buddy-str)
 			     (list
@@ -6661,8 +6654,7 @@ Answer automaticaly when incoming text match the first element of
              (when (string-match (car entry) text)
                (cl-return (cdr entry))))))
       (if message
-          (jabber-chat-send jabber-buffer-connection message)))
-    ))
+          (jabber-chat-send jabber-buffer-connection message)))))
 (cl-pushnew 'jabber-autoanswer-answer (get 'jabber-alert-message-hooks 'custom-options))
 #+END_SRC
 
@@ -6681,8 +6673,7 @@ of `jabber-autoanswer-alist'."
              (when (string-match (car entry) text)
                (cl-return (cdr entry))))))
       (if message
-          (jabber-chat-send jabber-buffer-connection message)))
-    ))
+          (jabber-chat-send jabber-buffer-connection message)))))
 (cl-pushnew 'jabber-autoanswer-answer-muc (get 'jabber-alert-muc-hooks 'custom-options))
 #+END_SRC
 
@@ -11320,7 +11311,7 @@ added in #RGB notation for unknown nicks."
     (if color
         color
       (progn
-        (unless jabber-muc-participant-colors )
+        (unless jabber-muc-participant-colors)
         (push (cons nick (jabber-muc-nick-gen-color nick)) jabber-muc-participant-colors)
         (cdr (assoc nick jabber-muc-participant-colors))))))
 #+END_SRC
@@ -12294,8 +12285,7 @@ JC is the Jabber connection."
      (apply 'concat "\nModerators:\n" (mapcar 'jabber-muc-format-names mlist))
      (apply 'concat "\nParticipants:\n" (mapcar 'jabber-muc-format-names plist))
      (apply 'concat "\nVisitors:\n" (mapcar 'jabber-muc-format-names vlist))
-     (apply 'concat "\nNones:\n" (mapcar 'jabber-muc-format-names nlist)))
-    ))
+     (apply 'concat "\nNones:\n" (mapcar 'jabber-muc-format-names nlist)))))
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp
@@ -13026,8 +13016,7 @@ Note that \":\" or alike not needed (it appended in other string)"
   "Return my jabber nick in GROUP."
   (let ((room (or group jabber-group)))
     (cdr (or (assoc room *jabber-active-groupchats*)
-             (assoc room jabber-muc-default-nicknames)))
-    ))
+             (assoc room jabber-muc-default-nicknames)))))
 #+END_SRC
 
 *** jabber-muc-looks-like-personal-p            :function:
@@ -13142,8 +13131,7 @@ Optional argument GROUP to look."
     (when last-tried
       (goto-char he-string-beg)
       (delete-char (length last-tried))
-      (ignore-errors (delete-char (length jabber-muc-completion-delimiter)))
-      )))
+      (ignore-errors (delete-char (length jabber-muc-completion-delimiter))))))
 #+END_SRC
 
 *** try-expand-jabber-muc                       :function:
@@ -13156,40 +13144,41 @@ Optional argument GROUP to look."
 OLD is last tried nickname."
   (unless jabber-chatting-with
     (unless old
-    (let ((nicknames (jabber-muc-nicknames)))
-      (he-init-string (jabber-muc-beginning-of-line) (point))
-      (setq he-expand-list (jabber-sort-nicks (all-completions he-search-string (mapcar 'list nicknames)) jabber-group))))
+      (let ((nicknames (jabber-muc-nicknames)))
+        (he-init-string (jabber-muc-beginning-of-line) (point))
+        (setq he-expand-list
+              (jabber-sort-nicks (all-completions he-search-string
+                                            (mapcar 'list nicknames))
+                           jabber-group))))
 
-  (setq he-expand-list
-	(cl-delete-if '(lambda (x)
-		       (he-string-member x he-tried-table))
-		   he-expand-list))
-  (if (null he-expand-list)
-      (progn
-	(when old
-          ;; here and later : its hack to workaround
-          ;; he-substitute-string work which cant substitute empty
-          ;; lines
-	  (if (string= he-search-string "")
-	      (jabber-muc-completion-delete-last-tried)
-	    (he-reset-string)))
-	())
-    (let ((subst (if (eq (line-beginning-position) (jabber-muc-beginning-of-line))
-                     (concat (car he-expand-list) jabber-muc-completion-delimiter)
-                   (car he-expand-list))))
-      (if (not (string= he-search-string ""))
-	  (he-substitute-string subst)
-	(jabber-muc-completion-delete-last-tried)
-	(progn
-          (insert subst)
-          (if (looking-back (concat "^" (regexp-quote (car he-expand-list))))
-              (unless (looking-back (concat "^" (regexp-quote (car he-expand-list)) jabber-muc-completion-delimiter))
-                (insert jabber-muc-completion-delimiter)))
-          )
-        ))
-    (setq he-tried-table (cons (car he-expand-list) (cdr he-tried-table)))
-    (setq he-expand-list (cdr he-expand-list))
-    t)))
+    (setq he-expand-list
+	  (cl-delete-if '(lambda (x)
+		           (he-string-member x he-tried-table))
+		        he-expand-list))
+    (if (null he-expand-list)
+        (progn
+          (when old
+            ;; here and later : its hack to workaround
+            ;; he-substitute-string work which cant substitute empty
+            ;; lines
+            (if (string= he-search-string "")
+                (jabber-muc-completion-delete-last-tried)
+              (he-reset-string)))
+          ())
+      (let ((subst (if (eq (line-beginning-position) (jabber-muc-beginning-of-line))
+                       (concat (car he-expand-list) jabber-muc-completion-delimiter)
+                     (car he-expand-list))))
+        (if (not (string= he-search-string ""))
+            (he-substitute-string subst)
+          (jabber-muc-completion-delete-last-tried)
+          (progn
+            (insert subst)
+            (if (looking-back (concat "^" (regexp-quote (car he-expand-list))))
+                (unless (looking-back (concat "^" (regexp-quote (car he-expand-list)) jabber-muc-completion-delimiter))
+                  (insert jabber-muc-completion-delimiter))))))
+      (setq he-tried-table (cons (car he-expand-list) (cdr he-tried-table)))
+      (setq he-expand-list (cdr he-expand-list))
+      t)))
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp
@@ -17429,8 +17418,7 @@ Add function last in chain, so a chat buffer is already created.
 	   (t
 	    ;; TODO: show warning when not in sync
 	    (message "out of sync! %s vs %s"
-		     seq jabber-rtt-last-seq))
-	  ))
+		     seq jabber-rtt-last-seq))))
 	 ;; TODO: handle event="init"
 	 )))))
 #+END_SRC
