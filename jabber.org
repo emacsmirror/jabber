@@ -10,7 +10,7 @@
 :CUSTOM_ID: library-headers-commentary
 :END:
 
-We don't want comments to be inserted within the comment structure, and certainly not before the package first line summary, hence the =:comments no= in the header-args.
+We don't want comments to be inserted within the package comment structure, and certainly not before the package first line summary, hence the =:comments no= in the header-args.
 #+BEGIN_SRC emacs-lisp
 ;;; jabber.el --- a minimal jabber client  -*- lexical-binding: t; -*-
 
@@ -123,11 +123,10 @@ We don't want comments to be inserted within the comment structure, and certainl
 :CUSTOM_ID: escape-xml
 :END:
 #+BEGIN_SRC emacs-lisp
-(defun jabber-escape-xml (str)
-  "Escape strings for XML.
-STR the string to escape."
-  (if (stringp str)
-      (let ((newstr (concat str)))
+(defun jabber-escape-xml (string)
+  "Escape STRING for XML."
+  (if (stringp string)
+      (let ((newstr (concat string)))
 	;; Form feeds might appear in code you copy, etc.  Nevertheless,
 	;; it's invalid XML.
 	(setq newstr (jabber-replace-in-string newstr "\f" "\n"))
@@ -140,7 +139,7 @@ STR the string to escape."
 	(setq newstr (jabber-replace-in-string newstr "'" "&apos;"))
 	(setq newstr (jabber-replace-in-string newstr "\"" "&quot;"))
 	newstr)
-    str))
+    string))
 #+END_SRC
 
 *** jabber-unescape-xml                         :function:
@@ -148,20 +147,19 @@ STR the string to escape."
 :CUSTOM_ID: unescape-xml
 :END:
 #+BEGIN_SRC emacs-lisp
-(defun jabber-unescape-xml (str)
-  "Unescape xml strings.
-STR the string to remove escaped characters."
+(defun jabber-unescape-xml (string)
+  "Unescape STRING for XML."
   ;; Eventually this can be done with `xml-substitute-special', but the
   ;; version in xml.el of GNU Emacs 21.3 is buggy.
-  (if (stringp str)
-      (let ((newstr str))
+  (if (stringp string)
+      (let ((newstr string))
 	(setq newstr (jabber-replace-in-string newstr "&quot;" "\""))
 	(setq newstr (jabber-replace-in-string newstr "&apos;" "'"))
 	(setq newstr (jabber-replace-in-string newstr "&gt;" ">"))
 	(setq newstr (jabber-replace-in-string newstr "&lt;" "<"))
 	(setq newstr (jabber-replace-in-string newstr "&amp;" "&"))
 	newstr)
-    str))
+    string))
 #+END_SRC
 
 *** jabber-sexp2xml                                   :function:
@@ -392,8 +390,8 @@ Return nil if the attribute was not found."
 :END:
 #+BEGIN_SRC emacs-lisp
 (defmacro jabber-xml-let-attributes (attributes xml-data &rest body)
-  "Bind variables to the same-name attribute values in XML-DATA.
-ATTRIBUTES is a list of attribute names."
+  "Evaluate BODY with ATTRIBUTES bound to their values in XML-DATA.
+ATTRIBUTES must be a list of symbols, as present in XML-DATA."
   `(let ,(mapcar #'(lambda (attr)
 		     (list attr `(jabber-xml-get-attribute ,xml-data ',attr)))
 		 attributes)
@@ -489,8 +487,11 @@ ATTRIBUTES is a list of attribute names."
 :CUSTOM_ID: replace-string
 :END:
 #+BEGIN_SRC emacs-lisp
-(defsubst jabber-replace-in-string (str regexp newtext)
-  (replace-regexp-in-string regexp newtext str t t))
+(defsubst jabber-replace-in-string (string regexp newtext)
+  "Return STRING with all matches for REGEXP replaced with NEWTEXT.
+NEWTEXT is inserted literally, without changing its case or treating \\ specially."
+  (replace-regexp-in-string regexp newtext string t t))
+
 #+END_SRC
 
 *** jabber-propertize                           :function:
@@ -519,6 +520,7 @@ ATTRIBUTES is a list of attribute names."
 Preserve input method when entering a minibuffer.
 #+BEGIN_SRC emacs-lisp
 (defsubst jabber-read-with-input-method (prompt &optional initial-contents history default-value)
+  "Like `read-string', but always inheriting the current input method."
   (read-string prompt initial-contents history default-value t))
 #+END_SRC
 
@@ -566,6 +568,7 @@ Preserve input method when entering a minibuffer.
 :CUSTOM_ID: concat-rosters
 :END:
 #+BEGIN_SRC emacs-lisp
+(defvar jabber-connections)
 (defun jabber-concat-rosters ()
   "Concatenate the rosters of all connected accounts."
   (apply #'append
@@ -700,9 +703,9 @@ JID must be a string."
 :CUSTOM_ID: jid-rostername
 :END:
 #+BEGIN_SRC emacs-lisp
-(defun jabber-jid-rostername (string)
-  "Return the name of the user from STRING as in roster, else nil."
-  (let ((user (jabber-jid-symbol string)))
+(defun jabber-jid-rostername (user)
+  "Return the name of USER if present in roster, or nil."
+  (let ((user (jabber-jid-symbol user)))
     (if (> (length (get user 'name)) 0)
 	(get user 'name))))
 #+END_SRC
@@ -725,6 +728,7 @@ JID must be a string."
 :CUSTOM_ID: jid-bookmarkname
 :END:
 #+BEGIN_SRC emacs-lisp
+(defvar jabber-bookmarks)
 (defun jabber-jid-bookmarkname (string)
   "Return from STRING the conference name from boomarks or displayname.
 Use the name according to roster or else the JID if none set."
@@ -753,13 +757,13 @@ JID must be a string."
 :CUSTOM_ID: jid-symbol
 :END:
 #+BEGIN_SRC emacs-lisp
+(defvar jabber-jid-obarray)
 (defun jabber-jid-symbol (jid)
-  "Return the symbol for the given JID.
-JID must be a string."
+  "Return the symbol for JID, which must be a symbol or a string."
   ;; If it's already a symbol, just return it.
   (if (symbolp jid)
       jid
-    ;; XXX: "downcase" is poor man's nodeprep.  See XMPP CORE.
+    ;; XXX: "downcase" is a poor man's nodeprep.  See XMPP CORE.
     (intern (downcase (jabber-jid-user jid)) jabber-jid-obarray)))
 #+END_SRC
 
@@ -768,6 +772,7 @@ JID must be a string."
 :CUSTOM_ID: my-jid-p
 :END:
 #+BEGIN_SRC emacs-lisp
+(defvar jabber-account-list)
 (defun jabber-my-jid-p (jc jid)
   "Return non-nil if the specified JID is in the `jabber-account-list'.
 Comment: (modulo resource).
@@ -783,6 +788,7 @@ Also return non-nil if JID matches JC, modulo resource."
 :CUSTOM_ID: read-jid-completing
 :END:
 #+BEGIN_SRC emacs-lisp
+(defvar *jabber-active-groupchats*)
 (defun jabber-read-jid-completing (prompt &optional subset require-match default resource fulljids)
   "Read a jid out of the current roster from the minibuffer.
 If SUBSET is non-nil, it should be a list of symbols from which
@@ -937,6 +943,7 @@ Useful if the password proved to be wrong."
 :CUSTOM_ID: read-account
 :END:
 #+BEGIN_SRC emacs-lisp
+(defvar jabber-buffer-connection)
 (defun jabber-read-account (&optional always-ask contact-hint)
   "Ask for which connected account to use.
 If ALWAYS-ASK is nil and there is only one account, return that
@@ -11222,10 +11229,12 @@ JC is the Jabber connection."
   (or (ignore-errors (require 'hexrgb))
       ;; jabber-fallback-lib/ from jabber/lisp/jabber-fallback-lib
       (ignore-errors
-        (let ((load-path (cons (expand-file-name
-                                "jabber-fallback-lib"
-                                (file-name-directory (locate-library "jabber")))
-                               load-path)))
+        (let* ((source    (or (locate-library "jabber")
+                              load-file-name))
+               (load-path (cons (expand-file-name
+                                 "jabber-fallback-lib"
+                                 (file-name-directory source))
+                                load-path)))
           (require 'hexrgb)))
       (error
        "The hexrgb library was not found in `load-path' or jabber-fallback-lib/ directory")))
