@@ -76,29 +76,30 @@ We don't want comments to be inserted within the package comment structure, and 
 :PROPERTIES:
 :CUSTOM_ID: lexical-binding-test
 :END:
-   The ~lexical-binding~ variable is setted to t evaluating the code to ensure that ~literate-elisp-load~ works using lexical bindings. The prop-line is also used just in case the code is tangled and byte-compiled, but ~literate-elisp-tangle~ discards all comments, thus the eval-when-compile sentence below.
+The ~lexical-binding~ variable is set to t evaluating the code to ensure that ~literate-elisp-load~ works using lexical bindings. The prop-line is also used just in case the code is tangled and byte-compiled, but ~literate-elisp-tangle~ discards all comments, thus the eval-when-compile sentence below.
+
 #+BEGIN_SRC emacs-lisp
-  (defmacro lexical-p ()
-    "Return non-nil in buffers with lexical binding."
-    '(let* ((ret t)
-            (code (lambda ()
-                    ret)))
-       (let ((ret nil))
-         (funcall code))))
+(defmacro jabber-lexical-p ()
+  "Return non-nil in buffers with lexical binding."
+  '(let* ((ret t)
+          (code (lambda ()
+                  ret)))
+     (let ((ret nil))
+       (funcall code))))
 
-  (unless (lexical-p)
+(unless (jabber-lexical-p)
+  (message "jabber.org: Lexical binding is off, trying to turn it on.")
+  (setq lexical-binding t))
+
+(eval-when-compile
+  (unless (jabber-lexical-p)
     (message "jabber.org: Lexical binding is off, trying to turn it on.")
-    (setq lexical-binding t))
+    (setq lexical-binding t)))
 
-  (eval-when-compile
-    (unless (lexical-p)
-      (message "jabber.org: Lexical binding is off, trying to turn it on.")
-      (setq lexical-binding t)))
-
-  (unless (lexical-p)
-    (message "jabber.org: It seems that lexical binding is still off...
-  Consider adding the file-local variable prop-line to the tangled jabber.el file
-  or try to byte-compile the code."))
+(unless (jabber-lexical-p)
+  (message "jabber.org: It seems that lexical binding is still off...
+Consider adding the file-local variable prop-line to the tangled jabber.el file
+or try to byte-compile the code."))
 #+END_SRC
 
 ** custom variables

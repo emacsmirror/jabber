@@ -45,7 +45,7 @@
 ;; Dependencies:1 ends here
 
 ;; [[file:jabber.org::#lexical-binding-test][lexical binding test:1]]
-(defmacro lexical-p ()
+(defmacro jabber-lexical-p ()
   "Return non-nil in buffers with lexical binding."
   '(let* ((ret t)
           (code (lambda ()
@@ -53,16 +53,16 @@
      (let ((ret nil))
        (funcall code))))
 
-(unless (lexical-p)
+(unless (jabber-lexical-p)
   (message "jabber.org: Lexical binding is off, trying to turn it on.")
   (setq lexical-binding t))
 
 (eval-when-compile
-  (unless (lexical-p)
+  (unless (jabber-lexical-p)
     (message "jabber.org: Lexical binding is off, trying to turn it on.")
     (setq lexical-binding t)))
 
-(unless (lexical-p)
+(unless (jabber-lexical-p)
   (message "jabber.org: It seems that lexical binding is still off...
 Consider adding the file-local variable prop-line to the tangled jabber.el file
 or try to byte-compile the code."))
