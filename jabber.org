@@ -9701,10 +9701,12 @@ JC is the Jabber connection."
   (or (ignore-errors (require 'hexrgb))
       ;; jabber-fallback-lib/ from jabber/lisp/jabber-fallback-lib
       (ignore-errors
-        (let ((load-path (cons (expand-file-name
-                                "jabber-fallback-lib"
-                                (file-name-directory (locate-library "jabber")))
-                               load-path)))
+        (let* ((source    (or (locate-library "jabber")
+                              load-file-name))
+               (load-path (cons (expand-file-name
+                                 "jabber-fallback-lib"
+                                 (file-name-directory source))
+                                load-path)))
           (require 'hexrgb)))
       (error
        "The hexrgb library was not found in `load-path' or jabber-fallback-lib/ directory")))
