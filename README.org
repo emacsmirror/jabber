@@ -22,11 +22,11 @@ Old resources
   * http://dir.gmane.org/gmane.emacs.jabber.general
 + chat: jabber.el@conference.jabber.se and emacs@conference.jabber.ru (Russian, English)
 
-** GNU Emacs
+** Requirements
 :PROPERTIES:
-:CUSTOM_ID: gnu-emacs
+:CUSTOM_ID: requirements
 :END:
-jabber.el runs on GNU Emacs 23.1 or later.
+jabber.el runs on GNU Emacs 27.1 or later.
 
 The file hexrgb.el (http://www.emacswiki.org/emacs/hexrgb.el) is needed for MUC nick coloring feature.  A copy is located in the compat directory, and used if the configure script doesn't find another copy already installed.
 
