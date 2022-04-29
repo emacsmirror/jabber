@@ -92,9 +92,9 @@ It is possible to make various web browsers pass links starting with "xmpp:" to 
 :PROPERTIES:
 :CUSTOM_ID: literate-program
 :END:
-jabber.el is an Org literate program. Tangling is done automatically after each save.
+jabber.el is a literate program made using Org. Thanks to [[https://github.com/melpa/melpa/issues/7408][package.el limitations]], we check in the tangled sources to Git. The tangled sources are what Emacs knows how to load.
 
-Alternatively, it is possible to use =literate-elisp-load= from  [[https://github.com/jingtaozf/literate-elisp][literate-elisp]] to directly load this Org file. This way, links to the source (e.g. =describe-*= buffers, byte-compilation messages) take the user directly to the Org file rather than to the tangled source.
+Alternatively, it is possible to use =literate-elisp-load= from [[https://github.com/jingtaozf/literate-elisp][literate-elisp]] to directly load this Org literate program. This way, links to the source (e.g. =xref=, =describe-*= buffers, byte-compilation messages) take the user directly to the Org file rather than to the tangled source.
 
 If a source block does not have syntax highlighting, press =M-o M-o= (=font-lock-fontify-block=) in it.
 
