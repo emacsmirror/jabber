@@ -1,6 +1,8 @@
 .phony: all setup tangle autoload compile lint clean
 
-all: setup tangle autoload compile lint
+build: tangle autoload compile
+
+dev: setup tangle autoload compile lint
 
 setup:
 	emacs --batch --eval="(package-initialize)" \
