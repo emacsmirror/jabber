@@ -22,6 +22,17 @@ Old resources
   * http://dir.gmane.org/gmane.emacs.jabber.general
 + chat: jabber.el@conference.jabber.se and emacs@conference.jabber.ru (Russian, English)
 
+** Differences from [[https://github.com/legoscia/emacs-jabber][upstream]]
+:PROPERTIES:
+:CUSTOM_ID: upstream-differences
+:END:
+1. (WIP) Support for [[https://xmpp.org/extensions/xep-0363.html][XEP-0363: HTTP File Upload]]
+2. Support for [[https://xmpp.org/extensions/xep-0280.html][XEP-0280: Message Carbons]]
+3. Use of the deprecated =cl= library is almost completely replaced with =cl-lib=
+4. Build system changed from Autotools to a =Makefile=
+5. Lots of cleanup by addressing =checkdoc= and byte-compiler warnings - addition/improvement of docstrings, function/variable declarations, etc
+6. Converted to [[#literate-program][an Org literate program]]
+
 ** Requirements
 :PROPERTIES:
 :CUSTOM_ID: requirements
