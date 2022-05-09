@@ -36,7 +36,10 @@ autoload:
 	--eval="(package-generate-autoloads \"jabber\" default-directory)"
 
 compile: tangle
-	emacs -q -Q --batch --eval='(byte-compile-file "jabber.el")' ; \
+	emacs -q -Q --batch \
+	--eval="(add-to-list 'load-path \"$(pwd)\")" \
+	--eval="(add-to-list 'load-path \"jabber-fallback-lib\")" \
+	--eval='(byte-compile-file "jabber.el")' ; \
 
 lint-check-declare: tangle
 	emacs -q -Q --batch --eval='(check-declare-file "jabber.el")'
