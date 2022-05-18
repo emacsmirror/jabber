@@ -18,7 +18,7 @@ We don't want comments to be inserted within the package comment structure, and 
 ;; Maintainer: wgreenhouse <wgreenhouse@tilde.club>
 ;; Keywords: comm
 ;; Homepage: https://tildegit.org/wgreenhouse/emacs-jabber
-;; Package-Requires: ((hexrgb "0") (emacs "27.1"))
+;; Package-Requires: ((hexrgb "0") (emacs "27.1") (fsm "0.1.0") (srv "0.1.0"))
 ;; Version: 0.8.92
 
 ;; Copyright (C) 2003-2010, 2013 - Magnus Henoch - mange@freemail.hu
