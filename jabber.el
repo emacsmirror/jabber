@@ -10559,18 +10559,17 @@ Optional argument GROUP to look."
 ;; [[file:jabber.org::#sort-nicks][jabber-sort-nicks:1]]
 (defun jabber-sort-nicks (nicks group)
   "Return list of NICKS in GROUP, sorted."
-  (let ((times (cdr (assoc group *jabber-muc-participant-last-speaking*))))
-    (flet ((fetch-time (nick) (or (assoc nick times) (cons nick 0)))
-	   (cmp (nt1 nt2)
-		(let ((t1 (cdr nt1))
-		      (t2 (cdr nt2)))
-		  (if (and (zerop t1) (zerop t2))
-		      (string<
-                       (car nt1)
-                       (car nt2))
-		    (> t1 t2)))))
-      (mapcar 'car (sort (mapcar #'fetch-time nicks)
-			  'cmp)))))
+  (cl-letf* ((times (cdr (assoc group *jabber-muc-participant-last-speaking*)))
+	     ((symbol-function 'fetch-time) (lambda (nick) (or (assoc nick times)
+							       (cons nick 0))))
+	     ((symbol-function 'cmp) (lambda (nt1 nt2)
+				       (let ((t1 (cdr nt1))
+					     (t2 (cdr nt2)))
+					 (if (and (zerop t1) (zerop t2))
+					     (string< (car nt1)
+						      (car nt2))
+					   (> t1 t2))))))
+    (mapcar #'car (sort (mapcar #'fetch-time nicks) #'cmp))))
 ;; jabber-sort-nicks:1 ends here
 
 ;; [[file:jabber.org::#muc-beginning-of-line][jabber-muc-beginning-of-line:1]]
