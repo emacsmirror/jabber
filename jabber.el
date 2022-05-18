@@ -50,7 +50,7 @@
   '(let* ((ret t)
           (code (lambda ()
                   ret)))
-     (let ((ret nil))
+     (let ((_ret nil))
        (funcall code))))
 
 (unless (jabber-lexical-p)
@@ -115,7 +115,8 @@ or try to byte-compile the code."))
 ;; [[file:jabber.org::#sexp2xml][jabber-sexp2xml:1]]
 (defun jabber-sexp2xml (sexp)
   "Return SEXP as well-formatted XML.
-SEXP should be in the form (tagname ((attribute-name . attribute-value)...) children...)"
+SEXP should be in the form:
+ (tagname ((attribute-name . attribute-value)...) children...)"
   (cond
    ((stringp sexp)
     (jabber-escape-xml sexp))
@@ -372,7 +373,8 @@ ATTRIBUTES must be a list of symbols, as present in XML-DATA."
 ;; [[file:jabber.org::#replace-string][jabber-replace-in-string:1]]
 (defsubst jabber-replace-in-string (string regexp newtext)
   "Return STRING with all matches for REGEXP replaced with NEWTEXT.
-NEWTEXT is inserted literally, without changing its case or treating \\ specially."
+NEWTEXT is inserted literally, without changing its case or treating \"\\\"
+specially."
   (replace-regexp-in-string regexp newtext string t t))
 ;; jabber-replace-in-string:1 ends here
 
@@ -829,7 +831,8 @@ obtained from `xml-parse-region'."
 
 ;; [[file:jabber.org::#parse-legacy-time][jabber-parse-legacy-time:1]]
 (defun jabber-parse-legacy-time (timestamp)
-  "Parse timestamp in ccyymmddThh:mm:ss format (UTC) and return as internal time value."
+  "Parse timestamp in ccyymmddThh:mm:ss format (UTC) and return as internal
+time value."
   (let ((year (string-to-number (substring timestamp 0 4)))
 	(month (string-to-number (substring timestamp 4 6)))
 	(day (string-to-number (substring timestamp 6 8)))
@@ -904,7 +907,7 @@ TIME is in a format accepted by `format-time-string'."
 ;; jabber-parse-time:1 ends here
 
 ;; [[file:jabber.org::#report-success][jabber-report-success:1]]
-(defun jabber-report-success (jc xml-data context)
+(defun jabber-report-success (_jc xml-data context)
   "IQ callback reporting success or failure of the operation.
 CONTEXT is a string describing the action.
 \"CONTEXT succeeded\" or \"CONTEXT failed: REASON\" is displayed in
@@ -1056,7 +1059,8 @@ See secton 9.3, Stanza Errors, of XMPP Core, and XEP-0086, Legacy Errors."
 
 ;; [[file:jabber.org::#parse-stream-error][jabber-parse-stream-error:1]]
 (defun jabber-parse-stream-error (error-xml)
-  "Parse the given <stream:error/> tag and return a sting fit for human consumption."
+  "Parse the given error tag and return a string fit for human consumption.
+ERROR-XML is a <stream:error/> tag parsed with `xml-parse-region'."
   (let ((text-node (car (jabber-xml-get-children error-xml 'text)))
 	(condition (jabber-stream-error-condition error-xml)))
     (concat (if condition (cdr (assq condition jabber-stream-error-messages))
@@ -1098,9 +1102,11 @@ For example, \"ji%C5%99i@%C4%8Dechy.example/v%20Praze\" becomes
 ;; jabber-unhex:1 ends here
 
 ;; [[file:jabber.org::#handle-uri][jabber-handle-uri:1]]
-(defun jabber-handle-uri (uri &rest ignored-args)
+(defun jabber-handle-uri (uri &rest _ignored-args)
   "Handle XMPP links according to draft-saintandre-xmpp-iri-04.
-See Info node `(jabber)XMPP URIs'."
+See Info node `(jabber)XMPP URIs'.
+URI is a string with the \"xmpp://\" link to handle.
+IGNORED-ARGS are ignored arguments the handler may pass. "
   (interactive "sEnter XMPP URI: ")
 
   (when (string-match "//" uri)
@@ -1594,7 +1600,7 @@ connection fails."
 		   :coding 'utf-8
 		   :nowait t
 		   :sentinel
-		   (let ((target target) (remaining-targets remaining-targets))
+		   (let ((_target target) (_remaining-targets remaining-targets))
 		     (lambda (connection status)
 		       (cond
 			((string-match "^open" status)
@@ -1815,9 +1821,10 @@ and a string that the connection wants to send.")
 ;; *jabber-virtual-server-function*:1 ends here
 
 ;; [[file:jabber.org::#virtual-connect][jabber-virtual-connect:1]]
-(defun jabber-virtual-connect (fsm server network-server port)
+(defun jabber-virtual-connect (fsm _server _network-server _port)
   "Connect to a virtual \"server\".
-Use `*jabber-virtual-server-function*' as send function."
+Use `*jabber-virtual-server-function*' as send function.
+FSM is the finite state machine created in jabber.el library."
   (unless (functionp *jabber-virtual-server-function*)
     (error "No virtual server function specified"))
   ;; We pass the fsm itself as "connection object", as that is what a
@@ -3739,7 +3746,7 @@ bring up menus of actions.
 
 ;; [[file:jabber.org::#switch-to-roster-buffer][jabber-switch-to-roster-buffer:1]]
 ;;;###autoload
-(defun jabber-switch-to-roster-buffer (&optional jc)
+(defun jabber-switch-to-roster-buffer (&optional _jc)
   "Switch to roster buffer.
 Optional JC argument is ignored; it's there so this function can
 be used in `jabber-post-connection-hooks'."
