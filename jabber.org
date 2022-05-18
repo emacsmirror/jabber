@@ -4743,21 +4743,13 @@ JC is the Jabber connection."
   (defun jabber-roster-sort-items (a b)
     "Sort roster items A and B according to `jabber-roster-sort-functions'.
   Return t if A is less than B."
-    (dolist (fn jabber-roster-sort-functions)
-      (let ((comparison (funcall fn a b)))
-        (cond
-         ((< comparison 0)
-          t)
-         ((> comparison 0)
-          nil)))))
+    (let ((result nil))
+      (seq-find (lambda (fn)
+                  (setq result (funcall fn a b))
+                  (not (= result 0)))
+                jabber-roster-sort-functions)
+      (< result 0))))
 #+END_SRC
-
-**** TODO Resolve warning
-byte-compiling function throws:
-
-: Warning: value returned from (< (funcall fn a b) 0) is unused
-
-What should we do with the returned value of each function?
 
 *** jabber-roster-sort-by-status                  :function:
 :PROPERTIES:

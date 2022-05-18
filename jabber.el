@@ -3817,13 +3817,12 @@ JC is the Jabber connection."
 (defun jabber-roster-sort-items (a b)
   "Sort roster items A and B according to `jabber-roster-sort-functions'.
 Return t if A is less than B."
-  (dolist (fn jabber-roster-sort-functions)
-    (let ((comparison (funcall fn a b)))
-      (cond
-       ((< comparison 0)
-        t)
-       ((> comparison 0)
-        nil)))))
+  (let ((result nil))
+    (seq-find (lambda (fn)
+                (setq result (funcall fn a b))
+                (not (= result 0)))
+              jabber-roster-sort-functions)
+    (< result 0))))
 ;; jabber-roster-sort-items:1 ends here
 
 ;; [[file:jabber.org::#roster-sort-by-status][jabber-roster-sort-by-status:1]]
