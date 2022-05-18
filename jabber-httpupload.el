@@ -1,114 +1,64 @@
-#+TODO: TODO WIP EXTEND CLEANUP FIXME REVIEW |
-#+PROPERTY: header-args :tangle yes :results silent
+;;; jabber-httpupload.el --- Emacs Jabber HTTP Upload Implementation -*- lexical-binding: t; -*-
 
-This file implements the HTTP Upload [[https://xmpp.org/extensions/xep-0363.html][XEP-0363]] extension.
-It is separated from the jabber.org file in order to implement and test it without affecting the original implementation.
+;; Copyright 2021 cnngimenez
+;;
+;; Author: cnngimenez
+;; Maintainer: cnngimenez
+;; Version: 0.1.0
+;; Keywords: comm
+;; URL: https://github.com/cnngimenez/emacs-jabber
+;; Package-Requires: ((emacs "26.1") (jabber "0.8.92"))
 
-The HTTP Upload implements a way to send files (images, audio, etc.) through XMPP clients by using server space and the HTTP protocol to upload and download from it. The advantage is that the sender user does not need to be connected after sharing the file, and the receiver may be disconnected while the sender is uploading.
+;; This program is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
 
-The procedure to send a file is the following:
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
 
-1. Use Disco queries to discover if the server supports the HTTP Upload (~urn:xmpp:http:upload~ namespace).
-2. Request a slot to the upload Disco item. The server will answer with a GET and PUT URL.
-3. Upload the file to the HTTP server by using the PUT URL.
-4. Usually, send the GET URL to the other XMPP clients to allow them to access the uploaded file.
-
-* Headers and commentary
-#+BEGIN_SRC emacs-lisp
-  ;;; jabber-httpupload.el --- Emacs Jabber HTTP Upload Implementation -*- lexical-binding: t; -*-
-
-  ;; Copyright 2021 cnngimenez
-  ;;
-  ;; Author: cnngimenez
-  ;; Maintainer: cnngimenez
-  ;; Version: 0.1.0
-  ;; Keywords: comm
-  ;; URL: https://github.com/cnngimenez/emacs-jabber
-  ;; Package-Requires: ((emacs "26.1") (jabber "0.8.92"))
-
-  ;; This program is free software: you can redistribute it and/or modify
-  ;; it under the terms of the GNU General Public License as published by
-  ;; the Free Software Foundation, either version 3 of the License, or
-  ;; (at your option) any later version.
-
-  ;; This program is distributed in the hope that it will be useful,
-  ;; but WITHOUT ANY WARRANTY; without even the implied warranty of
-  ;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  ;; GNU General Public License for more details.
-
-  ;; You should have received a copy of the GNU General Public License
-  ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
+;; You should have received a copy of the GNU General Public License
+;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
-  ;;; Commentary:
+;;; Commentary:
 
-  ;; This file implements the HTTP Upload XEP-0363 extension.  This extension
-  ;; enables the user to send files through XMPP clients by using server space.
-  ;; 
-  ;; Please read the jabber-httpupload.org file for information.
+;; This file implements the HTTP Upload XEP-0363 extension.  This extension
+;; enables the user to send files through XMPP clients by using server space.
+;; 
+;; Please read the jabber-httpupload.org file for information.
 
-  ;;; Code:
-#+END_SRC
+;;; Code:
 
-* Required libraries
-#+BEGIN_SRC emacs-lisp
 (require 'seq)
 (require 'fsm)
 (require 'mailcap)
 (require 'jabber)
-#+END_SRC
 
-* Configuration variables
-
-** jabber-httpupload group
-#+BEGIN_SRC emacs-lisp
 (defgroup jabber-httpupload nil "Jabber HTTP Upload Settings."
   :group 'jabber)
-#+END_SRC
 
-** jabber-httpupload-upload-function
-#+BEGIN_SRC emacs-lisp
-  (defcustom jabber-httpupload-upload-function #'jabber-httpupload-put-file-curl
-    "The function used to upload the file.
-  Some functions calls external programs such as Curl and wget, please check their
-  documentation for more information."
-    :group 'jabber-httpupload
-    :type 'function)
-#+END_SRC
+(defcustom jabber-httpupload-upload-function #'jabber-httpupload-put-file-curl
+  "The function used to upload the file.
+Some functions calls external programs such as Curl and wget, please check their
+documentation for more information."
+  :group 'jabber-httpupload
+  :type 'function)
 
-** jabber-httpupload-record-command
-#+BEGIN_SRC emacs-lisp
 (defcustom jabber-httpupload-record-command "sox -d -t ogg $(filename).ogg"
   "What is the command used to record audio?
 Use $(filename) where the temporal filename should be."
   :group 'jabber-httpupload
   :type 'function)
-#+END_SRC
 
-
-* Discovering support
-Disco is used to discover if HTTP Upload is supported on the server side. Two queries are used:
-
-1. An IQ Disco items request to get all items supported by the server. 
-2. For each item, an IQ Disco info request to test if the item is the Upload service.
-
-The namespace of the HTTP Upload feature is ~urn:xmpp:http:upload:0~. This will be used on the second query to detect which item is the upload service.
-
-For more information, see XML examples at the [[https://xmpp.org/extensions/xep-0363.html#disco][Discovering Support section of XEP-0363]].
-
-This implementation requires an initialization step to fill the ~jabber-httpupload-support~ variable. This variable registers all connections with their HTTP Upload item. If one of the server associated to a connection does not support HTTP Upload, then it will be registered with a ~nil~ item.
-
-** jabber-httpupload-support                                      :variable:
-#+BEGIN_SRC emacs-lisp
 (defvar jabber-httpupload-support nil
 "An alist of jabber connections and the node with HTTP Upload support.
 This is filled by the `jabber-httpupload-test-all-connections-suport'.
 Each element are of the form (jabber-connection . string/nil).  If the value is
 a string, it is the upload item IRI, if nil means no support.")
-#+END_SRC
 
-** jabber-httpupload-all-connections-support
-#+BEGIN_SRC emacs-lisp
 (defun jabber-httpupload-test-all-connections-support ()
   "Test all connections in `jabber-connections' for HTTP Upload support.
 Store the results at `jabber-httpupload-support'.
@@ -117,10 +67,7 @@ If the connection is already tested, ignore it."
                                      (mapcar #'car jabber-httpupload-support))))
     (dolist (jc connections)
       (jabber-httpupload-test-connection-support jc))))
-#+END_SRC
 
-** jabber-httpupload-test-connection-support
-#+BEGIN_SRC emacs-lisp
 (defun jabber-httpupload-test-connection-support (jc)
   "Test if HTTP Upload is supported on the JC connection's server.
 If it is supported, store the item IRI at `jabber-httpupload-support'.
@@ -129,46 +76,7 @@ This function is asynchronous, thus it won't return any results."
   (jabber-httpupload-apply-to-items jc
                                (lambda (jc result)
                                  (jabber-httpupload-test-item-support jc (elt result 1)))))
-#+END_SRC
 
-** jabber-httpupload-test-item-support
-~callback~ receives three arguments: the jabber connection, extra data and the query result. The result is a list of features supported by the server. For example, if the client receives the following IQ answer:
-
-#+BEGIN_SRC xml :tangle no
-<iq from="upload.server.org" type="result" to="myjid@server.org/pc1" id="emacs-iq-24678.666.622936">
-  <query xmlns="http://jabber.org/protocol/disco#info">
-    <identity name="HTTP File Upload" type="file" category="store"/>
-    <feature var="http://jabber.org/protocol/disco#info"/>
-    <feature var="http://jabber.org/protocol/disco#items"/>
-    <feature var="urn:xmpp:http:upload:0"/>
-    <feature var="urn:xmpp:http:upload"/>
-    <x xmlns="jabber:x:data" type="result">
-      <field type="hidden" var="FORM_TYPE">
-        <value>urn:xmpp:http:upload:0</value>
-      </field>
-      <field type="text-single" var="max-file-size">
-        <value>500000</value>
-      </field>
-    </x>
-    <x xmlns="jabber:x:data" type="result">
-      <field type="hidden" var="FORM_TYPE">
-        <value>urn:xmpp:http:upload</value>
-      </field>
-      <field type="text-single" var="max-file-size">
-        <value>500000</value>
-      </field>
-    </x>
-  </query>
-</iq>
-#+END_SRC
-
-The result would be:
-
-: ((["HTTP File Upload" "store" "file"]) ("http://jabber.org/protocol/disco#info" "http://jabber.org/protocol/disco#items" "urn:xmpp:http:upload:0" "urn:xmpp:http:upload"))
-
-This Disco item support HTTP Upload because the ~urn:xmpp:http:upload~ namespace is in the second list.
-
-#+BEGIN_SRC emacs-lisp
 (defun jabber-httpupload-test-item-support (jc iri)
   "Test if the IRI Disco item supports HTTP Upload.
 Get the Disco Info from the provided IRI at the current JC jabber connection,
@@ -181,26 +89,7 @@ in `jabber-httpupload-support'."
                              ;; This item supports HTTP Upload... register it!
                              (push (cons jc iri) jabber-httpupload-support)))
                            nil))
-  #+END_SRC
 
-** jabber-httpupload-apply-to-items
-~callback~ receives three arguments: the jabber connection, extra data and the query result. The result is a list of vector with the node name, its IRI and any other properties.
-
-For example, if the client receives the following XML:
-#+BEGIN_SRC xml :tangle no
-  <iq from="server.org" type="result" to="myjid@server.org/pc1" id="emacs-iq-24677.56646.166389">
-    <query xmlns="http://jabber.org/protocol/disco#items">
-      <item jid="conference.server.org" name="MUC chats!"/>
-      <item jid="upload.server.org"/>
-    </query>
-  </iq>
-#+END_SRC
-
-The result would be:
-
-: (["MUC chats!" "conference.server.org" nil] [nil "upload.server.org" nil])
-
-#+BEGIN_SRC emacs-lisp
 (defun jabber-httpupload-apply-to-items (jc callback)
   "Retrieve al Disco IRIs from the server connected in JC.
 Return a list of IRI strings.
@@ -215,12 +104,7 @@ the item vector."
 		      (message "item: %S" item)
                                 (funcall callback jc item)))
                             nil)))
-#+END_SRC
 
-** jabber-httpupload-has-support
-Use this function to check if a Jabber Connection has HTTP Upload support.
-
-#+BEGIN_SRC emacs-lisp
 (defun jabber-httpupload-server-has-support (jc)
   "Check if the server has HTTP Upload support.
 Return the tuple (jabber-connection . upload-url) when there is support from
@@ -237,30 +121,7 @@ JC is the Jabber Connection to use."
               (and (equal jc (car tuple))
                    (cdr tuple)))
             jabber-httpupload-support))
-#+END_SRC
 
-* Requesting a slot
-The HTTP Upload specify that the client must ask for a "slot" before uploading the file to the server. The slot is a fresh URL that will be enabled for the client to upload the file. The server may give two URLs in one slot query: the uploading URL and the GET URL to share.
-
-The server may limit the file size to upload. 
-
-** jabber-httpupload-parse-slot-answer
-#+BEGIN_SRC xml :tangle no
-<iq from='upload.montague.tld'
-    id='step_03'
-    to='romeo@montague.tld/garden'
-    type='result'>
-  <slot xmlns='urn:xmpp:http:upload:0'>
-    <put url='https://upload.montague.tld/4a771ac1-f0b2-4a4a-9700-f2a26fa2bb67/tr%C3%A8s%20cool.jpg'>
-      <header name='Authorization'>Basic Base64String==</header>
-      <header name='Cookie'>foo=bar; user=romeo</header>
-    </put>
-    <get url='https://download.montague.tld/4a771ac1-f0b2-4a4a-9700-f2a26fa2bb67/tr%C3%A8s%20cool.jpg' />
-  </slot>
-</iq>
-#+END_SRC
-
-#+BEGIN_SRC emacs-lisp
 (defun jabber-httpupload-parse-slot-answer (xml-data)
   "Retrieve the slot data from the XML-DATA information.
 The XML-DATA is the stanza receive from the Jabber Connection after requesting
@@ -269,10 +130,7 @@ The returned list has the PUT URL and the GET URL."
   (list
    (jabber-xml-get-attribute (jabber-xml-path xml-data '(slot put)) 'url)
    (jabber-xml-get-attribute (jabber-xml-path xml-data '(slot get)) 'url)))
-#+END_SRC
 
-** jabber-httpupload--request-slot-successful
-#+BEGIN_SRC emacs-lisp
 (defun jabber-httpupload--request-slot-successful (jc xml-data data)
   "Callback function used when the slot request succeeded.
 XML-DATA is the received XML from the server.
@@ -288,12 +146,7 @@ DATA is a triple (filedata success-callback success-args) where:
         (success-callback (nth 1 data))
         (success-args (nth 2 data)))
     (funcall success-callback jc xml-data filedata urls success-args)))
-#+END_SRC
 
-** jabber-httpupload--request-slot-failed
-Maybe this function should be added as lambda inside the jabber-httpupload-request-slot...
-
-#+BEGIN_SRC emacs-lisp
 (defun jabber-httpupload--request-slot-failed (jc xml-data data)
   "Callback function used when the slot request failed.
 
@@ -309,24 +162,7 @@ DATA is a list (filedata error-callback error-args) where:
         (funcall error-callback jc xml-data filedata error-args)
       (error (format "The file %s cannot be uploaded: SLOT rejected. %S"
                      (car data) xml-data)))))
-#+END_SRC
 
-** jabber-httpupload-request-slot                             :function:
-The XML used to request a slot is simmilar as the following:
-
-#+BEGIN_SRC xml :tangle no
-<iq from='romeo@montague.tld/garden'
-    id='step_03'
-    to='upload.montague.tld'
-    type='get'>
-  <request xmlns='urn:xmpp:http:upload:0'
-    filename='très cool.jpg'
-    size='23456'
-    content-type='image/jpeg' />
-</iq>
-#+END_SRC
-
-#+BEGIN_SRC emacs-lisp
 (defun jabber-httpupload-request-slot (jc filedata success-callback success-args
                                       &optional error-callback error-args)
   "Request a slot for HTTP Upload to the server's connection.
@@ -350,19 +186,7 @@ ERROR-ARGS is a list with arguments for ERROR-CALLBACK."
                     (list filedata success-callback success-args)
                     #'jabber-httpupload--request-slot-failed
                     (list filedata error-callback error-args))))
-#+END_SRC
 
-* Uploading the file
-Use the HTTP protocol to upload the file to the PUT URL provided by the slot.
-
-The following functions call the upload programs asynchronously. When the program ends, a callback function is called with one argument provided by the caller function.
-
-The uploading process supports multiple calls. For example, when the user call ~jabber-httpupload-send-file~ with one file, and then he or she calls ~jabber-httpuploads-send-file~ again while the upload process of the first one is still running.
-
-Also, a callback can be provided in order to send the URL to the receiver Jabber client or to do any other action after uploading the file.
-
-** jabber-httpupload-ignore-certificate
-#+BEGIN_SRC emacs-lisp
 (defun jabber-httpupload-ignore-certificate (jc)
   "Should the SSL/TLS certificates be ignore from JC connection?
 Check if JC URL is in the variable `jabber-invalid-certificate-servers', if it
@@ -370,10 +194,7 @@ is the XMPP and HTTPs connection should be established regarding their
 certificate validation status."
   (member (plist-get (fsm-get-state-data jc) :server)
           jabber-invalid-certificate-servers))
-#+END_SRC
 
-** jabber-httpupload-upload-file
-#+BEGIN_SRC emacs-lisp
 (defun jabber-httpupload-upload-file (filepath content-type put-url
                                            callback callback-arg
                                            &optional ignore-cert-problems)
@@ -389,25 +210,13 @@ code: (funcall CALLBACK CALLBACK-ARG)"
                    ignore-cert-problems)
     (error (concat "The upload function failed to PUT the file to the server. "
                    "Try other function or install the required program"))))
-#+END_SRC
 
-** jabber-httpupload-upload-processes                             :variable:
-Multiple files can be uploaded in parallel, and thus multiple subprocess could be working at the same time. This happens when the user calls interactively ~jabber-httpupload-send-file~ twice or while a file is still uploading.
+(defvar jabber-httpupload-upload-processes nil
+  "List of running processes uploading the file to the server.
+List of running processes uploading the file to the server associated with
+their callback and arguments.
+Each element has the following format: (process . (callback arg))")
 
-This variable keeps track of the subprocess and their callback along with any data required by these functions.
-
-#+BEGIN_SRC emacs-lisp
-  (defvar jabber-httpupload-upload-processes nil
-    "List of running processes uploading the file to the server.
-  List of running processes uploading the file to the server associated with
-  their callback and arguments.
-  Each element has the following format: (process . (callback arg))")
-#+END_SRC
-
-** jabber-httpupload-process-ended
-When the file has been uploaded, the process is still registered with its callback function. This callback should be called and the process deleted from the system.
-
-#+BEGIN_SRC emacs-lisp
 (defun jabber-httpupload-process-ended (process)
   "What to do when an upload process ends.
 PROCESS is the process that ended.
@@ -419,14 +228,7 @@ then call its callback with the provided argument."
     (setq jabber-httpupload-upload-processes
           (assq-delete-all process jabber-httpupload-upload-processes))
     (funcall callback callback-arg)))
-#+END_SRC
 
-
-** Use CURL to send the file
-These functions call curl to send the file to the server. A sentinel is required to check when the subprocess finishes to call the next function (usually, send the URL to the other jabber client).
-
-*** jabber-httpupload-curl-sentinel
-#+BEGIN_SRC emacs-lisp
 (defun jabber-httpupload-curl-sentinel (process event)
   "Detect when Curl ends and act accordingly.
 PROCESS is the asynchronous Curl call.
@@ -440,12 +242,7 @@ When EVENT is \"finished\n\", then the function
       (insert (format "Sentinel: %S event received." event))))
   (when (string= event "finished\n")
     (jabber-httpupload-process-ended process)))
-#+END_SRC
 
-*** jabber-httpupload-put-file-curl
-This is the function used to send a file to the server by running a curl subprocess.
-
-#+BEGIN_SRC emacs-lisp
 (defun jabber-httpupload-put-file-curl (filepath content-type put-url
                                              callback callback-arg
                                              &optional ignore-cert-problems)
@@ -481,32 +278,7 @@ the provided CALLBACK and CALLBACK-ARG."
             (set-process-sentinel process #'jabber-httpupload-curl-sentinel))
           (insert "-- done --")
           t)))))
-#+END_SRC
 
-** TODO Use wget to send the file
-
-* Send the file URL to the client
-Prepare the GET URL to send it to an XMPP client throug a Message stanza.
-
-** jabber-httpupload-send-file-url
-The following message is simmilar to one sent by conversations:
-
-#+BEGIN_SRC xml :tangle no
-<message from="from_jid@fromserver.org/Resource" id="fc824dcb-c654-4911-a22b-25718dfe4590" type="chat" to="to_jid@toserver.org">
-  <body>https://fromserver.org:5281/upload/kFTT5ET9JeF_CC6s/_IJNy8ZUSRGiKyVxjf5FkA.jpg</body>
-  <request xmlns="urn:xmpp:receipts"/>
-  <markable xmlns="urn:xmpp:chat-markers:0"/>
-  <origin-id id="fc824dcb-c654-4911-a22b-25718dfe4590" xmlns="urn:xmpp:sid:0"/>
-  <x xmlns="jabber:x:oob">
-    <url>https://fromserver.org:5281/upload/kFTT5ET9JeF_CC6s/_IJNy8ZUSRGiKyVxjf5FkA.jpg</url>
-  </x>
-  <stanza-id xmlns="urn:xmpp:sid:0" id="7e18d73a-278c-4e5e-bd09-61c12187e5d6" by="to_jid@toserver.org"/>
-</message>
-#+END_SRC
-
-The message should add the "body" and "x" tags. 
-
-#+BEGIN_SRC emacs-lisp
 (defun jabber-httpupload-send-file-url (jc jid get-url)
   "Send the GET URL address to the JID user.
 The message requiers the GET-URL of the slot file, the receiver's JID 
@@ -524,14 +296,7 @@ and the JC Jabber Connection."
                                 (body () ,get-url)
                                 (x ((xmlns . "jabber:x:oob"))
                                    (url () ,get-url))))))
-#+END_SRC
 
-
-* Chat Buffer
-** Send file (complete process)
-The following functions add interactive commands to the chat buffer to send the GET URL to the current (or selected) client.
-
-#+BEGIN_SRC emacs-lisp
 (defun jabber-httpupload-send-file (jc jid filepath)
   "Send the file at FILEPATH to the user JID.
 JC is the Jabber Connection to send the file URL."
@@ -546,18 +311,7 @@ JC is the Jabber Connection to send the file URL."
     (jabber-httpupload-request-slot jc filedata
                                     #'jabber-httpupload--slot-reserved
                                     (list jid))))
-#+END_SRC
 
-The following functions are callbacks used in the following order:
-
-1. ~jabber-httpupload-request-slot~ calls ~jabber-httpupload--slot-reserved~.
-2. ~jabber-httpupload--slot-reserved~ calls ~jabber-httpupload--upload-done~.
-3. ~jabber-httpupload--upload-done~ calls ~jabber-httpupload-send-file-url~.
-
-This form of calling is required because of the asynchronous behaviour of the upload file function.
-
-*** jabber-httpupload--upload-done
-#+BEGIN_SRC emacs-lisp
 (defun jabber-httpupload--upload-done (data)
   "Callback function used when the upload is done.
 When the upload process finished, a callback function is called with an
@@ -573,12 +327,7 @@ After the upload is done, send the get-url to the destined Jabber user JID."
     (condition-case err
         (jabber-httpupload-send-file-url jc jid get-url)
       (error "Cannot send message.  Error: %S" err))))
-#+END_SRC
 
-*** jabber-httpupload--slot-reserved
-When the slot is reserved, the HTTP upload should be started.
-
-#+BEGIN_SRC emacs-lisp
 (defun jabber-httpupload--slot-reserved (jc _xml-data filedata urls extra-data)
   "Callback function used when the slot request succeeded.
 JC is the current Jabber Connection.
@@ -599,87 +348,9 @@ EXTRA-DATA is a list `(jid)"
                                        #'jabber-httpupload--upload-done (list jc jid get-url)
                                        (jabber-httpupload-ignore-certificate jc))
       (error "Cannot upload the file.  Error: %S" err))))
-#+END_SRC
 
-
-** TODO Recording audio and sending
-:PROPERTIES:
-:header-args: :tangle no
-:END:
-
-To easy the burden to send an audio message, the following functions allows the user to call a recorder program and send the results through one M-x interactive command.
-
-*** TODO jabber-httpupload--record-audio
-Create a new audio record and save the file into a temporal directory.
-
-#+BEGIN_SRC emacs-lisp
-  (defun jabber-httpupload--record-audio ()
-    "Create a new audio record and save the file into a temporal directory."
-    (let ((process (start-process-shell-command "jabber-httpupload-record-audio"
-                                                (current-buffer)
-                                                (replace-string "$(filename" "/tmp/jabber-httpupload-record"
-                                                                jabber-httpupload-record-command))))
-      (set-process-sentinel process #'jabber-httpupload-record-sentinel)))
-#+END_SRC
-
-
-*** jabber-httpupload-record-and-send-audio
-#+BEGIN_SRC emacs-lisp
-(defun jabber-httpupload-record-and-send-audio (jc jid)
-  "Record an audio and send it to a user JID.
-JC is the Jabber Connection to send the file URL."
-  (interactive (list (jabber-read-account)
-                     (jabber-read-jid-completing "Send audio to:" nil nil nil 'full t)))
-  (jabber-httpupload-send-file jc jid (jabber-httpupload--record-audio)))
-#+END_SRC
-
-
-* Add hooks
-Some function should start automatically.
-
-** Test connection support after session is established
-Call ~jabber-httpupload-test-connection-support~ as soon as
-
-* Adding functions to hooks
-
-** Test HTTP Upload support after connecting
-#+BEGIN_SRC emacs-lisp
 (add-hook 'jabber-post-connect-hooks #'jabber-httpupload-test-connection-support)
-#+END_SRC
 
-* Providing the package name
-#+BEGIN_SRC emacs-lisp
 (provide 'jabber-httpupload)
 
 ;;; jabber-httpupload.el ends here
-#+END_SRC
-
-
-
-* Meta     :noexport:
-
-# ----------------------------------------------------------------------
-#+TITLE:  Emacs Jabber HTTP Upload implementation
-#+EMAIL:
-#+DESCRIPTION: 
-#+KEYWORDS: jabber, xmpp, xep-0363, http upload
-  
-#+STARTUP: inlineimages hidestars content hideblocks entitiespretty
-#+STARTUP: indent fninline latexpreview
-
-#+OPTIONS: H:3 num:t toc:t \n:nil @:t ::t |:t ^:{} -:t f:t *:t <:t
-#+OPTIONS: TeX:t LaTeX:t skip:nil d:nil todo:t pri:nil tags:not-in-toc
-#+OPTIONS: tex:imagemagick
-
-# -- Export
-#+LANGUAGE: en
-#+LINK_UP: jabber.org
-#+LINK_HOME: jabber.org
-#+EXPORT_SELECT_TAGS: export
-#+EXPORT_EXCLUDE_TAGS: noexport
-
-# -- HTML Export
-#+INFOJS_OPT: view:info toc:t ftoc:t ltoc:t mouse:underline buttons:t
-#+HTML_LINK_UP: jabber.html
-#+HTML_LINK_HOME: jabber.html
-#+XSLT:
