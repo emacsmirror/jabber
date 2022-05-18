@@ -4740,15 +4740,15 @@ JC is the Jabber connection."
 :CUSTOM_ID: roster-sort-items
 :END:
 #+BEGIN_SRC emacs-lisp
-  (defun jabber-roster-sort-items (a b)
-    "Sort roster items A and B according to `jabber-roster-sort-functions'.
-  Return t if A is less than B."
-    (let ((result nil))
-      (seq-find (lambda (fn)
-                  (setq result (funcall fn a b))
-                  (not (= result 0)))
-                jabber-roster-sort-functions)
-      (< result 0))))
+(defun jabber-roster-sort-items (a b)
+  "Sort roster items A and B according to `jabber-roster-sort-functions'.
+Return t if A is less than B."
+  (let ((result nil))
+    (seq-find (lambda (fn)
+		(setq result (funcall fn a b))
+		(not (= result 0)))
+	      jabber-roster-sort-functions)
+    (< result 0)))
 #+END_SRC
 
 *** jabber-roster-sort-by-status                  :function:

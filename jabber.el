@@ -3819,10 +3819,10 @@ JC is the Jabber connection."
 Return t if A is less than B."
   (let ((result nil))
     (seq-find (lambda (fn)
-                (setq result (funcall fn a b))
-                (not (= result 0)))
-              jabber-roster-sort-functions)
-    (< result 0))))
+		(setq result (funcall fn a b))
+		(not (= result 0)))
+	      jabber-roster-sort-functions)
+    (< result 0)))
 ;; jabber-roster-sort-items:1 ends here
 
 ;; [[file:jabber.org::#roster-sort-by-status][jabber-roster-sort-by-status:1]]
