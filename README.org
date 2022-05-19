@@ -185,7 +185,7 @@ To install the Info documentation, copy =jabber.info= to =/usr/local/info= and r
 
 5. Document user-facing changes in the [[file:NEWS][NEWS]] file. Update other documentation in this [[file:README.org][README.org]] if necessary.
 
-6. Push and create your PR, or send a patch using [[https://git-send-email.io/][=git-send-email=]] to wgreenhouse@tilde.club
+6. Push and create your PR, or send a patch using [[https://git-send-email.io/][git-send-email]] to [[mailto:wgreenhouse@tilde.club][wgreenhouse@tilde.club]]
 
 * Developer documentation
 :PROPERTIES:
