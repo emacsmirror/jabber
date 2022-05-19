@@ -173,9 +173,7 @@ To install the Info documentation, copy =jabber.info= to =/usr/local/info= and r
         make setup
       #+END_SRC
 
-3. Make your edits to =jabber.org= (not =jabber.el=), and save.
-
-4. Tangle the file -
+3. Make your edits to =jabber.org= (not =jabber.el=), and save. Then, tangle the file -
    #+BEGIN_SRC
    M-x compile RET make -Bk
    #+END_SRC
@@ -183,9 +181,11 @@ To install the Info documentation, copy =jabber.info= to =/usr/local/info= and r
 
    You can also run =make dev= to tangle, compile, and run linters in one go, and address their output.
 
-5. Document user-facing changes in the [[file:NEWS][NEWS]] file. Update other documentation in this [[file:README.org][README.org]] if necessary.
+   Commit your changes in =jabber.org=, as well as any changes made to =jabber.el= via tangling.
 
-6. Push and create your PR, or send a patch using [[https://git-send-email.io/][git-send-email]] to [[mailto:wgreenhouse@tilde.club][wgreenhouse@tilde.club]]
+4. Document user-facing changes in the [[file:NEWS][NEWS]] file. Update other documentation in this [[file:README.org][README.org]] if necessary.
+
+5. Push and create your PR, or send a patch using [[https://git-send-email.io/][git-send-email]] to [[mailto:wgreenhouse@tilde.club][wgreenhouse@tilde.club]]
 
 * Developer documentation
 :PROPERTIES:
