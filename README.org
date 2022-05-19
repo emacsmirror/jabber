@@ -150,73 +150,58 @@ If all goes well, =jabber.el= commands like =jabber-connect= should now be avail
 
 To install the Info documentation, copy =jabber.info= to =/usr/local/info= and run ="install-info /usr/local/info/jabber.info"=.
 
-** [Developers] Making your first pull request
+** Making your first pull request
 :PROPERTIES:
 :CUSTOM_ID: making-your-first-pull-request
 :END:
 1. Clone the jabber.el repository.
    #+BEGIN_SRC shell :tangle no
      mkdir ~/git/ && cd ~/git/
-     git clone https://tildegit.org/wgreenhouse/emacs-jabber
+     git clone https://codeberg.org/emacs-jabber/emacs-jabber
    #+END_SRC
+
 2. Install development dependencies.
-   1. Install Org mode v9.3.8 or higher.
+   1. Ensure you have Org mode v9.3.8 or higher. If necessary, install from source -
       #+BEGIN_SRC shell :tangle no
         git clone https://code.orgmode.org/bzg/org-mode.git
         cd ~/git/org-mode/
         make
       #+END_SRC
-   2. Install Magit - type -
-      #+BEGIN_SRC
-        M-x package-install RET magit RET
-      #+END_SRC
-      or evaluate -
-      #+BEGIN_SRC emacs-lisp :tangle no :load no
-        (package-install 'magit)
-      #+END_SRC
-   3. Install the remaining tools.
+   2. Optionally, install additional development tools (requires MELPA to be set up as package source) -
       #+BEGIN_SRC shell :tangle no
         cd ~/git/emacs-jabber/
-        make -f contrapunctus.mk setup
+        make setup
       #+END_SRC
-3. Set up automatic tangling, linting, and testing - in the =emacs-jabber= directory, create a =.dir-locals-2.el= containing the following -
-   #+BEGIN_SRC emacs-lisp :tangle no :load no
-((org-mode . ((nameless-mode . t)
-              (eval . (progn
-                        (make-local-variable 'after-save-hook)
-                        (add-hook 'after-save-hook
-                                  (lambda ()
-                                    (compile
-                                     (concat
-                                      "make ORG_PATH=\"~/git/org-mode/lisp/\" "
-                                      "--silent --always-make "
-                                      "-f contrapunctus.mk "
-                                      "tangle")))
-                                  nil t)))
-              ;; use `vc-before-checkin-hook' instead, if using `vc'
-              (eval . (add-hook 'magit-post-stage-hook
-                                (lambda ()
-                                  ;; check if we are in the right project
-                                  (when (file-exists-p "jabber.org")
-                                    (compile
-                                     (concat
-                                      "make --silent --always-make "
-                                      "-f contrapunctus.mk lint")))))))))
+
+3. Make your edits to =jabber.org= (not =jabber.el=), and save.
+
+4. Tangle the file -
+   #+BEGIN_SRC
+   M-x compile RET make -Bk
    #+END_SRC
-   Note -
-   * =ORG_PATH= must point to the =/lisp/= subdirectory of the cloned Org repository.
-   * =.dir-locals-2.el= is for your personal preferences - do not add it to the repository.
-4. Create your branch, and open =jabber.org= for editing. Press =!= to accept the directory local variables, then make your changes. Always edit =jabber.org=, never =jabber.el=!
-5. Stage your changes in =jabber.org=, as well as the changes in the automatically tangled sources in =jabber.el=.
-6. Address the issues presented by the linters and tests. Hitting Enter on an error in the compilation buffer will take you to the source in =jabber.el= - use =org-babel-tangle-jump-to-org= to go to the source block in =jabber.org=.
-7. Push and create your PR, or send a patch using [[https://git-send-email.io/][=git-send-email=]] to wgreenhouse@tilde.club
+   This also byte compiles it. Address any byte compilation errors.
+
+   You can also run =make dev= to tangle, compile, and run linters in one go, and address their output.
+
+5. Document user-facing changes in the [[file:NEWS][NEWS]] file. Update other documentation in this [[file:README.org][README.org]] if necessary.
+
+6. Push and create your PR, or send a patch using [[https://git-send-email.io/][=git-send-email=]] to wgreenhouse@tilde.club
 
 * Developer documentation
+:PROPERTIES:
+:CUSTOM_ID: developer-documentation
+:END:
 
-** Required Libraries Summary 
+** Required Libraries Summary
+:PROPERTIES:
+:CUSTOM_ID: required-libraries-summary
+:END:
 This documentation is more understandable if the reader know their purpose in advance. For this reason, this section provides a summary about them. Please, refer to their own Website or documentation manual for extensive documentation. Some interesting tips are provided to ease the debugging process and further developing of the jabber library.
-  
+
 *** fsm
+:PROPERTIES:
+:CUSTOM_ID: fsm
+:END:
 The Finite State Machine library implements functions to define multiple finite state machines (FSM), their states and all the events associated to each of them.
 
 The following is a list of the most important functions or macros defined in this library:
@@ -235,17 +220,26 @@ See [[file:jabber.org::*jabber-connection][jabber-connection]] section for an ex
 The machine requires states. They are defined with the ~define-state~ function.
 
 ** Debugging Tips
+:PROPERTIES:
+:CUSTOM_ID: debugging-tips
+:END:
 Useful tips for debugging:
 
-- There is a buffer called ~*fsm-debug*~ that displays all transitions and errors during the event handling. 
+- There is a buffer called ~*fsm-debug*~ that displays all transitions and errors during the event handling.
 - There is a jabber-debug customization group.
 - You can set ~jabber-debug-log-xml~ variable to ~t~ to enable the XML debug console. See [[file:jabber.org::#debug-log-xml][Section debug-log-xml at jabber.org]].
 - The XML console is a buffer called ~*-jabber-console-ACCOUNT-*~ by default. Enable ~jabber-debug-log-xml~ and switch to that buffer to see the incoming and outgoing XML stanzas. See [[file:jabber.org::#xml-console-mode][Section xml-console-mode at jabber.org]].
 
 ** The jabber-connection FSM
+:PROPERTIES:
+:CUSTOM_ID: jabber-connection-fsm
+:END:
 The jabber.el use a finite state machine (FSM) to track the current jabber connection step. It defines a FSM called ~jabber-connection~ (or ~jc~ when it is used as parameter in functions) and several states along with their sentinels. See [[file:jabber.org::#connection][Section jabber-connection at jabber.org]] where it is defined. The Org-mode tag ~:fsm:~ is used at jabber.org headlines to describe FSM definitions.
 
 *** States
+:PROPERTIES:
+:CUSTOM_ID: states
+:END:
 The following graph shows the states and their transition implemented in version [[https://tildegit.org/wgreenhouse/emacs-jabber/commit/dddcccb926f422b03d22a66b60db46f1266eb141][dddcccb926]] (20 march 2021). The nodes represents the states and the arc are events.
 
 All states have filter and sentinel events that do not change the FSM state. Also, they have a ~:do-disconnect~ event that change the FSM to the ~nil~ state except for the ~connecting~ state.
@@ -294,6 +288,9 @@ Some state changes depend on the event and the data received, in this case, the 
 
 
 ** How is the Stanza processing
+:PROPERTIES:
+:CUSTOM_ID: how-is-stanza-processing
+:END:
 The following is a brief summary about the stanza processing.
 
 1. The ~:session-established~ state is reached.

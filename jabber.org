@@ -18055,3 +18055,7 @@ Contents of process buffers might be useful for debugging."
 
 ;;; jabber.el ends here
 #+END_SRC
+
+# Local Variables:
+# eval: (when (package-installed-p 'nameless) (require 'nameless) (nameless-mode))
+# End:

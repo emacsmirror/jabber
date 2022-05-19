@@ -6,7 +6,7 @@ dev: setup tangle autoload compile lint
 
 setup:
 	emacs --batch --eval="(package-initialize)" \
-	--eval="(mapcar #'package-install '(indent-lint package-lint relint))"
+	--eval="(mapcar #'package-install '(indent-lint package-lint relint nameless))"
 
 # No -q or -Q without ORG_PATH - if the user has a newer version of
 # Org, we want to use it.
