@@ -1925,8 +1925,8 @@ Call REMEMBER with the password.  REMEMBER is expected to return it as well."
 		(bare-jid (jabber-connection-bare-jid jc))
 		(remember remember))
     (if password
-	(lambda (prompt) (funcall remember (copy-sequence password)))
-      (lambda (prompt) (funcall remember (jabber-read-password bare-jid))))))
+	(lambda (_prompt) (funcall remember (copy-sequence password)))
+      (lambda (_prompt) (funcall remember (jabber-read-password bare-jid))))))
 ;; jabber-sasl-read-passphrase-closure:1 ends here
 
 ;; [[file:jabber.org::#sasl-process-input][jabber-sasl-process-input:1]]
@@ -1987,7 +1987,7 @@ obtained from `xml-parse-region'."
 
 ;; [[file:jabber.org::#common-keymap-many-modes][common keymap for many modes:1]]
 ;; button.el was introduced in Emacs 22
-(condition-case e
+(condition-case _error-data
     (require 'button)
   (error nil))
 ;; common keymap for many modes:1 ends here
@@ -2034,6 +2034,16 @@ obtained from `xml-parse-region'."
 (require 'ewoc)
 (require 'sgml-mode) ;we base on this mode to hightlight XML
 ;; XML Console mode:1 ends here
+
+;; [[file:jabber.org::#debug-log-xml][jabber-debug-log-xml:1]]
+(defcustom jabber-debug-log-xml nil
+  "Set to non-nil to log all XML i/o in *-jabber-console-JID-* buffer.
+Set to string to also dump XML i/o in specified file."
+  :type '(choice (const :tag "Do not dump XML i/o" nil)
+                 (const :tag "Dump XML i/o in console" t)
+                 (string :tag "Dump XML i/o in console and this file"))
+  :group 'jabber-debug)
+;; jabber-debug-log-xml:1 ends here
 
 ;; [[file:jabber.org::#console-name-format][jabber-console-name-format:1]]
 (defcustom jabber-console-name-format "*-jabber-console-%s-*"
@@ -14287,16 +14297,6 @@ configure a Google Talk account like this:
 (defgroup jabber-debug nil "debugging options"
   :group 'jabber)
 ;; jabber-debug:1 ends here
-
-;; [[file:jabber.org::#debug-log-xml][jabber-debug-log-xml:1]]
-(defcustom jabber-debug-log-xml nil
-  "Set to non-nil to log all XML i/o in *-jabber-console-JID-* buffer.
-Set to string to also dump XML i/o in specified file."
-  :type '(choice (const :tag "Do not dump XML i/o" nil)
-                 (const :tag "Dump XML i/o in console" t)
-                 (string :tag "Dump XML i/o in console and this file"))
-  :group 'jabber-debug)
-;; jabber-debug-log-xml:1 ends here
 
 ;; [[file:jabber.org::#debug-keep-process-buffers][jabber-debug-keep-process-buffers:1]]
 (defcustom jabber-debug-keep-process-buffers nil

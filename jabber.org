@@ -2440,9 +2440,12 @@ Call REMEMBER with the password.  REMEMBER is expected to return it as well."
 		(bare-jid (jabber-connection-bare-jid jc))
 		(remember remember))
     (if password
-	(lambda (prompt) (funcall remember (copy-sequence password)))
-      (lambda (prompt) (funcall remember (jabber-read-password bare-jid))))))
+	(lambda (_prompt) (funcall remember (copy-sequence password)))
+      (lambda (_prompt) (funcall remember (jabber-read-password bare-jid))))))
 #+END_SRC
+
+**** TODO Why the lambda inside the "if password"?
+Remove the lambda, it seems it has no effect.
 
 *** jabber-sasl-process-input                     :function:
 :PROPERTIES:
@@ -2511,7 +2514,7 @@ obtained from `xml-parse-region'."
 :END:
 #+BEGIN_SRC emacs-lisp
 ;; button.el was introduced in Emacs 22
-(condition-case e
+(condition-case _error-data
     (require 'button)
   (error nil))
 #+END_SRC
@@ -2573,6 +2576,19 @@ obtained from `xml-parse-region'."
 (require 'sgml-mode) ;we base on this mode to hightlight XML
 #+END_SRC
 
+*** jabber-debug-log-xml                   :custom:variable:
+:PROPERTIES:
+:CUSTOM_ID: debug-log-xml
+:END:
+#+BEGIN_SRC emacs-lisp
+(defcustom jabber-debug-log-xml nil
+  "Set to non-nil to log all XML i/o in *-jabber-console-JID-* buffer.
+Set to string to also dump XML i/o in specified file."
+  :type '(choice (const :tag "Do not dump XML i/o" nil)
+                 (const :tag "Dump XML i/o in console" t)
+                 (string :tag "Dump XML i/o in console and this file"))
+  :group 'jabber-debug)
+#+END_SRC
 *** jabber-console-name-format             :custom:variable:
 :PROPERTIES:
 :CUSTOM_ID: console-name-format
@@ -10332,7 +10348,7 @@ accounts."
     (ignore-errors (jabber-send-string c " "))))
 #+END_SRC
 
-** Feature Negotiation ([[https://xmpp.org/extensions/xep-0020.html][XEP-0020]]) :xep_deprecated:
+** Feature Negotiation ([[https://xmpp.org/extensions/xep-0020.html][XEP-0020]])           :xep_deprecated:
 :PROPERTIES:
 :old-file:     jabber-feature-neg.el
 :CUSTOM_ID: feature-negotiation-()
@@ -10890,7 +10906,7 @@ Return nil if no form type is specified."
 				     (car (jabber-xml-get-children field 'value)))))))))
 #+END_SRC
 
-** Bookmarks ([[https://xmpp.org/extensions/xep-0048.html][XEP-0048]]) :xep_deprecated:
+** Bookmarks ([[https://xmpp.org/extensions/xep-0048.html][XEP-0048]])                     :xep_deprecated:
 :PROPERTIES:
 :old-file:     jabber-bookmarks.el
 :CUSTOM_ID: bookmarks-()
@@ -13508,7 +13524,7 @@ obtained from `xml-parse-region'."
 	    (insert "\n"))))))
 #+END_SRC
 
-** Jabber Browsing ([[https://xmpp.org/extensions/xep-0011.html][XEP-0011]]) :xep_obsolete:
+** Jabber Browsing ([[https://xmpp.org/extensions/xep-0011.html][XEP-0011]])                 :xep_obsolete:
 :PROPERTIES:
 :old-file:     jabber-browse.el
 :CUSTOM_ID: browsing-()
@@ -14933,7 +14949,7 @@ With a numeric arg, enable this display if arg is positive."
 (if jabber-activity-mode (jabber-activity-mode 1))
 #+END_SRC
 
-** Message Events ([[https://xmpp.org/extensions/xep-0022.html][XEP-0022]]) :xep_obsolete:
+** Message Events ([[https://xmpp.org/extensions/xep-0022.html][XEP-0022]])                  :xep_obsolete:
 :PROPERTIES:
 :old-file:     jabber-events.el
 :CUSTOM_ID: message-events-()
@@ -17990,20 +18006,6 @@ configure a Google Talk account like this:
 #+BEGIN_SRC emacs-lisp
 (defgroup jabber-debug nil "debugging options"
   :group 'jabber)
-#+END_SRC
-
-*** jabber-debug-log-xml                   :custom:variable:
-:PROPERTIES:
-:CUSTOM_ID: debug-log-xml
-:END:
-#+BEGIN_SRC emacs-lisp
-(defcustom jabber-debug-log-xml nil
-  "Set to non-nil to log all XML i/o in *-jabber-console-JID-* buffer.
-Set to string to also dump XML i/o in specified file."
-  :type '(choice (const :tag "Do not dump XML i/o" nil)
-                 (const :tag "Dump XML i/o in console" t)
-                 (string :tag "Dump XML i/o in console and this file"))
-  :group 'jabber-debug)
 #+END_SRC
 
 *** jabber-debug-keep-process-buffers      :custom:variable:
