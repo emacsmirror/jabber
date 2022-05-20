@@ -175,11 +175,11 @@ To install the Info documentation, copy =jabber.info= to =/usr/local/info= and r
 
 3. Make your edits to =jabber.org= (not =jabber.el=), and save. Then, tangle the file -
    #+BEGIN_SRC
-   M-x compile RET make -Bk
+   M-x compile RET make -Bk RET
    #+END_SRC
    + If you installed Org from source, be sure to mention the =ORG_PATH= -
      #+BEGIN_SRC
-     M-x compile RET ORG_PATH=/path/to/org/source/lisp/ make -Bk
+     M-x compile RET ORG_PATH=/path/to/org/source/lisp/ make -Bk RET
      #+END_SRC
 
    This tangles the literate program and byte compiles the tangled sources. Try to address any byte compilation errors.
