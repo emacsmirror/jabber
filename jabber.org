@@ -102,13 +102,57 @@ Consider adding the file-local variable prop-line to the tangled jabber.el file
 or try to byte-compile the code."))
 #+END_SRC
 
-** custom variables
+** Shared variables
+These are variables shared with more than one section. For instance, =jabber-process-buffer= is used at the Section [[#core][core]] but also at Section [[#network-transport-functions][Network transport functions]].
+
+Placing these variables definitions before using them avoid byte-compile warnings. Moreover, it is common practice to define variables before its usage.
+
+*** Custom variables
+**** jabber-enable-legacy-features-p              :variable:
 :PROPERTIES:
 :CUSTOM_ID: custom-variables
 :END:
 #+BEGIN_SRC emacs-lisp
   (defvar jabber-enable-legacy-features-p nil)
 #+END_SRC
+
+*** Core
+These variables were originally defined at Section [[#core][core]].
+
+**** jabber-process-buffer                        :variable:
+:PROPERTIES:
+:CUSTOM_ID: process-buffer
+:END:
+#+BEGIN_SRC emacs-lisp
+(defvar jabber-process-buffer " *-jabber-process-*"
+  "The name of the process buffer.")
+#+END_SRC
+
+*** Jabber
+These variables were originally defined at Section [[#jabber][Jabber]].
+**** jabber-debug-keep-process-buffers     :custom:variable:
+:PROPERTIES:
+:CUSTOM_ID: debug-keep-process-buffers
+:END:
+#+BEGIN_SRC emacs-lisp
+(defcustom jabber-debug-keep-process-buffers nil
+  "If nil, kill process buffers when the process dies.
+Contents of process buffers might be useful for debugging."
+  :type 'boolean
+  :group 'jabber-debug)
+#+END_SRC
+
+**** jabber-silent-mode                    :custom:variable:
+:PROPERTIES:
+:CUSTOM_ID: silent-mode
+:END:
+#+BEGIN_SRC emacs-lisp
+(defcustom jabber-silent-mode nil
+  "If non-nil, do not ask for confirmation for some operations.  DANGEROUS!"
+  :type 'boolean
+  :group 'jabber)
+#+END_SRC
+
 
 ** XML functions
 :PROPERTIES:
@@ -505,7 +549,7 @@ specially."
 (defalias 'jabber-propertize 'propertize)
 #+END_SRC
 
-*** bound-and-true-p                               :macro:
+*** bound-and-true-p                                 :macro:
 :PROPERTIES:
 :CUSTOM_ID: bound-true-p
 :END:
@@ -2986,15 +3030,6 @@ indefinitely.  See `password-cache' and `password-cache-expiry'."
   :group 'jabber-core)
 #+END_SRC
 
-*** jabber-process-buffer                         :variable:
-:PROPERTIES:
-:CUSTOM_ID: process-buffer
-:END:
-#+BEGIN_SRC emacs-lisp
-(defvar jabber-process-buffer " *-jabber-process-*"
-  "The name of the process buffer.")
-#+END_SRC
-
 *** jabber-use-sasl                        :custom:variable:
 :PROPERTIES:
 :CUSTOM_ID: use-sasl
@@ -3169,7 +3204,7 @@ With double prefix argument, specify more connection details."
 	  jabber-connections)))
 #+END_SRC
 
-*** jabber-connection                                      :fsm:
+*** jabber-connection                                  :fsm:
 :PROPERTIES:
 :CUSTOM_ID: fsm-connection
 :END:
@@ -3197,7 +3232,7 @@ With double prefix argument, specify more connection details."
 			:port port)))))
 #+END_SRC
 
-**** nil                                      :fsm:state:
+**** nil                                         :fsm:state:
 :PROPERTIES:
 :CUSTOM_ID: fsm-state-nil
 :END:
@@ -3261,7 +3296,7 @@ With double prefix argument, specify more connection details."
      (list nil state-data nil))))
 #+END_SRC
 
-**** connecting                               :fsm:state:
+**** connecting                                  :fsm:state:
 :PROPERTIES:
 :CUSTOM_ID: fsm-state-connecting
 :END:
@@ -3309,7 +3344,7 @@ With double prefix argument, specify more connection details."
      :defer)))
 #+END_SRC
 
-**** jabber-fsm-handle-sentinel               :inline:function:
+**** jabber-fsm-handle-sentinel            :inline:function:
 :PROPERTIES:
 :CUSTOM_ID: fsm-handle-sentinel
 :END:
@@ -3333,7 +3368,7 @@ With double prefix argument, specify more connection details."
     (list nil new-state-data)))
 #+END_SRC
 
-**** connected                                :fsm:state:
+**** connected                                   :fsm:state:
 :PROPERTIES:
 :CUSTOM_ID: fsm-state-connected
 :END:
@@ -3412,7 +3447,7 @@ With double prefix argument, specify more connection details."
 			  :disconnection-expected t)))))
 #+END_SRC
 
-**** starttls                                 :fsm:state:
+**** starttls                                    :fsm:state:
 :PROPERTIES:
 :CUSTOM_ID: fsm-state-starttls
 :END:
@@ -3454,7 +3489,7 @@ With double prefix argument, specify more connection details."
 			  :disconnection-expected t)))))
 #+END_SRC
 
-**** register-account                         :fsm:state:
+**** register-account                            :fsm:state:
 :PROPERTIES:
 :CUSTOM_ID: fsm-state-register-account
 :END:
@@ -3492,7 +3527,7 @@ With double prefix argument, specify more connection details."
 			  :disconnection-expected t)))))
 #+END_SRC
 
-**** legacy-auth                              :fsm:state:
+**** legacy-auth                                 :fsm:state:
 :PROPERTIES:
 :CUSTOM_ID: fsm-state-legacy-auth
 :END:
@@ -3540,7 +3575,7 @@ With double prefix argument, specify more connection details."
 			  :disconnection-expected t)))))
 #+END_SRC
 
-**** sasl-auth                                :fsm:state:
+**** sasl-auth                                   :fsm:state:
 :PROPERTIES:
 :CUSTOM_ID: fsm-state-sasl-auth
 :END:
@@ -3596,7 +3631,7 @@ With double prefix argument, specify more connection details."
 			  :disconnection-expected t)))))
 #+END_SRC
 
-**** bind                                     :fsm:state:
+**** bind                                        :fsm:state:
 :PROPERTIES:
 :CUSTOM_ID: fsm-state-bind
 :END:
@@ -3701,7 +3736,7 @@ With double prefix argument, specify more connection details."
 			  :disconnection-expected t)))))
 #+END_SRC
 
-**** jabber-pending-presence-timeout                 :variable:
+**** jabber-pending-presence-timeout              :variable:
 :PROPERTIES:
 :CUSTOM_ID: pending-presence-timeout
 :END:
@@ -3710,7 +3745,7 @@ With double prefix argument, specify more connection details."
   "Wait this long before doing presence packet batch processing.")
 #+END_SRC
 
-**** session-established                      :fsm:state:
+**** session-established                         :fsm:state:
 :PROPERTIES:
 :CUSTOM_ID: fsm-state-session-established
 :END:
@@ -18005,29 +18040,6 @@ configure a Google Talk account like this:
 :END:
 #+BEGIN_SRC emacs-lisp
 (defgroup jabber-debug nil "debugging options"
-  :group 'jabber)
-#+END_SRC
-
-*** jabber-debug-keep-process-buffers      :custom:variable:
-:PROPERTIES:
-:CUSTOM_ID: debug-keep-process-buffers
-:END:
-#+BEGIN_SRC emacs-lisp
-(defcustom jabber-debug-keep-process-buffers nil
-  "If nil, kill process buffers when the process dies.
-Contents of process buffers might be useful for debugging."
-  :type 'boolean
-  :group 'jabber-debug)
-#+END_SRC
-
-*** jabber-silent-mode                     :custom:variable:
-:PROPERTIES:
-:CUSTOM_ID: silent-mode
-:END:
-#+BEGIN_SRC emacs-lisp
-(defcustom jabber-silent-mode nil
-  "If non-nil, do not ask for confirmation for some operations.  DANGEROUS!"
-  :type 'boolean
   :group 'jabber)
 #+END_SRC
 

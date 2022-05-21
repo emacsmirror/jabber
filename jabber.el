@@ -68,9 +68,29 @@ Consider adding the file-local variable prop-line to the tangled jabber.el file
 or try to byte-compile the code."))
 ;; lexical binding test:1 ends here
 
-;; [[file:jabber.org::#custom-variables][custom variables:1]]
+;; [[file:jabber.org::#custom-variables][jabber-enable-legacy-features-p:1]]
 (defvar jabber-enable-legacy-features-p nil)
-;; custom variables:1 ends here
+;; jabber-enable-legacy-features-p:1 ends here
+
+;; [[file:jabber.org::#process-buffer][jabber-process-buffer:1]]
+(defvar jabber-process-buffer " *-jabber-process-*"
+  "The name of the process buffer.")
+;; jabber-process-buffer:1 ends here
+
+;; [[file:jabber.org::#debug-keep-process-buffers][jabber-debug-keep-process-buffers:1]]
+(defcustom jabber-debug-keep-process-buffers nil
+  "If nil, kill process buffers when the process dies.
+Contents of process buffers might be useful for debugging."
+  :type 'boolean
+  :group 'jabber-debug)
+;; jabber-debug-keep-process-buffers:1 ends here
+
+;; [[file:jabber.org::#silent-mode][jabber-silent-mode:1]]
+(defcustom jabber-silent-mode nil
+  "If non-nil, do not ask for confirmation for some operations.  DANGEROUS!"
+  :type 'boolean
+  :group 'jabber)
+;; jabber-silent-mode:1 ends here
 
 ;; [[file:jabber.org::#xml-functions][XML functions:1]]
 (require 'xml)
@@ -2309,11 +2329,6 @@ indefinitely.  See `password-cache' and `password-cache-expiry'."
   :type 'string
   :group 'jabber-core)
 ;; jabber-roster-buffer:1 ends here
-
-;; [[file:jabber.org::#process-buffer][jabber-process-buffer:1]]
-(defvar jabber-process-buffer " *-jabber-process-*"
-  "The name of the process buffer.")
-;; jabber-process-buffer:1 ends here
 
 ;; [[file:jabber.org::#use-sasl][jabber-use-sasl:1]]
 (defcustom jabber-use-sasl t
@@ -14297,21 +14312,6 @@ configure a Google Talk account like this:
 (defgroup jabber-debug nil "debugging options"
   :group 'jabber)
 ;; jabber-debug:1 ends here
-
-;; [[file:jabber.org::#debug-keep-process-buffers][jabber-debug-keep-process-buffers:1]]
-(defcustom jabber-debug-keep-process-buffers nil
-  "If nil, kill process buffers when the process dies.
-Contents of process buffers might be useful for debugging."
-  :type 'boolean
-  :group 'jabber-debug)
-;; jabber-debug-keep-process-buffers:1 ends here
-
-;; [[file:jabber.org::#silent-mode][jabber-silent-mode:1]]
-(defcustom jabber-silent-mode nil
-  "If non-nil, do not ask for confirmation for some operations.  DANGEROUS!"
-  :type 'boolean
-  :group 'jabber)
-;; jabber-silent-mode:1 ends here
 
 ;; [[file:jabber.org::#presence-faces][jabber-presence-faces:1]]
 ;;;###autoload
