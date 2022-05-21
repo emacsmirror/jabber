@@ -2828,10 +2828,144 @@ what kind of chat buffer is being created.")
       (progn
         (ewoc-enter-last jabber-console-ewoc (list direction (jabber-console-sanitize xml-data)))
 		(when (< 1  jabber-console-truncate-lines)
-		  (let ((jabber-log-lines-to-keep jabber-console-truncate-lines))
+		  (let ((_jabber-log-lines-to-keep jabber-console-truncate-lines))
 			(jabber-truncate-top buffer jabber-console-ewoc)))))))
 #+END_SRC
 
+**** TODO Sanitize code in jabber-process-console
+1. What is progn and the last let do doing?
+2. The progn may not be required.
+3. Then test if the console works properly.
+
+** Mode line
+:PROPERTIES:
+:old-file:     jabber-modeline.el
+:CUSTOM_ID: mode-line
+:END:
+
+*** jabber-mode-line                          :custom:group:
+:PROPERTIES:
+:CUSTOM_ID: mode-line
+:END:
+#+BEGIN_SRC emacs-lisp
+(defgroup jabber-mode-line nil
+  "Display Jabber status in mode line"
+  :group 'jabber)
+#+END_SRC
+
+*** jabber-mode-line-compact               :custom:variable:
+:PROPERTIES:
+:CUSTOM_ID: mode-line-compact
+:END:
+#+BEGIN_SRC emacs-lisp
+(defcustom jabber-mode-line-compact t
+  "Count contacts in fewer categories for compact view."
+  :group 'jabber-mode-line
+  :type 'boolean)
+#+END_SRC
+
+*** jabber-mode-line-string                       :variable:
+:PROPERTIES:
+:CUSTOM_ID: mode-line-string
+:END:
+#+BEGIN_SRC emacs-lisp
+(defvar jabber-mode-line-string nil)
+#+END_SRC
+
+*** jabber-mode-line-presence                     :variable:
+:PROPERTIES:
+:CUSTOM_ID: mode-line-presence
+:END:
+#+BEGIN_SRC emacs-lisp
+(defvar jabber-mode-line-presence nil)
+#+END_SRC
+
+*** jabber-mode-line-contacts                     :variable:
+:PROPERTIES:
+:CUSTOM_ID: mode-line-contacts
+:END:
+#+BEGIN_SRC emacs-lisp
+(defvar jabber-mode-line-contacts nil)
+#+END_SRC
+
+#+BEGIN_SRC emacs-lisp
+(defadvice jabber-send-presence (after jsp-update-mode-line
+				       (show status priority))
+  (jabber-mode-line-presence-update))
+#+END_SRC
+
+*** jabber-mode-line-presence-update              :function:
+:PROPERTIES:
+:CUSTOM_ID: mode-line-presence-update
+:END:
+#+BEGIN_SRC emacs-lisp
+(defun jabber-mode-line-presence-update ()
+  (setq jabber-mode-line-presence (if (and jabber-connections (not *jabber-disconnecting*))
+				      (cdr (assoc *jabber-current-show* jabber-presence-strings))
+				    "Offline")))
+#+END_SRC
+
+*** jabber-mode-line-count-contacts               :function:
+:PROPERTIES:
+:CUSTOM_ID: mode-line-count-contacts
+:END:
+#+BEGIN_SRC emacs-lisp
+(defun jabber-mode-line-count-contacts (&rest ignore)
+  (let ((count (list (cons "chat" 0)
+		     (cons "" 0)
+		     (cons "away" 0)
+		     (cons "xa" 0)
+		     (cons "dnd" 0)
+		     (cons nil 0))))
+    (dolist (jc jabber-connections)
+      (dolist (buddy (plist-get (fsm-get-state-data jc) :roster))
+	(when (assoc (get buddy 'show) count)
+	  (cl-incf (cdr (assoc (get buddy 'show) count))))))
+    (setq jabber-mode-line-contacts
+	  (if jabber-mode-line-compact
+	      (format "(%d/%d/%d)"
+		      (+ (cdr (assoc "chat" count))
+			 (cdr (assoc "" count)))
+		      (+ (cdr (assoc "away" count))
+			 (cdr (assoc "xa" count))
+			 (cdr (assoc "dnd" count)))
+		      (cdr (assoc nil count)))
+	    (apply 'format "(%d/%d/%d/%d/%d/%d)"
+		   (mapcar 'cdr count))))))
+#+END_SRC
+
+*** jabber-mode-line-mode                       :minor:mode:
+:PROPERTIES:
+:CUSTOM_ID: mode-line-mode
+:END:
+#+BEGIN_SRC emacs-lisp
+(define-minor-mode jabber-mode-line-mode
+  "Toggle display of Jabber status in mode lines.
+Display consists of your own status, and six numbers
+meaning the number of chatty, online, away, xa, dnd
+and offline contacts, respectively."
+  :global t :group 'jabber-mode-line
+  (setq jabber-mode-line-string "")
+  (or global-mode-string (setq global-mode-string '("")))
+  (if jabber-mode-line-mode
+      (progn
+	(add-to-list 'global-mode-string 'jabber-mode-line-string t)
+
+	(setq jabber-mode-line-string (list " "
+					    'jabber-mode-line-presence
+					    " "
+					    'jabber-mode-line-contacts))
+        (put 'jabber-mode-line-string 'risky-local-variable t)
+        (put 'jabber-mode-line-presence 'risky-local-variable t)
+	(jabber-mode-line-presence-update)
+	(jabber-mode-line-count-contacts)
+	(ad-activate 'jabber-send-presence)
+	(add-hook 'jabber-post-disconnect-hook
+		  'jabber-mode-line-presence-update)
+	(add-hook 'jabber-presence-hooks
+		  'jabber-mode-line-count-contacts))))
+#+END_SRC
+   
 ** core
 :PROPERTIES:
 :old-file:     jabber-core.el
@@ -14145,135 +14279,6 @@ obtained from `xml-parse-region'."
 		 (node . ,jabber-ahc-presence-node)
 		 (status . "completed"))
 		(note ((type . "info")) "Presence has been changed."))))))
-#+END_SRC
-
-** Mode line
-:PROPERTIES:
-:old-file:     jabber-modeline.el
-:CUSTOM_ID: mode-line
-:END:
-
-*** jabber-mode-line                          :custom:group:
-:PROPERTIES:
-:CUSTOM_ID: mode-line
-:END:
-#+BEGIN_SRC emacs-lisp
-(defgroup jabber-mode-line nil
-  "Display Jabber status in mode line"
-  :group 'jabber)
-#+END_SRC
-
-*** jabber-mode-line-compact               :custom:variable:
-:PROPERTIES:
-:CUSTOM_ID: mode-line-compact
-:END:
-#+BEGIN_SRC emacs-lisp
-(defcustom jabber-mode-line-compact t
-  "Count contacts in fewer categories for compact view."
-  :group 'jabber-mode-line
-  :type 'boolean)
-#+END_SRC
-
-*** jabber-mode-line-string                       :variable:
-:PROPERTIES:
-:CUSTOM_ID: mode-line-string
-:END:
-#+BEGIN_SRC emacs-lisp
-(defvar jabber-mode-line-string nil)
-#+END_SRC
-
-*** jabber-mode-line-presence                     :variable:
-:PROPERTIES:
-:CUSTOM_ID: mode-line-presence
-:END:
-#+BEGIN_SRC emacs-lisp
-(defvar jabber-mode-line-presence nil)
-#+END_SRC
-
-*** jabber-mode-line-contacts                     :variable:
-:PROPERTIES:
-:CUSTOM_ID: mode-line-contacts
-:END:
-#+BEGIN_SRC emacs-lisp
-(defvar jabber-mode-line-contacts nil)
-#+END_SRC
-
-#+BEGIN_SRC emacs-lisp
-(defadvice jabber-send-presence (after jsp-update-mode-line
-				       (show status priority))
-  (jabber-mode-line-presence-update))
-#+END_SRC
-
-*** jabber-mode-line-presence-update              :function:
-:PROPERTIES:
-:CUSTOM_ID: mode-line-presence-update
-:END:
-#+BEGIN_SRC emacs-lisp
-(defun jabber-mode-line-presence-update ()
-  (setq jabber-mode-line-presence (if (and jabber-connections (not *jabber-disconnecting*))
-				      (cdr (assoc *jabber-current-show* jabber-presence-strings))
-				    "Offline")))
-#+END_SRC
-
-*** jabber-mode-line-count-contacts               :function:
-:PROPERTIES:
-:CUSTOM_ID: mode-line-count-contacts
-:END:
-#+BEGIN_SRC emacs-lisp
-(defun jabber-mode-line-count-contacts (&rest ignore)
-  (let ((count (list (cons "chat" 0)
-		     (cons "" 0)
-		     (cons "away" 0)
-		     (cons "xa" 0)
-		     (cons "dnd" 0)
-		     (cons nil 0))))
-    (dolist (jc jabber-connections)
-      (dolist (buddy (plist-get (fsm-get-state-data jc) :roster))
-	(when (assoc (get buddy 'show) count)
-	  (cl-incf (cdr (assoc (get buddy 'show) count))))))
-    (setq jabber-mode-line-contacts
-	  (if jabber-mode-line-compact
-	      (format "(%d/%d/%d)"
-		      (+ (cdr (assoc "chat" count))
-			 (cdr (assoc "" count)))
-		      (+ (cdr (assoc "away" count))
-			 (cdr (assoc "xa" count))
-			 (cdr (assoc "dnd" count)))
-		      (cdr (assoc nil count)))
-	    (apply 'format "(%d/%d/%d/%d/%d/%d)"
-		   (mapcar 'cdr count))))))
-#+END_SRC
-
-*** jabber-mode-line-mode                       :minor:mode:
-:PROPERTIES:
-:CUSTOM_ID: mode-line-mode
-:END:
-#+BEGIN_SRC emacs-lisp
-(define-minor-mode jabber-mode-line-mode
-  "Toggle display of Jabber status in mode lines.
-Display consists of your own status, and six numbers
-meaning the number of chatty, online, away, xa, dnd
-and offline contacts, respectively."
-  :global t :group 'jabber-mode-line
-  (setq jabber-mode-line-string "")
-  (or global-mode-string (setq global-mode-string '("")))
-  (if jabber-mode-line-mode
-      (progn
-	(add-to-list 'global-mode-string 'jabber-mode-line-string t)
-
-	(setq jabber-mode-line-string (list " "
-					    'jabber-mode-line-presence
-					    " "
-					    'jabber-mode-line-contacts))
-        (put 'jabber-mode-line-string 'risky-local-variable t)
-        (put 'jabber-mode-line-presence 'risky-local-variable t)
-	(jabber-mode-line-presence-update)
-	(jabber-mode-line-count-contacts)
-	(ad-activate 'jabber-send-presence)
-	(add-hook 'jabber-post-disconnect-hook
-		  'jabber-mode-line-presence-update)
-	(add-hook 'jabber-presence-hooks
-		  'jabber-mode-line-count-contacts))))
 #+END_SRC
 
 ** watch - get notified when certain persons go online
