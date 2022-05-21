@@ -150,15 +150,20 @@ If all goes well, =jabber.el= commands like =jabber-connect= should now be avail
 
 To install the Info documentation, copy =jabber.info= to =/usr/local/info= and run ="install-info /usr/local/info/jabber.info"=.
 
-** Making your first pull request
+* How-to guides
+:PROPERTIES:
+:CUSTOM_ID: how-to-guides
+:END:
+** How to contribute to the project
 :PROPERTIES:
 :CUSTOM_ID: making-your-first-pull-request
 :END:
-1. Clone the jabber.el repository.
+1. Fork and clone the repository.
    #+BEGIN_SRC shell :tangle no
      mkdir ~/git/ && cd ~/git/
-     git clone https://codeberg.org/emacs-jabber/emacs-jabber
+     git clone https://codeberg.org/YOUR-ACCOUNT/emacs-jabber
    #+END_SRC
+   + You can also send patches to [[mailto:wgreenhouse@tilde.club][wgreenhouse@tilde.club]], using [[https://git-send-email.io/][git-send-email]]. In that case, no forking is necessary.
 
 2. Install development dependencies.
    1. Ensure you have Org mode v9.3.8 or higher. If necessary, install from source -
@@ -188,9 +193,9 @@ To install the Info documentation, copy =jabber.info= to =/usr/local/info= and r
 
    Commit your changes in =jabber.org=, as well as any changes made to =jabber.el= via tangling.
 
-4. Document user-facing changes in the [[file:NEWS][NEWS]] file. Update other documentation in this [[file:README.org][README.org]] if necessary.
+4. Document user-facing changes in the [[file:NEWS][NEWS]] file. Update or add other documentation in this [[file:README.org][README.org]] if necessary.
 
-5. Push and create your PR, or send a patch using [[https://git-send-email.io/][git-send-email]] to [[mailto:wgreenhouse@tilde.club][wgreenhouse@tilde.club]]
+5. Push and create your PR.
 
 * Developer documentation
 :PROPERTIES:
