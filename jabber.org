@@ -505,7 +505,7 @@ specially."
 (defalias 'jabber-propertize 'propertize)
 #+END_SRC
 
-*** bound-and-true-p                                 :macro:
+*** bound-and-true-p                               :macro:
 :PROPERTIES:
 :CUSTOM_ID: bound-true-p
 :END:
@@ -3153,9 +3153,9 @@ With double prefix argument, specify more connection details."
 	  jabber-connections)))
 #+END_SRC
 
-*** jabber-connection                                  :fsm:
+*** jabber-connection                                      :fsm:
 :PROPERTIES:
-:CUSTOM_ID: connection
+:CUSTOM_ID: fsm-connection
 :END:
 #+BEGIN_SRC emacs-lisp
 (define-state-machine jabber-connection
@@ -3181,6 +3181,10 @@ With double prefix argument, specify more connection details."
 			:port port)))))
 #+END_SRC
 
+**** nil                                      :fsm:state:
+:PROPERTIES:
+:CUSTOM_ID: fsm-state-nil
+:END:
 #+BEGIN_SRC emacs-lisp
 (define-enter-state jabber-connection nil
   (fsm state-data)
@@ -3241,6 +3245,10 @@ With double prefix argument, specify more connection details."
      (list nil state-data nil))))
 #+END_SRC
 
+**** connecting                               :fsm:state:
+:PROPERTIES:
+:CUSTOM_ID: fsm-state-connecting
+:END:
 #+BEGIN_SRC emacs-lisp
 (define-enter-state jabber-connection :connecting
   (fsm state-data)
@@ -3285,7 +3293,7 @@ With double prefix argument, specify more connection details."
      :defer)))
 #+END_SRC
 
-*** jabber-fsm-handle-sentinel             :inline:function:
+**** jabber-fsm-handle-sentinel               :inline:function:
 :PROPERTIES:
 :CUSTOM_ID: fsm-handle-sentinel
 :END:
@@ -3309,6 +3317,10 @@ With double prefix argument, specify more connection details."
     (list nil new-state-data)))
 #+END_SRC
 
+**** connected                                :fsm:state:
+:PROPERTIES:
+:CUSTOM_ID: fsm-state-connected
+:END:
 #+BEGIN_SRC emacs-lisp
 (define-enter-state jabber-connection :connected
   (fsm state-data)
@@ -3384,6 +3396,10 @@ With double prefix argument, specify more connection details."
 			  :disconnection-expected t)))))
 #+END_SRC
 
+**** starttls                                 :fsm:state:
+:PROPERTIES:
+:CUSTOM_ID: fsm-state-starttls
+:END:
 #+BEGIN_SRC emacs-lisp
 (define-enter-state jabber-connection :starttls
   (fsm state-data)
@@ -3422,6 +3438,10 @@ With double prefix argument, specify more connection details."
 			  :disconnection-expected t)))))
 #+END_SRC
 
+**** register-account                         :fsm:state:
+:PROPERTIES:
+:CUSTOM_ID: fsm-state-register-account
+:END:
 #+BEGIN_SRC emacs-lisp
 (define-enter-state jabber-connection :register-account
   (fsm state-data)
@@ -3456,6 +3476,10 @@ With double prefix argument, specify more connection details."
 			  :disconnection-expected t)))))
 #+END_SRC
 
+**** legacy-auth                              :fsm:state:
+:PROPERTIES:
+:CUSTOM_ID: fsm-state-legacy-auth
+:END:
 #+BEGIN_SRC emacs-lisp
 (define-enter-state jabber-connection :legacy-auth
   (fsm state-data)
@@ -3500,6 +3524,10 @@ With double prefix argument, specify more connection details."
 			  :disconnection-expected t)))))
 #+END_SRC
 
+**** sasl-auth                                :fsm:state:
+:PROPERTIES:
+:CUSTOM_ID: fsm-state-sasl-auth
+:END:
 #+BEGIN_SRC emacs-lisp
 (define-enter-state jabber-connection :sasl-auth
   (fsm state-data)
@@ -3552,6 +3580,10 @@ With double prefix argument, specify more connection details."
 			  :disconnection-expected t)))))
 #+END_SRC
 
+**** bind                                     :fsm:state:
+:PROPERTIES:
+:CUSTOM_ID: fsm-state-bind
+:END:
 #+BEGIN_SRC emacs-lisp
 (define-enter-state jabber-connection :bind
   (fsm state-data)
@@ -3653,6 +3685,19 @@ With double prefix argument, specify more connection details."
 			  :disconnection-expected t)))))
 #+END_SRC
 
+**** jabber-pending-presence-timeout                 :variable:
+:PROPERTIES:
+:CUSTOM_ID: pending-presence-timeout
+:END:
+#+BEGIN_SRC emacs-lisp
+(defvar jabber-pending-presence-timeout 0.5
+  "Wait this long before doing presence packet batch processing.")
+#+END_SRC
+
+**** session-established                      :fsm:state:
+:PROPERTIES:
+:CUSTOM_ID: fsm-state-session-established
+:END:
 #+BEGIN_SRC emacs-lisp
 (define-enter-state jabber-connection :session-established
   (fsm state-data)
@@ -3662,15 +3707,6 @@ With double prefix argument, specify more connection details."
 		  #'jabber-process-roster 'initial
 		  #'jabber-initial-roster-failure nil)
   (list (plist-put state-data :ever-session-established t) nil))
-#+END_SRC
-
-*** jabber-pending-presence-timeout               :variable:
-:PROPERTIES:
-:CUSTOM_ID: pending-presence-timeout
-:END:
-#+BEGIN_SRC emacs-lisp
-(defvar jabber-pending-presence-timeout 0.5
-  "Wait this long before doing presence packet batch processing.")
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp

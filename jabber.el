@@ -4,7 +4,7 @@
 ;; Maintainer: wgreenhouse <wgreenhouse@tilde.club>
 ;; Keywords: comm
 ;; Homepage: https://tildegit.org/wgreenhouse/emacs-jabber
-;; Package-Requires: ((hexrgb "0") (emacs "27.1"))
+;; Package-Requires: ((hexrgb "0") (emacs "27.1") (fsm "0.1.0") (srv "0.1.0"))
 ;; Version: 0.8.92
 
 ;; Copyright (C) 2003-2010, 2013 - Magnus Henoch - mange@freemail.hu
@@ -2455,7 +2455,7 @@ With double prefix argument, specify more connection details."
 	  jabber-connections)))
 ;; jabber-connect:1 ends here
 
-;; [[file:jabber.org::#connection][jabber-connection:1]]
+;; [[file:jabber.org::#fsm-connection][jabber-connection:1]]
 (define-state-machine jabber-connection
   :start ((username server resource registerp password network-server port connection-type)
 	  "Start a Jabber connection."
@@ -2479,7 +2479,7 @@ With double prefix argument, specify more connection details."
 			:port port)))))
 ;; jabber-connection:1 ends here
 
-;; [[file:jabber.org::#connection][jabber-connection:2]]
+;; [[file:jabber.org::#fsm-state-nil][nil:1]]
 (define-enter-state jabber-connection nil
   (fsm state-data)
   ;; `nil' is the error state.
@@ -2522,9 +2522,9 @@ With double prefix argument, specify more connection details."
       (jabber-display-roster)
       ;; And let the FSM sleep...
       (list state-data nil))))
-;; jabber-connection:2 ends here
+;; nil:1 ends here
 
-;; [[file:jabber.org::#connection][jabber-connection:3]]
+;; [[file:jabber.org::#fsm-state-nil][nil:2]]
 (define-state jabber-connection nil
   (fsm state-data event callback)
   ;; In the `nil' state, the connection is dead.  We wait for a
@@ -2537,9 +2537,9 @@ With double prefix argument, specify more connection details."
      (setq jabber-connections
 	    (delq fsm jabber-connections))
      (list nil state-data nil))))
-;; jabber-connection:3 ends here
+;; nil:2 ends here
 
-;; [[file:jabber.org::#connection][jabber-connection:4]]
+;; [[file:jabber.org::#fsm-state-connecting][connecting:1]]
 (define-enter-state jabber-connection :connecting
   (fsm state-data)
   (let* ((connection-type (plist-get state-data :connection-type))
@@ -2549,9 +2549,9 @@ With double prefix argument, specify more connection details."
 	 (port (plist-get state-data :port)))
     (funcall connect-function fsm server network-server port))
   (list state-data nil))
-;; jabber-connection:4 ends here
+;; connecting:1 ends here
 
-;; [[file:jabber.org::#connection][jabber-connection:5]]
+;; [[file:jabber.org::#fsm-state-connecting][connecting:2]]
 (define-state jabber-connection :connecting
   (fsm state-data event callback)
   (cl-case (or (car-safe event) event)
@@ -2581,7 +2581,7 @@ With double prefix argument, specify more connection details."
     (:do-disconnect
      ;; We don't have the connection object, so defer the disconnection.
      :defer)))
-;; jabber-connection:5 ends here
+;; connecting:2 ends here
 
 ;; [[file:jabber.org::#fsm-handle-sentinel][jabber-fsm-handle-sentinel:1]]
 (defsubst jabber-fsm-handle-sentinel (state-data event)
@@ -2603,7 +2603,7 @@ With double prefix argument, specify more connection details."
     (list nil new-state-data)))
 ;; jabber-fsm-handle-sentinel:1 ends here
 
-;; [[file:jabber.org::#fsm-handle-sentinel][jabber-fsm-handle-sentinel:2]]
+;; [[file:jabber.org::#fsm-state-connected][connected:1]]
 (define-enter-state jabber-connection :connected
   (fsm state-data)
 
@@ -2612,9 +2612,9 @@ With double prefix argument, specify more connection details."
   ;; Next thing happening is the server sending its own <stream:stream> start tag.
 
   (list state-data nil))
-;; jabber-fsm-handle-sentinel:2 ends here
+;; connected:1 ends here
 
-;; [[file:jabber.org::#fsm-handle-sentinel][jabber-fsm-handle-sentinel:3]]
+;; [[file:jabber.org::#fsm-state-connected][connected:2]]
 (define-state jabber-connection :connected
   (fsm state-data event callback)
   (cl-case (or (car-safe event) event)
@@ -2676,16 +2676,16 @@ With double prefix argument, specify more connection details."
      (jabber-send-string fsm "</stream:stream>")
      (list nil (plist-put state-data
 			  :disconnection-expected t)))))
-;; jabber-fsm-handle-sentinel:3 ends here
+;; connected:2 ends here
 
-;; [[file:jabber.org::#fsm-handle-sentinel][jabber-fsm-handle-sentinel:4]]
+;; [[file:jabber.org::#fsm-state-starttls][starttls:1]]
 (define-enter-state jabber-connection :starttls
   (fsm state-data)
   (jabber-starttls-initiate fsm)
   (list state-data nil))
-;; jabber-fsm-handle-sentinel:4 ends here
+;; starttls:1 ends here
 
-;; [[file:jabber.org::#fsm-handle-sentinel][jabber-fsm-handle-sentinel:5]]
+;; [[file:jabber.org::#fsm-state-starttls][starttls:2]]
 (define-state jabber-connection :starttls
   (fsm state-data event callback)
   (cl-case (or (car-safe event) event)
@@ -2714,16 +2714,16 @@ With double prefix argument, specify more connection details."
      (jabber-send-string fsm "</stream:stream>")
      (list nil (plist-put state-data
 			  :disconnection-expected t)))))
-;; jabber-fsm-handle-sentinel:5 ends here
+;; starttls:2 ends here
 
-;; [[file:jabber.org::#fsm-handle-sentinel][jabber-fsm-handle-sentinel:6]]
+;; [[file:jabber.org::#fsm-state-register-account][register-account:1]]
 (define-enter-state jabber-connection :register-account
   (fsm state-data)
   (jabber-get-register fsm nil)
   (list state-data nil))
-;; jabber-fsm-handle-sentinel:6 ends here
+;; register-account:1 ends here
 
-;; [[file:jabber.org::#fsm-handle-sentinel][jabber-fsm-handle-sentinel:7]]
+;; [[file:jabber.org::#fsm-state-register-account][register-account:2]]
 (define-state jabber-connection :register-account
   (fsm state-data event callback)
   ;; The connection will be closed in jabber-register
@@ -2748,17 +2748,17 @@ With double prefix argument, specify more connection details."
      (jabber-send-string fsm "</stream:stream>")
      (list nil (plist-put state-data
 			  :disconnection-expected t)))))
-;; jabber-fsm-handle-sentinel:7 ends here
+;; register-account:2 ends here
 
-;; [[file:jabber.org::#fsm-handle-sentinel][jabber-fsm-handle-sentinel:8]]
+;; [[file:jabber.org::#fsm-state-legacy-auth][legacy-auth:1]]
 (define-enter-state jabber-connection :legacy-auth
   (fsm state-data)
   (jabber-get-auth fsm (plist-get state-data :server)
 		   (plist-get state-data :session-id))
   (list state-data nil))
-;; jabber-fsm-handle-sentinel:8 ends here
+;; legacy-auth:1 ends here
 
-;; [[file:jabber.org::#fsm-handle-sentinel][jabber-fsm-handle-sentinel:9]]
+;; [[file:jabber.org::#fsm-state-legacy-auth][legacy-auth:2]]
 (define-state jabber-connection :legacy-auth
   (fsm state-data event callback)
   (cl-case (or (car-safe event) event)
@@ -2792,9 +2792,9 @@ With double prefix argument, specify more connection details."
      (jabber-send-string fsm "</stream:stream>")
      (list nil (plist-put state-data
 			  :disconnection-expected t)))))
-;; jabber-fsm-handle-sentinel:9 ends here
+;; legacy-auth:2 ends here
 
-;; [[file:jabber.org::#fsm-handle-sentinel][jabber-fsm-handle-sentinel:10]]
+;; [[file:jabber.org::#fsm-state-sasl-auth][sasl-auth:1]]
 (define-enter-state jabber-connection :sasl-auth
   (fsm state-data)
   (let ((new-state-data
@@ -2805,9 +2805,9 @@ With double prefix argument, specify more connection details."
 		     (plist-get state-data
 				:stream-features)))))
     (list new-state-data nil)))
-;; jabber-fsm-handle-sentinel:10 ends here
+;; sasl-auth:1 ends here
 
-;; [[file:jabber.org::#fsm-handle-sentinel][jabber-fsm-handle-sentinel:11]]
+;; [[file:jabber.org::#fsm-state-sasl-auth][sasl-auth:2]]
 (define-state jabber-connection :sasl-auth
   (fsm state-data event callback)
   (cl-case (or (car-safe event) event)
@@ -2844,16 +2844,16 @@ With double prefix argument, specify more connection details."
      (jabber-send-string fsm "</stream:stream>")
      (list nil (plist-put state-data
 			  :disconnection-expected t)))))
-;; jabber-fsm-handle-sentinel:11 ends here
+;; sasl-auth:2 ends here
 
-;; [[file:jabber.org::#fsm-handle-sentinel][jabber-fsm-handle-sentinel:12]]
+;; [[file:jabber.org::#fsm-state-bind][bind:1]]
 (define-enter-state jabber-connection :bind
   (fsm state-data)
   (jabber-send-stream-header fsm)
   (list state-data nil))
-;; jabber-fsm-handle-sentinel:12 ends here
+;; bind:1 ends here
 
-;; [[file:jabber.org::#fsm-handle-sentinel][jabber-fsm-handle-sentinel:13]]
+;; [[file:jabber.org::#fsm-state-bind][bind:2]]
 (define-state jabber-connection :bind
   (fsm state-data event callback)
   (cl-case (or (car-safe event) event)
@@ -2945,9 +2945,14 @@ With double prefix argument, specify more connection details."
      (jabber-send-string fsm "</stream:stream>")
      (list nil (plist-put state-data
 			  :disconnection-expected t)))))
-;; jabber-fsm-handle-sentinel:13 ends here
+;; bind:2 ends here
 
-;; [[file:jabber.org::#fsm-handle-sentinel][jabber-fsm-handle-sentinel:14]]
+;; [[file:jabber.org::#pending-presence-timeout][jabber-pending-presence-timeout:1]]
+(defvar jabber-pending-presence-timeout 0.5
+  "Wait this long before doing presence packet batch processing.")
+;; jabber-pending-presence-timeout:1 ends here
+
+;; [[file:jabber.org::#fsm-state-session-established][session-established:1]]
 (define-enter-state jabber-connection :session-established
   (fsm state-data)
   (jabber-send-iq fsm nil
@@ -2956,14 +2961,9 @@ With double prefix argument, specify more connection details."
 		  #'jabber-process-roster 'initial
 		  #'jabber-initial-roster-failure nil)
   (list (plist-put state-data :ever-session-established t) nil))
-;; jabber-fsm-handle-sentinel:14 ends here
+;; session-established:1 ends here
 
-;; [[file:jabber.org::#pending-presence-timeout][jabber-pending-presence-timeout:1]]
-(defvar jabber-pending-presence-timeout 0.5
-  "Wait this long before doing presence packet batch processing.")
-;; jabber-pending-presence-timeout:1 ends here
-
-;; [[file:jabber.org::#pending-presence-timeout][jabber-pending-presence-timeout:2]]
+;; [[file:jabber.org::#fsm-state-session-established][session-established:2]]
 (define-state jabber-connection :session-established
   (fsm state-data event callback)
   (cl-case (or (car-safe event) event)
@@ -3019,7 +3019,7 @@ With double prefix argument, specify more connection details."
      (jabber-send-string fsm "</stream:stream>")
      (list nil (plist-put state-data
 			  :disconnection-expected t)))))
-;; jabber-pending-presence-timeout:2 ends here
+;; session-established:2 ends here
 
 ;; [[file:jabber.org::#disconnect][jabber-disconnect:1]]
 (defun jabber-disconnect (&optional arg)
