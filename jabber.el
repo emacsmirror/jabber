@@ -2246,7 +2246,7 @@ what kind of chat buffer is being created.")
 ;; jabber-mode-line-presence-update:1 ends here
 
 ;; [[file:jabber.org::#mode-line-count-contacts][jabber-mode-line-count-contacts:1]]
-(defun jabber-mode-line-count-contacts (&rest ignore)
+(defun jabber-mode-line-count-contacts (&rest _ignore)
   (let ((count (list (cons "chat" 0)
 		     (cons "" 0)
 		     (cons "away" 0)
@@ -4029,7 +4029,9 @@ To change this permanently, customize the `jabber-show-offline-contacts'."
 
 ;; [[file:jabber.org::#display-roster][jabber-display-roster:1]]
 (defun jabber-display-roster ()
-  "Switch to the main jabber buffer and refresh the roster display to reflect the current information."
+  "Switch to the main jabber buffer and refresh it.
+Switch to the roster display and refresh it to reflect the current
+information."
   (interactive)
   (with-current-buffer (get-buffer-create jabber-roster-buffer)
     (if (not (eq major-mode 'jabber-roster-mode))
@@ -4513,7 +4515,7 @@ not affect your actual roster.
 ;; jabber-import-roster:1 ends here
 
 ;; [[file:jabber.org::#export-remove-regexp][jabber-export-remove-regexp:1]]
-(defun jabber-export-remove-regexp (&rest ignore)
+(defun jabber-export-remove-regexp (&rest _ignore)
   (let* ((value (widget-value jabber-export-roster-widget))
 	 (length-before (length value))
 	 (regexp (read-string "Remove JIDs matching regexp: ")))
@@ -4527,7 +4529,7 @@ not affect your actual roster.
 ;; jabber-export-remove-regexp:1 ends here
 
 ;; [[file:jabber.org::#export-save][jabber-export-save:1]]
-(defun jabber-export-save (&rest ignore)
+(defun jabber-export-save (&rest _ignore)
   "Export roster to file."
   (let ((items (mapcar #'jabber-roster-sexp-to-xml (widget-value jabber-export-roster-widget)))
 	(coding-system-for-write 'utf-8))
@@ -4540,7 +4542,7 @@ not affect your actual roster.
 ;; jabber-export-save:1 ends here
 
 ;; [[file:jabber.org::#import-doit][jabber-import-doit:1]]
-(defun jabber-import-doit (&rest ignore)
+(defun jabber-import-doit (&rest _ignore)
   "Import roster being edited in widget."
   (let* ((state-data (fsm-get-state-data jabber-buffer-connection))
 	 (jabber-roster (plist-get state-data :roster))
@@ -5196,7 +5198,7 @@ Examples:
 (define-jabber-alert echo "Show a message in the echo area"
   (lambda (text &optional title) (message "%s" (or title text))))
 (define-jabber-alert beep "Beep on event"
-  (lambda (&rest ignore) (beep)))
+  (lambda (&rest _ignore) (beep)))
 ;; define-jabber-alert:2 ends here
 
 ;; [[file:jabber.org::#message-default-message][jabber-message-default-message:1]]
@@ -6024,7 +6026,7 @@ JC is the Jabber connection."
 ;; jabber-compose:1 ends here
 
 ;; [[file:jabber.org::#compose-send][jabber-compose-send:1]]
-(defun jabber-compose-send (&rest ignore)
+(defun jabber-compose-send (&rest _ignore)
   (let ((recipients (widget-value (cdr (assq :recipients jabber-widget-alist))))
 	(subject (widget-value (cdr (assq :subject jabber-widget-alist))))
 	(text (widget-value (cdr (assq :text jabber-widget-alist)))))
@@ -6175,7 +6177,9 @@ These fields are available:
 
 ;; [[file:jabber.org::#chat-system-prompt-format][jabber-chat-system-prompt-format:1]]
 (defcustom jabber-chat-system-prompt-format "[%t] *** "
-  "The format specification for lines from the system or that are special in the chat buffer."
+  "The format specification for lines from the system or special chat.
+The format specification for lines from the system or that are special in the
+chat buffer."
   :type 'string
   :group 'jabber-chat)
 ;; jabber-chat-system-prompt-format:1 ends here
@@ -6351,7 +6355,9 @@ JC is the Jabber connection."
 
 ;; [[file:jabber.org::#chat-display-more-backlog][jabber-chat-display-more-backlog:1]]
 (defun jabber-chat-display-more-backlog (how-many)
-  "Display more context.  HOW-MANY is number of messages.  Specify 0 to display all messages."
+  "Display more context.
+The HOW-MANY argument is number of messages.
+Specify 0 to display all messages."
   (interactive "nHow many more messages (Specify 0 to display all)? ")
   (let* ((inhibit-read-only t)
 	 (jabber-backlog-days nil)
@@ -7278,7 +7284,7 @@ With prefix argument, ask for status message."
 
 ;; [[file:jabber.org::#send-default-presence][jabber-send-default-presence:1]]
 ;;;###autoload
-(defun jabber-send-default-presence (&optional ignore)
+(defun jabber-send-default-presence (&optional _ignore)
   "Send default presence.
 Default presence is specified by `jabber-default-show',
 `jabber-default-status', and `jabber-default-priority'."
@@ -7288,7 +7294,7 @@ Default presence is specified by `jabber-default-show',
 ;; jabber-send-default-presence:1 ends here
 
 ;; [[file:jabber.org::#send-current-presence][jabber-send-current-presence:1]]
-(defun jabber-send-current-presence (&optional ignore)
+(defun jabber-send-current-presence (&optional _ignore)
   "(Re-)send current presence.
 That is, if presence has already been sent, use current settings,
 otherwise send defaults (see `jabber-send-default-presence')."
@@ -8615,7 +8621,9 @@ DEFAULT-USERNAME is the default value for the username field."
 
 ;; [[file:jabber.org::#parse-register-form][jabber-parse-register-form:1]]
 (defun jabber-parse-register-form ()
-  "Return children of a <query/> tag containing information entered in the widgets of the current buffer."
+  "Return children of a <query/> tag containing information entered.
+Return children of a <query/> tag containing information entered in the
+widgets of the current buffer."
   (mapcar
    (lambda (widget-cons)
      (list (car widget-cons)
@@ -8712,7 +8720,9 @@ DEFAULTS takes precedence over values specified in the form."
 
 ;; [[file:jabber.org::#parse-xdata-form][jabber-parse-xdata-form:1]]
 (defun jabber-parse-xdata-form ()
-  "Return an <x/> tag containing information entered in the widgets of the current buffer."
+  "Return an <x/> tag containing information entered in the widgets.
+Return an <x/> tag containing information entered in the widgets of the current
+buffer."
   `(x ((xmlns . "jabber:x:data")
        (type . "submit"))
       ,@(mapcar
@@ -8731,7 +8741,8 @@ DEFAULTS takes precedence over values specified in the form."
 ;; [[file:jabber.org::#xdata-value-convert][jabber-xdata-value-convert:1]]
 (defun jabber-xdata-value-convert (value type)
   "Convert VALUE from form used by widget library to form required by XEP-0004.
-Return a list of strings, each of which to be included as cdata in a <value/> tag."
+Return a list of strings, each of which to be included as cdata in a
+<value/> tag."
   (cond
    ((string= type "boolean")
     (if value (list "1") (list "0")))
@@ -9033,7 +9044,7 @@ JC is the Jabber connection."
 ;; jabber-edit-bookmarks-1:1 ends here
 
 ;; [[file:jabber.org::#bookmarks-submit][jabber-bookmarks-submit:1]]
-(defun jabber-bookmarks-submit (&rest ignore)
+(defun jabber-bookmarks-submit (&rest _ignore)
   (let ((bookmarks (widget-value (cdr (assq 'bookmarks jabber-widget-alist)))))
     (setq bookmarks
 	  (mapcar
@@ -9066,7 +9077,7 @@ JC is the Jabber connection."
 ;; jabber-bookmarks-submit:1 ends here
 
 ;; [[file:jabber.org::#bookmarks-import][jabber-bookmarks-import:1]]
-(defun jabber-bookmarks-import (&rest ignore)
+(defun jabber-bookmarks-import (&rest _ignore)
   (let* ((value (widget-value (cdr (assq 'bookmarks jabber-widget-alist))))
 	 (conferences (mapcar
 		       'cdr
