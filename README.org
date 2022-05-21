@@ -156,7 +156,7 @@ To install the Info documentation, copy =jabber.info= to =/usr/local/info= and r
 :END:
 ** How to contribute to the project
 :PROPERTIES:
-:CUSTOM_ID: making-your-first-pull-request
+:CUSTOM_ID: how-to-contribute
 :END:
 1. Fork and clone the repository.
    #+BEGIN_SRC shell :tangle no
