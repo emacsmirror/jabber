@@ -96,6 +96,14 @@ Contents of process buffers might be useful for debugging."
 (require 'xml)
 ;; XML functions:1 ends here
 
+;; [[file:jabber.org::#replace-string][jabber-replace-in-string:1]]
+(defsubst jabber-replace-in-string (string regexp newtext)
+  "Return STRING with all matches for REGEXP replaced with NEWTEXT.
+NEWTEXT is inserted literally, without changing its case or treating \"\\\"
+specially."
+  (replace-regexp-in-string regexp newtext string t t))
+;; jabber-replace-in-string:1 ends here
+
 ;; [[file:jabber.org::#escape-xml][jabber-escape-xml:1]]
 (defun jabber-escape-xml (string)
   "Escape STRING for XML."
@@ -389,14 +397,6 @@ ATTRIBUTES must be a list of symbols, as present in XML-DATA."
 (defvar jabber-jid-history nil
   "History of entered JIDs.")
 ;; jabber-jid-history:1 ends here
-
-;; [[file:jabber.org::#replace-string][jabber-replace-in-string:1]]
-(defsubst jabber-replace-in-string (string regexp newtext)
-  "Return STRING with all matches for REGEXP replaced with NEWTEXT.
-NEWTEXT is inserted literally, without changing its case or treating \"\\\"
-specially."
-  (replace-regexp-in-string regexp newtext string t t))
-;; jabber-replace-in-string:1 ends here
 
 ;; [[file:jabber.org::#propertize][jabber-propertize:1]]
 (defalias 'jabber-propertize 'propertize)

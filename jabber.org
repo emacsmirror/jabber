@@ -163,6 +163,20 @@ Contents of process buffers might be useful for debugging."
 #+BEGIN_SRC emacs-lisp
     (require 'xml)
 #+END_SRC
+*** jabber-replace-in-string               :inline:function:
+:PROPERTIES:
+:CUSTOM_ID: replace-string
+:END:
+This inline function were originally placed at Section [[#various-utility-functions][Various utility functions]]. Placing it here fixes several "attempt to inline ‘jabber-replace-in-string’ before it was defined" warnings.
+
+#+BEGIN_SRC emacs-lisp
+(defsubst jabber-replace-in-string (string regexp newtext)
+  "Return STRING with all matches for REGEXP replaced with NEWTEXT.
+NEWTEXT is inserted literally, without changing its case or treating \"\\\"
+specially."
+  (replace-regexp-in-string regexp newtext string t t))
+
+#+END_SRC
 *** jabber-escape-xml                             :function:
 :PROPERTIES:
 :CUSTOM_ID: escape-xml
@@ -526,19 +540,6 @@ ATTRIBUTES must be a list of symbols, as present in XML-DATA."
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-jid-history nil
   "History of entered JIDs.")
-#+END_SRC
-
-*** jabber-replace-in-string               :inline:function:
-:PROPERTIES:
-:CUSTOM_ID: replace-string
-:END:
-#+BEGIN_SRC emacs-lisp
-(defsubst jabber-replace-in-string (string regexp newtext)
-  "Return STRING with all matches for REGEXP replaced with NEWTEXT.
-NEWTEXT is inserted literally, without changing its case or treating \"\\\"
-specially."
-  (replace-regexp-in-string regexp newtext string t t))
-
 #+END_SRC
 
 *** jabber-propertize                             :function:
