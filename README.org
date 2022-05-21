@@ -239,13 +239,13 @@ Useful tips for debugging:
 :PROPERTIES:
 :CUSTOM_ID: jabber-connection-fsm
 :END:
-The jabber.el use a finite state machine (FSM) to track the current jabber connection step. It defines a FSM called ~jabber-connection~ (or ~jc~ when it is used as parameter in functions) and several states along with their sentinels. See [[file:jabber.org::#connection][Section jabber-connection at jabber.org]] where it is defined. The Org-mode tag ~:fsm:~ is used at jabber.org headlines to describe FSM definitions.
+jabber.el use a finite state machine (FSM) to track the current Jabber connection step. It defines a FSM called [[file:jabber.org::#fsm-connection][jabber-connection]] (or ~jc~ when it is used as parameter in functions) and several states along with their sentinels. The Org-mode tag ~:fsm:~ is used at jabber.org headlines to describe FSM definitions.
 
 *** States
 :PROPERTIES:
 :CUSTOM_ID: states
 :END:
-The following graph shows the states and their transition implemented in version [[https://tildegit.org/wgreenhouse/emacs-jabber/commit/dddcccb926f422b03d22a66b60db46f1266eb141][dddcccb926]] (20 march 2021). The nodes represents the states and the arc are events.
+The following graph shows the states and their transitions, as of version [[https://tildegit.org/wgreenhouse/emacs-jabber/commit/dddcccb926f422b03d22a66b60db46f1266eb141][dddcccb926]] (2021-03-20). The nodes represent the states and the arrows are events.
 
 All states have filter and sentinel events that do not change the FSM state. Also, they have a ~:do-disconnect~ event that change the FSM to the ~nil~ state except for the ~connecting~ state.
 
