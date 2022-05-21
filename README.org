@@ -374,6 +374,8 @@ The following is a brief summary about the stanza processing.
   - XML console mode
 + Michael Cardell Widerkrantz
   - tmux support
++ Case Duckworth (acdw)
+  - [[https://codeberg.org/emacs-jabber/emacs-jabber/pulls/2][PR #2]]
 
 ** Maintainers
 :PROPERTIES:
@@ -381,8 +383,9 @@ The following is a brief summary about the stanza processing.
 :END:
 + wgreenhouse
   - 2021 resurrection
++ cngimenez
+  - HTTP Upload support
+  - documentation for FSM and its use in this project
 + contrapunctus
   - literate Org migration
-  - Makefile
-+ tomasino on #team@irc.tilde.chat
-  - helping contrapunctus debug the Makefile
+  - Makefile (shoutout to tomasino of #team@irc.tilde.chat for the Makefile-debugging help)
