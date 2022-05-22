@@ -68,13 +68,41 @@ Consider adding the file-local variable prop-line to the tangled jabber.el file
 or try to byte-compile the code."))
 ;; lexical binding test:1 ends here
 
-;; [[file:jabber.org::#custom-variables][custom variables:1]]
+;; [[file:jabber.org::#custom-variables][jabber-enable-legacy-features-p:1]]
 (defvar jabber-enable-legacy-features-p nil)
-;; custom variables:1 ends here
+;; jabber-enable-legacy-features-p:1 ends here
+
+;; [[file:jabber.org::#process-buffer][jabber-process-buffer:1]]
+(defvar jabber-process-buffer " *-jabber-process-*"
+  "The name of the process buffer.")
+;; jabber-process-buffer:1 ends here
+
+;; [[file:jabber.org::#debug-keep-process-buffers][jabber-debug-keep-process-buffers:1]]
+(defcustom jabber-debug-keep-process-buffers nil
+  "If nil, kill process buffers when the process dies.
+Contents of process buffers might be useful for debugging."
+  :type 'boolean
+  :group 'jabber-debug)
+;; jabber-debug-keep-process-buffers:1 ends here
+
+;; [[file:jabber.org::#silent-mode][jabber-silent-mode:1]]
+(defcustom jabber-silent-mode nil
+  "If non-nil, do not ask for confirmation for some operations.  DANGEROUS!"
+  :type 'boolean
+  :group 'jabber)
+;; jabber-silent-mode:1 ends here
 
 ;; [[file:jabber.org::#xml-functions][XML functions:1]]
 (require 'xml)
 ;; XML functions:1 ends here
+
+;; [[file:jabber.org::#replace-string][jabber-replace-in-string:1]]
+(defsubst jabber-replace-in-string (string regexp newtext)
+  "Return STRING with all matches for REGEXP replaced with NEWTEXT.
+NEWTEXT is inserted literally, without changing its case or treating \"\\\"
+specially."
+  (replace-regexp-in-string regexp newtext string t t))
+;; jabber-replace-in-string:1 ends here
 
 ;; [[file:jabber.org::#escape-xml][jabber-escape-xml:1]]
 (defun jabber-escape-xml (string)
@@ -369,14 +397,6 @@ ATTRIBUTES must be a list of symbols, as present in XML-DATA."
 (defvar jabber-jid-history nil
   "History of entered JIDs.")
 ;; jabber-jid-history:1 ends here
-
-;; [[file:jabber.org::#replace-string][jabber-replace-in-string:1]]
-(defsubst jabber-replace-in-string (string regexp newtext)
-  "Return STRING with all matches for REGEXP replaced with NEWTEXT.
-NEWTEXT is inserted literally, without changing its case or treating \"\\\"
-specially."
-  (replace-regexp-in-string regexp newtext string t t))
-;; jabber-replace-in-string:1 ends here
 
 ;; [[file:jabber.org::#propertize][jabber-propertize:1]]
 (defalias 'jabber-propertize 'propertize)
@@ -1925,8 +1945,8 @@ Call REMEMBER with the password.  REMEMBER is expected to return it as well."
 		(bare-jid (jabber-connection-bare-jid jc))
 		(remember remember))
     (if password
-	(lambda (prompt) (funcall remember (copy-sequence password)))
-      (lambda (prompt) (funcall remember (jabber-read-password bare-jid))))))
+	(lambda (_prompt) (funcall remember (copy-sequence password)))
+      (lambda (_prompt) (funcall remember (jabber-read-password bare-jid))))))
 ;; jabber-sasl-read-passphrase-closure:1 ends here
 
 ;; [[file:jabber.org::#sasl-process-input][jabber-sasl-process-input:1]]
@@ -1987,7 +2007,7 @@ obtained from `xml-parse-region'."
 
 ;; [[file:jabber.org::#common-keymap-many-modes][common keymap for many modes:1]]
 ;; button.el was introduced in Emacs 22
-(condition-case e
+(condition-case _error-data
     (require 'button)
   (error nil))
 ;; common keymap for many modes:1 ends here
@@ -2034,6 +2054,16 @@ obtained from `xml-parse-region'."
 (require 'ewoc)
 (require 'sgml-mode) ;we base on this mode to hightlight XML
 ;; XML Console mode:1 ends here
+
+;; [[file:jabber.org::#debug-log-xml][jabber-debug-log-xml:1]]
+(defcustom jabber-debug-log-xml nil
+  "Set to non-nil to log all XML i/o in *-jabber-console-JID-* buffer.
+Set to string to also dump XML i/o in specified file."
+  :type '(choice (const :tag "Do not dump XML i/o" nil)
+                 (const :tag "Dump XML i/o in console" t)
+                 (string :tag "Dump XML i/o in console and this file"))
+  :group 'jabber-debug)
+;; jabber-debug-log-xml:1 ends here
 
 ;; [[file:jabber.org::#console-name-format][jabber-console-name-format:1]]
 (defcustom jabber-console-name-format "*-jabber-console-%s-*"
@@ -2173,9 +2203,100 @@ what kind of chat buffer is being created.")
       (progn
         (ewoc-enter-last jabber-console-ewoc (list direction (jabber-console-sanitize xml-data)))
 		(when (< 1  jabber-console-truncate-lines)
-		  (let ((jabber-log-lines-to-keep jabber-console-truncate-lines))
+		  (let ((_jabber-log-lines-to-keep jabber-console-truncate-lines))
 			(jabber-truncate-top buffer jabber-console-ewoc)))))))
 ;; jabber-process-console:1 ends here
+
+;; [[file:jabber.org::#mode-line][jabber-mode-line:1]]
+(defgroup jabber-mode-line nil
+  "Display Jabber status in mode line"
+  :group 'jabber)
+;; jabber-mode-line:1 ends here
+
+;; [[file:jabber.org::#mode-line-compact][jabber-mode-line-compact:1]]
+(defcustom jabber-mode-line-compact t
+  "Count contacts in fewer categories for compact view."
+  :group 'jabber-mode-line
+  :type 'boolean)
+;; jabber-mode-line-compact:1 ends here
+
+;; [[file:jabber.org::#mode-line-string][jabber-mode-line-string:1]]
+(defvar jabber-mode-line-string nil)
+;; jabber-mode-line-string:1 ends here
+
+;; [[file:jabber.org::#mode-line-presence][jabber-mode-line-presence:1]]
+(defvar jabber-mode-line-presence nil)
+;; jabber-mode-line-presence:1 ends here
+
+;; [[file:jabber.org::#mode-line-contacts][jabber-mode-line-contacts:1]]
+(defvar jabber-mode-line-contacts nil)
+;; jabber-mode-line-contacts:1 ends here
+
+;; [[file:jabber.org::#mode-line-contacts][jabber-mode-line-contacts:2]]
+(defadvice jabber-send-presence (after jsp-update-mode-line
+				       (show status priority))
+  (jabber-mode-line-presence-update))
+;; jabber-mode-line-contacts:2 ends here
+
+;; [[file:jabber.org::#mode-line-presence-update][jabber-mode-line-presence-update:1]]
+(defun jabber-mode-line-presence-update ()
+  (setq jabber-mode-line-presence (if (and jabber-connections (not *jabber-disconnecting*))
+				      (cdr (assoc *jabber-current-show* jabber-presence-strings))
+				    "Offline")))
+;; jabber-mode-line-presence-update:1 ends here
+
+;; [[file:jabber.org::#mode-line-count-contacts][jabber-mode-line-count-contacts:1]]
+(defun jabber-mode-line-count-contacts (&rest _ignore)
+  (let ((count (list (cons "chat" 0)
+		     (cons "" 0)
+		     (cons "away" 0)
+		     (cons "xa" 0)
+		     (cons "dnd" 0)
+		     (cons nil 0))))
+    (dolist (jc jabber-connections)
+      (dolist (buddy (plist-get (fsm-get-state-data jc) :roster))
+	(when (assoc (get buddy 'show) count)
+	  (cl-incf (cdr (assoc (get buddy 'show) count))))))
+    (setq jabber-mode-line-contacts
+	  (if jabber-mode-line-compact
+	      (format "(%d/%d/%d)"
+		      (+ (cdr (assoc "chat" count))
+			 (cdr (assoc "" count)))
+		      (+ (cdr (assoc "away" count))
+			 (cdr (assoc "xa" count))
+			 (cdr (assoc "dnd" count)))
+		      (cdr (assoc nil count)))
+	    (apply 'format "(%d/%d/%d/%d/%d/%d)"
+		   (mapcar 'cdr count))))))
+;; jabber-mode-line-count-contacts:1 ends here
+
+;; [[file:jabber.org::#mode-line-mode][jabber-mode-line-mode:1]]
+(define-minor-mode jabber-mode-line-mode
+  "Toggle display of Jabber status in mode lines.
+Display consists of your own status, and six numbers
+meaning the number of chatty, online, away, xa, dnd
+and offline contacts, respectively."
+  :global t :group 'jabber-mode-line
+  (setq jabber-mode-line-string "")
+  (or global-mode-string (setq global-mode-string '("")))
+  (if jabber-mode-line-mode
+      (progn
+	(add-to-list 'global-mode-string 'jabber-mode-line-string t)
+
+	(setq jabber-mode-line-string (list " "
+					    'jabber-mode-line-presence
+					    " "
+					    'jabber-mode-line-contacts))
+        (put 'jabber-mode-line-string 'risky-local-variable t)
+        (put 'jabber-mode-line-presence 'risky-local-variable t)
+	(jabber-mode-line-presence-update)
+	(jabber-mode-line-count-contacts)
+	(ad-activate 'jabber-send-presence)
+	(add-hook 'jabber-post-disconnect-hook
+		  'jabber-mode-line-presence-update)
+	(add-hook 'jabber-presence-hooks
+		  'jabber-mode-line-count-contacts))))
+;; jabber-mode-line-mode:1 ends here
 
 ;; [[file:jabber.org::#core][core:1]]
 (eval-and-compile
@@ -2299,11 +2420,6 @@ indefinitely.  See `password-cache' and `password-cache-expiry'."
   :type 'string
   :group 'jabber-core)
 ;; jabber-roster-buffer:1 ends here
-
-;; [[file:jabber.org::#process-buffer][jabber-process-buffer:1]]
-(defvar jabber-process-buffer " *-jabber-process-*"
-  "The name of the process buffer.")
-;; jabber-process-buffer:1 ends here
 
 ;; [[file:jabber.org::#use-sasl][jabber-use-sasl:1]]
 (defcustom jabber-use-sasl t
@@ -3913,7 +4029,9 @@ To change this permanently, customize the `jabber-show-offline-contacts'."
 
 ;; [[file:jabber.org::#display-roster][jabber-display-roster:1]]
 (defun jabber-display-roster ()
-  "Switch to the main jabber buffer and refresh the roster display to reflect the current information."
+  "Switch to the main jabber buffer and refresh it.
+Switch to the roster display and refresh it to reflect the current
+information."
   (interactive)
   (with-current-buffer (get-buffer-create jabber-roster-buffer)
     (if (not (eq major-mode 'jabber-roster-mode))
@@ -4397,7 +4515,7 @@ not affect your actual roster.
 ;; jabber-import-roster:1 ends here
 
 ;; [[file:jabber.org::#export-remove-regexp][jabber-export-remove-regexp:1]]
-(defun jabber-export-remove-regexp (&rest ignore)
+(defun jabber-export-remove-regexp (&rest _ignore)
   (let* ((value (widget-value jabber-export-roster-widget))
 	 (length-before (length value))
 	 (regexp (read-string "Remove JIDs matching regexp: ")))
@@ -4411,7 +4529,7 @@ not affect your actual roster.
 ;; jabber-export-remove-regexp:1 ends here
 
 ;; [[file:jabber.org::#export-save][jabber-export-save:1]]
-(defun jabber-export-save (&rest ignore)
+(defun jabber-export-save (&rest _ignore)
   "Export roster to file."
   (let ((items (mapcar #'jabber-roster-sexp-to-xml (widget-value jabber-export-roster-widget)))
 	(coding-system-for-write 'utf-8))
@@ -4424,7 +4542,7 @@ not affect your actual roster.
 ;; jabber-export-save:1 ends here
 
 ;; [[file:jabber.org::#import-doit][jabber-import-doit:1]]
-(defun jabber-import-doit (&rest ignore)
+(defun jabber-import-doit (&rest _ignore)
   "Import roster being edited in widget."
   (let* ((state-data (fsm-get-state-data jabber-buffer-connection))
 	 (jabber-roster (plist-get state-data :roster))
@@ -5080,7 +5198,7 @@ Examples:
 (define-jabber-alert echo "Show a message in the echo area"
   (lambda (text &optional title) (message "%s" (or title text))))
 (define-jabber-alert beep "Beep on event"
-  (lambda (&rest ignore) (beep)))
+  (lambda (&rest _ignore) (beep)))
 ;; define-jabber-alert:2 ends here
 
 ;; [[file:jabber.org::#message-default-message][jabber-message-default-message:1]]
@@ -5908,7 +6026,7 @@ JC is the Jabber connection."
 ;; jabber-compose:1 ends here
 
 ;; [[file:jabber.org::#compose-send][jabber-compose-send:1]]
-(defun jabber-compose-send (&rest ignore)
+(defun jabber-compose-send (&rest _ignore)
   (let ((recipients (widget-value (cdr (assq :recipients jabber-widget-alist))))
 	(subject (widget-value (cdr (assq :subject jabber-widget-alist))))
 	(text (widget-value (cdr (assq :text jabber-widget-alist)))))
@@ -6059,7 +6177,9 @@ These fields are available:
 
 ;; [[file:jabber.org::#chat-system-prompt-format][jabber-chat-system-prompt-format:1]]
 (defcustom jabber-chat-system-prompt-format "[%t] *** "
-  "The format specification for lines from the system or that are special in the chat buffer."
+  "The format specification for lines from the system or special chat.
+The format specification for lines from the system or that are special in the
+chat buffer."
   :type 'string
   :group 'jabber-chat)
 ;; jabber-chat-system-prompt-format:1 ends here
@@ -6235,7 +6355,9 @@ JC is the Jabber connection."
 
 ;; [[file:jabber.org::#chat-display-more-backlog][jabber-chat-display-more-backlog:1]]
 (defun jabber-chat-display-more-backlog (how-many)
-  "Display more context.  HOW-MANY is number of messages.  Specify 0 to display all messages."
+  "Display more context.
+The HOW-MANY argument is number of messages.
+Specify 0 to display all messages."
   (interactive "nHow many more messages (Specify 0 to display all)? ")
   (let* ((inhibit-read-only t)
 	 (jabber-backlog-days nil)
@@ -7162,7 +7284,7 @@ With prefix argument, ask for status message."
 
 ;; [[file:jabber.org::#send-default-presence][jabber-send-default-presence:1]]
 ;;;###autoload
-(defun jabber-send-default-presence (&optional ignore)
+(defun jabber-send-default-presence (&optional _ignore)
   "Send default presence.
 Default presence is specified by `jabber-default-show',
 `jabber-default-status', and `jabber-default-priority'."
@@ -7172,7 +7294,7 @@ Default presence is specified by `jabber-default-show',
 ;; jabber-send-default-presence:1 ends here
 
 ;; [[file:jabber.org::#send-current-presence][jabber-send-current-presence:1]]
-(defun jabber-send-current-presence (&optional ignore)
+(defun jabber-send-current-presence (&optional _ignore)
   "(Re-)send current presence.
 That is, if presence has already been sent, use current settings,
 otherwise send defaults (see `jabber-send-default-presence')."
@@ -8499,7 +8621,9 @@ DEFAULT-USERNAME is the default value for the username field."
 
 ;; [[file:jabber.org::#parse-register-form][jabber-parse-register-form:1]]
 (defun jabber-parse-register-form ()
-  "Return children of a <query/> tag containing information entered in the widgets of the current buffer."
+  "Return children of a <query/> tag containing information entered.
+Return children of a <query/> tag containing information entered in the
+widgets of the current buffer."
   (mapcar
    (lambda (widget-cons)
      (list (car widget-cons)
@@ -8596,7 +8720,9 @@ DEFAULTS takes precedence over values specified in the form."
 
 ;; [[file:jabber.org::#parse-xdata-form][jabber-parse-xdata-form:1]]
 (defun jabber-parse-xdata-form ()
-  "Return an <x/> tag containing information entered in the widgets of the current buffer."
+  "Return an <x/> tag containing information entered in the widgets.
+Return an <x/> tag containing information entered in the widgets of the current
+buffer."
   `(x ((xmlns . "jabber:x:data")
        (type . "submit"))
       ,@(mapcar
@@ -8615,7 +8741,8 @@ DEFAULTS takes precedence over values specified in the form."
 ;; [[file:jabber.org::#xdata-value-convert][jabber-xdata-value-convert:1]]
 (defun jabber-xdata-value-convert (value type)
   "Convert VALUE from form used by widget library to form required by XEP-0004.
-Return a list of strings, each of which to be included as cdata in a <value/> tag."
+Return a list of strings, each of which to be included as cdata in a
+<value/> tag."
   (cond
    ((string= type "boolean")
     (if value (list "1") (list "0")))
@@ -8917,7 +9044,7 @@ JC is the Jabber connection."
 ;; jabber-edit-bookmarks-1:1 ends here
 
 ;; [[file:jabber.org::#bookmarks-submit][jabber-bookmarks-submit:1]]
-(defun jabber-bookmarks-submit (&rest ignore)
+(defun jabber-bookmarks-submit (&rest _ignore)
   (let ((bookmarks (widget-value (cdr (assq 'bookmarks jabber-widget-alist)))))
     (setq bookmarks
 	  (mapcar
@@ -8950,7 +9077,7 @@ JC is the Jabber connection."
 ;; jabber-bookmarks-submit:1 ends here
 
 ;; [[file:jabber.org::#bookmarks-import][jabber-bookmarks-import:1]]
-(defun jabber-bookmarks-import (&rest ignore)
+(defun jabber-bookmarks-import (&rest _ignore)
   (let* ((value (widget-value (cdr (assq 'bookmarks jabber-widget-alist))))
 	 (conferences (mapcar
 		       'cdr
@@ -11355,97 +11482,6 @@ obtained from `xml-parse-region'."
 		 (status . "completed"))
 		(note ((type . "info")) "Presence has been changed."))))))
 ;; jabber-ahc-presence:1 ends here
-
-;; [[file:jabber.org::#mode-line][jabber-mode-line:1]]
-(defgroup jabber-mode-line nil
-  "Display Jabber status in mode line"
-  :group 'jabber)
-;; jabber-mode-line:1 ends here
-
-;; [[file:jabber.org::#mode-line-compact][jabber-mode-line-compact:1]]
-(defcustom jabber-mode-line-compact t
-  "Count contacts in fewer categories for compact view."
-  :group 'jabber-mode-line
-  :type 'boolean)
-;; jabber-mode-line-compact:1 ends here
-
-;; [[file:jabber.org::#mode-line-string][jabber-mode-line-string:1]]
-(defvar jabber-mode-line-string nil)
-;; jabber-mode-line-string:1 ends here
-
-;; [[file:jabber.org::#mode-line-presence][jabber-mode-line-presence:1]]
-(defvar jabber-mode-line-presence nil)
-;; jabber-mode-line-presence:1 ends here
-
-;; [[file:jabber.org::#mode-line-contacts][jabber-mode-line-contacts:1]]
-(defvar jabber-mode-line-contacts nil)
-;; jabber-mode-line-contacts:1 ends here
-
-;; [[file:jabber.org::#mode-line-contacts][jabber-mode-line-contacts:2]]
-(defadvice jabber-send-presence (after jsp-update-mode-line
-				       (show status priority))
-  (jabber-mode-line-presence-update))
-;; jabber-mode-line-contacts:2 ends here
-
-;; [[file:jabber.org::#mode-line-presence-update][jabber-mode-line-presence-update:1]]
-(defun jabber-mode-line-presence-update ()
-  (setq jabber-mode-line-presence (if (and jabber-connections (not *jabber-disconnecting*))
-				      (cdr (assoc *jabber-current-show* jabber-presence-strings))
-				    "Offline")))
-;; jabber-mode-line-presence-update:1 ends here
-
-;; [[file:jabber.org::#mode-line-count-contacts][jabber-mode-line-count-contacts:1]]
-(defun jabber-mode-line-count-contacts (&rest ignore)
-  (let ((count (list (cons "chat" 0)
-		     (cons "" 0)
-		     (cons "away" 0)
-		     (cons "xa" 0)
-		     (cons "dnd" 0)
-		     (cons nil 0))))
-    (dolist (jc jabber-connections)
-      (dolist (buddy (plist-get (fsm-get-state-data jc) :roster))
-	(when (assoc (get buddy 'show) count)
-	  (cl-incf (cdr (assoc (get buddy 'show) count))))))
-    (setq jabber-mode-line-contacts
-	  (if jabber-mode-line-compact
-	      (format "(%d/%d/%d)"
-		      (+ (cdr (assoc "chat" count))
-			 (cdr (assoc "" count)))
-		      (+ (cdr (assoc "away" count))
-			 (cdr (assoc "xa" count))
-			 (cdr (assoc "dnd" count)))
-		      (cdr (assoc nil count)))
-	    (apply 'format "(%d/%d/%d/%d/%d/%d)"
-		   (mapcar 'cdr count))))))
-;; jabber-mode-line-count-contacts:1 ends here
-
-;; [[file:jabber.org::#mode-line-mode][jabber-mode-line-mode:1]]
-(define-minor-mode jabber-mode-line-mode
-  "Toggle display of Jabber status in mode lines.
-Display consists of your own status, and six numbers
-meaning the number of chatty, online, away, xa, dnd
-and offline contacts, respectively."
-  :global t :group 'jabber-mode-line
-  (setq jabber-mode-line-string "")
-  (or global-mode-string (setq global-mode-string '("")))
-  (if jabber-mode-line-mode
-      (progn
-	(add-to-list 'global-mode-string 'jabber-mode-line-string t)
-
-	(setq jabber-mode-line-string (list " "
-					    'jabber-mode-line-presence
-					    " "
-					    'jabber-mode-line-contacts))
-        (put 'jabber-mode-line-string 'risky-local-variable t)
-        (put 'jabber-mode-line-presence 'risky-local-variable t)
-	(jabber-mode-line-presence-update)
-	(jabber-mode-line-count-contacts)
-	(ad-activate 'jabber-send-presence)
-	(add-hook 'jabber-post-disconnect-hook
-		  'jabber-mode-line-presence-update)
-	(add-hook 'jabber-presence-hooks
-		  'jabber-mode-line-count-contacts))))
-;; jabber-mode-line-mode:1 ends here
 
 ;; [[file:jabber.org::#watch-alist][jabber-watch-alist:1]]
 (defcustom jabber-watch-alist nil
@@ -14287,31 +14323,6 @@ configure a Google Talk account like this:
 (defgroup jabber-debug nil "debugging options"
   :group 'jabber)
 ;; jabber-debug:1 ends here
-
-;; [[file:jabber.org::#debug-log-xml][jabber-debug-log-xml:1]]
-(defcustom jabber-debug-log-xml nil
-  "Set to non-nil to log all XML i/o in *-jabber-console-JID-* buffer.
-Set to string to also dump XML i/o in specified file."
-  :type '(choice (const :tag "Do not dump XML i/o" nil)
-                 (const :tag "Dump XML i/o in console" t)
-                 (string :tag "Dump XML i/o in console and this file"))
-  :group 'jabber-debug)
-;; jabber-debug-log-xml:1 ends here
-
-;; [[file:jabber.org::#debug-keep-process-buffers][jabber-debug-keep-process-buffers:1]]
-(defcustom jabber-debug-keep-process-buffers nil
-  "If nil, kill process buffers when the process dies.
-Contents of process buffers might be useful for debugging."
-  :type 'boolean
-  :group 'jabber-debug)
-;; jabber-debug-keep-process-buffers:1 ends here
-
-;; [[file:jabber.org::#silent-mode][jabber-silent-mode:1]]
-(defcustom jabber-silent-mode nil
-  "If non-nil, do not ask for confirmation for some operations.  DANGEROUS!"
-  :type 'boolean
-  :group 'jabber)
-;; jabber-silent-mode:1 ends here
 
 ;; [[file:jabber.org::#presence-faces][jabber-presence-faces:1]]
 ;;;###autoload

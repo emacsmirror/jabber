@@ -102,13 +102,57 @@ Consider adding the file-local variable prop-line to the tangled jabber.el file
 or try to byte-compile the code."))
 #+END_SRC
 
-** custom variables
+** Shared variables
+These are variables shared with more than one section. For instance, =jabber-process-buffer= is used at the Section [[#core][core]] but also at Section [[#network-transport-functions][Network transport functions]].
+
+Placing these variables definitions before using them avoid byte-compile warnings. Moreover, it is common practice to define variables before its usage.
+
+*** Custom variables
+**** jabber-enable-legacy-features-p              :variable:
 :PROPERTIES:
 :CUSTOM_ID: custom-variables
 :END:
 #+BEGIN_SRC emacs-lisp
   (defvar jabber-enable-legacy-features-p nil)
 #+END_SRC
+
+*** Core
+These variables were originally defined at Section [[#core][core]].
+
+**** jabber-process-buffer                        :variable:
+:PROPERTIES:
+:CUSTOM_ID: process-buffer
+:END:
+#+BEGIN_SRC emacs-lisp
+(defvar jabber-process-buffer " *-jabber-process-*"
+  "The name of the process buffer.")
+#+END_SRC
+
+*** Jabber
+These variables were originally defined at Section [[#jabber][Jabber]].
+**** jabber-debug-keep-process-buffers     :custom:variable:
+:PROPERTIES:
+:CUSTOM_ID: debug-keep-process-buffers
+:END:
+#+BEGIN_SRC emacs-lisp
+(defcustom jabber-debug-keep-process-buffers nil
+  "If nil, kill process buffers when the process dies.
+Contents of process buffers might be useful for debugging."
+  :type 'boolean
+  :group 'jabber-debug)
+#+END_SRC
+
+**** jabber-silent-mode                    :custom:variable:
+:PROPERTIES:
+:CUSTOM_ID: silent-mode
+:END:
+#+BEGIN_SRC emacs-lisp
+(defcustom jabber-silent-mode nil
+  "If non-nil, do not ask for confirmation for some operations.  DANGEROUS!"
+  :type 'boolean
+  :group 'jabber)
+#+END_SRC
+
 
 ** XML functions
 :PROPERTIES:
@@ -118,6 +162,20 @@ or try to byte-compile the code."))
 
 #+BEGIN_SRC emacs-lisp
     (require 'xml)
+#+END_SRC
+*** jabber-replace-in-string               :inline:function:
+:PROPERTIES:
+:CUSTOM_ID: replace-string
+:END:
+This inline function were originally placed at Section [[#various-utility-functions][Various utility functions]]. Placing it here fixes several "attempt to inline ‘jabber-replace-in-string’ before it was defined" warnings.
+
+#+BEGIN_SRC emacs-lisp
+(defsubst jabber-replace-in-string (string regexp newtext)
+  "Return STRING with all matches for REGEXP replaced with NEWTEXT.
+NEWTEXT is inserted literally, without changing its case or treating \"\\\"
+specially."
+  (replace-regexp-in-string regexp newtext string t t))
+
 #+END_SRC
 *** jabber-escape-xml                             :function:
 :PROPERTIES:
@@ -484,19 +542,6 @@ ATTRIBUTES must be a list of symbols, as present in XML-DATA."
   "History of entered JIDs.")
 #+END_SRC
 
-*** jabber-replace-in-string               :inline:function:
-:PROPERTIES:
-:CUSTOM_ID: replace-string
-:END:
-#+BEGIN_SRC emacs-lisp
-(defsubst jabber-replace-in-string (string regexp newtext)
-  "Return STRING with all matches for REGEXP replaced with NEWTEXT.
-NEWTEXT is inserted literally, without changing its case or treating \"\\\"
-specially."
-  (replace-regexp-in-string regexp newtext string t t))
-
-#+END_SRC
-
 *** jabber-propertize                             :function:
 :PROPERTIES:
 :CUSTOM_ID: propertize
@@ -505,7 +550,7 @@ specially."
 (defalias 'jabber-propertize 'propertize)
 #+END_SRC
 
-*** bound-and-true-p                               :macro:
+*** bound-and-true-p                                 :macro:
 :PROPERTIES:
 :CUSTOM_ID: bound-true-p
 :END:
@@ -2440,9 +2485,12 @@ Call REMEMBER with the password.  REMEMBER is expected to return it as well."
 		(bare-jid (jabber-connection-bare-jid jc))
 		(remember remember))
     (if password
-	(lambda (prompt) (funcall remember (copy-sequence password)))
-      (lambda (prompt) (funcall remember (jabber-read-password bare-jid))))))
+	(lambda (_prompt) (funcall remember (copy-sequence password)))
+      (lambda (_prompt) (funcall remember (jabber-read-password bare-jid))))))
 #+END_SRC
+
+**** TODO Why the lambda inside the "if password"?
+Remove the lambda, it seems it has no effect.
 
 *** jabber-sasl-process-input                     :function:
 :PROPERTIES:
@@ -2511,7 +2559,7 @@ obtained from `xml-parse-region'."
 :END:
 #+BEGIN_SRC emacs-lisp
 ;; button.el was introduced in Emacs 22
-(condition-case e
+(condition-case _error-data
     (require 'button)
   (error nil))
 #+END_SRC
@@ -2573,6 +2621,19 @@ obtained from `xml-parse-region'."
 (require 'sgml-mode) ;we base on this mode to hightlight XML
 #+END_SRC
 
+*** jabber-debug-log-xml                   :custom:variable:
+:PROPERTIES:
+:CUSTOM_ID: debug-log-xml
+:END:
+#+BEGIN_SRC emacs-lisp
+(defcustom jabber-debug-log-xml nil
+  "Set to non-nil to log all XML i/o in *-jabber-console-JID-* buffer.
+Set to string to also dump XML i/o in specified file."
+  :type '(choice (const :tag "Do not dump XML i/o" nil)
+                 (const :tag "Dump XML i/o in console" t)
+                 (string :tag "Dump XML i/o in console and this file"))
+  :group 'jabber-debug)
+#+END_SRC
 *** jabber-console-name-format             :custom:variable:
 :PROPERTIES:
 :CUSTOM_ID: console-name-format
@@ -2767,10 +2828,144 @@ what kind of chat buffer is being created.")
       (progn
         (ewoc-enter-last jabber-console-ewoc (list direction (jabber-console-sanitize xml-data)))
 		(when (< 1  jabber-console-truncate-lines)
-		  (let ((jabber-log-lines-to-keep jabber-console-truncate-lines))
+		  (let ((_jabber-log-lines-to-keep jabber-console-truncate-lines))
 			(jabber-truncate-top buffer jabber-console-ewoc)))))))
 #+END_SRC
 
+**** TODO Sanitize code in jabber-process-console
+1. What is progn and the last let do doing?
+2. The progn may not be required.
+3. Then test if the console works properly.
+
+** Mode line
+:PROPERTIES:
+:old-file:     jabber-modeline.el
+:CUSTOM_ID: mode-line
+:END:
+
+*** jabber-mode-line                          :custom:group:
+:PROPERTIES:
+:CUSTOM_ID: mode-line
+:END:
+#+BEGIN_SRC emacs-lisp
+(defgroup jabber-mode-line nil
+  "Display Jabber status in mode line"
+  :group 'jabber)
+#+END_SRC
+
+*** jabber-mode-line-compact               :custom:variable:
+:PROPERTIES:
+:CUSTOM_ID: mode-line-compact
+:END:
+#+BEGIN_SRC emacs-lisp
+(defcustom jabber-mode-line-compact t
+  "Count contacts in fewer categories for compact view."
+  :group 'jabber-mode-line
+  :type 'boolean)
+#+END_SRC
+
+*** jabber-mode-line-string                       :variable:
+:PROPERTIES:
+:CUSTOM_ID: mode-line-string
+:END:
+#+BEGIN_SRC emacs-lisp
+(defvar jabber-mode-line-string nil)
+#+END_SRC
+
+*** jabber-mode-line-presence                     :variable:
+:PROPERTIES:
+:CUSTOM_ID: mode-line-presence
+:END:
+#+BEGIN_SRC emacs-lisp
+(defvar jabber-mode-line-presence nil)
+#+END_SRC
+
+*** jabber-mode-line-contacts                     :variable:
+:PROPERTIES:
+:CUSTOM_ID: mode-line-contacts
+:END:
+#+BEGIN_SRC emacs-lisp
+(defvar jabber-mode-line-contacts nil)
+#+END_SRC
+
+#+BEGIN_SRC emacs-lisp
+(defadvice jabber-send-presence (after jsp-update-mode-line
+				       (show status priority))
+  (jabber-mode-line-presence-update))
+#+END_SRC
+
+*** jabber-mode-line-presence-update              :function:
+:PROPERTIES:
+:CUSTOM_ID: mode-line-presence-update
+:END:
+#+BEGIN_SRC emacs-lisp
+(defun jabber-mode-line-presence-update ()
+  (setq jabber-mode-line-presence (if (and jabber-connections (not *jabber-disconnecting*))
+				      (cdr (assoc *jabber-current-show* jabber-presence-strings))
+				    "Offline")))
+#+END_SRC
+
+*** jabber-mode-line-count-contacts               :function:
+:PROPERTIES:
+:CUSTOM_ID: mode-line-count-contacts
+:END:
+#+BEGIN_SRC emacs-lisp
+(defun jabber-mode-line-count-contacts (&rest _ignore)
+  (let ((count (list (cons "chat" 0)
+		     (cons "" 0)
+		     (cons "away" 0)
+		     (cons "xa" 0)
+		     (cons "dnd" 0)
+		     (cons nil 0))))
+    (dolist (jc jabber-connections)
+      (dolist (buddy (plist-get (fsm-get-state-data jc) :roster))
+	(when (assoc (get buddy 'show) count)
+	  (cl-incf (cdr (assoc (get buddy 'show) count))))))
+    (setq jabber-mode-line-contacts
+	  (if jabber-mode-line-compact
+	      (format "(%d/%d/%d)"
+		      (+ (cdr (assoc "chat" count))
+			 (cdr (assoc "" count)))
+		      (+ (cdr (assoc "away" count))
+			 (cdr (assoc "xa" count))
+			 (cdr (assoc "dnd" count)))
+		      (cdr (assoc nil count)))
+	    (apply 'format "(%d/%d/%d/%d/%d/%d)"
+		   (mapcar 'cdr count))))))
+#+END_SRC
+
+*** jabber-mode-line-mode                       :minor:mode:
+:PROPERTIES:
+:CUSTOM_ID: mode-line-mode
+:END:
+#+BEGIN_SRC emacs-lisp
+(define-minor-mode jabber-mode-line-mode
+  "Toggle display of Jabber status in mode lines.
+Display consists of your own status, and six numbers
+meaning the number of chatty, online, away, xa, dnd
+and offline contacts, respectively."
+  :global t :group 'jabber-mode-line
+  (setq jabber-mode-line-string "")
+  (or global-mode-string (setq global-mode-string '("")))
+  (if jabber-mode-line-mode
+      (progn
+	(add-to-list 'global-mode-string 'jabber-mode-line-string t)
+
+	(setq jabber-mode-line-string (list " "
+					    'jabber-mode-line-presence
+					    " "
+					    'jabber-mode-line-contacts))
+        (put 'jabber-mode-line-string 'risky-local-variable t)
+        (put 'jabber-mode-line-presence 'risky-local-variable t)
+	(jabber-mode-line-presence-update)
+	(jabber-mode-line-count-contacts)
+	(ad-activate 'jabber-send-presence)
+	(add-hook 'jabber-post-disconnect-hook
+		  'jabber-mode-line-presence-update)
+	(add-hook 'jabber-presence-hooks
+		  'jabber-mode-line-count-contacts))))
+#+END_SRC
+   
 ** core
 :PROPERTIES:
 :old-file:     jabber-core.el
@@ -2970,15 +3165,6 @@ indefinitely.  See `password-cache' and `password-cache-expiry'."
   :group 'jabber-core)
 #+END_SRC
 
-*** jabber-process-buffer                         :variable:
-:PROPERTIES:
-:CUSTOM_ID: process-buffer
-:END:
-#+BEGIN_SRC emacs-lisp
-(defvar jabber-process-buffer " *-jabber-process-*"
-  "The name of the process buffer.")
-#+END_SRC
-
 *** jabber-use-sasl                        :custom:variable:
 :PROPERTIES:
 :CUSTOM_ID: use-sasl
@@ -3153,7 +3339,7 @@ With double prefix argument, specify more connection details."
 	  jabber-connections)))
 #+END_SRC
 
-*** jabber-connection                                      :fsm:
+*** jabber-connection                                  :fsm:
 :PROPERTIES:
 :CUSTOM_ID: fsm-connection
 :END:
@@ -3181,7 +3367,7 @@ With double prefix argument, specify more connection details."
 			:port port)))))
 #+END_SRC
 
-**** nil                                      :fsm:state:
+**** nil                                         :fsm:state:
 :PROPERTIES:
 :CUSTOM_ID: fsm-state-nil
 :END:
@@ -3245,7 +3431,7 @@ With double prefix argument, specify more connection details."
      (list nil state-data nil))))
 #+END_SRC
 
-**** connecting                               :fsm:state:
+**** connecting                                  :fsm:state:
 :PROPERTIES:
 :CUSTOM_ID: fsm-state-connecting
 :END:
@@ -3293,7 +3479,7 @@ With double prefix argument, specify more connection details."
      :defer)))
 #+END_SRC
 
-**** jabber-fsm-handle-sentinel               :inline:function:
+**** jabber-fsm-handle-sentinel            :inline:function:
 :PROPERTIES:
 :CUSTOM_ID: fsm-handle-sentinel
 :END:
@@ -3317,7 +3503,7 @@ With double prefix argument, specify more connection details."
     (list nil new-state-data)))
 #+END_SRC
 
-**** connected                                :fsm:state:
+**** connected                                   :fsm:state:
 :PROPERTIES:
 :CUSTOM_ID: fsm-state-connected
 :END:
@@ -3396,7 +3582,7 @@ With double prefix argument, specify more connection details."
 			  :disconnection-expected t)))))
 #+END_SRC
 
-**** starttls                                 :fsm:state:
+**** starttls                                    :fsm:state:
 :PROPERTIES:
 :CUSTOM_ID: fsm-state-starttls
 :END:
@@ -3438,7 +3624,7 @@ With double prefix argument, specify more connection details."
 			  :disconnection-expected t)))))
 #+END_SRC
 
-**** register-account                         :fsm:state:
+**** register-account                            :fsm:state:
 :PROPERTIES:
 :CUSTOM_ID: fsm-state-register-account
 :END:
@@ -3476,7 +3662,7 @@ With double prefix argument, specify more connection details."
 			  :disconnection-expected t)))))
 #+END_SRC
 
-**** legacy-auth                              :fsm:state:
+**** legacy-auth                                 :fsm:state:
 :PROPERTIES:
 :CUSTOM_ID: fsm-state-legacy-auth
 :END:
@@ -3524,7 +3710,7 @@ With double prefix argument, specify more connection details."
 			  :disconnection-expected t)))))
 #+END_SRC
 
-**** sasl-auth                                :fsm:state:
+**** sasl-auth                                   :fsm:state:
 :PROPERTIES:
 :CUSTOM_ID: fsm-state-sasl-auth
 :END:
@@ -3580,7 +3766,7 @@ With double prefix argument, specify more connection details."
 			  :disconnection-expected t)))))
 #+END_SRC
 
-**** bind                                     :fsm:state:
+**** bind                                        :fsm:state:
 :PROPERTIES:
 :CUSTOM_ID: fsm-state-bind
 :END:
@@ -3685,7 +3871,7 @@ With double prefix argument, specify more connection details."
 			  :disconnection-expected t)))))
 #+END_SRC
 
-**** jabber-pending-presence-timeout                 :variable:
+**** jabber-pending-presence-timeout              :variable:
 :PROPERTIES:
 :CUSTOM_ID: pending-presence-timeout
 :END:
@@ -3694,7 +3880,7 @@ With double prefix argument, specify more connection details."
   "Wait this long before doing presence packet batch processing.")
 #+END_SRC
 
-**** session-established                      :fsm:state:
+**** session-established                         :fsm:state:
 :PROPERTIES:
 :CUSTOM_ID: fsm-state-session-established
 :END:
@@ -4911,7 +5097,9 @@ To change this permanently, customize the `jabber-show-offline-contacts'."
 :END:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-display-roster ()
-  "Switch to the main jabber buffer and refresh the roster display to reflect the current information."
+  "Switch to the main jabber buffer and refresh it.
+Switch to the roster display and refresh it to reflect the current
+information."
   (interactive)
   (with-current-buffer (get-buffer-create jabber-roster-buffer)
     (if (not (eq major-mode 'jabber-roster-mode))
@@ -5457,7 +5645,7 @@ not affect your actual roster.
 :CUSTOM_ID: export-remove-regexp
 :END:
 #+BEGIN_SRC emacs-lisp
-(defun jabber-export-remove-regexp (&rest ignore)
+(defun jabber-export-remove-regexp (&rest _ignore)
   (let* ((value (widget-value jabber-export-roster-widget))
 	 (length-before (length value))
 	 (regexp (read-string "Remove JIDs matching regexp: ")))
@@ -5475,7 +5663,7 @@ not affect your actual roster.
 :CUSTOM_ID: export-save
 :END:
 #+BEGIN_SRC emacs-lisp
-(defun jabber-export-save (&rest ignore)
+(defun jabber-export-save (&rest _ignore)
   "Export roster to file."
   (let ((items (mapcar #'jabber-roster-sexp-to-xml (widget-value jabber-export-roster-widget)))
 	(coding-system-for-write 'utf-8))
@@ -5492,7 +5680,7 @@ not affect your actual roster.
 :CUSTOM_ID: import-doit
 :END:
 #+BEGIN_SRC emacs-lisp
-(defun jabber-import-doit (&rest ignore)
+(defun jabber-import-doit (&rest _ignore)
   "Import roster being edited in widget."
   (let* ((state-data (fsm-get-state-data jabber-buffer-connection))
 	 (jabber-roster (plist-get state-data :roster))
@@ -6316,7 +6504,7 @@ Examples:
 (define-jabber-alert echo "Show a message in the echo area"
   (lambda (text &optional title) (message "%s" (or title text))))
 (define-jabber-alert beep "Beep on event"
-  (lambda (&rest ignore) (beep)))
+  (lambda (&rest _ignore) (beep)))
 #+END_SRC
 
 *** jabber-message-default-message                :function:
@@ -7409,7 +7597,7 @@ JC is the Jabber connection."
 :CUSTOM_ID: compose-send
 :END:
 #+BEGIN_SRC emacs-lisp
-(defun jabber-compose-send (&rest ignore)
+(defun jabber-compose-send (&rest _ignore)
   (let ((recipients (widget-value (cdr (assq :recipients jabber-widget-alist))))
 	(subject (widget-value (cdr (assq :subject jabber-widget-alist))))
 	(text (widget-value (cdr (assq :text jabber-widget-alist)))))
@@ -7613,7 +7801,9 @@ These fields are available:
 :END:
 #+BEGIN_SRC emacs-lisp
 (defcustom jabber-chat-system-prompt-format "[%t] *** "
-  "The format specification for lines from the system or that are special in the chat buffer."
+  "The format specification for lines from the system or special chat.
+The format specification for lines from the system or that are special in the
+chat buffer."
   :type 'string
   :group 'jabber-chat)
 #+END_SRC
@@ -7849,7 +8039,9 @@ JC is the Jabber connection."
 :END:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-chat-display-more-backlog (how-many)
-  "Display more context.  HOW-MANY is number of messages.  Specify 0 to display all messages."
+  "Display more context.
+The HOW-MANY argument is number of messages.
+Specify 0 to display all messages."
   (interactive "nHow many more messages (Specify 0 to display all)? ")
   (let* ((inhibit-read-only t)
 	 (jabber-backlog-days nil)
@@ -8926,7 +9118,7 @@ With prefix argument, ask for status message."
 :END:
 #+BEGIN_SRC emacs-lisp
 ;;;###autoload
-(defun jabber-send-default-presence (&optional ignore)
+(defun jabber-send-default-presence (&optional _ignore)
   "Send default presence.
 Default presence is specified by `jabber-default-show',
 `jabber-default-status', and `jabber-default-priority'."
@@ -8940,7 +9132,7 @@ Default presence is specified by `jabber-default-show',
 :CUSTOM_ID: send-current-presence
 :END:
 #+BEGIN_SRC emacs-lisp
-(defun jabber-send-current-presence (&optional ignore)
+(defun jabber-send-current-presence (&optional _ignore)
   "(Re-)send current presence.
 That is, if presence has already been sent, use current settings,
 otherwise send defaults (see `jabber-send-default-presence')."
@@ -10332,7 +10524,7 @@ accounts."
     (ignore-errors (jabber-send-string c " "))))
 #+END_SRC
 
-** Feature Negotiation ([[https://xmpp.org/extensions/xep-0020.html][XEP-0020]]) :xep_deprecated:
+** Feature Negotiation ([[https://xmpp.org/extensions/xep-0020.html][XEP-0020]])           :xep_deprecated:
 :PROPERTIES:
 :old-file:     jabber-feature-neg.el
 :CUSTOM_ID: feature-negotiation-()
@@ -10632,7 +10824,9 @@ DEFAULT-USERNAME is the default value for the username field."
 :END:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-parse-register-form ()
-  "Return children of a <query/> tag containing information entered in the widgets of the current buffer."
+  "Return children of a <query/> tag containing information entered.
+Return children of a <query/> tag containing information entered in the
+widgets of the current buffer."
   (mapcar
    (lambda (widget-cons)
      (list (car widget-cons)
@@ -10737,7 +10931,9 @@ DEFAULTS takes precedence over values specified in the form."
 :END:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-parse-xdata-form ()
-  "Return an <x/> tag containing information entered in the widgets of the current buffer."
+  "Return an <x/> tag containing information entered in the widgets.
+Return an <x/> tag containing information entered in the widgets of the current
+buffer."
   `(x ((xmlns . "jabber:x:data")
        (type . "submit"))
       ,@(mapcar
@@ -10760,7 +10956,8 @@ DEFAULTS takes precedence over values specified in the form."
 #+BEGIN_SRC emacs-lisp
 (defun jabber-xdata-value-convert (value type)
   "Convert VALUE from form used by widget library to form required by XEP-0004.
-Return a list of strings, each of which to be included as cdata in a <value/> tag."
+Return a list of strings, each of which to be included as cdata in a
+<value/> tag."
   (cond
    ((string= type "boolean")
     (if value (list "1") (list "0")))
@@ -10890,7 +11087,7 @@ Return nil if no form type is specified."
 				     (car (jabber-xml-get-children field 'value)))))))))
 #+END_SRC
 
-** Bookmarks ([[https://xmpp.org/extensions/xep-0048.html][XEP-0048]]) :xep_deprecated:
+** Bookmarks ([[https://xmpp.org/extensions/xep-0048.html][XEP-0048]])                     :xep_deprecated:
 :PROPERTIES:
 :old-file:     jabber-bookmarks.el
 :CUSTOM_ID: bookmarks-()
@@ -11128,7 +11325,7 @@ JC is the Jabber connection."
 :CUSTOM_ID: bookmarks-submit
 :END:
 #+BEGIN_SRC emacs-lisp
-(defun jabber-bookmarks-submit (&rest ignore)
+(defun jabber-bookmarks-submit (&rest _ignore)
   (let ((bookmarks (widget-value (cdr (assq 'bookmarks jabber-widget-alist)))))
     (setq bookmarks
 	  (mapcar
@@ -11165,7 +11362,7 @@ JC is the Jabber connection."
 :CUSTOM_ID: bookmarks-import
 :END:
 #+BEGIN_SRC emacs-lisp
-(defun jabber-bookmarks-import (&rest ignore)
+(defun jabber-bookmarks-import (&rest _ignore)
   (let* ((value (widget-value (cdr (assq 'bookmarks jabber-widget-alist))))
 	 (conferences (mapcar
 		       'cdr
@@ -13508,7 +13705,7 @@ obtained from `xml-parse-region'."
 	    (insert "\n"))))))
 #+END_SRC
 
-** Jabber Browsing ([[https://xmpp.org/extensions/xep-0011.html][XEP-0011]]) :xep_obsolete:
+** Jabber Browsing ([[https://xmpp.org/extensions/xep-0011.html][XEP-0011]])                 :xep_obsolete:
 :PROPERTIES:
 :old-file:     jabber-browse.el
 :CUSTOM_ID: browsing-()
@@ -14093,135 +14290,6 @@ obtained from `xml-parse-region'."
 		 (node . ,jabber-ahc-presence-node)
 		 (status . "completed"))
 		(note ((type . "info")) "Presence has been changed."))))))
-#+END_SRC
-
-** Mode line
-:PROPERTIES:
-:old-file:     jabber-modeline.el
-:CUSTOM_ID: mode-line
-:END:
-
-*** jabber-mode-line                          :custom:group:
-:PROPERTIES:
-:CUSTOM_ID: mode-line
-:END:
-#+BEGIN_SRC emacs-lisp
-(defgroup jabber-mode-line nil
-  "Display Jabber status in mode line"
-  :group 'jabber)
-#+END_SRC
-
-*** jabber-mode-line-compact               :custom:variable:
-:PROPERTIES:
-:CUSTOM_ID: mode-line-compact
-:END:
-#+BEGIN_SRC emacs-lisp
-(defcustom jabber-mode-line-compact t
-  "Count contacts in fewer categories for compact view."
-  :group 'jabber-mode-line
-  :type 'boolean)
-#+END_SRC
-
-*** jabber-mode-line-string                       :variable:
-:PROPERTIES:
-:CUSTOM_ID: mode-line-string
-:END:
-#+BEGIN_SRC emacs-lisp
-(defvar jabber-mode-line-string nil)
-#+END_SRC
-
-*** jabber-mode-line-presence                     :variable:
-:PROPERTIES:
-:CUSTOM_ID: mode-line-presence
-:END:
-#+BEGIN_SRC emacs-lisp
-(defvar jabber-mode-line-presence nil)
-#+END_SRC
-
-*** jabber-mode-line-contacts                     :variable:
-:PROPERTIES:
-:CUSTOM_ID: mode-line-contacts
-:END:
-#+BEGIN_SRC emacs-lisp
-(defvar jabber-mode-line-contacts nil)
-#+END_SRC
-
-#+BEGIN_SRC emacs-lisp
-(defadvice jabber-send-presence (after jsp-update-mode-line
-				       (show status priority))
-  (jabber-mode-line-presence-update))
-#+END_SRC
-
-*** jabber-mode-line-presence-update              :function:
-:PROPERTIES:
-:CUSTOM_ID: mode-line-presence-update
-:END:
-#+BEGIN_SRC emacs-lisp
-(defun jabber-mode-line-presence-update ()
-  (setq jabber-mode-line-presence (if (and jabber-connections (not *jabber-disconnecting*))
-				      (cdr (assoc *jabber-current-show* jabber-presence-strings))
-				    "Offline")))
-#+END_SRC
-
-*** jabber-mode-line-count-contacts               :function:
-:PROPERTIES:
-:CUSTOM_ID: mode-line-count-contacts
-:END:
-#+BEGIN_SRC emacs-lisp
-(defun jabber-mode-line-count-contacts (&rest ignore)
-  (let ((count (list (cons "chat" 0)
-		     (cons "" 0)
-		     (cons "away" 0)
-		     (cons "xa" 0)
-		     (cons "dnd" 0)
-		     (cons nil 0))))
-    (dolist (jc jabber-connections)
-      (dolist (buddy (plist-get (fsm-get-state-data jc) :roster))
-	(when (assoc (get buddy 'show) count)
-	  (cl-incf (cdr (assoc (get buddy 'show) count))))))
-    (setq jabber-mode-line-contacts
-	  (if jabber-mode-line-compact
-	      (format "(%d/%d/%d)"
-		      (+ (cdr (assoc "chat" count))
-			 (cdr (assoc "" count)))
-		      (+ (cdr (assoc "away" count))
-			 (cdr (assoc "xa" count))
-			 (cdr (assoc "dnd" count)))
-		      (cdr (assoc nil count)))
-	    (apply 'format "(%d/%d/%d/%d/%d/%d)"
-		   (mapcar 'cdr count))))))
-#+END_SRC
-
-*** jabber-mode-line-mode                       :minor:mode:
-:PROPERTIES:
-:CUSTOM_ID: mode-line-mode
-:END:
-#+BEGIN_SRC emacs-lisp
-(define-minor-mode jabber-mode-line-mode
-  "Toggle display of Jabber status in mode lines.
-Display consists of your own status, and six numbers
-meaning the number of chatty, online, away, xa, dnd
-and offline contacts, respectively."
-  :global t :group 'jabber-mode-line
-  (setq jabber-mode-line-string "")
-  (or global-mode-string (setq global-mode-string '("")))
-  (if jabber-mode-line-mode
-      (progn
-	(add-to-list 'global-mode-string 'jabber-mode-line-string t)
-
-	(setq jabber-mode-line-string (list " "
-					    'jabber-mode-line-presence
-					    " "
-					    'jabber-mode-line-contacts))
-        (put 'jabber-mode-line-string 'risky-local-variable t)
-        (put 'jabber-mode-line-presence 'risky-local-variable t)
-	(jabber-mode-line-presence-update)
-	(jabber-mode-line-count-contacts)
-	(ad-activate 'jabber-send-presence)
-	(add-hook 'jabber-post-disconnect-hook
-		  'jabber-mode-line-presence-update)
-	(add-hook 'jabber-presence-hooks
-		  'jabber-mode-line-count-contacts))))
 #+END_SRC
 
 ** watch - get notified when certain persons go online
@@ -14933,7 +15001,7 @@ With a numeric arg, enable this display if arg is positive."
 (if jabber-activity-mode (jabber-activity-mode 1))
 #+END_SRC
 
-** Message Events ([[https://xmpp.org/extensions/xep-0022.html][XEP-0022]]) :xep_obsolete:
+** Message Events ([[https://xmpp.org/extensions/xep-0022.html][XEP-0022]])                  :xep_obsolete:
 :PROPERTIES:
 :old-file:     jabber-events.el
 :CUSTOM_ID: message-events-()
@@ -17989,43 +18057,6 @@ configure a Google Talk account like this:
 :END:
 #+BEGIN_SRC emacs-lisp
 (defgroup jabber-debug nil "debugging options"
-  :group 'jabber)
-#+END_SRC
-
-*** jabber-debug-log-xml                   :custom:variable:
-:PROPERTIES:
-:CUSTOM_ID: debug-log-xml
-:END:
-#+BEGIN_SRC emacs-lisp
-(defcustom jabber-debug-log-xml nil
-  "Set to non-nil to log all XML i/o in *-jabber-console-JID-* buffer.
-Set to string to also dump XML i/o in specified file."
-  :type '(choice (const :tag "Do not dump XML i/o" nil)
-                 (const :tag "Dump XML i/o in console" t)
-                 (string :tag "Dump XML i/o in console and this file"))
-  :group 'jabber-debug)
-#+END_SRC
-
-*** jabber-debug-keep-process-buffers      :custom:variable:
-:PROPERTIES:
-:CUSTOM_ID: debug-keep-process-buffers
-:END:
-#+BEGIN_SRC emacs-lisp
-(defcustom jabber-debug-keep-process-buffers nil
-  "If nil, kill process buffers when the process dies.
-Contents of process buffers might be useful for debugging."
-  :type 'boolean
-  :group 'jabber-debug)
-#+END_SRC
-
-*** jabber-silent-mode                     :custom:variable:
-:PROPERTIES:
-:CUSTOM_ID: silent-mode
-:END:
-#+BEGIN_SRC emacs-lisp
-(defcustom jabber-silent-mode nil
-  "If non-nil, do not ask for confirmation for some operations.  DANGEROUS!"
-  :type 'boolean
   :group 'jabber)
 #+END_SRC
 
