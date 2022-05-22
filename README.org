@@ -300,11 +300,6 @@ To install the Info documentation, copy =jabber.info= to =/usr/local/info= and r
    3. Update or add other documentation in this [[file:README.org][README.org]] if necessary. Try to follow the https://diataxis.fr/ structure.
 5. Push and create your PR.
 
-* Developer documentation
-:PROPERTIES:
-:CUSTOM_ID: developer-documentation
-:END:
-
 * TODO maintenance [0%]
 :PROPERTIES:
 :CUSTOM_ID: maintenance
