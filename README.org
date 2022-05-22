@@ -166,7 +166,7 @@ jabber.el use a finite state machine (FSM) to track the current Jabber connectio
 :PROPERTIES:
 :CUSTOM_ID: states
 :END:
-The following graph shows the states and their transitions, as of version [[https://tildegit.org/wgreenhouse/emacs-jabber/commit/dddcccb926f422b03d22a66b60db46f1266eb141][dddcccb926]] (2021-03-20). The nodes represent the states and the arrows are events.
+The following graph shows the states and their transitions, as of commit [[https://tildegit.org/wgreenhouse/emacs-jabber/commit/dddcccb926f422b03d22a66b60db46f1266eb141][dddcccb926]] (2021-03-20). The nodes represent the states and the arrows are events.
 
 All states have filter and sentinel events that do not change the FSM state. Also, they have a ~:do-disconnect~ event that change the FSM to the ~nil~ state except for the ~connecting~ state.
 
