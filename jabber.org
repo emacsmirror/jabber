@@ -2558,10 +2558,7 @@ obtained from `xml-parse-region'."
 :CUSTOM_ID: common-keymap-many-modes
 :END:
 #+BEGIN_SRC emacs-lisp
-;; button.el was introduced in Emacs 22
-(condition-case _error-data
-    (require 'button)
-  (error nil))
+(require 'button)
 #+END_SRC
 
 *** jabber-common-keymap                          :variable:

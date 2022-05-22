@@ -2006,10 +2006,7 @@ obtained from `xml-parse-region'."
 ;; jabber-sasl-process-input:1 ends here
 
 ;; [[file:jabber.org::#common-keymap-many-modes][common keymap for many modes:1]]
-;; button.el was introduced in Emacs 22
-(condition-case _error-data
-    (require 'button)
-  (error nil))
+(require 'button)
 ;; common keymap for many modes:1 ends here
 
 ;; [[file:jabber.org::#common-keymap][jabber-common-keymap:1]]
