@@ -14165,12 +14165,6 @@ XEP-0301, In-Band Real Time Text."
 	jabber-rtt-send-last-timestamp nil))
 ;; jabber-rtt--message-sent:1 ends here
 
-;; [[file:jabber.org::#jabber][Jabber:1]]
-;;; load Unicode tables if this needed
-(when (and (featurep 'xemacs) (not (emacs-version>= 21 5 5)))
-    (require 'un-define))
-;; Jabber:1 ends here
-
 ;; [[file:jabber.org::#1][jabber:1]]
 ;;; these customize fields should come first
 (defgroup jabber nil "Jabber instant messaging"

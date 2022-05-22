@@ -17847,11 +17847,6 @@ XEP-0301, In-Band Real Time Text."
 :CUSTOM_ID: jabber
 :END:
 
-#+BEGIN_SRC emacs-lisp
-;;; load Unicode tables if this needed
-(when (and (featurep 'xemacs) (not (emacs-version>= 21 5 5)))
-    (require 'un-define))
-#+END_SRC
 *** jabber                                    :custom:group:
 :PROPERTIES:
 :CUSTOM_ID: 1
