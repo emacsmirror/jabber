@@ -53,7 +53,7 @@ lint-package-lint: setup tangle
         -f 'package-lint-batch-and-exit' jabber.el
 
 lint-relint: setup tangle
-	emacs -q -Q --batch --eval='(relint-file "jabber.el")'
+	emacs -q -Q --batch --eval="(progn (package-initialize) (relint-file \"jabber.el\"))"
 
 lint: lint-check-declare lint-checkdoc lint-package-lint lint-relint
 
