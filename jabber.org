@@ -18117,4 +18117,5 @@ configure a Google Talk account like this:
 
 # Local Variables:
 # eval: (when (package-installed-p 'nameless) (require 'nameless) (nameless-mode))
+# eval: (when (package-installed-p 'literate-elisp) (require 'literate-elisp) (add-to-list 'load-path (file-name-directory (buffer-file-name))) (literate-elisp-load (buffer-file-name)))
 # End:
