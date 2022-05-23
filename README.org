@@ -292,12 +292,14 @@ To install the Info documentation, copy =jabber.info= to =/usr/local/info= and r
 
    You can also run =make dev= to tangle, compile, and run linters in one go, and address their output.
 
-   Commit your changes in =jabber.org=, as well as any changes made to =jabber.el= via tangling.
+   Stage the changes you made to =jabber.org=, as well as any changes the tangling process made to =jabber.el=.
+
+   Try to follow [[https://cbea.ms/git-commit/#seven-rules][the seven rules of a great Git commit message]] in your commits.
 
 4. Update the documentation.
    1. Add your name to the [[#contributors][list of contributors]].
-   3. Update or add other documentation in this [[file:README.org][README.org]] if necessary. Try to follow the https://diataxis.fr/ structure.
    2. Document user-facing changes in [[file:CHANGELOG.org][CHANGELOG.org]].
+   3. Update or add other documentation in this [[file:README.org][README.org]] if necessary. Try to follow the [[https://diataxis.fr/][Diataxis Framework]].
 5. Push and create your PR.
 
 * TODO maintenance [0%]
