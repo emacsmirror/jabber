@@ -296,8 +296,8 @@ To install the Info documentation, copy =jabber.info= to =/usr/local/info= and r
 
 4. Update the documentation.
    1. Add your name to the [[#contributors][list of contributors]].
-   2. Document user-facing changes in the [[file:NEWS][NEWS]] file.
    3. Update or add other documentation in this [[file:README.org][README.org]] if necessary. Try to follow the https://diataxis.fr/ structure.
+   2. Document user-facing changes in [[file:CHANGELOG.org][CHANGELOG.org]].
 5. Push and create your PR.
 
 * TODO maintenance [0%]

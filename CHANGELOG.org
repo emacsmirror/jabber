@@ -1,0 +1,478 @@
+#+TITLE: Changelog
+All notable changes to this project will be documented in this file.
+
+The format is based on [[https://keepachangelog.com/en/1.0.0/][Keep a Changelog]].
+
+* New features in jabber.el latest git
+:PROPERTIES:
+:CUSTOM_ID: new-features-jabberel-latest-git
+:END:
+** Support for reading passwords from netrc/authinfo files
+:PROPERTIES:
+:CUSTOM_ID: support-reading-passwords-from-netrc-authinfo-files
+:END:
+Use "machine example.com login username password s3cret port xmpp".
+
+** Support for roster's groups roll state saving
+:PROPERTIES:
+:CUSTOM_ID: support-rosters-groups-roll-state-saving
+:END:
+
+** Full support for XEP-0012
+:PROPERTIES:
+:CUSTOM_ID: full-support-xep-001
+:END:
+Response of idle time.
+
+** Support for XEP-0202
+:PROPERTIES:
+:CUSTOM_ID: support-xep-020
+:END:
+Entity Time for request/response time as main method.
+
+** Support for automatic MUC nicks colorization
+:PROPERTIES:
+:CUSTOM_ID: support-automatic-muc-nicks-colorization
+:END:
+See "Customizing the chat buffer" in the manual.
+
+** XML Console
+:PROPERTIES:
+:CUSTOM_ID: xml-console
+:END:
+Log all received/sending XML stanzas into special buffer. Also can be
+used to send custom XML stanzas manually.
+
+** Autoaway
+:PROPERTIES:
+:CUSTOM_ID: autoaway
+:END:
+Support for list of autoaway methods. Support for Xa. See section "Autoaway" in manual.
+
+** MUC
+:PROPERTIES:
+:CUSTOM_ID: muc
+:END:
+MUC participants list format is now customizable: see
+jabber-muc-print-names-format in manual. Also, participants sorted by
+role.
+
+** Treat XML namespace prefixes correctly
+:PROPERTIES:
+:CUSTOM_ID: treat-xml-namespace-prefixes-correctly
+:END:
+A change in the Google Talk server has brought to light the fact that
+jabber.el didn't handle XML namespace prefixes correctly.  This should
+be fixed by the new jabber-xml-resolve-namespace-prefixes function.
+
+* [0.8]
+:PROPERTIES:
+:CUSTOM_ID: v0.8
+:END:
+
+** Added
+:PROPERTIES:
+:CUSTOM_ID: added
+:END:
+*** Support for multiple accounts
+:PROPERTIES:
+:CUSTOM_ID: support-multiple-accounts
+:END:
+Configuration variables have changed.  See section "Account settings"
+in the manual.
+
+*** Activity mode improved
+:PROPERTIES:
+:CUSTOM_ID: activity-mode-improved
+:END:
+Customizable face for personal messages added, list of unwanted (banned) JIDs added
+
+*** Simple automatic answering machine
+:PROPERTIES:
+:CUSTOM_ID: simple-automatic-answering-machine
+:END:
+Realized as alert. Can match regexp and answer with predefined string
+
+*** OSD alerts (message, MUC, MUC-personal)
+:PROPERTIES:
+:CUSTOM_ID: osd-alerts-message,-muc,-muc-personal
+:END:
+
+*** Family of personal MUC alerts added
+:PROPERTIES:
+:CUSTOM_ID: family-personal-muc-alerts-added
+:END:
+See section "Standard alerts" in manual.
+
+*** MUC nicks completion
+:PROPERTIES:
+:CUSTOM_ID: muc-nicks-completion
+:END:
+See section "Groupchat" in manual.
+
+*** Automatic reconnection
+:PROPERTIES:
+:CUSTOM_ID: automatic-reconnection
+:END:
+Not enabled by default; See "Reconnecting" section in manual.
+
+*** Support for XEP-0085
+:PROPERTIES:
+:CUSTOM_ID: support-xep-008
+:END:
+This means "contact is typing" notifications when chatting with Gajim
+or Google Talk users, among others.
+See "Typing notifications" section in the manual.
+
+*** Option: hide offline contacts in roster
+:PROPERTIES:
+:CUSTOM_ID: option-hide-offline-contacts-roster
+:END:
+See "The roster buffer" in manual.
+
+*** Clean history from chat buffers
+:PROPERTIES:
+:CUSTOM_ID: clean-history-from-chat-buffers
+:END:
+See jabber-truncate-* functions and new options for
+jabber-alert-muc-hooks and jabber-alert-message-hooks. See section
+"Message history" in manual too.
+
+*** MUC bookmarks
+:PROPERTIES:
+:CUSTOM_ID: muc-bookmarks
+:END:
+See jabber-edit-bookmarks function and "Bookmarks" section in manual.
+
+*** Name of browse buffers customizable
+:PROPERTIES:
+:CUSTOM_ID: name-browse-buffers-customizable
+:END:
+See "Services" section in manual.
+
+*** Subscription requests are sent to chat buffers
+:PROPERTIES:
+:CUSTOM_ID: subscription-requests-are-sent-to-chat-buffers
+:END:
+Subscription requests now displayed in chat buffers. See "Presence
+subscription" section in manual.
+
+*** Option: hide avatar in chat buffer
+:PROPERTIES:
+:CUSTOM_ID: option-hide-avatar-chat-buffer
+:END:
+`jabber-chat-buffer-show-avatar'.
+
+*** Gmail notifications
+:PROPERTIES:
+:CUSTOM_ID: gmail-notifications
+:END:
+(Not documented nor autoloaded)
+
+*** GConf-based installation of URI handler
+:PROPERTIES:
+:CUSTOM_ID: gconf-based-installation-uri-handler
+:END:
+See "XMPP URIs" in manual.
+
+* [0.7.1]
+:PROPERTIES:
+:CUSTOM_ID: v0.7.1
+:END:
+
+** Added
+:PROPERTIES:
+:CUSTOM_ID: v0.7.1-added
+:END:
+
+*** STARTTLS
+:PROPERTIES:
+:CUSTOM_ID: starttls
+:END:
+
+*** SRV records
+:PROPERTIES:
+:CUSTOM_ID: srv-records
+:END:
+Requires No Gnus.
+
+*** Message composition buffer
+:PROPERTIES:
+:CUSTOM_ID: message-composition-buffer
+:END:
+Try jabber-compose.
+
+*** XMPP URIs are handled
+:PROPERTIES:
+:CUSTOM_ID: xmpp-uris-are-handled
+:END:
+See manual for setup.
+
+*** Autoaway
+:PROPERTIES:
+:CUSTOM_ID: autoaway-1
+:END:
+
+*** MUC features
+:PROPERTIES:
+:CUSTOM_ID: muc-features
+:END:
+**** Don't display alerts for your own messages
+:PROPERTIES:
+:CUSTOM_ID: dont-display-alerts-your-own-messages
+:END:
+See jabber-muc-alert-self.
+**** Presence changes are sent to MUC rooms too
+:PROPERTIES:
+:CUSTOM_ID: presence-changes-are-sent-to-muc-rooms-too
+:END:
+**** Check room features before joining
+:PROPERTIES:
+:CUSTOM_ID: check-room-features-before-joining
+:END:
+
+*** Avatars
+:PROPERTIES:
+:CUSTOM_ID: avatars
+:END:
+Viewing and publishing JEP-0153 avatars (vCard-based) is now
+supported.
+
+*** File transfer
+:PROPERTIES:
+:CUSTOM_ID: file-transfer
+:END:
+
+*** Sound files per contact for alerts
+:PROPERTIES:
+:CUSTOM_ID: sound-files-per-contact-alerts
+:END:
+
+*** Per-user history files changed
+:PROPERTIES:
+:CUSTOM_ID: per-user-history-files-changed
+:END:
+For some time after 0.7 these file names erroneously contained double
+quotes.  If you have used the CVS version you'll need to rename your
+history files manually.
+
+*** New function: jabber-send-directed-presence
+:PROPERTIES:
+:CUSTOM_ID: new-function-jabber-send-directed-presence
+:END:
+
+*** Entity time supported (XEP-0090)
+:PROPERTIES:
+:CUSTOM_ID: entity-time-supported-xep-0090
+:END:
+
+*** Last activity supported (XEP-0012)
+:PROPERTIES:
+:CUSTOM_ID: last-activity-supported-xep-0012
+:END:
+
+* [0.7]
+:PROPERTIES:
+:CUSTOM_ID: v0.7
+:END:
+
+** Added
+:PROPERTIES:
+:CUSTOM_ID: v0.7-added
+:END:
+*** SSL connections possible
+:PROPERTIES:
+:CUSTOM_ID: ssl-connections-possible
+:END:
+See variable `jabber-connection-type'.
+
+*** Chat buffers rewritten
+:PROPERTIES:
+:CUSTOM_ID: chat-buffers-rewritten
+:END:
+New modular design gives increased extensibility.
+**** Received URLs are displayed
+:PROPERTIES:
+:CUSTOM_ID: received-urls-are-displayed
+:END:
+**** Long lines are filled
+:PROPERTIES:
+:CUSTOM_ID: long-lines-are-filled
+:END:
+See jabber-chat-fill-long-lines.
+**** Rare timestamps are printed by default
+:PROPERTIES:
+:CUSTOM_ID: rare-timestamps-are-printed-by-default
+:END:
+See jabber-print-rare-time and jabber-rare-time-format.
+
+*** MUC features
+:PROPERTIES:
+:CUSTOM_ID: muc-features-1
+:END:
+**** Different default nicknames for different MUC rooms
+:PROPERTIES:
+:CUSTOM_ID: different-default-nicknames-different-muc-rooms
+:END:
+See jabber-muc-default-nicknames.
+**** Autojoin MUC rooms on connection
+:PROPERTIES:
+:CUSTOM_ID: autojoin-muc-rooms-on-connection
+:END:
+See jabber-muc-autojoin.
+**** Change nickname
+:PROPERTIES:
+:CUSTOM_ID: change-nickname
+:END:
+Actually simply an alias from jabber-muc-nick to jabber-muc-join.
+**** Invitations
+:PROPERTIES:
+:CUSTOM_ID: invitations
+:END:
+Both sending and receiving invitiations is supported.
+**** Basic affiliation change support
+:PROPERTIES:
+:CUSTOM_ID: basic-affiliation-change-support
+:END:
+(Not finished)
+**** Private MUC messages
+:PROPERTIES:
+:CUSTOM_ID: private-muc-messages
+:END:
+**** Support for setting and displaying topic
+:PROPERTIES:
+:CUSTOM_ID: support-setting-displaying-topic
+:END:
+
+*** Global key bindings
+:PROPERTIES:
+:CUSTOM_ID: global-key-bindings
+:END:
+Global keymap under C-x C-j.
+
+*** Vcard viewer and editor
+:PROPERTIES:
+:CUSTOM_ID: vcard-viewer-editor
+:END:
+
+*** Roster export
+:PROPERTIES:
+:CUSTOM_ID: roster-export
+:END:
+
+*** Message events (JEP-0022)
+:PROPERTIES:
+:CUSTOM_ID: message-events-jep-0022
+:END:
+
+*** Easy way to define external notifiers
+:PROPERTIES:
+:CUSTOM_ID: easy-way-to-define-external-notifiers
+:END:
+See define-jabber-alert.  Alerts for Festival (speech synthesis),
+Sawfish, and xmessage added.
+
+*** Activity mode improved
+:PROPERTIES:
+:CUSTOM_ID: activity-mode-improved-1
+:END:
+Can now display count in frame title.  Update hook added.
+
+*** Roster display optimized
+:PROPERTIES:
+:CUSTOM_ID: roster-display-optimized
+:END:
+
+*** Optionally use per-contact history files
+:PROPERTIES:
+:CUSTOM_ID: optionally-use-per-contact-history-files
+:END:
+
+*** Jabber menu in menubar not enabled by default
+:PROPERTIES:
+:CUSTOM_ID: jabber-menu-menubar-not-enabled-by-default
+:END:
+Call jabber-menu to have it there.
+
+*** Flyspell in chat buffers
+:PROPERTIES:
+:CUSTOM_ID: flyspell-chat-buffers
+:END:
+Flyspell will only spell check what you're currently writing.
+
+*** Different time formats for instant and delayed messages
+:PROPERTIES:
+:CUSTOM_ID: different-time-formats-instant-delayed-messages
+:END:
+See `jabber-chat-time-format' and `jabber-chat-delayed-time-format'.
+You can see the complete timestamp in a tooltip by holding the mouse
+over the prompt.
+
+*** Chat buffers in inactive windows are scrolled
+:PROPERTIES:
+:CUSTOM_ID: chat-buffers-inactive-windows-are-scrolled
+:END:
+
+*** Roster is sorted by name also
+:PROPERTIES:
+:CUSTOM_ID: roster-is-sorted-by-name-also
+:END:
+
+* [0.6.1]
+:PROPERTIES:
+:CUSTOM_ID: v0.6.1
+:END:
+** Added
+:PROPERTIES:
+:CUSTOM_ID: v0.6.1-added
+:END:
+*** Message history
+:PROPERTIES:
+:CUSTOM_ID: message-history
+:END:
+Set jabber-history-enabled to t to activate it.
+
+*** Backlogs
+:PROPERTIES:
+:CUSTOM_ID: backlogs
+:END:
+If you have history enabled, the last few messages are inserted when
+you open a new chat buffer.
+
+*** Activity tracking on the mode line
+:PROPERTIES:
+:CUSTOM_ID: activity-tracking-on-mode-line
+:END:
+Activate it with M-x jabber-activity-mode.
+
+*** Receive an alert when a specific person goes online
+:PROPERTIES:
+:CUSTOM_ID: receive-alert-when-specific-person-goes-online
+:END:
+Use it with M-x jabber-watch-add.
+
+*** Support for /me in chats (xep-0245, except XHTML-IM)
+:PROPERTIES:
+:CUSTOM_ID: support-me-chats-xep-0245,-except-xhtml-im
+:END:
+As in "/me laughs" etc.
+
+*** Message alerts for current buffer can be disabled
+:PROPERTIES:
+:CUSTOM_ID: message-alerts-current-buffer-can-be-disabled
+:END:
+Set jabber-message-alert-same-buffer to nil to do that.
+
+*** Basic moderation support in MUC
+:PROPERTIES:
+:CUSTOM_ID: basic-moderation-support-muc
+:END:
+
+*** MUC alerts are separated from ordinary message alerts
+:PROPERTIES:
+:CUSTOM_ID: muc-alerts-are-separated-from-ordinary-message-alerts
+:END:
+Customize jabber-alert-muc-hooks to get your desired behaviour.
+
+
+arch-tag: 1CE20E4E-3BD9-11D9-8D64-000A95C2FCD0
