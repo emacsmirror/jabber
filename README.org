@@ -273,10 +273,10 @@ To install the Info documentation, copy =jabber.info= to =/usr/local/info= and r
         cd ~/git/org-mode/
         make
       #+END_SRC
-   2. Optionally, install additional development tools (requires MELPA to be set up as package source) -
-      #+BEGIN_SRC shell :tangle no
-        cd ~/git/emacs-jabber/
-        make setup
+   2. Optionally, evaluate the following to install additional development tools (requires MELPA to be set up as package source) -
+      #+BEGIN_SRC emacs-lisp :tangle no
+        (mapcar #'package-install
+                '(indent-lint package-lint relint nameless literate-elisp))
       #+END_SRC
 
 3. Make your edits to =jabber.org= (not =jabber.el=), and save. Then, tangle the file -

@@ -1,12 +1,8 @@
-.phony: all setup tangle autoload compile lint clean
+.phony: all tangle autoload compile lint clean
 
 build: tangle autoload compile
 
-dev: setup tangle autoload compile lint
-
-setup:
-	emacs --batch --eval="(package-initialize)" \
-	--eval="(mapcar #'package-install '(indent-lint package-lint relint nameless literate-elisp))"
+dev: tangle autoload compile lint
 
 # No -q or -Q without ORG_PATH - if the user has a newer version of
 # Org, we want to use it.
@@ -47,12 +43,12 @@ lint-check-declare: tangle
 lint-checkdoc: tangle
 	emacs -q -Q --batch --eval='(checkdoc-file "jabber.el")'
 
-lint-package-lint: setup tangle
+lint-package-lint: tangle
 	emacs -Q --batch --eval='(package-initialize)' \
         --eval="(require 'package-lint)" \
         -f 'package-lint-batch-and-exit' jabber.el
 
-lint-relint: setup tangle
+lint-relint: tangle
 	emacs -q -Q --batch --eval="(progn (package-initialize) (relint-file \"jabber.el\"))"
 
 lint: lint-check-declare lint-checkdoc lint-package-lint lint-relint
