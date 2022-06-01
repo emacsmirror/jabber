@@ -10,7 +10,7 @@
 This is jabber.el 0.8.92, an XMPP client for Emacs.  XMPP (also known as 'Jabber') is an instant messaging system; see http://xmpp.org for more information.
 
 New resources
-+ [[https://tildegit.org/wgreenhouse/emacs-jabber/][project page]]
++ [[https://codeberg.org/emacs-jabber/emacs-jabber/][project page]]
 + chat: [[xmpp:emacs@salas.suchat.org?join][xmpp:emacs@salas.suchat.org?join]] (general Emacs and jabber.el talk)
 + chat: xmpp:jabber-el@conference.hmm.st?join (jabber.el developement)
 

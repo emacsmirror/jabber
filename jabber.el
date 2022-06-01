@@ -3,7 +3,7 @@
 ;; Author: Magnus Henoch <mange@freemail.hu>
 ;; Maintainer: wgreenhouse <wgreenhouse@tilde.club>
 ;; Keywords: comm
-;; Homepage: https://tildegit.org/wgreenhouse/emacs-jabber
+;; Homepage: https://codeberg.org/emacs-jabber/emacs-jabber
 ;; Package-Requires: ((hexrgb "0") (emacs "27.1") (fsm "0.1.0") (srv "0.1.0"))
 ;; Version: 0.8.92
 
