@@ -4,7 +4,7 @@
 ;; Maintainer: wgreenhouse <wgreenhouse@tilde.club>
 ;; Keywords: comm
 ;; Homepage: https://codeberg.org/emacs-jabber/emacs-jabber
-;; Package-Requires: ((hexrgb "0") (emacs "27.1") (fsm "0.1.0") (srv "0.1.0"))
+;; Package-Requires: ((hexrgb "21.0") (emacs "27.1") (fsm "0.1.0") (srv "0.1.0"))
 ;; Version: 0.8.92
 
 ;; Copyright (C) 2003-2010, 2013 - Magnus Henoch - mange@freemail.hu
@@ -32,7 +32,9 @@
 ;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 ;;; Commentary:
-;;
+;; jabber.el is an XMPP client for Emacs. XMPP (also known as
+;; 'Jabber') is the IETF-standard federated instant messaging protocol
+;; - see http://xmpp.org for more information.
 
 ;;; History:
 ;;
@@ -401,13 +403,6 @@ ATTRIBUTES must be a list of symbols, as present in XML-DATA."
 ;; [[file:jabber.org::#propertize][jabber-propertize:1]]
 (defalias 'jabber-propertize 'propertize)
 ;; jabber-propertize:1 ends here
-
-;; [[file:jabber.org::#bound-true-p][bound-and-true-p:1]]
-(unless (fboundp 'bound-and-true-p)
-  (defmacro bound-and-true-p (var)
-    "Return the value of symbol VAR if it is bound, else nil."
-    `(and (boundp (quote ,var)) ,var)))
-;; bound-and-true-p:1 ends here
 
 ;; [[file:jabber.org::#read-input-method][jabber-read-with-input-method:1]]
 (defsubst jabber-read-with-input-method (prompt &optional initial-contents history default-value)
