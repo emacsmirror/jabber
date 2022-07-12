@@ -233,6 +233,19 @@ The following is a brief summary about the stanza processing.
 :PROPERTIES:
 :CUSTOM_ID: installation
 :END:
+*** from MELPA
+:PROPERTIES:
+:CUSTOM_ID: from-melpa
+:END:
+1. Add the MELPA repositories to your Emacs - https://melpa.org/#/getting-started
+2. Type =M-x package-install RET jabber RET=
+
+If all goes well, =jabber.el= commands like =jabber-connect= should now be available in the =M-x= menu.
+
+*** from source
+:PROPERTIES:
+:CUSTOM_ID: from-source
+:END:
 1. Clone the repository by typing the following into a terminal -
    #+BEGIN_SRC shell
    mkdir ~/emacs-jabber/
@@ -240,12 +253,13 @@ The following is a brief summary about the stanza processing.
    git clone https://codeberg.org/emacs-jabber/emacs-jabber
    make
    #+END_SRC
+
 2. Add the following lines to your =init.el= -
    #+BEGIN_SRC emacs-lisp
    (add-to-list 'load-path "~/emacs-jabber/")
    (load "~/emacs-jabber/jabber-autoloads")
    #+END_SRC
-   ...and, while still in your =init.el=, type =M-x eval-buffer=.
+   ...and, while still in your =init.el=, type =M-x eval-buffer RET=.
 
 If all goes well, =jabber.el= commands like =jabber-connect= should now be available in the =M-x= menu.
 
