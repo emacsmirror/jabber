@@ -158,7 +158,7 @@ Contents of process buffers might be useful for debugging."
 
 ** XML functions
 :PROPERTIES:
-:old-file:     jabber-xml.el
+:header-args: :tangle jabber-xml.el
 :CUSTOM_ID: xml-functions
 :END:
 
@@ -524,7 +524,7 @@ ATTRIBUTES must be a list of symbols, as present in XML-DATA."
 
 ** various utility functions
 :PROPERTIES:
-:old-file:     jabber-util.el
+:header-args: :tangle jabber-util.el
 :CUSTOM_ID: various-utility-functions
 :END:
 
@@ -1589,7 +1589,7 @@ FN is applied to the node and not to the data itself."
 
 ** menu
 :PROPERTIES:
-:old-file:     jabber-menu.el
+:header-args: :tangle jabber-menu.el
 :CUSTOM_ID: menu
 :END:
 
@@ -1864,7 +1864,7 @@ This used to be: =(define-key-after global-map [menu-bar jabber-menu] ...)= but 
 
 ** Network transport functions
 :PROPERTIES:
-:old-file:     jabber-conn.el
+:header-args: :tangle jabber-conn.el
 :CUSTOM_ID: network-transport-functions
 :END:
 A collection of functions, that hide the details of transmitting to and fro a Jabber Server. Mostly inspired by Gnus.
@@ -2377,7 +2377,7 @@ FSM is the finite state machine created in jabber.el library."
 
 ** SASL authentication
 :PROPERTIES:
-:old-file:     jabber-sasl.el
+:header-args: :tangle jabber-sasl.el
 :CUSTOM_ID: sasl-authentication
 :END:
 
@@ -2545,7 +2545,7 @@ obtained from `xml-parse-region'."
 
 ** common keymap for many modes
 :PROPERTIES:
-:old-file:     jabber-keymap.el
+:header-args: :tangle jabber-keymap.el
 :CUSTOM_ID: common-keymap-many-modes
 :END:
 #+BEGIN_SRC emacs-lisp
@@ -2600,7 +2600,7 @@ obtained from `xml-parse-region'."
 
 ** XML Console mode
 :PROPERTIES:
-:old-file:     jabber-console.el
+:header-args: :tangle jabber-console.el
 :CUSTOM_ID: xml-console-mode
 :END:
 
@@ -2827,7 +2827,7 @@ what kind of chat buffer is being created.")
 
 ** Mode line
 :PROPERTIES:
-:old-file:     jabber-modeline.el
+:header-args: :tangle jabber-modeline.el
 :CUSTOM_ID: mode-line
 :END:
 
@@ -2953,10 +2953,10 @@ and offline contacts, respectively."
 	(add-hook 'jabber-presence-hooks
 		  'jabber-mode-line-count-contacts))))
 #+END_SRC
-   
+
 ** core
 :PROPERTIES:
-:old-file:     jabber-core.el
+:header-args: :tangle jabber-core.el
 :CUSTOM_ID: core
 :END:
 
@@ -4239,7 +4239,7 @@ Return an fsm result list if it is."
 
 ** logon
 :PROPERTIES:
-:old-file:     jabber-logon.el
+:header-args: :tangle jabber-logon.el
 :CUSTOM_ID: logon
 :END:
 
@@ -4326,7 +4326,7 @@ obtained from `xml-parse-region'."
 
 ** Displaying the roster
 :PROPERTIES:
-:old-file:     jabber-roster.el
+:header-args: :tangle jabber-roster.el
 :CUSTOM_ID: displaying-roster
 :END:
 
@@ -5516,7 +5516,7 @@ obtained from `xml-parse-region'."
 
 ** export Jabber roster to file
 :PROPERTIES:
-:old-file:     jabber-export.el
+:header-args: :tangle jabber-export.el
 :CUSTOM_ID: export-jabber-roster-to-file
 :END:
 
@@ -5819,7 +5819,7 @@ See `jabber-roster-to-sexp' for description of output format."
 
 ** infoquery (IQ) functions
 :PROPERTIES:
-:old-file:     jabber-iq.el
+:header-args: :tangle jabber-iq.el
 :CUSTOM_ID: infoquery-(iq)-functions
 :END:
 
@@ -6105,7 +6105,7 @@ obtained from `xml-parse-region'."
 
 ** Alert hooks
 :PROPERTIES:
-:old-file:     jabber-alert.el
+:header-args: :tangle jabber-alert.el
 :CUSTOM_ID: alert-hooks
 :END:
 
@@ -6898,7 +6898,7 @@ of `jabber-autoanswer-alist'."
 
 ** FIXME Recording message history
 :PROPERTIES:
-:old-file:     jabber-history.el
+:header-args: :tangle jabber-history.el
 :CUSTOM_ID: recording-message-history
 :END:
 
@@ -7338,7 +7338,7 @@ applies, though."
 
 ** Functions common to all chat buffers
 :PROPERTIES:
-:old-file:     jabber-chatbuffer.el
+:header-args: :tangle jabber-chatbuffer.el
 :CUSTOM_ID: functions-common-to-all-chat-buffers
 :END:
 
@@ -7526,7 +7526,7 @@ JC is the Jabber connection."
 
 ** Compose a Jabber message in a buffer
 :PROPERTIES:
-:old-file:     jabber-compose.el
+:header-args: :tangle jabber-compose.el
 :CUSTOM_ID: compose-jabber-message-buffer
 :END:
 *** jabber-compose                                 :command:
@@ -7601,7 +7601,7 @@ JC is the Jabber connection."
 
 ** One-to-one chats
 :PROPERTIES:
-:old-file:     jabber-chat.el
+:header-args: :tangle jabber-chat.el
 :CUSTOM_ID: one-to-one-chats
 :END:
 
@@ -8577,7 +8577,7 @@ With a prefix argument, open buffer in other window."
 
 ** Roster and presence bookkeeping
 :PROPERTIES:
-:old-file:     jabber-presence.el
+:header-args: :tangle jabber-presence.el
 :CUSTOM_ID: roster-presence-bookkeeping
 :END:
 
@@ -9294,7 +9294,7 @@ JC is the Jabber connection."
 
 ** Entity Capabilities ([[https://xmpp.org/extensions/xep-0115.html][XEP-0115]])
 :PROPERTIES:
-:old-file:     jabber-disco.el
+:header-args: :tangle jabber-disco.el
 :CUSTOM_ID: entity-capabilities-()
 :END:
 
@@ -9706,7 +9706,7 @@ the right node."
 
 ** Service Discovery ([[https://xmpp.org/extensions/xep-0030.html][XEP-0030]])
 :PROPERTIES:
-:old-file:     jabber-disco.el
+:header-args: :tangle jabber-disco.el
 :CUSTOM_ID: service-discovery-()
 :END:
 *** Respond to disco requests
@@ -10188,7 +10188,7 @@ JC is the Jabber connection."
 
 ** XMPP Ping ([[https://xmpp.org/extensions/xep-0199.html][XEP-0199]])
 :PROPERTIES:
-:old-file:     jabber-ping.el
+:header-args: :tangle jabber-ping.el
 :CUSTOM_ID: xmpp-ping-()
 :END:
 
@@ -10263,7 +10263,7 @@ obtained from `xml-parse-region'."
 
 ** keepalive - try to detect a lost connection
 :PROPERTIES:
-:old-file:     jabber-keepalive.el
+:header-args: :tangle jabber-keepalive.el
 :CUSTOM_ID: keepalive-try-to-detect-lost-connection
 :END:
 
@@ -10514,7 +10514,7 @@ accounts."
 
 ** Feature Negotiation ([[https://xmpp.org/extensions/xep-0020.html][XEP-0020]])           :xep_deprecated:
 :PROPERTIES:
-:old-file:     jabber-feature-neg.el
+:header-args: :tangle jabber-feature-neg.el
 :CUSTOM_ID: feature-negotiation-()
 :END:
 
@@ -10638,7 +10638,7 @@ protocols."
 
 ** widget - display various kinds of forms
 :PROPERTIES:
-:old-file:     jabber-widget.el
+:header-args: :tangle jabber-widget.el
 :CUSTOM_ID: widget-display-various-kinds-of-forms
 :END:
 
@@ -11077,7 +11077,7 @@ Return nil if no form type is specified."
 
 ** Bookmarks ([[https://xmpp.org/extensions/xep-0048.html][XEP-0048]])                     :xep_deprecated:
 :PROPERTIES:
-:old-file:     jabber-bookmarks.el
+:header-args: :tangle jabber-bookmarks.el
 :CUSTOM_ID: bookmarks-()
 :END:
 
@@ -11378,7 +11378,7 @@ JC is the Jabber connection."
 
 ** Private XML Storage ([[https://xmpp.org/extensions/xep-0049.html][XEP-0049]])
 :PROPERTIES:
-:old-file:     jabber-private.el
+:header-args: :tangle jabber-private.el
 :CUSTOM_ID: private-xml-storage-()
 :END:
 
@@ -11438,7 +11438,7 @@ JC is the Jabber connection."
 #+END_SRC
 ** muc-nick-coloring
 :PROPERTIES:
-:old-file:     jabber-muc-nick-coloring.el
+:header-args: :tangle jabber-muc-nick-coloring.el
 :CUSTOM_ID: muc-nick-coloring
 :END:
 
@@ -11546,7 +11546,7 @@ added in #RGB notation for unknown nicks."
 
 ** Multi-User Chat (MUC) ([[https://xmpp.org/extensions/xep-0045.html][XEP-0045]])
 :PROPERTIES:
-:old-file:     jabber-muc.el
+:header-args: :tangle jabber-muc.el
 :CUSTOM_ID: multi-user-chat-(muc)-()
 :END:
 
@@ -13170,7 +13170,7 @@ JC is the Jabber connection."
 
 ** muc-nick-completion
 :PROPERTIES:
-:old-file:     jabber-muc-nick-completion.el
+:header-args: :tangle jabber-muc-nick-completion.el
 :CUSTOM_ID: muc-nick-completion
 :END:
 
@@ -13416,7 +13416,7 @@ OLD is last tried nickname."
 
 ** In-Band Registration ([[https://xmpp.org/extensions/xep-0077.html][XEP-0077]])
 :PROPERTIES:
-:old-file:     jabber-register.el
+:header-args: :tangle jabber-register.el
 :CUSTOM_ID: -band-registration-()
 :END:
 
@@ -13579,7 +13579,7 @@ obtained from `xml-parse-region'."
 
 ** Jabber Search ([[https://xmpp.org/extensions/xep-0055.html][XEP-0055]])
 :PROPERTIES:
-:old-file:     jabber-search.el
+:header-args: :tangle jabber-search.el
 :CUSTOM_ID: search-()
 :END:
 
@@ -13695,7 +13695,7 @@ obtained from `xml-parse-region'."
 
 ** Jabber Browsing ([[https://xmpp.org/extensions/xep-0011.html][XEP-0011]])                 :xep_obsolete:
 :PROPERTIES:
-:old-file:     jabber-browse.el
+:header-args: :tangle jabber-browse.el
 :CUSTOM_ID: browsing-()
 :END:
 
@@ -13790,7 +13790,7 @@ obtained from `xml-parse-region'."
 
 ** Software Version ([[https://xmpp.org/extensions/xep-0092.html][XEP-0092]])
 :PROPERTIES:
-:old-file:     jabber-version.el
+:header-args: :tangle jabber-version.el
 :CUSTOM_ID: software-version-()
 :END:
 
@@ -13890,7 +13890,7 @@ JC is the Jabber connection."
 
 ** Ad Hoc Commands ([[https://xmpp.org/extensions/xep-0050.html][XEP-0050]])
 :PROPERTIES:
-:old-file:     jabber-ahc.el
+:header-args: :tangle jabber-ahc.el
 :CUSTOM_ID: ad-hoc-commands-()
 :END:
 
@@ -14177,7 +14177,7 @@ JC is the Jabber connection."
 
 ** ahc-presence - provide remote control of presence
 :PROPERTIES:
-:old-file:     jabber-ahc-presence.el
+:header-args: :tangle jabber-ahc-presence.el
 :CUSTOM_ID: ahc-presence-provide-remote-control-of-presence
 :END:
 
@@ -14282,7 +14282,7 @@ obtained from `xml-parse-region'."
 
 ** watch - get notified when certain persons go online
 :PROPERTIES:
-:old-file:     jabber-watch.el
+:header-args: :tangle jabber-watch.el
 :CUSTOM_ID: watch-get-notified-when-certain-persons-go-online
 :END:
 
@@ -14361,7 +14361,7 @@ calling `jabber-watch-add' and `jabber-watch-remove'."
 
 ** activity - show Jabber activity in the mode line
 :PROPERTIES:
-:old-file:     jabber-activity.el
+:header-args: :tangle jabber-activity.el
 :CUSTOM_ID: activity-show-jabber-activity-mode-line
 :END:
 
@@ -14991,7 +14991,7 @@ With a numeric arg, enable this display if arg is positive."
 
 ** Message Events ([[https://xmpp.org/extensions/xep-0022.html][XEP-0022]])                  :xep_obsolete:
 :PROPERTIES:
-:old-file:     jabber-events.el
+:header-args: :tangle jabber-events.el
 :CUSTOM_ID: message-events-()
 :END:
 
@@ -15338,7 +15338,7 @@ Add function last in chain, so a chat buffer is already created.
 
 ** Chat State Notifications ([[https://xmpp.org/extensions/xep-0085.html][XEP-0085]])
 :PROPERTIES:
-:old-file:     jabber-chatstates.el
+:header-args: :tangle jabber-chatstates.el
 :CUSTOM_ID: chat-state-notifications-()
 :END:
 
@@ -15595,7 +15595,7 @@ It can be sent and cancelled several times.")
 
 ** Generic functions for avatars
 :PROPERTIES:
-:old-file:     jabber-avatar.el
+:header-args: :tangle jabber-avatar.el
 :CUSTOM_ID: generic-functions-avatars
 :END:
 
@@ -15901,7 +15901,7 @@ available."
 
 ** vCard ([[https://xmpp.org/extensions/xep-0054.html][XEP-0054]])
 :PROPERTIES:
-:old-file:     jabber-vcard.el
+:header-args: :tangle jabber-vcard.el
 :CUSTOM_ID: vcard-()
 :END:
 
@@ -16514,7 +16514,7 @@ obtained from `xml-parse-region'."
 
 ** vCard-Based Avatars ([[https://xmpp.org/extensions/xep-0153.html][XEP-0153]])
 :PROPERTIES:
-:old-file:     jabber-vcard-avatars.el
+:header-args: :tangle jabber-vcard-avatars.el
 :CUSTOM_ID: vcard-based-avatars-()
 :END:
 
@@ -16690,7 +16690,7 @@ JC is the Jabber connection."
 
 ** autoaway
 :PROPERTIES:
-:old-file:     jabber-autoaway.el
+:header-args: :tangle jabber-autoaway.el
 :CUSTOM_ID: autoaway
 :END:
 
@@ -17015,7 +17015,7 @@ The method for finding the terminal only works on GNU/Linux."
 
 ** Entity Time ([[https://xmpp.org/extensions/xep-0202.html][XEP-0202]]), Legacy Entity Time ([[https://xmpp.org/extensions/xep-0090.html][XEP-0090]]) :xep_obsolete:
 :PROPERTIES:
-:old-file:     jabber-time.el
+:header-args: :tangle jabber-time.el
 :CUSTOM_ID: entity-time-()
 :END:
 
@@ -17288,7 +17288,7 @@ obtained from `xml-parse-region'."
 
 ** truncate - cleanup top lines in chatbuffers
 :PROPERTIES:
-:old-file:     jabber-truncate.el
+:header-args: :tangle jabber-truncate.el
 :CUSTOM_ID: truncate-cleanup-top-lines-chatbuffers
 :END:
 
@@ -17365,7 +17365,7 @@ get it, and then it just gets deleted."
 
 ** Message Carbons ([[https://xmpp.org/extensions/xep-0280.html][XEP-0280]])
 :PROPERTIES:
-:old-file:     jabber-carbons.el
+:header-args: :tangle jabber-carbons.el
 :CUSTOM_ID: message-carbons-()
 :END:
 
@@ -17410,7 +17410,7 @@ JC is the Jabber connection."
 
 ** In-Band Real Time Text (RTT) ([[https://xmpp.org/extensions/xep-0301.html][XEP-0301]])
 :PROPERTIES:
-:old-file:     jabber-rtt.el
+:header-args: :tangle jabber-rtt.el
 :CUSTOM_ID: -band-real-time-text-(rtt)-()
 :END:
 
@@ -17834,7 +17834,7 @@ XEP-0301, In-Band Real Time Text."
 
 ** Jabber
 :PROPERTIES:
-:old-file:     jabber.el
+:header-args: :tangle jabber.el
 :CUSTOM_ID: jabber
 :END:
 
