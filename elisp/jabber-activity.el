@@ -300,7 +300,8 @@ Optional PRESENCE mean personal presence request or alert."
   (setq jabber-activity-personal-jids
 	(cl-delete-if-not jabber-activity-show-p
 		       jabber-activity-personal-jids))
-  (jabber-activity-mode-line-update))
+  (ignore-errors
+    (jabber-activity-mode-line-update)))
 
 (defun jabber-activity-add (from buffer text proposed-alert)
   "Add a JID to mode line when `jabber-activity-show-p'."
