@@ -49,11 +49,10 @@ One of:
 		       (if (string-match "<\\([^>]+\\)>[ \t]*$" value)
 			   (match-string 1 value)
 			 value))
-  :complete-function 'jid-complete)
+  :complete 'jid-complete)
 
-(defun jid-complete ()
+(defun jid-complete (widget)
   "Perform completion on JID preceding point."
-  (interactive)
   ;; mostly stolen from widget-color-complete
   (let* ((prefix (buffer-substring-no-properties (widget-field-start widget)
 						 (point)))
