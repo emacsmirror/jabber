@@ -269,7 +269,7 @@ To install the Info documentation, copy =jabber.info= to =/usr/local/info= and r
 :PROPERTIES:
 :CUSTOM_ID: how-to-guides
 :END:
-** How to contribute to the project
+** How to contribute to jabber.el
 :PROPERTIES:
 :CUSTOM_ID: how-to-contribute
 :END:
@@ -301,6 +301,7 @@ To install the Info documentation, copy =jabber.info= to =/usr/local/info= and r
      #+BEGIN_SRC
      M-x compile RET ORG_PATH=/path/to/org/source/lisp/ make -Bk RET
      #+END_SRC
+   + If you don't like working with literate programs, just edit =jabber.el= and we'll incorporate your PR into =jabber.org=.
 
    This tangles the literate program and byte compiles the tangled sources. Try to address any byte compilation errors.
 
@@ -314,6 +315,7 @@ To install the Info documentation, copy =jabber.info= to =/usr/local/info= and r
    1. Add your name to the [[#contributors][list of contributors]].
    2. Document user-facing changes in [[file:CHANGELOG.org][CHANGELOG.org]].
    3. Update or add other documentation in this [[file:README.org][README.org]] if necessary. Try to follow the [[https://diataxis.fr/][Diataxis Framework]].
+
 5. Push and create your PR.
 
 * TODO maintenance [0%]
