@@ -1,3 +1,28 @@
+;; jabber-alert.el - alert hooks
+
+;; Copyright (C) 2003, 2004, 2005, 2007, 2008 - Magnus Henoch - mange@freemail.hu
+;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+
+;; This file is a part of jabber.el.
+
+;; This program is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 2 of the License, or
+;; (at your option) any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program; if not, write to the Free Software
+;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+(require 'jabber-util)
+
+(require 'cl)
+
 (defgroup jabber-alerts nil "auditory and visual alerts for jabber events"
   :group 'jabber)
 
@@ -412,6 +437,8 @@ This function is not called directly, but can be used as the value for
   (when proposed-alert
     (switch-to-buffer jabber-roster-buffer)))
 
+;;; Info alert hooks
+
 (defun jabber-info-default-message (infotype buffer)
   "Function for constructing info alert messages.
 
@@ -488,3 +515,6 @@ of `jabber-autoanswer-alist'."
       (if message
           (jabber-chat-send jabber-buffer-connection message)))))
 (cl-pushnew 'jabber-autoanswer-answer-muc (get 'jabber-alert-muc-hooks 'custom-options))
+(provide 'jabber-alert)
+
+;;; arch-tag: 725bd73e-c613-4fdc-a11d-3392a7598d4f

@@ -7,15 +7,11 @@
 ;; Package-Requires: ((hexrgb "21.0") (emacs "27.1") (fsm "0.1.0") (srv "0.1.0"))
 ;; Version: 0.8.92
 
-;; Copyright (C) 2003-2010, 2013 - Magnus Henoch - mange@freemail.hu
-;; Copyright (C) 2002-2004 - Tom Berger - object@intelectronica.net
+;; Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
+;; Copyright (C) 2002, 2003, 2004 - Tom Berger - object@intelectronica.net
+
+;; SSL - Support, mostly inspired by Gnus
 ;; Copyright (C) 2005 - Georg Lehner - jorge@magma.com.ni
-;; Copyright (C) 2008-2010, 2012-2013 - Terechkov Evgenii - evg@altlinux.org
-;; Copyright (C) 2006-2010 - Kirill A. Korinskiy - catap@catap.ru
-;; Copyright (C) 2004-2005 - Carl Henrik Lunde - chlunde+jabber+@ping.uio.no
-;; Copyright (C) 2009-2010 - Demyan Rogozhin <demyan.rogozhin@gmail.com>
-;; Copyright (C) 2004 - Mathias Dahl
-;; Copyright (C) 2007 - Serguei Jidkov - jsv@e-mail.ru
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -180,13 +176,62 @@ configure a Google Talk account like this:
   :type 'integer
   :group 'jabber)
 
+;;; guess internal dependencies!
+(require 'jabber-util)
+(require 'jabber-menu)
+(require 'jabber-xml)
+(require 'jabber-conn)
+(require 'jabber-core)
+(require 'jabber-logon)
+(require 'jabber-roster)
+(require 'jabber-presence)
+(require 'jabber-alert)
+(require 'jabber-chat)
+(require 'jabber-disco)
+(require 'jabber-iq)
+(require 'jabber-widget)
+(require 'jabber-register)
+(require 'jabber-search)
+(require 'jabber-browse)
+(require 'jabber-muc)
+(require 'jabber-muc-nick-completion)
+(require 'jabber-version)
+(require 'jabber-ahc-presence)
+(require 'jabber-modeline)
+(require 'jabber-watch)
+(require 'jabber-activity)
+(require 'jabber-vcard)
+(require 'jabber-events)
+(require 'jabber-chatstates)
+(require 'jabber-vcard-avatars)
+(require 'jabber-autoaway)
+(require 'jabber-time)
+(require 'jabber-truncate)
+
+(require 'jabber-ft-client)
+(require 'jabber-ft-server)
+(require 'jabber-socks5)
+
+;; External notifiers
+(require 'jabber-screen)
+(require 'jabber-tmux)
+(require 'jabber-ratpoison)
+(require 'jabber-sawfish)
+(require 'jabber-festival)
+(require 'jabber-xmessage)
+(require 'jabber-wmii)
+(require 'jabber-osd)
+(require 'jabber-awesome)
+(require 'jabber-libnotify)
+(require 'jabber-notifications)
+
 ;;;###autoload
 (defvar *jabber-current-status* nil
-  "The users current presence status.")
+  "The user's current presence status.")
 
 ;;;###autoload
 (defvar *jabber-current-show* nil
-  "The users current presence show.")
+  "The user's current presence show.")
 
 ;;;###autoload
 (defvar *jabber-current-priority* nil
@@ -195,7 +240,7 @@ configure a Google Talk account like this:
 (defvar *jabber-status-history* nil
   "History of status messages.")
 
-(defgroup jabber-faces nil "Faces for displaying jabber instant messaging."
+(defgroup jabber-faces nil "Faces for displaying Jabber instant messaging."
   :group 'jabber)
 
 (defface jabber-title-small
@@ -239,7 +284,7 @@ configure a Google Talk account like this:
 
 ;;;###autoload
 (defun jabber-customize ()
-  "Customize jabber options."
+  "Customize Jabber options."
   (interactive)
   (customize-group 'jabber))
 
@@ -251,4 +296,5 @@ configure a Google Talk account like this:
 
 (provide 'jabber)
 
+;;; arch-tag: 5145153e-4d19-4dc2-800c-b1282feb155d
 ;;; jabber.el ends here

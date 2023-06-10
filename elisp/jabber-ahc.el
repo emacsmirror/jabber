@@ -1,3 +1,27 @@
+;; jabber-ahc.el - Ad-Hoc Commands by JEP-0050
+
+;; Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
+;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+
+;; This file is a part of jabber.el.
+
+;; This program is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 2 of the License, or
+;; (at your option) any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program; if not, write to the Free Software
+;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+(require 'jabber-disco)
+(require 'jabber-widget)
+
 (defvar jabber-ahc-sessionid nil
   "Session ID of Ad-Hoc Command session.")
 
@@ -5,11 +29,10 @@
   "Node to send commands to.")
 
 (defvar jabber-ahc-commands nil
-  "Commands provided.
+  "Alist of ad-hoc commands provided.
 
-This is an alist, where the keys are node names as strings (which
-means that they must not conflict).  The values are plists having
-following properties:
+The keys are node names as strings (which means that they must
+not conflict). The values are plists having the following properties -
 
 acl     - function taking connection object and JID of requester,
 	  returning non-nil for access allowed.  No function means
@@ -20,6 +43,8 @@ func	- function taking connection object and entire IQ stanza as
 
 Use the function `jabber-ahc-add' to add a command to this list.")
 
+
+;;; SERVER
 (add-to-list 'jabber-disco-info-nodes
 	     (list "http://jabber.org/protocol/commands"
 		   '((identity ((category . "automation")
@@ -97,6 +122,7 @@ obtained from `xml-parse-region'."
 	;; No such node
 	(jabber-signal-error "Cancel" 'item-not-found)))))
 
+;;; CLIENT
 (add-to-list 'jabber-jid-service-menu
 	     (cons "Request command list" 'jabber-ahc-get-list))
 (defun jabber-ahc-get-list (jc to)
@@ -208,3 +234,7 @@ JC is the Jabber connection."
 
 		  #'jabber-process-data #'jabber-ahc-display
 		  #'jabber-process-data "Command execution failed"))
+
+(provide 'jabber-ahc)
+
+;;; arch-tag: c0d5ed8c-50cb-44e1-8e0f-4058b79ee353
