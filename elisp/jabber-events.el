@@ -1,6 +1,33 @@
+;;; jabber-events.el --- Message events (JEP-0022) implementation
+
+;; Copyright (C) 2005, 2008  Magnus Henoch
+
+;; Author: Magnus Henoch <mange@freemail.hu>
+
+;; This file is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 2, or (at your option)
+;; any later version.
+
+;; This file is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with GNU Emacs; see the file COPYING.  If not, write to
+;; the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
+
+(require 'cl)
+
 (defgroup jabber-events nil
   "Message events and notifications."
   :group 'jabber)
+
+;;; INCOMING
+;;; Code for requesting event notifications from others and handling
+;;; them.
 
 (defcustom jabber-events-request-these '(offline
 					 delivered
@@ -44,6 +71,10 @@ probably reading the message).")
   (jabber-events-update-message)
   `((x ((xmlns . "jabber:x:event"))
        ,@(mapcar #'list jabber-events-request-these))))
+
+;;; OUTGOING
+;;; Code for handling requests for event notifications and providing
+;;; them, modulo user preferences.
 
 (defcustom jabber-events-confirm-delivered t
   "Send delivery confirmation if requested?"
@@ -122,6 +153,9 @@ and it hasn't been sent before."
 	    (id () ,jabber-events-last-id))))
       (setq jabber-events-composing-sent composing-now))))
 
+;;; COMMON
+
+;; Add function last in chain, so a chat buffer is already created.
 (add-to-list 'jabber-message-chain 'jabber-handle-incoming-message-events t)
 
 (defun jabber-handle-incoming-message-events (jc xml-data)
@@ -206,3 +240,6 @@ and it hasn't been sent before."
 	      (setq jabber-events-composing-p
 		    (not (null (jabber-xml-get-children x 'composing))))
 	      (jabber-events-update-message)))))))))
+
+(provide 'jabber-events)
+;; arch-tag: 7b6e61fe-a9b3-11d9-afca-000a95c2fcd0

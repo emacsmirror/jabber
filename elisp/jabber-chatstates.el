@@ -1,3 +1,29 @@
+;;; jabber-chatstate.el --- Chat state notification (XEP-0085) implementation
+
+;; Author: Ami Fischman <ami@fischman.org>
+;; (based entirely on jabber-events.el by Magnus Henoch <mange@freemail.hu>)
+
+;; This file is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 2, or (at your option)
+;; any later version.
+
+;; This file is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with GNU Emacs; see the file COPYING.  If not, write to
+;; the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
+
+;; TODO
+;; - Currently only active/composing notifications are /sent/ though all 5
+;;   notifications are handled on receipt.
+
+(require 'cl)
+
 (defgroup jabber-chatstates nil
   "Chat state notifications."
   :group 'jabber)
@@ -26,6 +52,10 @@ nil - don't send states")
   "Human-readable presentation of chat state information.")
 (make-variable-buffer-local 'jabber-chatstates-message)
 
+;;; INCOMING
+;;; Code for requesting chat state notifications from others and handling
+;;; them.
+
 (defun jabber-chatstates-update-message ()
   (setq jabber-chatstates-message
         (if (and jabber-chatstates-last-state
@@ -44,6 +74,10 @@ nil - don't send states")
       (setq jabber-chatstates-requested nil))
     (setq jabber-chatstates-composing-sent nil)
     `((active ((xmlns . ,jabber-chatstates-xmlns))))))
+
+;;; OUTGOING
+;;; Code for handling requests for chat state notifications and providing
+;;; them, modulo user preferences.
 
 (defvar jabber-chatstates-composing-sent nil
   "Has composing notification been sent?
@@ -92,6 +126,8 @@ It can be sent and cancelled several times.")
       (when (setq jabber-chatstates-composing-sent composing-now)
         (jabber-chatstates-kick-timer)))))
 
+;;; COMMON
+
 (defun jabber-handle-incoming-message-chatstates (jc xml-data)
   (when (get-buffer (jabber-chat-get-buffer (jabber-xml-get-attribute xml-data 'from)))
     (with-current-buffer (jabber-chat-get-buffer (jabber-xml-get-attribute xml-data 'from))
@@ -136,3 +172,6 @@ It can be sent and cancelled several times.")
 (add-to-list 'jabber-message-chain 'jabber-handle-incoming-message-chatstates t)
 
 (jabber-disco-advertise-feature "http://jabber.org/protocol/chatstates")
+
+(provide 'jabber-chatstates)
+;; arch-tag: d879de90-51e1-11dc-909d-000a95c2fcd0

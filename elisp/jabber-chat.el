@@ -1,4 +1,29 @@
+;; jabber-chat.el - one-to-one chats
+
+;; Copyright (C) 2005, 2007, 2008 - Magnus Henoch - mange@freemail.hu
+
+;; This file is a part of jabber.el.
+
+;; This program is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 2 of the License, or
+;; (at your option) any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program; if not, write to the Free Software
+;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+(require 'jabber-core)
+(require 'jabber-chatbuffer)
+(require 'jabber-history)
+(require 'jabber-menu)                  ;we need jabber-jid-chat-menu
 (require 'ewoc)
+(eval-when-compile (require 'cl))
 
 (defgroup jabber-chat nil "chat display options"
   :group 'jabber)
@@ -149,9 +174,9 @@ chat buffer."
   "JID of the person you are chatting with.")
 
 (defvar jabber-chat-printers '(jabber-chat-print-subject
-			       jabber-chat-print-body
-			       jabber-chat-print-url
-			       jabber-chat-goto-address)
+			 jabber-chat-print-body
+			 jabber-chat-print-url
+			 jabber-chat-goto-address)
   "List of functions that may be able to print part of a message.
 Each function receives these arguments:
 
@@ -637,6 +662,7 @@ obtained from `xml-parse-region'."
 	;; using `field-beginning'.
 	(goto-address-fontify (field-beginning nil nil limit) end)))))
 
+;; jabber-compose is autoloaded in jabber.el
 (add-to-list 'jabber-jid-chat-menu
 	     (cons "Compose message" 'jabber-compose))
 
@@ -690,3 +716,7 @@ With a prefix argument, open buffer in other window."
     (if (and jid-at-point account)
 	(jabber-chat-with account jid-at-point other-window)
       (error "No contact at point"))))
+
+(provide 'jabber-chat)
+
+;; arch-tag: f423eb92-aa87-475b-b590-48c93ccba9be

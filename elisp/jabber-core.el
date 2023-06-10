@@ -1,3 +1,32 @@
+;; jabber-core.el - core functions
+
+;; Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
+;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+
+;; SSL-Connection Parts:
+;; Copyright (C) 2005 - Georg Lehner - jorge@magma.com.ni
+
+;; This file is a part of jabber.el.
+
+;; This program is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 2 of the License, or
+;; (at your option) any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program; if not, write to the Free Software
+;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+(require 'cl)
+
+(require 'jabber-util)
+(require 'jabber-logon)
+(require 'jabber-conn)
 (eval-and-compile
   (or (ignore-errors (require 'fsm))
       (ignore-errors
@@ -9,6 +38,9 @@
       (error
        "The fsm library was not found in `load-path' or jabber-fallback-lib/ directory")))
 
+(require 'jabber-sasl)
+(require 'jabber-console)
+
 (defvar jabber-connections nil
   "List of jabber-connection FSMs.")
 
@@ -19,7 +51,7 @@
   "Obarray for keeping JIDs.")
 
 (defvar *jabber-disconnecting* nil
-  "Boolean - are we in the process of disconnecting by free will.")
+  "Non-nil if are we in the process of voluntary disconnection.")
 
 (defvar jabber-message-chain nil
   "Incoming messages are sent to these functions, in order.")
@@ -106,6 +138,9 @@ problems."
 
 (defvar jabber-connection-type-history ()
   "Keeps track of previously used connection types.")
+
+;; jabber-connect and jabber-connect-all should load jabber.el, not
+;; just jabber-core.el, when autoloaded.
 
 ;;;###autoload (autoload 'jabber-connect-all "jabber" "Connect to all configured Jabber accounts.\nSee `jabber-account-list'.\nIf no accounts are configured (or ARG supplied), call `jabber-connect' interactively." t)
 (defun jabber-connect-all (&optional arg)
@@ -207,6 +242,8 @@ With double prefix argument, specify more connection details."
 	   (jabber-jid-server jid)
 	   (jabber-jid-resource jid)
 	   registerp password network-server port connection-type)))
+
+  (require 'jabber)
 
   (if (member (list username
 		    server)
@@ -810,7 +847,7 @@ DATA is any sexp."
 	(jabber-filter process fsm)))))
 
 (defun jabber-filter (process fsm)
-  "The filter function for the jabber process."
+  "The filter function for the Jabber process."
   (with-current-buffer (process-buffer process)
     ;; Start from the beginning
     (goto-char (point-min))
@@ -966,3 +1003,7 @@ Return an fsm result list if it is."
     (unless connection
       (error "%s has no connection" (jabber-connection-jid jc)))
     (funcall send-function connection string)))
+
+(provide 'jabber-core)
+
+;;; arch-tag: 9d273ce6-c45a-447b-abf3-21d3ce73a51a

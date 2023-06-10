@@ -1,3 +1,29 @@
+;; jabber-console.el - XML Console mode
+
+;; Copyright (C) 2009, 2010 - Demyan Rogozhin <demyan.rogozhin@gmail.com>
+
+;; This program is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 2 of the License, or
+;; (at your option) any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program; if not, write to the Free Software
+;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+;;; Commentary:
+
+;; Use *-jabber-console-* for sending custom XMPP code. Be careful!
+
+;;; Code:
+
+(require 'jabber-keymap)
+(require 'jabber-util)
 (require 'ewoc)
 (require 'sgml-mode) ;we base on this mode to hightlight XML
 
@@ -120,3 +146,6 @@ what kind of chat buffer is being created.")
 		(when (< 1  jabber-console-truncate-lines)
 		  (let ((_jabber-log-lines-to-keep jabber-console-truncate-lines))
 			(jabber-truncate-top buffer jabber-console-ewoc)))))))
+
+(provide 'jabber-console)
+;;; jabber-console.el ends here

@@ -1,4 +1,41 @@
+;;; jabber-avatar.el --- generic functions for avatars
+
+;; Copyright (C) 2006, 2007, 2008  Magnus Henoch
+
+;; Author: Magnus Henoch <mange@freemail.hu>
+
+;; This file is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 2, or (at your option)
+;; any later version.
+
+;; This file is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with GNU Emacs; see the file COPYING.  If not, write to
+;; the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+;; Boston, MA 02110-1301, USA.
+
+;;; Commentary:
+
+;; There are several methods for transporting avatars in Jabber
+;; (JEP-0008, JEP-0084, JEP-0153).  They all have in common that they
+;; identify avatars by their SHA1 checksum, and (at least partially)
+;; use Base64-encoded image data.  Thus this library of support
+;; functions for interpreting and caching avatars.
+
+;; A contact with an avatar has the image in the avatar property of
+;; the JID symbol.  Use `jabber-avatar-set' to set it.
+
+;;; Code:
+
 (require 'mailcap)
+(eval-when-compile (require 'cl))
+
+;;;; Variables
 
 (defgroup jabber-avatar nil
   "Avatar related settings"
@@ -25,8 +62,10 @@
   :group 'jabber-avatar
   :type 'integer)
 
-  (cl-defstruct
-      avatar sha1-sum mime-type url base64-data height width bytes)
+;;;; Avatar data handling
+
+(cl-defstruct
+    avatar sha1-sum mime-type url base64-data height width bytes)
 
 (defun jabber-avatar-from-url (url)
   "Construct an avatar structure from the given URL.
@@ -114,6 +153,8 @@ Return AVATAR."
       (setf (avatar-height avatar) (cdr size)))
     avatar))
 
+;;;; Avatar cache
+
 (defun jabber-avatar-find-cached (sha1-sum)
   "Return file name of cached image for avatar identified by SHA1-SUM.
 If there is no cached image, return nil."
@@ -175,9 +216,10 @@ AVATAR may be one of:
       (jabber-presence-update-roster jid-symbol))))
 
 (defun jabber-create-image (file-or-data &optional type data-p)
-  "Create image, scaled down to jabber-avatar-max-width/height.
-If width/height exceeds either of those, and ImageMagick is
-available."
+  "Create an image from FILE-OR-DATA.
+If width/height exceeds jabber-avatar-max-width or
+jabber-avatar-max-height, and ImageMagick is available, the image
+is scaled down."
   (let* ((image (create-image file-or-data type data-p))
          (size (image-size image t))
          (spec (cdr image)))
@@ -188,3 +230,6 @@ available."
       (plist-put spec :width jabber-avatar-max-width)
       (plist-put spec :height jabber-avatar-max-height))
     image))
+
+(provide 'jabber-avatar)
+;; arch-tag: 2405c3f8-8eaa-11da-826c-000a95c2fcd0

@@ -1,3 +1,28 @@
+;; jabber-bookmarks.el - bookmarks according to XEP-0048
+
+;; Copyright (C) 2007, 2008 - Magnus Henoch - mange@freemail.hu
+
+;; This file is a part of jabber.el.
+
+;; This program is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 2 of the License, or
+;; (at your option) any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program; if not, write to the Free Software
+;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+(require 'jabber-private)
+(require 'jabber-widget)
+
+(require 'cl)
+
 (defvar jabber-bookmarks (make-hash-table :test 'equal)
   "Mapping from full JIDs to bookmarks.
 Bookmarks are what has been retrieved from the server, as list of
@@ -220,3 +245,6 @@ JC is the Jabber connection."
 	  (push (cons 'conference entry) value))))
     (widget-value-set (cdr (assq 'bookmarks jabber-widget-alist)) value)
     (widget-setup)))
+
+(provide 'jabber-bookmarks)
+;; arch-tag: a7d6f862-bac0-11db-831f-000a95c2fcd0
