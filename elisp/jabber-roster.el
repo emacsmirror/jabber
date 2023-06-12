@@ -25,7 +25,7 @@
 (require 'jabber-alert)
 (require 'jabber-keymap)
 (require 'format-spec)
-(require 'cl)				;for `find'
+(require 'cl-lib)				;for `find'
 (require 'jabber-private)
 
 (defgroup jabber-roster nil "roster display options"

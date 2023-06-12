@@ -21,7 +21,7 @@
 (require 'jabber-private)
 (require 'jabber-widget)
 
-(require 'cl)
+(require 'cl-lib)
 
 (defvar jabber-bookmarks (make-hash-table :test 'equal)
   "Mapping from full JIDs to bookmarks.

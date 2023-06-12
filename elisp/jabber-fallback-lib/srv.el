@@ -32,7 +32,7 @@
 (condition-case nil
     (require 'dns)
   (error nil))
-(eval-when-compile (require 'cl))
+(eval-when-compile (require 'cl-lib))
 
 (defun srv-lookup (target)
   "Perform SRV lookup of TARGET and return list of connection candidiates.

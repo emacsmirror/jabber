@@ -20,7 +20,7 @@
 
 ;;; Code:
 
-(eval-when-compile (require 'cl))	;for ignore-errors
+(eval-when-compile (require 'cl-lib))	;for ignore-errors
 ;; we need hexrgb-hsv-to-hex:
 (eval-and-compile
   (or (ignore-errors (require 'hexrgb))

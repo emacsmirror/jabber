@@ -56,7 +56,7 @@
 
 ;; Here is a simple (not using all the features of fsm.el) example:
 ;;
-;; (require 'cl)
+;; (require 'cl-lib)
 ;; (labels ((hey (n ev)
 ;;               (message "%d (%s)\tp%sn%s!" n ev
 ;;                        (if (zerop (% n 4)) "o" "i")
@@ -105,7 +105,7 @@
 
 ;; We require cl at runtime, since we insert `cl-destructuring-bind' into
 ;; modules that use fsm.el.
-(require 'cl)
+(require 'cl-lib)
 
 (defvar fsm-debug "*fsm-debug*"
   "*Name of buffer for fsm debug messages.

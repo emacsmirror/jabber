@@ -1,4 +1,4 @@
-(eval-when-compile (require 'cl))
+(eval-when-compile (require 'cl-lib))
 
 (defvar jabber-socks5-pending-sessions nil
   "List of pending sessions.

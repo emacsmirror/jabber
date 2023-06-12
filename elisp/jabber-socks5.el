@@ -26,7 +26,7 @@
 
 ;; jabber-core will require fsm for us
 (require 'jabber-core)
-(eval-when-compile (require 'cl))
+(eval-when-compile (require 'cl-lib))
 
 (defvar jabber-socks5-pending-sessions nil
   "List of pending sessions.

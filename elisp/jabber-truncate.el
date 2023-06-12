@@ -21,7 +21,7 @@
 (require 'jabber-chat)
 (require 'jabber-alert)
 
-(require 'cl)
+(require 'cl-lib)
 
 (defvar jabber-log-lines-to-keep 1000
   "Maximum number of lines in chat buffer.")

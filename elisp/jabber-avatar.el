@@ -33,7 +33,7 @@
 ;;; Code:
 
 (require 'mailcap)
-(eval-when-compile (require 'cl))
+(eval-when-compile (require 'cl-lib))
 
 ;;;; Variables
 

@@ -20,7 +20,7 @@
 
 (require 'jabber-presence)
 (require 'jabber-alert)
-(eval-when-compile (require 'cl))
+(eval-when-compile (require 'cl-lib))
 
 (defgroup jabber-mode-line nil
   "Display Jabber status in mode line"

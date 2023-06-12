@@ -21,7 +21,7 @@
 
 (require 'jabber-util)
 
-(require 'cl)
+(require 'cl-lib)
 
 (defgroup jabber-alerts nil "auditory and visual alerts for jabber events"
   :group 'jabber)

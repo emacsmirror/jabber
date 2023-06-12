@@ -23,7 +23,7 @@
 (require 'jabber-history)
 (require 'jabber-menu)                  ;we need jabber-jid-chat-menu
 (require 'ewoc)
-(eval-when-compile (require 'cl))
+(eval-when-compile (require 'cl-lib))
 
 (defgroup jabber-chat nil "chat display options"
   :group 'jabber)

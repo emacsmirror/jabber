@@ -25,7 +25,7 @@
 ;; A collection of functions, that hide the details of transmitting to
 ;; and fro a Jabber Server
 
-(eval-when-compile (require 'cl))
+(eval-when-compile (require 'cl-lib))
 
 ;; Emacs 24 can be linked with GnuTLS
 (ignore-errors (require 'gnutls))

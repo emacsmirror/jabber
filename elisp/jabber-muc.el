@@ -29,7 +29,7 @@
 ;; jabber-get-bookmarks and jabber-parse-conference-bookmark):
 (require 'jabber-bookmarks)
 
-(require 'cl)
+(require 'cl-lib)
 
 ;;;###autoload
 (defvar *jabber-active-groupchats* nil

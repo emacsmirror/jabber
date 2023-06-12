@@ -22,7 +22,7 @@
 (require 'xml)
 (require 'jabber-util)
 (eval-when-compile
-  (require 'cl))
+  (require 'cl-lib))
 
 (defsubst jabber-replace-in-string (string regexp newtext)
   "Return STRING with all matches for REGEXP replaced with NEWTEXT.
