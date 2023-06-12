@@ -444,3 +444,4 @@ With a numeric arg, enable this display if arg is positive."
 (provide 'jabber-activity)
 
 ;; arch-tag: 127D7E42-356B-11D9-BE1E-000A95C2FCD0
+;;; jabber-activity.el ends here

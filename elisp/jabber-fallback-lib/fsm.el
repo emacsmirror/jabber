@@ -42,7 +42,7 @@
 ;; possibly returning a value.
 
 ;; The essential macros/functions are:
-;; 
+;;
 ;; define-state-machine  - create start-FOO function
 ;; define-state          - event handler for each state (required)
 ;; define-enter-state    - called when entering a state (optional)
@@ -103,7 +103,7 @@
 
 ;;; Code:
 
-;; We require cl at runtime, since we insert `destructuring-bind' into
+;; We require cl at runtime, since we insert `cl-destructuring-bind' into
 ;; modules that use fsm.el.
 (require 'cl)
 
@@ -148,14 +148,14 @@ arguments.
 \(fn NAME :start ((ARG ...) DOCSTRING BODY) [:sleep SLEEP-FUNCTION])"
   (declare (debug (&define name :name start
 			   &rest
-			   &or [":start" 
+			   &or [":start"
 				(lambda-list
 				 [&optional ("interactive" interactive)]
 				 stringp def-body)]
 			   [":sleep" function-form])))
   (let ((start-name (intern (format "start-%s" name)))
         interactive-spec)
-    (destructuring-bind (arglist docstring &body body) start
+    (cl-destructuring-bind (arglist docstring &body body) start
       (when (and (consp (car body)) (eq 'interactive (caar body)))
           (setq interactive-spec (list (pop body))))
       (unless (stringp docstring)
@@ -168,7 +168,7 @@ arguments.
            ,@interactive-spec
 	   (fsm-debug-output "Starting %s" ',name)
 	   (let ((fsm (gensym (concat "fsm-" ,(symbol-name name) "-"))))
-	     (destructuring-bind (state state-data &optional timeout)
+	     (cl-destructuring-bind (state state-data &optional timeout)
 		 (progn ,@body)
 	       (put fsm :name ',name)
 	       (put fsm :state nil)
@@ -253,19 +253,19 @@ FSM-NAME, STATE-DATA-NAME, CALLBACK-NAME, and EVENT-NAME are symbols,
 used to construct the state functions' arglists."
   `(progn
      (define-state-machine ,name :start ,start :sleep ,sleep)
-     ,@(loop for (state-name . spec) in states
-             if (assq :enter spec) collect
-             `(define-enter-state ,name ,state-name
-                (,fsm-name ,state-data-name)
-                ,@(cdr it))
-             end
-             if (assq :event spec) collect
-             `(define-state ,name ,state-name
-                (,fsm-name ,state-data-name
-                           ,event-name
-                           ,callback-name)
-                ,@(cdr it))
-             end)))
+     ,@(cl-loop for (state-name . spec) in states
+         if (assq :enter spec) collect
+         `(define-enter-state ,name ,state-name
+            (,fsm-name ,state-data-name)
+            ,@(cdr it))
+         end
+         if (assq :event spec) collect
+         `(define-state ,name ,state-name
+            (,fsm-name ,state-data-name
+                       ,event-name
+                       ,callback-name)
+            ,@(cdr it))
+         end)))
 
 (defun fsm-goodbye-cruel-world (name)
   "Unbind functions related to fsm NAME (a symbol).
@@ -331,7 +331,7 @@ CALLBACK with the response as only argument."
 	(when (functionp enter-fn)
 	  (fsm-debug-output "Found enter function for %S" new-state)
 	  (condition-case e
-	      (destructuring-bind (newer-state-data newer-timeout)
+	      (cl-destructuring-bind (newer-state-data newer-timeout)
 		  (funcall enter-fn fsm new-state-data)
 		(fsm-debug-output "Using data from enter function")
 		(put fsm :state-data newer-state-data)
@@ -358,7 +358,7 @@ CALLBACK with the response as only argument."
       (fsm-debug-output "Sent %S to %s in state %s"
 			(or (car-safe event) event) fsm-name state)
       (let ((result (condition-case e
-			(funcall state-fn fsm state-data event 
+			(funcall state-fn fsm state-data event
 				 (or callback 'ignore))
 		      ((debug error) (cons :error-signaled e)))))
 	;; Special case for deferring an event until next state change.
@@ -375,7 +375,7 @@ CALLBACK with the response as only argument."
 	 ((and (listp result)
 	       (<= 2 (length result))
 	       (<= (length result) 3))
-	  (destructuring-bind (new-state new-state-data &optional timeout) result
+	  (cl-destructuring-bind (new-state new-state-data &optional timeout) result
 	    (fsm-update fsm new-state new-state-data timeout)))
 	 (t
 	  (fsm-debug-output "Incorrect return value in %s/%s: %S"

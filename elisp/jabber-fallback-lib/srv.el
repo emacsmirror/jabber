@@ -65,7 +65,7 @@ of the list.  The list is empty if no SRV records were found."
 	    (push (cons priority (list a)) answers-by-priority))))
       ;; Sort by priority.
       (setq answers-by-priority
-	    (sort answers-by-priority 
+	    (sort answers-by-priority
 		  #'(lambda (a b) (< (car a) (car b)))))
       ;; Randomize by weight within priority groups.  See
       ;; algorithm in RFC 2782.
@@ -74,7 +74,7 @@ of the list.  The list is empty if no SRV records were found."
 	      weight-order)
 	  ;; Assign running sum of weight to each entry.
 	  (dolist (a (cdr p))
-	    (incf weight-acc (cadr (assq 'weight a)))
+	    (cl-incf weight-acc (cadr (assq 'weight a)))
 	    (push (cons weight-acc a) weight-order))
 	  (setq weight-order (nreverse weight-order))
 
@@ -85,7 +85,7 @@ of the list.  The list is empty if no SRV records were found."
 	    (let* ((r (random (1+ weight-acc)))
 		   (next-entry (dolist (a weight-order)
 				 (if (>= (car a) r)
-				     (return a)))))
+				     (cl-return a)))))
 	      (push (cdr next-entry) weighted-result)
 	      (setq weight-order
 		    (delq next-entry weight-order))))))

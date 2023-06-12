@@ -19,7 +19,11 @@
 ;; along with this program; if not, write to the Free Software
 ;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+(require 'jabber-presence)
 (require 'jabber-ahc)
+(defvar *jabber-current-show*)
+(defvar *jabber-current-status*)
+(defvar *jabber-current-priority*)
 
 (defconst jabber-ahc-presence-node "http://jabber.org/protocol/rc#set-status"
   "Node used by function `jabber-ahc-presence'.")

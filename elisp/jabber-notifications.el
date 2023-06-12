@@ -83,9 +83,8 @@
   ;; jabber-*-notifications* requires "from" argument, so we cant use
   ;; define-jabber-alert/define-personal-jabber-alert here and do the
   ;; work by hand:
-  (pushnew 'jabber-message-notifications (get 'jabber-alert-message-hooks 'custom-options))
-  (pushnew 'jabber-muc-notifications (get 'jabber-alert-muc-hooks 'custom-options))
-  (pushnew 'jabber-muc-notifications-personal (get 'jabber-alert-muc-hooks 'custom-options))
-  )
+  (cl-pushnew 'jabber-message-notifications (get 'jabber-alert-message-hooks 'custom-options))
+  (cl-pushnew 'jabber-muc-notifications (get 'jabber-alert-muc-hooks 'custom-options))
+  (cl-pushnew 'jabber-muc-notifications-personal (get 'jabber-alert-muc-hooks 'custom-options)))
 
 (provide 'jabber-notifications)
