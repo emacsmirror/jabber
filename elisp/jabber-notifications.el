@@ -20,7 +20,7 @@
 
 ;; Built on jabber-libnotify.el.
 
-(eval-when-compile (require 'jabber))
+(eval-when-compile (require 'jabber-alert))
 (unless (string< emacs-version "24.1")  ;notifications.el preset since Emacs 24.1
   (require 'notifications)
 

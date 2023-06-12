@@ -1,3 +1,26 @@
+;; jabber-search.el - searching by JEP-0055, with x:data support
+
+;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+;; Copyright (C) 2003, 2004 - Magnus Henoch - mange@freemail.hu
+
+;; This file is a part of jabber.el.
+
+;; This program is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 2 of the License, or
+;; (at your option) any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program; if not, write to the Free Software
+;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+(require 'jabber-register)
+
 (add-to-list 'jabber-jid-service-menu
 	     (cons "Search directory" 'jabber-get-search))
 (defun jabber-get-search (jc to)
@@ -12,6 +35,13 @@ JC is the Jabber connection."
 		  #'jabber-process-data #'jabber-process-register-or-search
 		  #'jabber-report-success "Search field retrieval"))
 
+;; `jabber-process-register-or-search' logically comes here, rendering the
+;; search form, but since register and search are so similar, having
+;; two functions would be serious code duplication. See
+;; `jabber-register.el'.
+
+;; `jabber-submit-search' is called when the "submit" button of the search
+;; form is activated.
 (defun jabber-submit-search (&rest ignore)
   "Submit search.  See `jabber-process-register-or-search'."
 
@@ -86,3 +116,7 @@ obtained from `xml-parse-region'."
 		(put-text-property start-of-line (point)
 				   'jabber-jid jid))
 	    (insert "\n"))))))
+
+(provide 'jabber-search)
+
+;;; arch-tag: c39e9241-ab6f-4ac5-b1ba-7908bbae009c

@@ -1,3 +1,27 @@
+;; jabber-register.el - registration according to JEP-0077
+
+;; Copyright (C) 2003, 2004, 2007 - Magnus Henoch - mange@freemail.hu
+;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+
+;; This file is a part of jabber.el.
+
+;; This program is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 2 of the License, or
+;; (at your option) any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program; if not, write to the Free Software
+;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+(require 'jabber-iq)
+(require 'jabber-widget)
+
 (add-to-list 'jabber-jid-service-menu
 	     (cons "Register with service" 'jabber-get-register))
 (defun jabber-get-register (jc to)
@@ -76,7 +100,6 @@ obtained from `xml-parse-region'."
 
 (defun jabber-submit-register (&rest ignore)
   "Submit registration input.  See `jabber-process-register-or-search'."
-
   (let* ((registerp (plist-get (fsm-get-state-data jabber-buffer-connection) :registerp))
 	 (handler (if registerp
 		      #'jabber-process-register-secondtime
@@ -124,3 +147,7 @@ obtained from `xml-parse-region'."
 			      (remove))
 		      #'jabber-report-success "Unregistration"
 		      #'jabber-report-success "Unregistration")))
+
+(provide 'jabber-register)
+
+;;; arch-tag: e6b349d6-b1ad-4d19-a412-74459dfae239

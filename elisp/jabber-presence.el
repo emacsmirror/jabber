@@ -1,3 +1,31 @@
+;; jabber-presence.el - roster and presence bookkeeping
+
+;; Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
+;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+
+;; This file is a part of jabber.el.
+
+;; This program is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 2 of the License, or
+;; (at your option) any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program; if not, write to the Free Software
+;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+(require 'jabber-core)
+(require 'jabber-iq)
+(require 'jabber-alert)
+(require 'jabber-util)
+(require 'jabber-menu)
+(require 'jabber-muc)
+
 (defvar jabber-presence-element-functions nil
   "List of functions returning extra elements for <presence/> stanzas.
 Each function takes one argument, the connection, and returns a
@@ -98,13 +126,13 @@ obtained from `xml-parse-region'."
 
 (defun jabber-initial-roster-failure (jc xml-data _closure-data)
   "Report the initial roster failure.
-If the initial roster request fails, let's report it, but run
-`jabber-post-connect-hooks' anyway.  According to the spec, there
-is nothing exceptional about the server not returning a roster.
 
 JC is the Jabber connection.
 XML-DATA is the parsed tree data from the stream (stanzas)
 obtained from `xml-parse-region'."
+  ;; If the initial roster request fails, let's report it, but run
+  ;; `jabber-post-connect-hooks' anyway. According to the spec, there is
+  ;; nothing exceptional about the server not returning a roster.
   (jabber-report-success jc xml-data "Initial roster retrieval")
   (run-hook-with-args 'jabber-post-connect-hooks jc))
 
@@ -552,3 +580,8 @@ JC is the Jabber connection."
 		       g))
 	 (get jid 'groups))
 	:test 'string=)))))
+
+
+(provide 'jabber-presence)
+
+;;; arch-tag: b8616d4c-dde8-423e-86c7-da7b4928afc3

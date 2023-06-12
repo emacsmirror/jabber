@@ -1,4 +1,32 @@
+;; jabber-roster.el - displaying the roster    -*- coding: utf-8; -*-
+
+;; Copyright (C) 2009 - Kirill A. Korinskiy - catap@catap.ru
+;; Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
+;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+
+;; This file is a part of jabber.el.
+
+;; This program is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 2 of the License, or
+;; (at your option) any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program; if not, write to the Free Software
+;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+(require 'jabber-presence)
+(require 'jabber-util)
+(require 'jabber-alert)
+(require 'jabber-keymap)
 (require 'format-spec)
+(require 'cl)				;for `find'
+(require 'jabber-private)
 
 (defgroup jabber-roster nil "roster display options"
   :group 'jabber)
@@ -39,7 +67,7 @@ Having a \"presence subscription\" means being able to see the
 other person's presence.
 
 Some fancy arrows you might want to use, if your system can
-display them: ← → ⇄ ↔."
+display them: ← → ⇄ ↔"
   :type '(list (cons :format "%v" (const :format "" "none") (string :tag "None"))
 	       (cons :format "%v" (const :format "" "from") (string :tag "From"))
 	       (cons :format "%v" (const :format "" "to") (string :tag "To"))
@@ -150,38 +178,38 @@ Trailing newlines are always removed, regardless of this variable."
 
 (defface jabber-roster-user-online
   '((t (:foreground "blue" :weight bold :slant normal)))
-  "face for displaying online users."
+  "Face for displaying online users."
   :group 'jabber-roster)
 
 (defface jabber-roster-user-xa
   '((((background dark)) (:foreground "magenta" :weight normal :slant italic))
     (t (:foreground "black" :weight normal :slant italic)))
-  "face for displaying extended away users."
+  "Face for displaying extended away users."
   :group 'jabber-roster)
 
 (defface jabber-roster-user-dnd
   '((t (:foreground "red" :weight normal :slant italic)))
-  "face for displaying do not disturb users."
+  "Face for displaying do not disturb users."
   :group 'jabber-roster)
 
 (defface jabber-roster-user-away
   '((t (:foreground "dark green" :weight normal :slant italic)))
-  "face for displaying away users."
+  "Face for displaying away users."
   :group 'jabber-roster)
 
 (defface jabber-roster-user-chatty
   '((t (:foreground "dark orange" :weight bold :slant normal)))
-  "face for displaying chatty users."
+  "Face for displaying chatty users."
   :group 'jabber-roster)
 
 (defface jabber-roster-user-error
   '((t (:foreground "red" :weight light :slant italic)))
-  "face for displaying users sending presence errors."
+  "Face for displaying users sending presence errors."
   :group 'jabber-roster)
 
 (defface jabber-roster-user-offline
   '((t (:foreground "dark grey" :weight light :slant italic)))
-  "face for displaying offline users."
+  "Face for displaying offline users."
   :group 'jabber-roster)
 
 (defvar jabber-roster-debug nil
@@ -216,7 +244,7 @@ Trailing newlines are always removed, regardless of this variable."
     map))
 
 (defun jabber-roster-ret-action-at-point ()
-  "Action for ret.
+  "Action for RET.
 Before try to roll up/down group.  Eval `chat-with-jid-at-point' is no group at
 point."
   (interactive)
@@ -592,8 +620,7 @@ H        Toggle displaying this text
 
 (defun jabber-display-roster-entry (jc group-name buddy)
   "Format and insert a roster entry for BUDDY at point.
-BUDDY is a JID symbol.
-JC is the Jabber connection."
+BUDDY is a JID symbol. JC is the Jabber connection."
   (if buddy
       (let ((buddy-str (format-spec
                         jabber-roster-line-format
@@ -864,3 +891,7 @@ obtained from `xml-parse-region'."
                                    ,roll-groups)
                           'jabber-report-success "Roster groups saved"
                           'jabber-report-success "Failed to save roster groups"))))
+
+(provide 'jabber-roster)
+
+;;; arch-tag: 096af063-0526-4dd2-90fd-bc6b5ba07d32
