@@ -1,5 +1,28 @@
+;; jabber-widget.el - display various kinds of forms
+
+;; Copyright (C) 2003, 2004, 2007 - Magnus Henoch - mange@freemail.hu
+;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+
+;; This file is a part of jabber.el.
+
+;; This program is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 2 of the License, or
+;; (at your option) any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program; if not, write to the Free Software
+;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
 (require 'widget)
 (require 'wid-edit)
+(require 'jabber-util)
+(require 'jabber-disco)
 
 (defvar jabber-widget-alist nil
   "Alist of widgets currently used.")
@@ -249,11 +272,9 @@ Return a list of strings, each of which to be included as cdata in a
 
 (defun jabber-render-xdata-search-results (xdata)
   "Render search results in x:data form."
-
   (let ((title (car (jabber-xml-get-children xdata 'title))))
     (when title
       (insert (jabber-propertize (car (jabber-xml-node-children title)) 'face 'jabber-title-medium) "\n")))
-
   (if (jabber-xml-get-children xdata 'reported)
       (jabber-render-xdata-search-results-multi xdata)
     (jabber-render-xdata-search-results-single xdata)))
@@ -340,3 +361,7 @@ Return nil if no form type is specified."
 		 (string= (jabber-xml-get-attribute field 'type) "hidden"))
 	(throw 'found-formtype (car (jabber-xml-node-children
 				     (car (jabber-xml-get-children field 'value)))))))))
+
+(provide 'jabber-widget)
+
+;;; arch-tag: da3312f3-1970-41d5-a974-14b8d76156b8

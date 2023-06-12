@@ -1,3 +1,73 @@
+;;; jabber-vcard.el --- vcards according to JEP-0054
+
+;; Copyright (C) 2005, 2007  Magnus Henoch
+
+;; Author: Magnus Henoch <mange@freemail.hu>
+
+;; This file is a part of jabber.el.
+
+;; This program is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 2, or (at your option)
+;; any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with GNU Emacs; see the file COPYING.  If not, write to
+;; the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
+
+;;; Commentary:
+
+;; There are great variations in Jabber vcard implementations.  This
+;; one adds some spice to the mix, while trying to follow the JEP
+;; closely.
+
+;; Fields not implemented: GEO, LOGO, AGENT, ORG, CATEGORIES, SOUND,
+;; CLASS, KEY.
+
+;; The internal data structure used for vCards is an alist.  All
+;; keys are uppercase symbols.
+;;
+;; FN, NICKNAME, BDAY, JABBERID, MAILER, TZ, TITLE, ROLE, NOTE,
+;; PRODID, REV, SORT-STRING, UID, URL, DESC:
+;; Value is a string.
+;;
+;; N:
+;;   Value is an alist, with keys FAMILY, GIVEN, MIDDLE, PREFIX and SUFFIX.
+;;
+;; ADR:
+;;   Value is a list, each element representing a separate address.
+;;   The car of each address is a list of types; possible values are
+;;   HOME, WORK, POSTAL, PARCEL, DOM, INTL, PREF.
+;;   The cdr of each address is an alist, with keys POBOX, EXTADD,
+;;   STREET, LOCALITY, REGION, PCODE, CTRY, and values being strings.
+;;
+;; TEL:
+;;   Value is a list, each element representing a separate phone number.
+;;   The car of each number is a list of types; possible values are
+;;   HOME, WORK, VOICE, FAX, PAGER, MSG, CELL, VIDEO, BBS, MODEM, ISDN,
+;;   PCS, PREF
+;;   The cdr is the phone number as a string.
+;;
+;; EMAIL:
+;;   Value is a list, each element representing a separate e-mail address.
+;;   The car of each address is a list of types; possible values are
+;;   HOME, WORK, INTERNET, PREF, X400.  At least one of INTERNET and
+;;   X400 is always present.
+;;   The cdr is the address as a string.
+
+;;; Code:
+
+(require 'jabber-core)
+(require 'jabber-widget)
+(require 'jabber-iq)
+(require 'jabber-avatar)
+
 (defvar jabber-vcard-photo nil
   "The avatar structure for the photo in the vCard edit buffer.")
 (make-variable-buffer-local 'jabber-vcard-photo)
@@ -483,3 +553,6 @@ obtained from `xml-parse-region'."
       (jabber-vcard-avatars-update-current
        jabber-buffer-connection
        (and jabber-vcard-photo (avatar-sha1-sum jabber-vcard-photo))))))
+
+(provide 'jabber-vcard)
+;; arch-tag: 65B95E9C-63BD-11D9-94A9-000A95C2FCD0

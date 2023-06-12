@@ -1,3 +1,32 @@
+;;; jabber-vcard-avatars.el --- Avatars by JEP-0153
+
+;; Copyright (C) 2006, 2007, 2008  Magnus Henoch
+
+;; Author: Magnus Henoch <mange@freemail.hu>
+
+;; This file is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 2, or (at your option)
+;; any later version.
+
+;; This file is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with GNU Emacs; see the file COPYING.  If not, write to
+;; the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+;; Boston, MA 02110-1301, USA.
+
+;;; Commentary:
+
+;;
+
+;;; Code:
+
+(require 'jabber-avatar)
+
 (defcustom jabber-vcard-avatars-retrieve (and (fboundp 'display-images-p)
 					      (display-images-p))
   "Automatically download vCard avatars?"
@@ -41,15 +70,15 @@ obtained from `xml-parse-region'."
 	;; Avatar is not cached; retrieve it
 	(jabber-vcard-avatars-fetch jc from sha1-hash))))))
 
-(defun jabber-vcard-avatars-fetch (jc who sha1-hash)
-  "Fetch WHO's vCard, and extract avatar.
+(defun jabber-vcard-avatars-fetch (jc jid sha1-hash)
+  "Fetch vCard for JID and extract the avatar.
 
 JC is the Jabber connection."
   (interactive (list (jabber-read-account)
 		     (jabber-read-jid-completing "Fetch whose vCard avatar: ")
 		     nil))
-  (jabber-send-iq jc who "get" '(vCard ((xmlns . "vcard-temp")))
-		  #'jabber-vcard-avatars-vcard (cons who sha1-hash)
+  (jabber-send-iq jc jid "get" '(vCard ((xmlns . "vcard-temp")))
+		  #'jabber-vcard-avatars-vcard (cons jid sha1-hash)
 		  #'ignore nil))
 
 (defun jabber-vcard-avatars-vcard (jc iq closure)
@@ -111,3 +140,6 @@ JC is the Jabber connection."
 	   ;; that is, we haven't yet checked what avatar we have.
 	   ,(when hash
 	      `(photo () ,hash)))))))
+
+(provide 'jabber-vcard-avatars)
+;; arch-tag: 3e50d460-8eae-11da-826c-000a95c2fcd0

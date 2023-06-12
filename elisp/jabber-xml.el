@@ -1,4 +1,28 @@
-    (require 'xml)
+;; jabber-xml.el - XML functions
+
+;; Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
+;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+
+;; This file is a part of jabber.el.
+
+;; This program is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 2 of the License, or
+;; (at your option) any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program; if not, write to the Free Software
+;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+(require 'xml)
+(require 'jabber-util)
+(eval-when-compile
+  (require 'cl))
 
 (defsubst jabber-replace-in-string (string regexp newtext)
   "Return STRING with all matches for REGEXP replaced with NEWTEXT.
@@ -157,6 +181,8 @@ CHILD-NAME should be a lower case symbol."
 	      (push child match))))
     (nreverse match)))
 
+;; `xml-get-attribute' returns "" if the attribute is not found, which
+;; is not very useful.  Therefore, we use `xml-get-attribute-or-nil'.
 (defsubst jabber-xml-get-attribute (node attribute)
   "Get from NODE the value of ATTRIBUTE.
 Return nil if the attribute was not found."
@@ -167,38 +193,38 @@ Return nil if the attribute was not found."
   "Get \"xmlns\" attribute of NODE, or nil if not present."
   (jabber-xml-get-attribute node 'xmlns))
 
-  (defun jabber-xml-path (xml-data path)
-    "Find sub-node of XML-DATA according to PATH.
+(defun jabber-xml-path (xml-data path)
+  "Find sub-node of XML-DATA according to PATH.
   PATH is a vaguely XPath-inspired list.  Each element can be:
   a symbol     go to first child node with this node name
   cons cell    car is string containing namespace URI,
                cdr is string containing node name.  Find
                first matching child node.
   any string   character data of this node."
-    (let ((node xml-data))
-      (while (and path node)
-        (let ((step (car path)))
-          (cond
-           ((symbolp step)
-            (setq node (car (jabber-xml-get-children node step))))
-           ((consp step)
-            ;; This will be easier with namespace-aware use
-            ;; of xml.el.  It will also be more correct.
-            ;; Now, it only matches explicit namespace declarations.
-            (setq node
-                  (cl-block dolist-loop
+  (let ((node xml-data))
+    (while (and path node)
+      (let ((step (car path)))
+        (cond
+         ((symbolp step)
+          (setq node (car (jabber-xml-get-children node step))))
+         ((consp step)
+          ;; This will be easier with namespace-aware use
+          ;; of xml.el.  It will also be more correct.
+          ;; Now, it only matches explicit namespace declarations.
+          (setq node
+                (cl-block dolist-loop
                   (dolist (x (jabber-xml-get-children node (intern (cdr step))))
                     (when (string= (jabber-xml-get-attribute x 'xmlns)
                                    (car step))
                       (cl-return-from dolist-loop  x))))))
-           ((stringp step)
-            (setq node (car (jabber-xml-node-children node)))
-            (unless (stringp node)
-              (setq node nil)))
-           (t
-            (error "Unknown path step: %s" step))))
-        (setq path (cdr path)))
-      node))
+         ((stringp step)
+          (setq node (car (jabber-xml-node-children node)))
+          (unless (stringp node)
+            (setq node nil)))
+         (t
+          (error "Unknown path step: %s" step))))
+      (setq path (cdr path)))
+    node))
 
 (defmacro jabber-xml-let-attributes (attributes xml-data &rest body)
   "Evaluate BODY with ATTRIBUTES bound to their values in XML-DATA.
@@ -257,3 +283,7 @@ ATTRIBUTES must be a list of symbols, as present in XML-DATA."
 			    (remove (assoc prefix prefixes) prefixes)
 			  prefixes)))))))
   prefixes)
+
+(provide 'jabber-xml)
+
+;;; arch-tag: ca206e65-7026-4ee8-9af2-ff6a9c5af98a
