@@ -208,23 +208,6 @@ configure a Google Talk account like this:
 (require 'jabber-time)
 (require 'jabber-truncate)
 
-(require 'jabber-ft-client)
-(require 'jabber-ft-server)
-(require 'jabber-socks5)
-
-;; External notifiers
-(require 'jabber-screen)
-(require 'jabber-tmux)
-(require 'jabber-ratpoison)
-(require 'jabber-sawfish)
-(require 'jabber-festival)
-(require 'jabber-xmessage)
-(require 'jabber-wmii)
-(require 'jabber-osd)
-(require 'jabber-awesome)
-(require 'jabber-libnotify)
-(require 'jabber-notifications)
-
 ;;;###autoload
 (defvar *jabber-current-status* nil
   "The user's current presence status.")
