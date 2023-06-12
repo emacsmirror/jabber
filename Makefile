@@ -1,59 +1,46 @@
-.phony: all tangle autoload compile lint clean
+.phony: all autoload compile lint clean
 
-build: tangle autoload compile
+build: autoload compile
 
-dev: tangle autoload compile lint
-
-# No -q or -Q without ORG_PATH - if the user has a newer version of
-# Org, we want to use it.
-jabber.el:
-	if [ -z "${ORG_PATH}" ]; then \
-          echo ; \
-	  echo "[WARNING] ORG_PATH is unset. Org versions older than 9.3.8 have a bug" ; \
-	  echo "which result in them always using absolute paths in comment links in" ; \
-	  echo "tangled source files. If your Org version is older than 9.3.8, please" ; \
-	  echo "upgrade it before tangling." ; \
-          echo ; \
-          emacs --batch \
-	emacs --batch \
-	--eval="(progn (package-initialize) (require 'ob-tangle))" \
-	--eval='(org-babel-tangle-file "jabber.org")' ; \
-        else \
-          emacs -q -Q --batch \
-          --eval="(add-to-list 'load-path \"${ORG_PATH}\")" \
-          --eval="(require 'ob-tangle)" \
-          --eval='(org-babel-tangle-file "jabber.org")' ; \
-        fi
-
-tangle: jabber.el
+dev: autoload compile lint
 
 autoload:
 	emacs -q --batch --eval="(require 'package)" \
 	--eval="(package-generate-autoloads \"jabber\" default-directory)"
 
-compile: tangle
+compile:
 	emacs -q -Q --batch \
+	--eval="(setq print-length nil)" \
 	--eval="(add-to-list 'load-path \"$(pwd)\")" \
 	--eval="(add-to-list 'load-path \"jabber-fallback-lib\")" \
-	--eval='(byte-compile-file "jabber.el")' ; \
+	-f batch-byte-compile elisp/
 
-lint-check-declare: tangle
-	emacs -q -Q --batch --eval='(check-declare-file "jabber.el")'
+lint-check-declare:
+	for file in elisp/*.el ; do \
+	emacs -q -Q --batch --eval="(check-declare-file \"$$file\")" ; \
+	done
 
-lint-checkdoc: tangle
-	emacs -q -Q --batch --eval='(checkdoc-file "jabber.el")'
+lint-checkdoc:
+	for file in elisp/*.el ; do \
+	emacs -q -Q --batch --eval="(checkdoc-file \"$$file\")" ; \
+	done
 
-lint-package-lint: tangle
+lint-package-lint:
+	for file in elisp/*.el ; do \
 	emacs -Q --batch --eval='(package-initialize)' \
         --eval="(require 'package-lint)" \
-        -f 'package-lint-batch-and-exit' jabber.el
+        -f 'package-lint-batch-and-exit' "$file" ; \
+	done
 
-lint-relint: tangle
-	emacs -q -Q --batch --eval="(progn (package-initialize) (relint-file \"jabber.el\"))"
+lint-relint:
+	for file in elisp/*.el ; do \
+	emacs -q -Q --batch \
+	--eval="(progn (package-initialize) (relint-file \"$$file\"))" ; \
+	done
 
 lint: lint-check-declare lint-checkdoc lint-package-lint lint-relint
 
-clean-tangle:
+clean-:
 	-rm jabber.el
 
 clean-elc:
