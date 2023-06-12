@@ -1,3 +1,33 @@
+;; jabber-keepalive.el - try to detect lost connection
+
+;; Copyright (C) 2004, 2008 - Magnus Henoch - mange@freemail.hu
+;; Copyright (C) 2007 - Detlev Zundel - dzu@gnu.org
+
+;; This file is a part of jabber.el.
+
+;; This program is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 2 of the License, or
+;; (at your option) any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program; if not, write to the Free Software
+;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+
+;;;; Keepalive - send something to the server and see if it answers
+;;;
+;;; These keepalive functions send a urn:xmpp:ping request to the
+;;; server every X minutes, and considers the connection broken if
+;;; they get no answer within Y seconds.
+
+(require 'jabber-ping)
+
 ;;;###autoload
 (defgroup jabber-keepalive nil
   "Keepalive functions try to detect lost connection"
@@ -89,6 +119,12 @@ for all accounts regardless of the argument."
     (run-hook-with-args 'jabber-lost-connection-hooks c)
     (jabber-disconnect-one c nil)))
 
+;;;; Whitespace pings - less traffic, no error checking on our side
+;;;
+;;; Openfire needs something like this, but I couldn't bring myself to
+;;; enable keepalive by default... Whitespace pings are light and
+;;; unobtrusive.
+
 (defcustom jabber-whitespace-ping-interval 30
   "Send a space character to the server with this interval, in seconds.
 
@@ -134,3 +170,7 @@ accounts."
 (defun jabber-whitespace-ping-do ()
   (dolist (c jabber-connections)
     (ignore-errors (jabber-send-string c " "))))
+
+(provide 'jabber-keepalive)
+
+;;; arch-tag: d19ca743-75a1-475f-9217-83bd18012146

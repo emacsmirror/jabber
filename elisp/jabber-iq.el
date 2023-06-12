@@ -1,5 +1,30 @@
+;; jabber-iq.el - infoquery functions
+
+;; Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
+;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
+
+;; This file is a part of jabber.el.
+
+;; This program is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 2 of the License, or
+;; (at your option) any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program; if not, write to the Free Software
+;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+(require 'jabber-core)
+(require 'jabber-util)
+(require 'jabber-keymap)
+
 (defvar *jabber-open-info-queries* nil
-  "An alist of open query id and their callback functions.")
+  "Alist of open query id and their callback functions.")
 
 (defvar jabber-iq-get-xmlns-alist nil
   "Mapping from XML namespace to handler for IQ GET requests.")
@@ -197,3 +222,7 @@ obtained from `xml-parse-region'."
     (dolist (hook '(jabber-info-message-hooks jabber-alert-info-message-hooks))
       (run-hook-with-args hook 'browse (current-buffer)
                           text))))
+
+(provide 'jabber-iq)
+
+;;; arch-tag: 5585dfa3-b59a-42ee-9292-803652c85e26

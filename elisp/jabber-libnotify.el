@@ -18,7 +18,7 @@
 ;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 (require 'dbus nil t)
-(eval-when-compile (require 'jabber))
+(eval-when-compile (require 'jabber-alert))
 
 (defcustom jabber-libnotify-icon ""
   "Icon to be used on the notification pop-up. Default is empty"
