@@ -1,4 +1,4 @@
-;; jabber-search.el - searching by JEP-0055, with x:data support
+;; jabber-search.el - searching by JEP-0055, with x:data support  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
 ;; Copyright (C) 2003, 2004 - Magnus Henoch - mange@freemail.hu

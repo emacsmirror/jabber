@@ -1,4 +1,4 @@
-;;; jabber-activity.el --- show jabber activity in the mode line
+;;; jabber-activity.el --- show jabber activity in the mode line  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2004 Carl Henrik Lunde - <chlunde+jabber+@ping.uio.no>
 

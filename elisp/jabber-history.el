@@ -1,4 +1,4 @@
-;; jabber-history.el - recording message history
+;; jabber-history.el - recording message history  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
 ;; Copyright (C) 2004 - Mathias Dahl

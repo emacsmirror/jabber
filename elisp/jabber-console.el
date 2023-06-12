@@ -1,4 +1,4 @@
-;; jabber-console.el - XML Console mode
+;; jabber-console.el - XML Console mode  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2009, 2010 - Demyan Rogozhin <demyan.rogozhin@gmail.com>
 

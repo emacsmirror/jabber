@@ -1,4 +1,4 @@
-;; jabber-sawfish.el - emacs-jabber interface to sawfish
+;; jabber-sawfish.el - emacs-jabber interface to sawfish  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2005 - Mario Domenech Goulart
 

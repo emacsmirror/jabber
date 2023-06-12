@@ -1,4 +1,4 @@
-;;; jabber-vcard.el --- vcards according to JEP-0054
+;;; jabber-vcard.el --- vcards according to JEP-0054  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2005, 2007  Magnus Henoch
 

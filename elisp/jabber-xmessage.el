@@ -1,4 +1,4 @@
-;; jabber-xmessage.el - emacs-jabber interface to xmessage
+;; jabber-xmessage.el - emacs-jabber interface to xmessage  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2008 - Magnus Henoch
 ;; Copyright (C) 2005 - Mario Domenech Goulart

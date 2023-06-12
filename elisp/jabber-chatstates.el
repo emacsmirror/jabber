@@ -1,4 +1,4 @@
-;;; jabber-chatstate.el --- Chat state notification (XEP-0085) implementation
+;;; jabber-chatstate.el --- Chat state notification (XEP-0085) implementation  -*- lexical-binding: t; -*-
 
 ;; Author: Ami Fischman <ami@fischman.org>
 ;; (based entirely on jabber-events.el by Magnus Henoch <mange@freemail.hu>)

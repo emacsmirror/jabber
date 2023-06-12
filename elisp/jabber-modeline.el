@@ -1,4 +1,4 @@
-;; jabber-modeline.el - display jabber status in modeline
+;; jabber-modeline.el - display jabber status in modeline  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2004 - Magnus Henoch - mange@freemail.hu
 

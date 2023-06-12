@@ -1,4 +1,4 @@
-;;; jabber-gmail.el --- Gmail notifications via emacs-jabber
+;;; jabber-gmail.el --- Gmail notifications via emacs-jabber  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2008  Magnus Henoch <mange@freemail.hu>
 ;; Copyright (C) 2007  Valery V. Vorotyntsev <valery.vv@gmail.com>

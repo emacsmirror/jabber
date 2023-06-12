@@ -1,3 +1,4 @@
+;;; jabber-muc-nick-completion.el --- MUC nick completion  -*- lexical-binding: t; -*-
 (defcustom jabber-muc-completion-delimiter ": "
   "String to add to end of completion line."
   :type 'string
@@ -18,6 +19,10 @@
 Note that \":\" or alike not needed (it appended in other string)"
   :type 'string
   :group 'jabber-chat)
+
+
+;;; Commentary:
+;;
 
 ;;; History:
 ;;

@@ -1,4 +1,4 @@
-;; jabber-bookmarks.el - bookmarks according to XEP-0048
+;; jabber-bookmarks.el - bookmarks according to XEP-0048  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2007, 2008 - Magnus Henoch - mange@freemail.hu
 

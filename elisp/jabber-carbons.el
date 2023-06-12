@@ -1,3 +1,10 @@
+;;; jabber-carbons.el --- Support for XEP-0280: Message Carbons  -*- lexical-binding: t; -*-
+
+;;; Commentary:
+;;
+
+;;; Code:
+
 (defun jabber-carbon-success (jc xml-data context)
   (when (equal "result" (jabber-xml-get-attribute xml-data 'type))
     (message "Carbons feature successfully enabled")))
@@ -18,3 +25,7 @@ JC is the Jabber connection."
                   `(enable ((xmlns . "urn:xmpp:carbons:2")))
                   #'jabber-carbon-success "Carbons feature enablement"
                   #'jabber-carbon-failure "Carbons feature enablement"))
+
+(provide 'jabber-carbons)
+
+;;; jabber-carbons.el ends here

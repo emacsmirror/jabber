@@ -1,4 +1,4 @@
-;; jabber-keepalive.el - try to detect lost connection
+;; jabber-keepalive.el - try to detect lost connection  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2004, 2008 - Magnus Henoch - mange@freemail.hu
 ;; Copyright (C) 2007 - Detlev Zundel - dzu@gnu.org

@@ -1,4 +1,4 @@
-;;; jabber-events.el --- Message events (JEP-0022) implementation
+;;; jabber-events.el --- Message events (JEP-0022) implementation  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2005, 2008  Magnus Henoch
 

@@ -1,4 +1,4 @@
-;;; jabber-autoaway.el --- change status to away after idleness
+;;; jabber-autoaway.el --- change status to away after idleness  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2010 - Kirill A. Korinskiy - catap@catap.ru
 ;; Copyright (C) 2010 - Terechkov Evgenii - evg@altlinux.org

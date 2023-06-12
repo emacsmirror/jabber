@@ -1,4 +1,4 @@
-;; jabber-muc.el - advanced MUC functions
+;; jabber-muc.el - advanced MUC functions  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2010 - Kirill A. Korinskiy - catap@catap.ru
 ;; Copyright (C) 2003, 2004, 2007, 2008, 2009, 2010 - Magnus Henoch - mange@freemail.hu

@@ -1,4 +1,4 @@
-;;; jabber-compose.el --- compose a Jabber message in a buffer
+;;; jabber-compose.el --- compose a Jabber message in a buffer  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2006, 2007  Magnus Henoch
 

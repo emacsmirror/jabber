@@ -1,4 +1,4 @@
-;; jabber-wmii.el - emacs-jabber interface to wmii
+;; jabber-wmii.el - emacs-jabber interface to wmii  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2007 - Detlev Zundel - dzu@gnu.org
 

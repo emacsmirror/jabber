@@ -1,4 +1,4 @@
-;;; jabber-avatar.el --- generic functions for avatars
+;;; jabber-avatar.el --- generic functions for avatars  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2006, 2007, 2008  Magnus Henoch
 

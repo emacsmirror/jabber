@@ -1,4 +1,4 @@
-;;; jabber-festival.el --- Festival alert hooks
+;;; jabber-festival.el --- Festival alert hooks  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2005  Magnus Henoch
 

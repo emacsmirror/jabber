@@ -1,4 +1,4 @@
-;; jabber-chatbuffer.el - functions common to all chat buffers
+;; jabber-chatbuffer.el - functions common to all chat buffers  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2005, 2007, 2008 - Magnus Henoch - mange@freemail.hu
 

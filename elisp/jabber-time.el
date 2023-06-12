@@ -1,4 +1,4 @@
-;; jabber-time.el - time reporting by XEP-0012, XEP-0090, XEP-0202
+;; jabber-time.el - time reporting by XEP-0012, XEP-0090, XEP-0202  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2006, 2010 - Kirill A. Kroinskiy - catap@catap.ru
 ;; Copyright (C) 2006 - Magnus Henoch - mange@freemail.hu

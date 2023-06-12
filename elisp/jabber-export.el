@@ -1,4 +1,4 @@
-;;; jabber-export.el --- export Jabber roster to file
+;;; jabber-export.el --- export Jabber roster to file  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2005, 2007  Magnus Henoch
 

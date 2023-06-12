@@ -1,4 +1,4 @@
-;; jabber-ratpoison.el - emacs-jabber interface to ratpoison
+;; jabber-ratpoison.el - emacs-jabber interface to ratpoison  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2005, 2008 - Magnus Henoch - mange@freemail.hu
 

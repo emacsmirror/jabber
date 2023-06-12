@@ -1,4 +1,4 @@
-;; jabber-libnotify.el - emacs-jabber interface to libnotify
+;; jabber-libnotify.el - emacs-jabber interface to libnotify  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2010 - Kirill A. Korinskiy - catap@catap.ru
 ;; Copyright (C) 2007 - Rodrigo Lazo - rlazo.paz@gmail.com

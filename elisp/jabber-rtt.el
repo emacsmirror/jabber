@@ -1,4 +1,4 @@
-;;; jabber-rtt.el --- XEP-0301: In-Band Real Time Text
+;;; jabber-rtt.el --- XEP-0301: In-Band Real Time Text  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2013  Magnus Henoch
 

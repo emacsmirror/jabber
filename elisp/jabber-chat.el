@@ -1,4 +1,4 @@
-;; jabber-chat.el - one-to-one chats
+;; jabber-chat.el - one-to-one chats  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2005, 2007, 2008 - Magnus Henoch - mange@freemail.hu
 

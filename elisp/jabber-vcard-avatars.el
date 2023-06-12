@@ -1,4 +1,4 @@
-;;; jabber-vcard-avatars.el --- Avatars by JEP-0153
+;;; jabber-vcard-avatars.el --- Avatars by JEP-0153  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2006, 2007, 2008  Magnus Henoch
 

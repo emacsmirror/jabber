@@ -1,4 +1,4 @@
-;; jabber-socks5.el - SOCKS5 bytestreams by JEP-0065
+;; jabber-socks5.el - SOCKS5 bytestreams by JEP-0065  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2003, 2004, 2007 - Magnus Henoch - mange@freemail.hu
 ;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net

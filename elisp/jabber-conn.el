@@ -1,4 +1,4 @@
-;; jabber-conn.el - Network transport functions
+;; jabber-conn.el - Network transport functions  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2005 - Georg Lehner - jorge@magma.com.ni
 ;; mostly inspired by Gnus.

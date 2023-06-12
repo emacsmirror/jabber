@@ -1,4 +1,4 @@
-;; jabber-sasl.el - SASL authentication
+;; jabber-sasl.el - SASL authentication  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
 

@@ -1,4 +1,4 @@
-;; jabber-awesome.el - emacs-jabber interface to awesome and naughty
+;; jabber-awesome.el - emacs-jabber interface to awesome and naughty  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2009 - Evgenii Terechkov - evg@altlinux.org
 

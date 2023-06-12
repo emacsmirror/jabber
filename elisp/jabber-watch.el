@@ -1,4 +1,4 @@
-;; jabber-watch.el - get notified when certain persons go online
+;; jabber-watch.el - get notified when certain persons go online  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2004 - Mathias Dahl
 ;; Copyright (C) 2004 - Magnus Henoch - mange@freemail.hu

@@ -1,4 +1,4 @@
-;;; jabber-private.el --- jabber:iq:private API by JEP-0049
+;;; jabber-private.el --- jabber:iq:private API by JEP-0049  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2005  Magnus Henoch
 

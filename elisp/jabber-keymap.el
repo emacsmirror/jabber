@@ -1,4 +1,4 @@
-;; jabber-keymap.el - common keymap for many modes
+;; jabber-keymap.el - common keymap for many modes  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
 ;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
