@@ -97,7 +97,7 @@ binding."
 (defun jabber-find-connection (bare-jid)
   "Find the connection to the account named by BARE-JID.
 Return nil if none found."
-  (dolist (jc jabber-connections)
+  (cl-dolist (jc jabber-connections)
     (when (string= bare-jid (jabber-connection-bare-jid jc))
       (cl-return jc))))
 
@@ -603,7 +603,7 @@ See secton 9.3, Stanza Errors, of XMPP Core, and XEP-0086, Legacy Errors."
   "Return the condition of a <stream:error/> tag."
   ;; as we don't know the node name of the condition, we have to
   ;; search for it.
-  (dolist (node (jabber-xml-node-children error-xml))
+  (cl-dolist (node (jabber-xml-node-children error-xml))
     (when (and (string= (jabber-xml-get-attribute node 'xmlns)
 			"urn:ietf:params:xml:ns:xmpp-streams")
 	       (assq (jabber-xml-node-name node)

@@ -212,11 +212,10 @@ Return nil if the attribute was not found."
           ;; of xml.el.  It will also be more correct.
           ;; Now, it only matches explicit namespace declarations.
           (setq node
-                (cl-block dolist-loop
-                  (dolist (x (jabber-xml-get-children node (intern (cdr step))))
-                    (when (string= (jabber-xml-get-attribute x 'xmlns)
-                                   (car step))
-                      (cl-return-from dolist-loop  x))))))
+                (cl-dolist (x (jabber-xml-get-children node (intern (cdr step))))
+                  (when (string= (jabber-xml-get-attribute x 'xmlns)
+                                 (car step))
+                    (cl-return x)))))
          ((stringp step)
           (setq node (car (jabber-xml-node-children node)))
           (unless (stringp node)

@@ -281,10 +281,10 @@ set; the target waits for one."
 	 (id (jabber-xml-get-attribute xml-data 'id))
 	 (query (jabber-iq-query xml-data))
 	 (sid (jabber-xml-get-attribute query 'sid))
-	 (session (dolist (pending-session jabber-socks5-pending-sessions)
+	 (session (cl-dolist (pending-session jabber-socks5-pending-sessions)
 		    (when (and (equal sid (nth 0 pending-session))
 			       (equal jid (nth 1 pending-session)))
-		      (return pending-session)))))
+		      (cl-return pending-session)))))
     ;; check that we really are expecting this session
     (unless session
       (jabber-signal-error "auth" 'not-acceptable))

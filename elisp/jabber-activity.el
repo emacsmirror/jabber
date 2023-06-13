@@ -184,7 +184,7 @@ private MUC conversations, return the user's nickname."
 (defun jabber-activity-common-prefix (s1 s2)
   "Return length of common prefix string shared by S1 and S2."
   (let ((len (min (length s1) (length s2))))
-    (or (dotimes (i len)
+    (or (cl-dotimes (i len)
 	  (when (not (eq (aref s1 i) (aref s2 i)))
 	    (cl-return i)))
 	;; Substrings, equal, nil, or empty ("")

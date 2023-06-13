@@ -83,7 +83,7 @@ of the list.  The list is empty if no SRV records were found."
 	  ;; running sum is greater than or equal to this number.
 	  (while weight-order
 	    (let* ((r (random (1+ weight-acc)))
-		   (next-entry (dolist (a weight-order)
+		   (next-entry (cl-dolist (a weight-order)
 				 (if (>= (car a) r)
 				     (cl-return a)))))
 	      (push (cdr next-entry) weighted-result)
