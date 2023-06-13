@@ -300,7 +300,7 @@ Examples:
   (when title
     (let* ((case-fold-search t)
 	   (bare-jid (jabber-jid-user from))
-	   (sound-file (or (dolist (entry jabber-alert-message-wave-alist)
+	   (sound-file (or (cl-dolist (entry jabber-alert-message-wave-alist)
 			     (when (string-match (car entry) bare-jid)
 			       (cl-return (cdr entry))))
 			   jabber-alert-message-wave)))
@@ -415,7 +415,7 @@ This function is not called directly, but can be used as the value for
   (when proposed-alert
     (let* ((case-fold-search t)
 	   (bare-jid (symbol-name who))
-	   (sound-file (or (dolist (entry jabber-alert-presence-wave-alist)
+	   (sound-file (or (cl-dolist (entry jabber-alert-presence-wave-alist)
 			     (when (string-match (car entry) bare-jid)
 			       (cl-return (cdr entry))))
 			   jabber-alert-presence-wave)))
@@ -496,7 +496,7 @@ Answer automaticaly when incoming text match the first element of
 `jabber-autoanswer-alist'"
   (when (and from buffer text proposed-alert jabber-autoanswer-alist)
     (let ((message
-           (dolist (entry jabber-autoanswer-alist)
+           (cl-dolist (entry jabber-autoanswer-alist)
              (when (string-match (car entry) text)
                (cl-return (cdr entry))))))
       (if message
@@ -509,7 +509,7 @@ Answer automaticaly when incoming text match first element
 of `jabber-autoanswer-alist'."
   (when (and nick group buffer text proposed-alert jabber-autoanswer-alist)
     (let ((message
-           (dolist (entry jabber-autoanswer-alist)
+           (cl-dolist (entry jabber-autoanswer-alist)
              (when (string-match (car entry) text)
                (cl-return (cdr entry))))))
       (if message

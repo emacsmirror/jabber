@@ -793,7 +793,7 @@ JC is the Jabber connection."
 
 XML-DATA is the parsed tree data from the stream (stanzas)
 obtained from `xml-parse-region'."
-  (dolist (x (jabber-xml-get-children xml-data 'x))
+  (cl-dolist (x (jabber-xml-get-children xml-data 'x))
     (when (string= (jabber-xml-get-attribute x 'xmlns) "http://jabber.org/protocol/muc#user")
       (let ((invitation (car (jabber-xml-get-children x 'invite))))
 	(when invitation

@@ -99,7 +99,7 @@ proxies have answered."
 	(setq jabber-socks5-proxies-data
 	      (delq existing-entry jabber-socks5-proxies-data))))
 
-    (destructuring-bind (callback successp) closure-data
+    (cl-destructuring-bind (callback successp) closure-data
       (when successp
 	(setq jabber-socks5-proxies-data
 	      (cons (cons from streamhosts)
@@ -188,15 +188,15 @@ set; the target waits for one."
     (fsm-debug-output "got disco event")
     ;; Count the response.
     (plist-put state-data :remaining-info (1- (plist-get state-data :remaining-info)))
-    (unless (eq (first (third event)) 'error)
-      (let ((identities (first (third event))))
+    (unless (eq (cl-first (cl-third event)) 'error)
+      (let ((identities (cl-first (cl-third event))))
 	;; Is it a bytestream proxy?
-	(when (dolist (identity identities)
+	(when (cl-dolist (identity identities)
 		(when (and (string= (aref identity 1) "proxy")
 			   (string= (aref identity 2) "bytestreams"))
-		  (return t)))
+		  (cl-return t)))
 	  ;; Yes, it is.  Add it to the list.
-	  (push (second event) jabber-socks5-proxies))))
+	  (push (cl-second event) jabber-socks5-proxies))))
 
     ;; Wait for more responses, if any are to be expected.
     (if (zerop (plist-get state-data :remaining-info))
@@ -281,10 +281,10 @@ set; the target waits for one."
 	 (id (jabber-xml-get-attribute xml-data 'id))
 	 (query (jabber-iq-query xml-data))
 	 (sid (jabber-xml-get-attribute query 'sid))
-	 (session (dolist (pending-session jabber-socks5-pending-sessions)
+	 (session (cl-dolist (pending-session jabber-socks5-pending-sessions)
 		    (when (and (equal sid (nth 0 pending-session))
 			       (equal jid (nth 1 pending-session)))
-		      (return pending-session)))))
+		      (cl-return pending-session)))))
     ;; check that we really are expecting this session
     (unless session
       (jabber-signal-error "auth" 'not-acceptable))
@@ -332,7 +332,7 @@ set; the target waits for one."
 
      ;; Incoming IQ
      ((eq (car-safe event) :iq)
-      (let ((xml-data (second event)))
+      (let ((xml-data (cl-second event)))
 	;; This is either type "set" (with a list of streamhosts to
 	;; use), or a "result" (indicating the streamhost finally used
 	;; by the other party).
@@ -418,7 +418,7 @@ set; the target waits for one."
   (fsm state-data event callback)
   (cond
    ((eq (car-safe event) :sentinel)
-    (let ((string (third event)))
+    (let ((string (cl-third event)))
       (cond
        ;; Connection succeeded
        ((string= (substring string 0 4) "open")
@@ -440,14 +440,14 @@ set; the target waits for one."
   "Receive response to authenticate command."
   (cond
    ((eq (car-safe event) :filter)
-    (let ((string (third event)))
+    (let ((string (cl-third event)))
       ;; should return:
       ;; version: 5.  auth method to use: none
       (if (string= string (string 5 0))
 	  ;; Authenticated.  Send connect command.
 	  (list 'connect state-data nil)
 	;; Authentication failed...
-	(delete-process (second event))
+	(delete-process (cl-second event))
 	(list 'fail state-data nil))))
 
    ((eq (car-safe event) :sentinel)
@@ -471,7 +471,7 @@ set; the target waits for one."
   "Receive response to connect command."
   (cond
    ((eq (car-safe event) :filter)
-    (let ((string (third event)))
+    (let ((string (cl-third event)))
       (if (string= (substring string 0 2) (string 5 0))
 	  ;; connection established
 	  (progn
@@ -505,7 +505,7 @@ set; the target waits for one."
   (fsm state-data event callback)
   (cond
    ((eq (car-safe event) :connected)
-    (destructuring-bind (ignored connection streamhost-jid) event
+    (cl-destructuring-bind (ignored connection streamhost-jid) event
       (setq state-data (plist-put state-data :connection connection))
       ;; If we are expected to tell which streamhost we chose, do so.
       (let ((iq-id (plist-get state-data :iq-id)))
@@ -552,7 +552,7 @@ set; the target waits for one."
    ;; Stray events from earlier state
    ((eq (car-safe event) :connected)
     ;; We just close the connection
-    (delete-process (second event))
+    (delete-process (cl-second event))
     (list 'wait-for-activation state-data :keep))
    ((eq event :not-connected)
     (list 'wait-for-activation state-data :keep))))
@@ -587,28 +587,28 @@ set; the target waits for one."
 	(jid (plist-get state-data :jid)))
     (cond
      ((eq (car-safe event) :send)
-      (process-send-string connection (second event))
+      (process-send-string connection (cl-second event))
       (list 'stream-activated state-data nil))
 
      ((eq (car-safe event) :filter)
       ;; Pass data from connection to profile data function
       ;; If the data function requests it, tear down the connection.
-      (unless (funcall profile-data-function jc jid sid (third event))
-	(fsm-send fsm (list :sentinel (second event) "shutdown")))
+      (unless (funcall profile-data-function jc jid sid (cl-third event))
+	(fsm-send fsm (list :sentinel (cl-second event) "shutdown")))
 
       (list 'stream-activated state-data nil))
 
      ((eq (car-safe event) :sentinel)
       ;; Connection terminated.  Shuffle together the remaining data,
       ;; and kill the buffer.
-      (delete-process (second event))
+      (delete-process (cl-second event))
       (funcall profile-data-function jc jid sid nil)
       (list 'closed nil nil))
 
      ;; Stray events from earlier state
      ((eq (car-safe event) :connected)
       ;; We just close the connection
-      (delete-process (second event))
+      (delete-process (cl-second event))
       (list 'stream-activated state-data nil))
      ((eq event :not-connected)
       (list 'stream-activated state-data nil)))))

@@ -2899,7 +2899,7 @@ what kind of chat buffer is being created.")
 :END:
 #+BEGIN_SRC emacs-lisp
 (defun jabber-mode-line-count-contacts (&rest _ignore)
-  (let ((count (list (cons "chat" 0)
+  (let ((cl-count (list (cons "chat" 0)
 		     (cons "" 0)
 		     (cons "away" 0)
 		     (cons "xa" 0)

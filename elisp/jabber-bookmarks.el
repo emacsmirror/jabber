@@ -52,7 +52,7 @@ immediately, and return nil if it is not in the cache."
 	   (funcall cont jc entry)))))))
 
 (defun jabber-get-conference-data-internal (result conference-jid key)
-  (let ((entry (dolist (node result)
+  (let ((entry (cl-dolist (node result)
 		(when (and (eq (jabber-xml-node-name node) 'conference)
 			   (string= (jabber-xml-get-attribute node 'jid) conference-jid))
 		  (cl-return (jabber-parse-conference-bookmark node))))))
