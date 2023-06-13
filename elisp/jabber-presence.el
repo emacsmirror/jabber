@@ -308,7 +308,7 @@ Show status properties from highest-priority resource."
 (defun jabber-count-connected-resources (buddy)
   "Return the number of connected resources for BUDDY."
   (let ((resource-alist (get buddy 'resources))
-	(count 0))
+	(cl-count 0))
     (dolist (resource resource-alist)
       (if (plist-get (cdr resource) 'connected)
 	  (setq count (1+ count))))
