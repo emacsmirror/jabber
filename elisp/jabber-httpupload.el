@@ -27,7 +27,7 @@
 
 ;; This file implements the HTTP Upload XEP-0363 extension.  This extension
 ;; enables the user to send files through XMPP clients by using server space.
-;; 
+;;
 ;; Please read the jabber-httpupload.org file for information.
 
 ;;; Code:
@@ -40,12 +40,12 @@
 (defgroup jabber-httpupload nil "Jabber HTTP Upload Settings."
   :group 'jabber)
 
-(defcustom jabber-httpupload-upload-function #'jabber-httpupload-put-file-curl
-  "The function used to upload the file.
-Some functions calls external programs such as Curl and wget, please check their
-documentation for more information."
-  :group 'jabber-httpupload
-  :type 'function)
+  (defcustom jabber-httpupload-upload-function #'jabber-httpupload-put-file-curl
+    "The function used to upload the file.
+  Some functions calls external programs such as Curl and wget, please check their
+  documentation for more information."
+    :group 'jabber-httpupload
+    :type 'function)
 
 (defcustom jabber-httpupload-record-command "sox -d -t ogg $(filename).ogg"
   "What is the command used to record audio?
@@ -53,8 +53,30 @@ Use $(filename) where the temporal filename should be."
   :group 'jabber-httpupload
   :type 'function)
 
+;; Disco is used to discover if HTTP Upload is supported on the server
+;; side. Two queries are used:
+
+;; 1. An IQ Disco items request to get all items supported by the
+;;    server.
+;; 2. For each item, an IQ Disco info request to test if the item is
+;;    the Upload service.
+
+;; The namespace of the HTTP Upload feature is
+;; "urn:xmpp:http:upload:0". This will be used on the second query to
+;; detect which item is the upload service.
+
+;; For more information, see XML examples at the
+;; [[https://xmpp.org/extensions/xep-0363.html#disco][Discovering
+;; Support section of XEP-0363]].
+
+;; This implementation requires an initialization step to fill the
+;; `jabber-httpupload-support' variable. This variable registers all
+;; connections with their HTTP Upload item. If one of the server
+;; associated to a connection does not support HTTP Upload, then it
+;; will be registered with a `nil' item.
+
 (defvar jabber-httpupload-support nil
-"An alist of jabber connections and the node with HTTP Upload support.
+"Alist of Jabber connections and the node with HTTP Upload support.
 This is filled by the `jabber-httpupload-test-all-connections-suport'.
 Each element are of the form (jabber-connection . string/nil).  If the value is
 a string, it is the upload item IRI, if nil means no support.")
@@ -211,11 +233,11 @@ code: (funcall CALLBACK CALLBACK-ARG)"
     (error (concat "The upload function failed to PUT the file to the server. "
                    "Try other function or install the required program"))))
 
-(defvar jabber-httpupload-upload-processes nil
-  "List of running processes uploading the file to the server.
-List of running processes uploading the file to the server associated with
-their callback and arguments.
-Each element has the following format: (process . (callback arg))")
+  (defvar jabber-httpupload-upload-processes nil
+    "List of running processes uploading the file to the server.
+  List of running processes uploading the file to the server associated with
+  their callback and arguments.
+  Each element has the following format: (process . (callback arg))")
 
 (defun jabber-httpupload-process-ended (process)
   "What to do when an upload process ends.
@@ -258,7 +280,7 @@ the provided CALLBACK and CALLBACK-ARG."
   (let* ((exec-path (executable-find "curl"))
          (cmd (format "%s %s --upload-file '%s' -H \"content-type: %s\" '%s'"
                       exec-path
-                      (if ignore-cert-problems                          
+                      (if ignore-cert-problems
                           "--insecure"
                         "")
                       filepath content-type put-url)))
@@ -281,7 +303,7 @@ the provided CALLBACK and CALLBACK-ARG."
 
 (defun jabber-httpupload-send-file-url (jc jid get-url)
   "Send the GET URL address to the JID user.
-The message requiers the GET-URL of the slot file, the receiver's JID 
+The message requiers the GET-URL of the slot file, the receiver's JID
 and the JC Jabber Connection."
   ;; This could be a possibliity, but... cannot send the x tag.
   ;; (jabber-send-message jc jid nil get-url nil)

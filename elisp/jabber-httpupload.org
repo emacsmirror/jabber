@@ -1,18 +1,6 @@
 #+TODO: TODO WIP EXTEND CLEANUP FIXME REVIEW |
 #+PROPERTY: header-args :tangle yes :results silent
 
-This file implements the HTTP Upload [[https://xmpp.org/extensions/xep-0363.html][XEP-0363]] extension.
-It is separated from the jabber.org file in order to implement and test it without affecting the original implementation.
-
-The HTTP Upload implements a way to send files (images, audio, etc.) through XMPP clients by using server space and the HTTP protocol to upload and download from it. The advantage is that the sender user does not need to be connected after sharing the file, and the receiver may be disconnected while the sender is uploading.
-
-The procedure to send a file is the following:
-
-1. Use Disco queries to discover if the server supports the HTTP Upload (~urn:xmpp:http:upload~ namespace).
-2. Request a slot to the upload Disco item. The server will answer with a GET and PUT URL.
-3. Upload the file to the HTTP server by using the PUT URL.
-4. Usually, send the GET URL to the other XMPP clients to allow them to access the uploaded file.
-
 * Headers and commentary
 #+BEGIN_SRC emacs-lisp
   ;;; jabber-httpupload.el --- Emacs Jabber HTTP Upload Implementation -*- lexical-binding: t; -*-
@@ -44,7 +32,7 @@ The procedure to send a file is the following:
 
   ;; This file implements the HTTP Upload XEP-0363 extension.  This extension
   ;; enables the user to send files through XMPP clients by using server space.
-  ;; 
+  ;;
   ;; Please read the jabber-httpupload.org file for information.
 
   ;;; Code:
@@ -87,18 +75,6 @@ Use $(filename) where the temporal filename should be."
 
 
 * Discovering support
-Disco is used to discover if HTTP Upload is supported on the server side. Two queries are used:
-
-1. An IQ Disco items request to get all items supported by the server. 
-2. For each item, an IQ Disco info request to test if the item is the Upload service.
-
-The namespace of the HTTP Upload feature is ~urn:xmpp:http:upload:0~. This will be used on the second query to detect which item is the upload service.
-
-For more information, see XML examples at the [[https://xmpp.org/extensions/xep-0363.html#disco][Discovering Support section of XEP-0363]].
-
-This implementation requires an initialization step to fill the ~jabber-httpupload-support~ variable. This variable registers all connections with their HTTP Upload item. If one of the server associated to a connection does not support HTTP Upload, then it will be registered with a ~nil~ item.
-
-** jabber-httpupload-support                                      :variable:
 #+BEGIN_SRC emacs-lisp
 (defvar jabber-httpupload-support nil
 "An alist of jabber connections and the node with HTTP Upload support.
@@ -242,7 +218,7 @@ JC is the Jabber Connection to use."
 * Requesting a slot
 The HTTP Upload specify that the client must ask for a "slot" before uploading the file to the server. The slot is a fresh URL that will be enabled for the client to upload the file. The server may give two URLs in one slot query: the uploading URL and the GET URL to share.
 
-The server may limit the file size to upload. 
+The server may limit the file size to upload.
 
 ** jabber-httpupload-parse-slot-answer
 #+BEGIN_SRC xml :tangle no
@@ -311,7 +287,7 @@ DATA is a list (filedata error-callback error-args) where:
                      (car data) xml-data)))))
 #+END_SRC
 
-** jabber-httpupload-request-slot                             :function:
+** jabber-httpupload-request-slot                :function:
 The XML used to request a slot is simmilar as the following:
 
 #+BEGIN_SRC xml :tangle no
@@ -391,7 +367,7 @@ code: (funcall CALLBACK CALLBACK-ARG)"
                    "Try other function or install the required program"))))
 #+END_SRC
 
-** jabber-httpupload-upload-processes                             :variable:
+** jabber-httpupload-upload-processes            :variable:
 Multiple files can be uploaded in parallel, and thus multiple subprocess could be working at the same time. This happens when the user calls interactively ~jabber-httpupload-send-file~ twice or while a file is still uploading.
 
 This variable keeps track of the subprocess and their callback along with any data required by these functions.
@@ -461,7 +437,7 @@ the provided CALLBACK and CALLBACK-ARG."
   (let* ((exec-path (executable-find "curl"))
          (cmd (format "%s %s --upload-file '%s' -H \"content-type: %s\" '%s'"
                       exec-path
-                      (if ignore-cert-problems                          
+                      (if ignore-cert-problems
                           "--insecure"
                         "")
                       filepath content-type put-url)))
@@ -504,12 +480,12 @@ The following message is simmilar to one sent by conversations:
 </message>
 #+END_SRC
 
-The message should add the "body" and "x" tags. 
+The message should add the "body" and "x" tags.
 
 #+BEGIN_SRC emacs-lisp
 (defun jabber-httpupload-send-file-url (jc jid get-url)
   "Send the GET URL address to the JID user.
-The message requiers the GET-URL of the slot file, the receiver's JID 
+The message requiers the GET-URL of the slot file, the receiver's JID
 and the JC Jabber Connection."
   ;; This could be a possibliity, but... cannot send the x tag.
   ;; (jabber-send-message jc jid nil get-url nil)
@@ -656,14 +632,14 @@ Call ~jabber-httpupload-test-connection-support~ as soon as
 
 
 
-* Meta     :noexport:
+* Meta                                            :noexport:
 
 # ----------------------------------------------------------------------
 #+TITLE:  Emacs Jabber HTTP Upload implementation
 #+EMAIL:
-#+DESCRIPTION: 
+#+DESCRIPTION:
 #+KEYWORDS: jabber, xmpp, xep-0363, http upload
-  
+
 #+STARTUP: inlineimages hidestars content hideblocks entitiespretty
 #+STARTUP: indent fninline latexpreview
 
