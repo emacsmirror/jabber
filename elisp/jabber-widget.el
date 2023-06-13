@@ -74,8 +74,7 @@ One of:
 	  (t
 	   (message "Making completion list...")
 	   (with-output-to-temp-buffer "*Completions*"
-	     (display-completion-list (all-completions prefix list nil)
-				      prefix))
+	     (display-completion-list (all-completions prefix list nil)))
 	   (message "Making completion list...done")))))
 
 (defun jabber-init-widget-buffer (submit-to)

@@ -124,7 +124,7 @@ Optional argument GROUP to look."
 (defun jabber-muc-beginning-of-line ()
   "Return position of line begining."
   (save-excursion
-    (if (looking-back jabber-muc-completion-delimiter)
+    (if (looking-back jabber-muc-completion-delimiter (line-beginning-position))
         (backward-char (+ (length jabber-muc-completion-delimiter) 1)))
     (skip-syntax-backward "^-")
     (point)))
@@ -172,8 +172,9 @@ OLD is last tried nickname."
           (jabber-muc-completion-delete-last-tried)
           (progn
             (insert subst)
-            (if (looking-back (concat "^" (regexp-quote (car he-expand-list))))
-                (unless (looking-back (concat "^" (regexp-quote (car he-expand-list)) jabber-muc-completion-delimiter))
+            (if (looking-back (concat "^" (regexp-quote (car he-expand-list))) nil)
+                (unless (looking-back (concat "^" (regexp-quote (car he-expand-list)) jabber-muc-completion-delimiter)
+                                      nil)
                   (insert jabber-muc-completion-delimiter))))))
       (setq he-tried-table (cons (car he-expand-list) (cdr he-tried-table)))
       (setq he-expand-list (cdr he-expand-list))
