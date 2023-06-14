@@ -37,12 +37,9 @@
 
 ;;; Code:
 
-;; [[file:jabber.org::#dependencies][Dependencies:1]]
 (require 'cl-lib)
 (require 'goto-addr)
-;; Dependencies:1 ends here
 
-;; [[file:jabber.org::#lexical-binding-test][lexical binding test:1]]
 (defmacro jabber-lexical-p ()
   "Return non-nil in buffers with lexical binding."
   '(let* ((ret t)
@@ -64,31 +61,22 @@
   (message "jabber.org: It seems that lexical binding is still off...
 Consider adding the file-local variable prop-line to the tangled jabber.el file
 or try to byte-compile the code."))
-;; lexical binding test:1 ends here
 
-;; [[file:jabber.org::#custom-variables][jabber-enable-legacy-features-p:1]]
   (defvar jabber-enable-legacy-features-p nil)
-;; jabber-enable-legacy-features-p:1 ends here
 
-;; [[file:jabber.org::#process-buffer][jabber-process-buffer:1]]
 (defvar jabber-process-buffer " *-jabber-process-*"
   "The name of the process buffer.")
-;; jabber-process-buffer:1 ends here
 
-;; [[file:jabber.org::#debug-keep-process-buffers][jabber-debug-keep-process-buffers:1]]
 (defcustom jabber-debug-keep-process-buffers nil
   "If nil, kill process buffers when the process dies.
 Contents of process buffers might be useful for debugging."
   :type 'boolean
   :group 'jabber-debug)
-;; jabber-debug-keep-process-buffers:1 ends here
 
-;; [[file:jabber.org::#silent-mode][jabber-silent-mode:1]]
 (defcustom jabber-silent-mode nil
   "If non-nil, do not ask for confirmation for some operations.  DANGEROUS!"
   :type 'boolean
   :group 'jabber)
-;; jabber-silent-mode:1 ends here
 
 ;;; these customize fields should come first
 (defgroup jabber nil "Jabber instant messaging"
