@@ -20,9 +20,9 @@
 
 (eval-when-compile (require 'jabber-alert))
 
-(defun jabber-tmux-message (msg)
+(defun jabber-tmux-message (text &optional title)
   "Show MSG in tmux"
-  (call-process "tmux" nil nil nil "display-message" msg))
+  (call-process "tmux" nil nil nil "display-message" (or title text)))
 
 ; Automatically defines jabber-{message,muc,presence,info}-tmux
 ; functions.
