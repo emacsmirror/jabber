@@ -40,10 +40,7 @@ lint-relint:
 
 lint: lint-check-declare lint-checkdoc lint-package-lint lint-relint
 
-clean-:
-	-rm jabber.el
-
 clean-elc:
-	-rm *.elc
+	-rm elisp/*.elc
 
 clean: clean-elc
