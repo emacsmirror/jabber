@@ -26,17 +26,14 @@ lint-checkdoc:
 	done
 
 lint-package-lint:
-	for file in elisp/*.el ; do \
-	emacs -Q --batch --eval='(package-initialize)' \
-        --eval="(require 'package-lint)" \
-        -f 'package-lint-batch-and-exit' "$$file" ; \
-	done
+	emacs -Q --batch \
+	--eval='(package-initialize)' --eval="(require 'package-lint)" \
+        -f 'package-lint-batch-and-exit' $(wildcard elisp/*.el)
 
 lint-relint:
-	for file in elisp/*.el ; do \
-	emacs -q -Q --batch \
-	--eval="(progn (package-initialize) (relint-file \"$$file\"))" ; \
-	done
+	emacs -Q --batch \
+	--eval='(package-initialize)' --eval="(require 'relint)" \
+	-f 'relint-batch' "elisp"
 
 lint: lint-check-declare lint-checkdoc lint-package-lint lint-relint
 
