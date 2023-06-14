@@ -1,486 +1,33 @@
-#+TITLE: Deprecated Features
-#+TODO: TODO WIP EXTEND CLEANUP FIXME REVIEW |
-#+PROPERTY: header-args :tangle yes
+;; jabber-socks5.el - SOCKS5 bytestreams by XEP-0065
 
-Anything listed here is no longer maintained, will not be tangled and compiled at build time, and may lose compatibility with existing features.
+;; Copyright (C) 2003, 2004, 2007 - Magnus Henoch - mange@freemail.hu
+;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
 
-Here there be dragons.
+;; This file is a part of jabber.el.
 
-*** Stream Initiation (SI) ([[https://xmpp.org/extensions/xep-0095.html][XEP-0095]])     :xep_deprecated:
-:PROPERTIES:
-:CUSTOM_ID: stream-initiation-si-
-:END:
-**** common
-:PROPERTIES:
-:header-args: :tangle elisp/deprecated/jabber-si-common.el
-:file:     jabber-si-common.el
-:CUSTOM_ID: common
-:END:
+;; This program is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 2 of the License, or
+;; (at your option) any later version.
 
-***** jabber-si-stream-methods                 :variable:
-:PROPERTIES:
-:CUSTOM_ID: jabber-si-stream-methods
-:END:
-#+BEGIN_SRC emacs-lisp
-(defvar jabber-si-stream-methods nil
-  "Supported SI stream methods.
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
 
-Each entry is a list, containing:
- * The namespace URI of the stream method
- * Active initiation function
- * Passive initiation function
+;; You should have received a copy of the GNU General Public License
+;; along with this program; if not, write to the Free Software
+;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-The active initiation function should initiate the connection,
-while the passive initiation function should wait for an incoming
-connection.  Both functions take the same arguments:
+(require 'jabber-iq)
+(require 'jabber-disco)
+(require 'jabber-si-server)
+(require 'jabber-si-client)
 
- * JID of peer
- * SID
- * \"connection established\" function
-
-The \"connection established\" function should be called when the
-stream has been established and data can be transferred.  It is part
-of the profile, and takes the following arguments:
-
- * JID of peer
- * SID
- * Either:
-    - \"send data\" function, with one string argument
-    - an error message, when connection failed
-
-It returns an \"incoming data\" function.
-
-The \"incoming data\" function should be called when data arrives on
-the stream.  It takes these arguments:
-
- * JID of peer
- * SID
- * A string containing the received data, or nil on EOF
-
-If it returns nil, the stream should be closed.")
-
-#+END_SRC
-**** client
-:PROPERTIES:
-:header-args: :tangle elisp/deprecated/jabber-si-client.el
-:file:     jabber-si-client.el
-:CUSTOM_ID: client
-:END:
-
-***** jabber-si-initiate                      :function:
-:PROPERTIES:
-:CUSTOM_ID: jabber-si-initiate
-:END:
-#+BEGIN_SRC emacs-lisp
-(defun jabber-si-initiate (jc jid profile-namespace profile-data profile-function &optional mime-type)
-  "Try to initiate a stream to JID.
-PROFILE-NAMESPACE is, well, the namespace of the profile to use.
-PROFILE-DATA is the XML data to send within the SI request.
-PROFILE-FUNCTION is the \"connection established\" function.
-See `jabber-si-stream-methods'.
-MIME-TYPE is the MIME type to specify.
-Returns the SID."
-
-  (let ((sid (apply 'format "emacs-sid-%d.%d.%d" (current-time))))
-    (jabber-send-iq jc jid "set"
-		    `(si ((xmlns . "http://jabber.org/protocol/si")
-			  (id . ,sid)
-			  ,(if mime-type
-			       (cons 'mime-type mime-type))
-			  (profile . ,profile-namespace))
-			 ,profile-data
-			 (feature ((xmlns . "http://jabber.org/protocol/feature-neg"))
-				  ,(jabber-fn-encode (list
-						      (cons "stream-method"
-							    (mapcar 'car jabber-si-stream-methods)))
-						     'request)))
-		    #'jabber-si-initiate-process (cons profile-function sid)
-		    ;; XXX: use other function here?
-		    #'jabber-report-success "Stream initiation")
-    sid))
-
-#+END_SRC
-***** jabber-si-initiate-process              :function:
-:PROPERTIES:
-:CUSTOM_ID: jabber-si-initiate-process
-:END:
-#+BEGIN_SRC emacs-lisp
-(defun jabber-si-initiate-process (jc xml-data closure-data)
-  "Act on response to our SI query."
-
-  (let* ((profile-function (car closure-data))
-	 (sid (cdr closure-data))
-	 (from (jabber-xml-get-attribute xml-data 'from))
-	 (query (jabber-iq-query xml-data))
-	 (feature-node (car (jabber-xml-get-children query 'feature)))
-	 (feature-alist (jabber-fn-parse feature-node 'response))
-	 (chosen-method (cadr (assoc "stream-method" feature-alist)))
-	 (method-data (assoc chosen-method jabber-si-stream-methods)))
-    ;; Our work is done.  Hand it over to the stream method.
-    (let ((stream-negotiate (nth 1 method-data)))
-      (funcall stream-negotiate jc from sid profile-function))))
-
-#+END_SRC
-**** server
-:PROPERTIES:
-:header-args: :tangle elisp/deprecated/jabber-si-server.el
-:file:     jabber-si-server.el
-:CUSTOM_ID: server
-:END:
-
-#+BEGIN_SRC emacs-lisp
-(jabber-disco-advertise-feature "http://jabber.org/protocol/si")
-
-#+END_SRC
-***** jabber-si-profiles                      :variable:
-:PROPERTIES:
-:CUSTOM_ID: jabber-si-profiles
-:END:
-Now, stream methods push data to profiles.  It could be the other way around; not sure which is better.
-
-#+BEGIN_SRC emacs-lisp
-(defvar jabber-si-profiles nil
-  "Supported SI profiles.
-
-Each entry is a list, containing:
- * The namespace URI of the profile
- * Accept function, taking entire IQ stanza, and signalling a 'forbidden'
-   error if request is declined; returning an XML node to return in
-   response, or nil of none needed
- * \"Connection established\" function.  See `jabber-si-stream-methods'.")
-
-#+END_SRC
-***** jabber-si-process                       :function:
-:PROPERTIES:
-:CUSTOM_ID: jabber-si-process
-:END:
-#+BEGIN_SRC emacs-lisp
-(add-to-list 'jabber-iq-set-xmlns-alist
-	     (cons "http://jabber.org/protocol/si" 'jabber-si-process))
-(defun jabber-si-process (jc xml-data)
-
-  (let* ((to (jabber-xml-get-attribute xml-data 'from))
-	 (id (jabber-xml-get-attribute xml-data 'id))
-	 (query (jabber-iq-query xml-data))
-	 (profile (jabber-xml-get-attribute query 'profile))
-	 (si-id (jabber-xml-get-attribute query 'id))
-	 (feature (car (jabber-xml-get-children query 'feature))))
-    (message "Receiving SI with profile '%s'" profile)
-
-    (let (stream-method
-	  ;; Find profile
-	  (profile-data (assoc profile jabber-si-profiles)))
-      ;; Now, feature negotiation for stream type (errors
-      ;; don't match XEP-0095, so convert)
-      (condition-case err
-	  (setq stream-method (jabber-fn-intersection
-			       (jabber-fn-parse feature 'request)
-			       (list (cons "stream-method" (mapcar 'car jabber-si-stream-methods)))))
-	(jabber-error
-	 (jabber-signal-error "cancel" 'bad-request nil
-			      '((no-valid-streams ((xmlns . "http://jabber.org/protocol/si")))))))
-      (unless profile-data
-	;; profile not understood
-	(jabber-signal-error "cancel" 'bad-request nil
-			     '((bad-profile ((xmlns . "http://jabber.org/protocol/si"))))))
-      (let* ((profile-accept-function (nth 1 profile-data))
-	     ;; accept-function might throw a "forbidden" error
-	     ;; on user cancel
-	     (profile-response (funcall profile-accept-function jc xml-data))
-	     (profile-connected-function (nth 2 profile-data))
-	     (stream-method-id (nth 1 (assoc "stream-method" stream-method)))
-	     (stream-data (assoc stream-method-id jabber-si-stream-methods))
-	     (stream-accept-function (nth 2 stream-data)))
-	;; prepare stream for the transfer
-	(funcall stream-accept-function jc to si-id profile-connected-function)
-	;; return result of feature negotiation of stream type
-	(jabber-send-iq jc to "result"
-			`(si ((xmlns . "http://jabber.org/protocol/si"))
-			     ,@profile-response
-			     (feature ((xmlns . "http://jabber.org/protocol/feature-neg"))
-				      ,(jabber-fn-encode stream-method 'response)))
-			nil nil nil nil
-			id)
-	))))
-
-#+END_SRC
-*** SI File Transfer ([[https://xmpp.org/extensions/xep-0096.html][XEP-0096]])           :xep_deprecated:
-:PROPERTIES:
-:CUSTOM_ID: si-file-transfer-
-:END:
-**** common
-:PROPERTIES:
-:header-args: :tangle elisp/deprecated/jabber-ft-common.el
-:file:     jabber-ft-common.el
-:CUSTOM_ID: common-1
-:END:
-
-***** jabber-ft-md5sum-program         :custom:variable:
-:PROPERTIES:
-:CUSTOM_ID: jabber-ft-md5sum-program
-:END:
-#+BEGIN_SRC emacs-lisp
-(defcustom jabber-ft-md5sum-program (or (when (executable-find "md5")
-					  (list (executable-find "md5") "-n"))
-					(when (executable-find "md5sum")
-					  (list (executable-find "md5sum"))))
-  "The program to use to calculate MD5 sums of files.
-The first item should be the name of the program, and the remaing
-items the arguments.  The file name is appended as the last
-argument."
-  :type '(repeat string)
-  :group 'jabber)
-
-#+END_SRC
-***** jabber-ft-get-md5                       :function:
-:PROPERTIES:
-:CUSTOM_ID: jabber-ft-get-md
-:END:
-#+BEGIN_SRC emacs-lisp
-(defun jabber-ft-get-md5 (file-name)
-  "Get MD5 sum of FILE-NAME, and return as hex string.
-Return nil if no MD5 summing program is available."
-  (when jabber-ft-md5sum-program
-    (with-temp-buffer
-      (apply 'call-process (car jabber-ft-md5sum-program) nil t nil
-	     (append (cdr jabber-ft-md5sum-program) (list file-name)))
-      ;; Output is "hexsum filename"
-      (goto-char (point-min))
-      (forward-word 1)
-      (buffer-substring (point-min) (point)))))
-
-#+END_SRC
-**** client
-:PROPERTIES:
-:header-args: :tangle elisp/deprecated/jabber-ft-client.el
-:file:     jabber-ft-client.el
-:CUSTOM_ID: client-1
-:END:
-
-#+BEGIN_SRC emacs-lisp
+;; jabber-core will require fsm for us
+(require 'jabber-core)
 (eval-when-compile (require 'cl))
 
-#+END_SRC
-***** jabber-ft-send                           :command:
-:PROPERTIES:
-:CUSTOM_ID: jabber-ft-send
-:END:
-#+BEGIN_SRC emacs-lisp
-(defun jabber-ft-send (jc jid filename desc)
-  "Attempt to send FILENAME to JID."
-  (interactive (list (jabber-read-account)
-		     (jabber-read-jid-completing "Send file to: " nil nil nil 'full t)
-		     (read-file-name "Send which file: " nil nil t)
-		     (jabber-read-with-input-method "Description (optional): ")))
-  (if (zerop (length desc)) (setq desc nil))
-  (setq filename (expand-file-name filename))
-  (access-file filename "Couldn't open file")
-
-  (let* ((attributes (file-attributes filename))
-	 (size (nth 7 attributes))
-	 (date (nth 5 attributes))
-	 (hash (jabber-ft-get-md5 filename)))
-    (jabber-si-initiate jc jid "http://jabber.org/protocol/si/profile/file-transfer"
-			`(file ((xmlns . "http://jabber.org/protocol/si/profile/file-transfer")
-				(name . ,(file-name-nondirectory filename))
-				(size . ,size)
-				(date . ,(jabber-encode-time date))
-				,@(when hash
-				    (list (cons 'hash hash))))
-			       (desc () ,desc))
-			(lexical-let ((filename filename))
-			  (lambda (jc jid sid send-data-function)
-			    (jabber-ft-do-send
-			     jid sid send-data-function filename))))))
-
-#+END_SRC
-***** jabber-ft-do-send                       :function:
-:PROPERTIES:
-:CUSTOM_ID: jabber-ft-do-send
-:END:
-#+BEGIN_SRC emacs-lisp
-(defun jabber-ft-do-send (jid sid send-data-function filename)
-  (if (stringp send-data-function)
-      (message "File sending failed: %s" send-data-function)
-    (with-temp-buffer
-      (insert-file-contents-literally filename)
-
-      ;; Ever heard of buffering?
-      (funcall send-data-function (buffer-string))
-      (message "File transfer completed")))
-  ;; File transfer is monodirectional, so ignore received data.
-  #'ignore)
-
-#+END_SRC
-**** server
-:PROPERTIES:
-:header-args: :tangle elisp/deprecated/jabber-ft-server.el
-:file:     jabber-ft-server.el
-:CUSTOM_ID: server-1
-:END:
-
-***** jabber-ft-sessions                      :variable:
-:PROPERTIES:
-:CUSTOM_ID: jabber-ft-sessions
-:END:
-#+BEGIN_SRC emacs-lisp
-(defvar jabber-ft-sessions nil
-  "Alist, where keys are (sid jid), and values are buffers of the files.")
-
-#+END_SRC
-***** jabber-ft-size                          :variable:
-:PROPERTIES:
-:CUSTOM_ID: jabber-ft-size
-:END:
-#+BEGIN_SRC emacs-lisp
-(defvar jabber-ft-size nil
-  "Size of the file that is being downloaded")
-
-#+END_SRC
-***** jabber-ft-md5-hash                      :variable:
-:PROPERTIES:
-:CUSTOM_ID: jabber-ft-md5-hash
-:END:
-#+BEGIN_SRC emacs-lisp
-(defvar jabber-ft-md5-hash nil
-  "MD5 hash of the file that is being downloaded")
-
-#+END_SRC
-
-#+BEGIN_SRC emacs-lisp
-(jabber-disco-advertise-feature "http://jabber.org/protocol/si/profile/file-transfer")
-
-#+END_SRC
-
-#+BEGIN_SRC emacs-lisp
-(add-to-list 'jabber-si-profiles
-	     (list "http://jabber.org/protocol/si/profile/file-transfer"
-		   'jabber-ft-accept
-		   'jabber-ft-server-connected))
-
-#+END_SRC
-***** jabber-ft-accept                        :function:
-:PROPERTIES:
-:CUSTOM_ID: jabber-ft-accept
-:END:
-#+BEGIN_SRC emacs-lisp
-(defun jabber-ft-accept (jc xml-data)
-  "Receive IQ stanza containing file transfer request, ask user"
-  (let* ((from (jabber-xml-get-attribute xml-data 'from))
-	 (query (jabber-iq-query xml-data))
-	 (si-id (jabber-xml-get-attribute query 'id))
-	 ;; TODO: check namespace
-	 (file (car (jabber-xml-get-children query 'file)))
-	 (name (jabber-xml-get-attribute file 'name))
-	 (size (jabber-xml-get-attribute file 'size))
-	 (date (jabber-xml-get-attribute file 'date))
-	 (md5-hash (jabber-xml-get-attribute file 'hash))
-	 (desc (car (jabber-xml-node-children
-		     (car (jabber-xml-get-children file 'desc)))))
-	 (range (car (jabber-xml-get-children file 'range))))
-    (unless (and name size)
-      ;; both name and size must be present
-      (jabber-signal-error "modify" 'bad-request))
-
-    (let ((question (format
-		     "%s is sending you the file %s (%s bytes).%s  Accept? "
-		     (jabber-jid-displayname from)
-		     name
-		     size
-		     (if (not (zerop (length desc)))
-			 (concat "  Description: '" desc "'")
-		       ""))))
-      (unless (yes-or-no-p question)
-	(jabber-signal-error "cancel" 'forbidden)))
-
-    ;; default is to save with given name, in current directory.
-    ;; maybe that's bad; maybe should be customizable.
-    (let* ((file-name (read-file-name "Download to: " nil nil nil name))
-	   (buffer (create-file-buffer file-name)))
-      (message "Starting download of %s..." (file-name-nondirectory file-name))
-      (with-current-buffer buffer
-	(kill-all-local-variables)
-	(setq buffer-file-coding-system 'binary)
-	;; For Emacs, switch buffer to unibyte _before_ anything goes into it,
-	;; otherwise binary files are corrupted.  For XEmacs, it isn't needed,
-	;; and it also doesn't have set-buffer-multibyte.
-	(if (fboundp 'set-buffer-multibyte)
-	    (set-buffer-multibyte nil))
-	(set-visited-file-name file-name t)
-	(set (make-local-variable 'jabber-ft-size)
-	     (string-to-number size))
-	(set (make-local-variable 'jabber-ft-md5-hash)
-	     md5-hash))
-      (add-to-list 'jabber-ft-sessions
-		   (cons (list si-id from) buffer)))
-
-    ;; to support range, return something sensible here
-    nil))
-
-#+END_SRC
-***** jabber-ft-server-connected              :function:
-:PROPERTIES:
-:CUSTOM_ID: jabber-ft-server-connected
-:END:
-#+BEGIN_SRC emacs-lisp
-(defun jabber-ft-server-connected (jc jid sid send-data-function)
-  ;; We don't really care about the send-data-function.  But if it's
-  ;; a string, it means that we have no connection.
-  (if (stringp send-data-function)
-      (message "File receiving failed: %s" send-data-function)
-    ;; On success, we just return our data receiving function.
-    'jabber-ft-data))
-
-#+END_SRC
-***** jabber-ft-data                          :function:
-:PROPERTIES:
-:CUSTOM_ID: jabber-ft-data
-:END:
-#+BEGIN_SRC emacs-lisp
-(defun jabber-ft-data (jc jid sid data)
-  "Receive chunk of transferred file."
-  (let ((buffer (cdr (assoc (list sid jid) jabber-ft-sessions))))
-    (with-current-buffer buffer
-      ;; If data is nil, there is no more data.
-      ;; But maybe the remote entity doesn't close the stream -
-      ;; then we have to keep track of file size to know when to stop.
-      ;; Return value is whether to keep connection open.
-      (when data
-	(insert data))
-      (if (and data (< (buffer-size) jabber-ft-size))
-	  t
-	(basic-save-buffer)
-	(if (and jabber-ft-md5-hash
-		 (let ((file-hash (jabber-ft-get-md5 buffer-file-name)))
-		   (and file-hash
-			(not (string= file-hash jabber-ft-md5-hash)))))
-	    ;; hash mismatch!
-	    (progn
-	      (message "%s downloaded - CHECKSUM MISMATCH!"
-		       (file-name-nondirectory buffer-file-name))
-	      (sleep-for 5))
-	  ;; all is fine
-	  (message "%s downloaded" (file-name-nondirectory buffer-file-name)))
-	(kill-buffer buffer)
-	nil))))
-
-#+END_SRC
-*** SOCKS5 Bytestreams ([[https://xmpp.org/extensions/xep-0065.html][XEP-0065]])
-:PROPERTIES:
-:header-args: :tangle elisp/deprecated/jabber-socks5.el
-:file:     jabber-socks5.el
-:CUSTOM_ID: socks5-bytestreams-
-:END:
-
-#+BEGIN_SRC emacs-lisp
-(eval-when-compile (require 'cl))
-
-#+END_SRC
-**** jabber-socks5-pending-sessions            :variable:
-:PROPERTIES:
-:CUSTOM_ID: jabber-socks5-pending-sessions
-:END:
-#+BEGIN_SRC emacs-lisp
 (defvar jabber-socks5-pending-sessions nil
   "List of pending sessions.
 
@@ -489,12 +36,6 @@ Each entry is a list, containing:
  * Full JID of initiator
  * State machine managing the session")
 
-#+END_SRC
-**** jabber-socks5-active-sessions             :variable:
-:PROPERTIES:
-:CUSTOM_ID: jabber-socks5-active-sessions
-:END:
-#+BEGIN_SRC emacs-lisp
 (defvar jabber-socks5-active-sessions nil
   "List of active sessions.
 
@@ -504,12 +45,6 @@ Each entry is a list, containing:
  * Full JID of initiator
  * Profile data function")
 
-#+END_SRC
-**** jabber-socks5-proxies              :custom:variable:
-:PROPERTIES:
-:CUSTOM_ID: jabber-socks5-proxies
-:END:
-#+BEGIN_SRC emacs-lisp
 (defcustom jabber-socks5-proxies nil
   "JIDs of XEP-0065 proxies to use for file transfer.
 Put preferred ones first."
@@ -518,36 +53,18 @@ Put preferred ones first."
 ;  :set 'jabber-socks5-set-proxies)
   )
 
-#+END_SRC
-**** jabber-socks5-proxies-data                :variable:
-:PROPERTIES:
-:CUSTOM_ID: jabber-socks5-proxies-data
-:END:
-#+BEGIN_SRC emacs-lisp
 (defvar jabber-socks5-proxies-data nil
   "Alist containing information about proxies.
 Keys of the alist are strings, the JIDs of the proxies.
 Values are \"streamhost\" XML nodes.")
 
-#+END_SRC
-
-#+BEGIN_SRC emacs-lisp
 (jabber-disco-advertise-feature "http://jabber.org/protocol/bytestreams")
 
-#+END_SRC
-
-#+BEGIN_SRC emacs-lisp
 (add-to-list 'jabber-si-stream-methods
 	     (list "http://jabber.org/protocol/bytestreams"
 		   'jabber-socks5-client-1
 		   'jabber-socks5-accept))
 
-#+END_SRC
-**** jabber-socks5-set-proxies                 :function:
-:PROPERTIES:
-:CUSTOM_ID: jabber-socks5-set-proxies
-:END:
-#+BEGIN_SRC emacs-lisp
 (defun jabber-socks5-set-proxies (symbol value)
   "Set `jabber-socks5-proxies' and query proxies.
 This is the set function of `jabber-socks5-proxies-data'."
@@ -555,12 +72,6 @@ This is the set function of `jabber-socks5-proxies-data'."
   (when jabber-connections
     (jabber-socks5-query-all-proxies)))
 
-#+END_SRC
-**** jabber-socks5-query-all-proxies            :command:
-:PROPERTIES:
-:CUSTOM_ID: jabber-socks5-query-all-proxies
-:END:
-#+BEGIN_SRC emacs-lisp
 (defun jabber-socks5-query-all-proxies (jc &optional callback)
   "Ask all proxies in `jabber-socks5-proxies' for connection information.
 If CALLBACK is non-nil, call it with no arguments when all
@@ -570,12 +81,6 @@ proxies have answered."
   (dolist (proxy jabber-socks5-proxies)
     (jabber-socks5-query-proxy jc proxy callback)))
 
-#+END_SRC
-**** jabber-socks5-query-proxy                 :function:
-:PROPERTIES:
-:CUSTOM_ID: jabber-socks5-query-proxy
-:END:
-#+BEGIN_SRC emacs-lisp
 (defun jabber-socks5-query-proxy (jc jid &optional callback)
   "Query the SOCKS5 proxy specified by JID for IP and port number."
   (jabber-send-iq jc jid "get"
@@ -583,12 +88,6 @@ proxies have answered."
 		  #'jabber-socks5-process-proxy-response (list callback t)
 		  #'jabber-socks5-process-proxy-response (list callback nil)))
 
-#+END_SRC
-**** jabber-socks5-process-proxy-response      :function:
-:PROPERTIES:
-:CUSTOM_ID: jabber-socks5-process-proxy-response
-:END:
-#+BEGIN_SRC emacs-lisp
 (defun jabber-socks5-process-proxy-response (jc xml-data closure-data)
   "Process response from proxy query."
   (let* ((query (jabber-iq-query xml-data))
@@ -611,9 +110,6 @@ proxies have answered."
       (when (and callback (= (length jabber-socks5-proxies-data) (length jabber-socks5-proxies)))
 	(funcall callback)))))
 
-#+END_SRC
-
-#+BEGIN_SRC emacs-lisp
 (define-state-machine jabber-socks5
   :start ((jc jid sid profile-function role)
 	  "Start XEP-0065 bytestream with JID.
@@ -641,21 +137,12 @@ set; the target waits for one."
 		   'initiate))))
 	    (list new-state new-state-data nil))))
 
-#+END_SRC
-**** jabber-socks5-accept                      :function:
-:PROPERTIES:
-:CUSTOM_ID: jabber-socks5-accept
-:END:
-#+BEGIN_SRC emacs-lisp
 (defun jabber-socks5-accept (jc jid sid profile-function)
   "Remember that we are waiting for connection from JID, with stream id SID"
   ;; asking the user for permission is done in the profile
   (add-to-list 'jabber-socks5-pending-sessions
 	       (list sid jid (start-jabber-socks5 jc jid sid profile-function :target))))
 
-#+END_SRC
-
-#+BEGIN_SRC emacs-lisp
 (define-enter-state jabber-socks5 seek-proxies (fsm state-data)
   ;; Look for items at the server.
   (let* ((jc (plist-get state-data :jc))
@@ -669,9 +156,6 @@ set; the target waits for one."
   ;; Spend no more than five seconds looking for a proxy.
   (list state-data 5))
 
-#+END_SRC
-
-#+BEGIN_SRC emacs-lisp
 (define-state jabber-socks5 seek-proxies (fsm state-data event callback)
   "Collect disco results, looking for a bytestreams proxy."
   ;; We put the number of outstanding requests as :remaining-info in
@@ -725,9 +209,6 @@ set; the target waits for one."
     ;; We can't wait anymore...
     (list 'query-proxies state-data nil))))
 
-#+END_SRC
-
-#+BEGIN_SRC emacs-lisp
 (define-enter-state jabber-socks5 query-proxies (fsm state-data)
   (jabber-socks5-query-all-proxies
    (plist-get state-data :jc)
@@ -735,9 +216,6 @@ set; the target waits for one."
      (lambda () (fsm-send-sync fsm :proxies))))
   (list state-data 5))
 
-#+END_SRC
-
-#+BEGIN_SRC emacs-lisp
 (define-state jabber-socks5 query-proxies (fsm state-data event callback)
   "Query proxies in `jabber-socks5-proxies'."
   (cond
@@ -753,9 +231,6 @@ set; the target waits for one."
    ((memq event '(:proxies :timeout))
     (list 'initiate state-data nil))))
 
-#+END_SRC
-
-#+BEGIN_SRC emacs-lisp
 (define-enter-state jabber-socks5 initiate (fsm state-data)
   ;; Sort the alist jabber-socks5-proxies-data such that the
   ;; keys are in the same order as in jabber-socks5-proxies.
@@ -798,12 +273,6 @@ set; the target waits for one."
   ;; If we're the target, we just wait for an incoming stanza.
   (list state-data nil))
 
-#+END_SRC
-**** jabber-socks5-process                     :function:
-:PROPERTIES:
-:CUSTOM_ID: jabber-socks5-process
-:END:
-#+BEGIN_SRC emacs-lisp
 (add-to-list 'jabber-iq-set-xmlns-alist
 	     (cons "http://jabber.org/protocol/bytestreams" 'jabber-socks5-process))
 (defun jabber-socks5-process (jc xml-data)
@@ -847,9 +316,6 @@ set; the target waits for one."
 ;;       )
     ))
 
-#+END_SRC
-
-#+BEGIN_SRC emacs-lisp
 (define-state jabber-socks5 initiate (fsm state-data event callback)
   (let* ((jc (plist-get state-data :jc))
 	 (jc-data (fsm-get-state-data jc))
@@ -903,9 +369,6 @@ set; the target waits for one."
 
 	  (list 'wait-for-connection state-data 30))))))))
 
-#+END_SRC
-
-#+BEGIN_SRC emacs-lisp
 (define-state-machine jabber-socks5-connection
   :start
   ((jc initiator-jid target-jid streamhost-jid sid host port socks5-fsm)
@@ -951,9 +414,6 @@ set; the target waits for one."
 		   nil))
 	 (error (list 'fail '() nil)))))))
 
-#+END_SRC
-
-#+BEGIN_SRC emacs-lisp
 (define-state jabber-socks5-connection wait-for-connection
   (fsm state-data event callback)
   (cond
@@ -967,9 +427,6 @@ set; the target waits for one."
        (t
 	(list 'fail state-data nil)))))))
 
-#+END_SRC
-
-#+BEGIN_SRC emacs-lisp
 (define-enter-state jabber-socks5-connection authenticate
   (fsm state-data)
   "Send authenticate command."
@@ -978,9 +435,6 @@ set; the target waits for one."
   (process-send-string (plist-get state-data :connection) (string 5 1 0))
   (list state-data 30))
 
-#+END_SRC
-
-#+BEGIN_SRC emacs-lisp
 (define-state jabber-socks5-connection authenticate
   (fsm state-data event callback)
   "Receive response to authenticate command."
@@ -999,9 +453,6 @@ set; the target waits for one."
    ((eq (car-safe event) :sentinel)
     (list 'fail state-data nil))))
 
-#+END_SRC
-
-#+BEGIN_SRC emacs-lisp
 (define-enter-state jabber-socks5-connection connect (fsm state-data)
   "Send connect command."
   (let* ((sid (plist-get state-data :sid))
@@ -1015,9 +466,6 @@ set; the target waits for one."
 	     (string 0 0)))
     (list state-data 30)))
 
-#+END_SRC
-
-#+BEGIN_SRC emacs-lisp
 (define-state jabber-socks5-connection connect
   (fsm state-data event callback)
   "Receive response to connect command."
@@ -1037,34 +485,22 @@ set; the target waits for one."
    ((eq (car-safe event) :sentinel)
     (list 'fail state-data nil))))
 
-#+END_SRC
-
-#+BEGIN_SRC emacs-lisp
 (define-state jabber-socks5-connection done
   (fsm state-data event callback)
   ;; ignore all events
   (list 'done nil nil))
 
-#+END_SRC
-
-#+BEGIN_SRC emacs-lisp
 (define-enter-state jabber-socks5-connection fail (fsm state-data)
   ;; Notify parent fsm about failure
   (fsm-send (plist-get state-data :socks5-fsm)
 	    :not-connected)
   (list nil nil))
 
-#+END_SRC
-
-#+BEGIN_SRC emacs-lisp
 (define-state jabber-socks5-connection fail
   (fsm state-data event callback)
   ;; ignore all events
   (list 'fail nil nil))
 
-#+END_SRC
-
-#+BEGIN_SRC emacs-lisp
 (define-state jabber-socks5 wait-for-connection
   (fsm state-data event callback)
   (cond
@@ -1105,9 +541,6 @@ set; the target waits for one."
    ((eq event :timeout)
     (list 'fail (plist-put state-data :error "Timeout when connecting to streamhosts") nil))))
 
-#+END_SRC
-
-#+BEGIN_SRC emacs-lisp
 (define-state jabber-socks5 wait-for-activation
   (fsm state-data event callback)
   (cond
@@ -1124,9 +557,6 @@ set; the target waits for one."
    ((eq event :not-connected)
     (list 'wait-for-activation state-data :keep))))
 
-#+END_SRC
-
-#+BEGIN_SRC emacs-lisp
 (define-enter-state jabber-socks5 stream-activated
   (fsm state-data)
   (let ((connection (plist-get state-data :connection))
@@ -1184,9 +614,6 @@ set; the target waits for one."
      ((eq event :not-connected)
       (list 'stream-activated state-data nil)))))
 
-#+END_SRC
-
-#+BEGIN_SRC emacs-lisp
 (define-enter-state jabber-socks5 fail (fsm state-data)
   "Tell our caller that we failed."
   (let ((jc (plist-get state-data :jc))
@@ -1201,24 +628,12 @@ set; the target waits for one."
 			    'remote-server-not-found)))
   (list nil nil))
 
-#+END_SRC
-**** jabber-socks5-client-1                    :function:
-:PROPERTIES:
-:CUSTOM_ID: jabber-socks5-client-
-:END:
-#+BEGIN_SRC emacs-lisp
 (defun jabber-socks5-client-1 (jc jid sid profile-function)
   "Negotiate a SOCKS5 connection with JID.
 This function simply starts a state machine."
   (add-to-list 'jabber-socks5-pending-sessions
 	       (list sid jid (start-jabber-socks5 jc jid sid profile-function :initiator))))
 
-#+END_SRC
-**** +jabber-socks5-client-2+                  :function:
-:PROPERTIES:
-:CUSTOM_ID: jabber-socks5-client-2
-:END:
-#+BEGIN_SRC emacs-lisp
 ;; (defun jabber-socks5-client-2 (xml-data jid sid profile-function)
 ;;   "Contact has selected a streamhost to use.  Connect to the proxy."
 ;;   (let* ((query (jabber-iq-query xml-data))
@@ -1258,4 +673,6 @@ This function simply starts a state machine."
 ;; 	     (lambda (data)
 ;; 	       (process-send-string proxy-connection data)))))
 
-#+END_SRC
+(provide 'jabber-socks5)
+
+;;; arch-tag: 9e70dfea-2522-40c6-a79f-302c8fb82ac5
