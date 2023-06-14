@@ -228,7 +228,7 @@ all strings still are unique and at least
   (let ((buffer (jabber-activity-find-buffer-name jid)))
     (and (buffer-live-p buffer)
 	 (not (get-buffer-window buffer 'visible))
-         (not (dolist (entry jabber-activity-banned)
+         (not (cl-dolist (entry jabber-activity-banned)
                 (when (string-match entry jid)
                   (cl-return t)))))))
 
