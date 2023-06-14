@@ -29,7 +29,7 @@ lint-package-lint:
 	for file in elisp/*.el ; do \
 	emacs -Q --batch --eval='(package-initialize)' \
         --eval="(require 'package-lint)" \
-        -f 'package-lint-batch-and-exit' "$file" ; \
+        -f 'package-lint-batch-and-exit' "$$file" ; \
 	done
 
 lint-relint:
