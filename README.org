@@ -32,7 +32,6 @@ Old resources
 3. Use of the deprecated =cl= library is almost completely replaced with =cl-lib=
 4. Build system changed from Autotools to a =Makefile=
 5. Lots of cleanup by addressing =checkdoc= and byte-compiler warnings - addition/improvement of docstrings, function/variable declarations, etc
-6. Converted to [[#literate-program][an Org literate program]]
 
 ** Requirements
 :PROPERTIES:
@@ -99,30 +98,6 @@ This release of jabber.el contains support for file transfer.  You may need to c
 :CUSTOM_ID: xmpp-uris
 :END:
 It is possible to make various web browsers pass links starting with "xmpp:" to jabber.el.  In the ideal case, this works right after running "make install".  Otherwise, see the manual, section "XMPP URIs".
-
-** Literate program
-:PROPERTIES:
-:CUSTOM_ID: literate-program
-:END:
-jabber.el is a literate program made using Org. Thanks to [[https://github.com/melpa/melpa/issues/7408][package.el limitations]], we check in the tangled sources to Git. The tangled sources are what Emacs knows how to load.
-
-Alternatively, it is possible to use =literate-elisp-load-file= from [[https://github.com/jingtaozf/literate-elisp][literate-elisp]] to directly load this Org literate program. This way, links to the source (e.g. =xref=, =describe-*= buffers, byte-compilation messages) take the user directly to the Org file rather than to the tangled source.
-
-If a source block does not have syntax highlighting, press =M-o M-o= (=font-lock-fontify-block=) in it.
-
-*** TODO literate/organizational tasks [37%]
-:PROPERTIES:
-:CUSTOM_ID: literate-organizational-tasks
-:END:
-1. [ ] (maybe) make dependencies optional and tangle them to separate files, reducing load time for users.
-2. [ ] contemplate [[https://github.com/melpa/melpa/issues/7408][distribution strategies]]
-3. [X] make headings for remaining definitions - some FSM-related definitions remain.
-4. [ ] move tests to this file (probably migrate them to =ert= or =buttercup= first), in sub-headings of their concerned components.
-5. [ ] move dependencies to the Dependencies heading; also make library headers for them
-6. [X] move per-file author information and copyright notice here, and delete the empty .el files
-   * But it will cease to remain applicable as soon as we move anything around...
-7. [ ] "Code" has a lot of direct sub-headings, making it somewhat cumbersome to navigate; someone with a better understanding of the program could organize these better
-8. [X] The tangled file currently does not list all the other authors (currently listed in =:COPYRIGHT:= drawers). We could add them all at once in the library headers section...or something else. 🤔
 
 ** Debugging tips
 :PROPERTIES:
@@ -225,6 +200,16 @@ The following is a brief summary about the stanza processing.
 5. Call all of their functions with the jabber connection and XML data as parameters .
 6. Continue in the same state.
 
+** HTTP Upload
+[[file:elisp/jabber-httpupload.el][elisp/jabber-httpupload.el]] implements the HTTP Upload [[https://xmpp.org/extensions/xep-0363.html][XEP-0363]] extension, providing a way to send files (images, audio, etc) through XMPP clients by using server space and the HTTP protocol to upload and download from it. The advantage is that the sender user does not need to be connected after sharing the file, and the receiver may be disconnected while the sender is uploading.
+
+The procedure to send a file is as follows -
+
+1. Use Disco queries to discover if the server supports the HTTP Upload (~urn:xmpp:http:upload~ namespace).
+2. Request a slot to the upload Disco item. The server will answer with a GET and PUT URL.
+3. Upload the file to the HTTP server by using the PUT URL.
+4. Usually, send the GET URL to the other XMPP clients to allow them to access the uploaded file.
+
 * Tutorials
 :PROPERTIES:
 :CUSTOM_ID: tutorials
@@ -290,7 +275,7 @@ To install the Info documentation, copy =jabber.info= to =/usr/local/info= and r
    2. Optionally, evaluate the following to install additional development tools (requires MELPA to be set up as package source) -
       #+BEGIN_SRC emacs-lisp :tangle no
         (mapcar #'package-install
-                '(indent-lint package-lint relint nameless literate-elisp))
+                '(indent-lint package-lint relint nameless))
       #+END_SRC
 
 3. Make your edits to =jabber.org= (not =jabber.el=), and save. Then, tangle the file -
@@ -301,13 +286,10 @@ To install the Info documentation, copy =jabber.info= to =/usr/local/info= and r
      #+BEGIN_SRC
      M-x compile RET ORG_PATH=/path/to/org/source/lisp/ make -Bk RET
      #+END_SRC
-   + If you don't like working with literate programs, just edit =jabber.el= and we'll incorporate your PR into =jabber.org=.
 
    This tangles the literate program and byte compiles the tangled sources. Try to address any byte compilation errors.
 
    You can also run =make dev= to tangle, compile, and run linters in one go, and address their output.
-
-   Stage the changes you made to =jabber.org=, as well as any changes the tangling process made to =jabber.el=.
 
    Try to follow [[https://cbea.ms/git-commit/#seven-rules][the seven rules of a great Git commit message]] in your commits.
 
