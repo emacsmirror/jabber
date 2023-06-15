@@ -40,30 +40,17 @@
 (require 'cl-lib)
 (require 'goto-addr)
 
-(defmacro jabber-lexical-p ()
-  "Return non-nil in buffers with lexical binding."
-  '(let* ((ret t)
-          (code (lambda ()
-                  ret)))
-     (let ((_ret nil))
-       (funcall code))))
+;; These are variables shared with more than one section. For
+;; instance, `jabber-process-buffer' is used in jabber-core.el but also in
+;; jabber-conn.el.
 
-(unless (jabber-lexical-p)
-  (message "jabber.org: Lexical binding is off, trying to turn it on.")
-  (setq lexical-binding t))
+;; Placing these variable definitions before using them avoid
+;; byte-compile warnings. Moreover, it is common practice to define
+;; variables before its usage.
 
-(eval-when-compile
-  (unless (jabber-lexical-p)
-    (message "jabber.org: Lexical binding is off, trying to turn it on.")
-    (setq lexical-binding t)))
+(defvar jabber-enable-legacy-features-p nil)
 
-(unless (jabber-lexical-p)
-  (message "jabber.org: It seems that lexical binding is still off...
-Consider adding the file-local variable prop-line to the tangled jabber.el file
-or try to byte-compile the code."))
-
-  (defvar jabber-enable-legacy-features-p nil)
-
+;; This was originally defined in jabber-core.el
 (defvar jabber-process-buffer " *-jabber-process-*"
   "The name of the process buffer.")
 

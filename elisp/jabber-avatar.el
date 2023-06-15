@@ -21,14 +21,22 @@
 
 ;;; Commentary:
 
-;; There are several methods for transporting avatars in Jabber
-;; (JEP-0008, JEP-0084, JEP-0153).  They all have in common that they
-;; identify avatars by their SHA1 checksum, and (at least partially)
-;; use Base64-encoded image data.  Thus this library of support
-;; functions for interpreting and caching avatars.
+;; There are several methods for transporting avatars in Jabber. [1][2][3]
+;;
+;; They all have in common that they identify avatars by their SHA1
+;; checksum, and (at least partially) use Base64-encoded image data.
+;; Thus this library of support functions for interpreting and caching
+;; avatars.
 
 ;; A contact with an avatar has the image in the avatar property of
 ;; the JID symbol.  Use `jabber-avatar-set' to set it.
+;;
+;; [1] XEP-0008: IQ-Based Avatars
+;;     https://xmpp.org/extensions/xep-0008.html
+;; [2] XEP-0084: User Avatar
+;;     https://xmpp.org/extensions/xep-0084.html
+;; [3] XEP-0153: vCard-Based Avatars
+;;     https://xmpp.org/extensions/xep-0153.html
 
 ;;; Code:
 

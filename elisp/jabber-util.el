@@ -34,6 +34,7 @@
 
 (defsubst jabber-read-with-input-method (prompt &optional initial-contents history default-value)
   "Like `read-string', but always inheriting the current input method."
+  ;; Preserve input method when entering a minibuffer.
   (read-string prompt initial-contents history default-value t))
 
 (unless (fboundp 'delete-and-extract-region)
@@ -627,6 +628,15 @@ ERROR-XML is a <stream:error/> tag parsed with `xml-parse-region'."
      'error-message
      "Jabber error")
 
+
+;; https://www.rfc-editor.org/rfc/rfc6120.html#section-8.3 explains
+;; that there are stanza errors, which are recoverable and do not
+;; terminate the stream.
+
+;; Each stanza has a type which are the one explained at the
+;; ERROR-TYPE parameter. checkdoc throws warnings stating that errors
+;; messages should start with capital letters, thus the `downcase'
+;; function is used as a workaround.
 (defun jabber-signal-error (error-type condition &optional text app-specific)
   "Signal an error to be sent by Jabber.
 ERROR-TYPE is one of \"Cancel\", \"Continue\", \"Mmodify\", \"Auth\"

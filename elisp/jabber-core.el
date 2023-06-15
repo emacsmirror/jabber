@@ -1,3 +1,4 @@
+;;; jabber-core.el ---
 ;; jabber-core.el - core functions  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
@@ -22,11 +23,28 @@
 ;; along with this program; if not, write to the Free Software
 ;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+;;; Commentary:
+;;
+;; Standards (probably) involved -
+;; 1. [RFC 6120] Extensible Messaging and Presence Protocol (XMPP): Core
+;;    https://datatracker.ietf.org/doc/rfc6120/
+;;
+;; 2. [RFC 7950] Use of Transport Layer Security (TLS) in the Extensible Messaging and Presence Protocol (XMPP)
+;;    https://datatracker.ietf.org/doc/rfc7590/
+;;
+;; 3. [RFC 6121] Extensible Messaging and Presence Protocol (XMPP): Instant Messaging and Presence
+;;    https://datatracker.ietf.org/doc/rfc6121/
+;;
+;; 4. [RFC 7622] Extensible Messaging and Presence Protocol (XMPP): Address Format
+;;    https://datatracker.ietf.org/doc/rfc7622/
+
 (require 'cl-lib)
 
 (require 'jabber-util)
 (require 'jabber-logon)
 (require 'jabber-conn)
+;;; Code:
+
 (eval-and-compile
   (or (ignore-errors (require 'fsm))
       (ignore-errors
@@ -1007,3 +1025,4 @@ Return an fsm result list if it is."
 (provide 'jabber-core)
 
 ;;; arch-tag: 9d273ce6-c45a-447b-abf3-21d3ce73a51a
+;;; jabber-core.el ends here

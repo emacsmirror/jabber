@@ -22,7 +22,7 @@
 ;;; Log format:
 ;; Each message is on one separate line, represented as a vector with
 ;; five elements.  The first element is time encoded according to
-;; JEP-0082.  The second element is direction, "in" or "out".
+;; XEP-0082.  The second element is direction, "in" or "out".
 ;; The third element is the sender, "me" or a JID.  The fourth
 ;; element is the recipient.  The fifth element is the text
 ;; of the message.
