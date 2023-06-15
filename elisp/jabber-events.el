@@ -231,7 +231,7 @@ and it hasn't been sent before."
 
 	    ;; There's only one node except for the id.
 	    (unless
-		(dolist (possible-node '(offline delivered displayed))
+		(cl-dolist (possible-node '(offline delivered displayed))
 		  (when (jabber-xml-get-children x possible-node)
 		    (setq jabber-events-arrived possible-node)
 		    (jabber-events-update-message)

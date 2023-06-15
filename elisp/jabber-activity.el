@@ -228,7 +228,7 @@ all strings still are unique and at least
   (let ((buffer (jabber-activity-find-buffer-name jid)))
     (and (buffer-live-p buffer)
 	 (not (get-buffer-window buffer 'visible))
-         (not (dolist (entry jabber-activity-banned)
+         (not (cl-dolist (entry jabber-activity-banned)
                 (when (string-match entry jid)
                   (cl-return t)))))))
 
@@ -300,7 +300,8 @@ Optional PRESENCE mean personal presence request or alert."
   (setq jabber-activity-personal-jids
 	(cl-delete-if-not jabber-activity-show-p
 		       jabber-activity-personal-jids))
-  (jabber-activity-mode-line-update))
+  (ignore-errors
+    (jabber-activity-mode-line-update)))
 
 (defun jabber-activity-add (from buffer text proposed-alert)
   "Add a JID to mode line when `jabber-activity-show-p'."
