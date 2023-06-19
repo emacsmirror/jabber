@@ -13,6 +13,14 @@ The format is based on [[https://keepachangelog.com/en/1.0.0/][Keep a Changelog]
 :END:
 Use "machine example.com login username password s3cret port xmpp".
 
+** Provide MUC presence announcement formatting
+:PROPERTIES:
+:CUSTOM_ID: provide-muc-presence-announcement-formatting
+:END:
+Provide customization to limit, highlight, or deemphasize MUC presence
+announcements.  See the manual for details (info "(jabber) Presence
+announcements").
+
 ** Support for roster's groups roll state saving
 :PROPERTIES:
 :CUSTOM_ID: support-rosters-groups-roll-state-saving
