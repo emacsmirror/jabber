@@ -13,31 +13,31 @@ compile:
 	--eval="(setq print-length nil)" \
 	--eval="(add-to-list 'load-path \"$(pwd)\")" \
 	--eval="(add-to-list 'load-path \"jabber-fallback-lib\")" \
-	-f batch-byte-compile elisp/
+	-f batch-byte-compile lisp/
 
 lint-check-declare:
-	for file in elisp/*.el ; do \
+	for file in lisp/*.el ; do \
 	emacs -q -Q --batch --eval="(check-declare-file \"$$file\")" ; \
 	done
 
 lint-checkdoc:
-	for file in elisp/*.el ; do \
+	for file in lisp/*.el ; do \
 	emacs -q -Q --batch --eval="(checkdoc-file \"$$file\")" ; \
 	done
 
 lint-package-lint:
 	emacs -Q --batch \
 	--eval='(package-initialize)' --eval="(require 'package-lint)" \
-        -f 'package-lint-batch-and-exit' $(wildcard elisp/*.el)
+        -f 'package-lint-batch-and-exit' $(wildcard lisp/*.el)
 
 lint-relint:
 	emacs -Q --batch \
 	--eval='(package-initialize)' --eval="(require 'relint)" \
-	-f 'relint-batch' "elisp"
+	-f 'relint-batch' "lisp"
 
 lint: lint-check-declare lint-checkdoc lint-package-lint lint-relint
 
 clean-elc:
-	-rm elisp/*.elc
+	-rm lisp/*.elc
 
 clean: clean-elc
