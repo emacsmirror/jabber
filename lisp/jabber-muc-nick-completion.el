@@ -29,7 +29,6 @@
 ;;; Code:
 
 (require 'cl-lib)
-(require 'hippie-exp)
 
 (require 'jabber-chatbuffer)
 
@@ -123,18 +122,30 @@ Optional argument GROUP to look."
 
 (defun jabber-sort-nicks (nicks group)
   "Return list of NICKS in GROUP, sorted."
+  ;; when completing word at beginning of line each nick, each element of NICKS
+  ;; has a trailing completion-delimiter (usually ": ").
   (let ((times (cdr (assoc group *jabber-muc-participant-last-speaking*))))
-    (cl-flet ((fetch-time (nick) (or (assoc nick times) (cons nick 0)))
-	      (cmp (nt1 nt2)
-		(let ((t1 (cdr nt1))
-		      (t2 (cdr nt2)))
-		  (if (and (zerop t1) (zerop t2))
-		      (string<
+    (cl-flet ((fetch-time (nick)
+                (let ((time-entry (assoc
+                                   (if (string-suffix-p
+                                        jabber-muc-completion-delimiter
+                                        nick)
+                                       (substring
+                                        nick 0 (- (length nick) 2))
+                                     nick)
+                                   times)))
+                  (cons nick
+                        (if time-entry (cdr time-entry) 0))))
+              (cmp (nt1 nt2)
+                (let ((t1 (cdr nt1))
+                      (t2 (cdr nt2)))
+                  (if (and (zerop t1) (zerop t2))
+                      (string<
                        (car nt1)
                        (car nt2))
-		    (> t1 t2)))))
+                    (> t1 t2)))))
       (mapcar #'car (sort (mapcar #'fetch-time nicks)
-			  #'cmp)))))
+                          #'cmp)))))
 
 (defun jabber-muc-beginning-of-line ()
   "Return position of line begining."
@@ -144,65 +155,33 @@ Optional argument GROUP to look."
     (skip-syntax-backward "^-")
     (point)))
 
-;;; One big hack:
-(defun jabber-muc-completion-delete-last-tried ()
-  "Delete last tried competion variand from line."
-  (let ((last-tried (car he-tried-table)))
-    (when last-tried
-      (goto-char he-string-beg)
-      (delete-char (length last-tried))
-      (ignore-errors (delete-char (length jabber-muc-completion-delimiter))))))
-
-(defun try-expand-jabber-muc (old)
-  "Try to expand target nick in MUC according to last speaking time.
-OLD is last tried nickname."
-  (unless jabber-chatting-with
-    (unless old
-      (let ((nicknames (jabber-muc-nicknames)))
-        (he-init-string (jabber-muc-beginning-of-line) (point))
-        (setq he-expand-list
-              (jabber-sort-nicks (all-completions he-search-string
-                                                  (mapcar #'list nicknames))
-                                 jabber-group))))
-
-    (setq he-expand-list
-          (cl-delete-if (lambda (x)
-                          (he-string-member x he-tried-table))
-                        he-expand-list))
-    (if (null he-expand-list)
-        (progn
-          (when old
-            ;; here and later : its hack to workaround
-            ;; he-substitute-string work which cant substitute empty
-            ;; lines
-            (if (string= he-search-string "")
-                (jabber-muc-completion-delete-last-tried)
-              (he-reset-string)))
-          ())
-      (let ((subst (if (eq (line-beginning-position) (jabber-muc-beginning-of-line))
-                       (concat (car he-expand-list) jabber-muc-completion-delimiter)
-                     (car he-expand-list))))
-        (if (not (string= he-search-string ""))
-            (he-substitute-string subst)
-          (jabber-muc-completion-delete-last-tried)
-          (progn
-            (insert subst)
-            (if (looking-back (concat "^" (regexp-quote (car he-expand-list)))
-                              (line-beginning-position))
-                (unless (looking-back (concat "^" (regexp-quote (car he-expand-list)) jabber-muc-completion-delimiter)
-                                      (line-beginning-position))
-                  (insert jabber-muc-completion-delimiter)))
-            )
-          ))
-      (setq he-tried-table (cons (car he-expand-list) (cdr he-tried-table)))
-      (setq he-expand-list (cdr he-expand-list))
-      t)))
-
-(add-hook 'jabber-muc-hooks #'jabber-muc-track-message-time)
-(defun jabber-muc-completion (_old)) ; ensure function defined for define-key below
-(fset 'jabber-muc-completion (make-hippie-expand-function '(try-expand-jabber-muc)))
-(with-eval-after-load 'jabber-chatbuffer
-  (define-key jabber-chat-mode-map [?\t] #'jabber-muc-completion))
+(defun jabber-muc-nick-completion-at-point ()
+  "Nick completion function for `completion-at-point'."
+  ;; largely cribbed from rcirc.el
+    (let* ((line-begin (line-beginning-position))
+	   (group jabber-group)
+	   (beg (save-excursion
+                  ;; On some networks it is common to message or
+                  ;; mention someone using @nick instead of just
+                  ;; nick.
+                  (if (re-search-backward "[[:space:]@]" line-begin t)
+                      (1+ (point))
+                    line-begin)))
+           (table (mapcar
+                   (lambda (str)
+                     (if (= beg line-begin)
+			 (concat str jabber-muc-completion-delimiter)
+		       str))
+                   (jabber-muc-nicknames))))
+      (list beg (point)
+            (lambda (str pred action)
+              (if (eq action 'metadata)
+                  `(metadata
+                    (display-sort-function . ,(lambda (nicks)
+                                               (jabber-sort-nicks
+						nicks group)))
+                  (cycle-sort-function . identity))
+              (complete-with-action action table str pred))))))
 
 (provide 'jabber-muc-nick-completion)
 

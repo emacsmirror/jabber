@@ -53,6 +53,7 @@ window or at `fill-column', whichever is shorter."
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map jabber-common-keymap)
     (define-key map "\r" #'jabber-chat-buffer-send)
+    (define-key map "\t" 'completion-at-point)
     map))
 
 (defun jabber-chat-mode (jc ewoc-pp)
@@ -67,6 +68,8 @@ JC is the Jabber connection."
   (make-local-variable 'jabber-point-insert)
   (make-local-variable 'jabber-chat-ewoc)
   (make-local-variable 'buffer-undo-list)
+
+  (add-hook 'completion-at-point-functions #'jabber-muc-nick-completion-at-point nil t)
 
   (setq jabber-buffer-connection jc
         scroll-conservatively 5
