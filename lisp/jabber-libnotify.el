@@ -49,7 +49,9 @@
   :group 'jabber-alerts)
 
 (defcustom jabber-libnotify-method (if (featurep 'dbus) 'dbus 'shell)
-  "Specifies the method for libnotify call. Dbus is more faster but require emacs23+"
+  "Specifies the method for libnotify call.
+Dbus is faster but require emacs23+, use shell as a fallback."
+  ;; TODO: why the distinction now that jabber.el requires Emacs version 27.1?
   :type '(choice (const :tag "Shell" shell)
                  (const :tag "D-Bus" dbus))
   :group 'jabber-alerts)

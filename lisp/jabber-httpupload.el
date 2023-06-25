@@ -58,8 +58,8 @@
 
 (defcustom jabber-httpupload-upload-function #'jabber-httpupload-put-file-curl
   "The function used to upload the file.
-  Some functions calls external programs such as Curl and wget, please check their
-  documentation for more information."
+Some functions calls external programs such as Curl and wget,
+please check their documentation for more information."
   :group 'jabber-httpupload
   :type 'function)
 

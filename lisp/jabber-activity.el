@@ -224,7 +224,9 @@ all strings still are unique and at least
       (get-buffer (jabber-muc-get-buffer jid))))
 
 (defun jabber-activity-show-p-default (jid)
-  "Return non-nil if there is an invisible buffer for JID, and JID is not in `jabber-activity-banned'."
+  "Return non-nil if JID should be hidden.
+A JID should be hidden when there is an invisible buffer for JID,
+and JID is not in `jabber-activity-banned'."
   (let ((buffer (jabber-activity-find-buffer-name jid)))
     (and (buffer-live-p buffer)
 	 (not (get-buffer-window buffer 'visible))

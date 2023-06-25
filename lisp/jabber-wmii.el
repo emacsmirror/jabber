@@ -21,10 +21,13 @@
 (eval-when-compile (require 'jabber-alert))
 
 (defvar jabber-wmii-color "#ffffff #335577 #447799"
-  "Color specification as needed by the wmii window manager for the jabber alert messages.")
+  "Color specification for the wmii window manager.
+This color specification is used for presenting alert messages.")
 
 (defvar jabber-wmii-reset-time "20 sec"
-  "If non-nil time to reset wmii message.  If nil the message has to be cleared by other means, i.e. from wmiirc.")
+  "Duration of alert message presentation.
+If non-nil, duration of wmii message visibility.
+If nil the message has to be cleared by other means, i.e. from wmiirc.")
 
 (defvar jabber-wmii-timer nil
   "Timer to clear wmii message.")
