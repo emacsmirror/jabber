@@ -148,7 +148,7 @@ All hooks refrain from action if this function returns nil."
   "Hooks run when an info request is completed.
 
 First argument is WHAT, a symbol telling the kind of info request completed.
-That might be 'roster, for requested roster updates, and 'browse, for
+That might be \=’roster, for requested roster updates, and \=’browse, for
 browse requests.  Second argument in BUFFER, a buffer containing the result.
 Third argument is PROPOSED-ALERT, containing the string returned by
 `jabber-alert-info-message-function' for these arguments."
@@ -239,7 +239,7 @@ lambda form or a quoted function name.
 The created functions are inserted as options in Customize.
 
 Examples:
-\(define-jabber-alert foo \"Send foo alert\" 'foo-message)
+\(define-jabber-alert foo \"Send foo alert\" \='foo-message)
 \(define-jabber-alert bar \"Send bar alert\"
   (lambda (msg) (bar msg 42)))"
   (let ((sn (symbol-name name)))
@@ -373,7 +373,7 @@ Examples:
   "Return a string with the status change if OLDSTATUS and NEWSTATUS differs.
 
 Return nil if OLDSTATUS and NEWSTATUS are equal, and in other
-cases a string of the form \"'name' (jid) is now NEWSTATUS (STATUSTEXT)\".
+cases a string of the form \"\='name\=' (jid) is now NEWSTATUS (STATUSTEXT)\".
 
 This function is not called directly, but is the default for
 `jabber-alert-presence-message-function'."

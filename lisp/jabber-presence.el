@@ -39,7 +39,7 @@ stanza.")
 	     (cons "jabber:iq:roster" (function (lambda (jc x) (jabber-process-roster jc x nil)))))
 (defun jabber-process-roster (jc xml-data closure-data)
   "Process an incoming roster infoquery result.
-CLOSURE-DATA should be 'initial if initial roster push, nil otherwise.
+CLOSURE-DATA should be \='initial if initial roster push, nil otherwise.
 JC is the Jabber connection.
 XML-DATA is the parsed tree data from the stream (stanzas)
 obtained from `xml-parse-region'."

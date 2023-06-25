@@ -30,8 +30,8 @@
 (defvar jabber-form-type nil
   "Type of form.
 One of:
-'x-data, jabber:x:data
-'register, as used in jabber:iq:register and jabber:iq:search.")
+\='x-data, jabber:x:data
+\='register, as used in jabber:iq:register and jabber:iq:search.")
 
 (defvar jabber-submit-to nil
   "JID of the entity to which form data is to be sent.")

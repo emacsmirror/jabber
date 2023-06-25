@@ -85,22 +85,22 @@ It can be sent and cancelled several times.")
 (make-variable-buffer-local 'jabber-chatstates-composing-sent)
 
 (defvar jabber-chatstates-paused-timer nil
-  "Timer that counts down from 'composing state to 'paused.")
+  "Timer that counts down from \='composing state to \='paused.")
 (make-variable-buffer-local 'jabber-chatstates-paused-timer)
 
 (defun jabber-chatstates-stop-timer ()
-  "Stop the 'paused timer."
+  "Stop the \='paused timer."
   (when jabber-chatstates-paused-timer
     (cancel-timer jabber-chatstates-paused-timer)))
 
 (defun jabber-chatstates-kick-timer ()
-  "Start (or restart) the 'paused timer as approriate."
+  "Start (or restart) the \='paused timer as approriate."
   (jabber-chatstates-stop-timer)
   (setq jabber-chatstates-paused-timer
         (run-with-timer 5 nil 'jabber-chatstates-send-paused)))
 
 (defun jabber-chatstates-send-paused ()
-  "Send an 'paused state notification."
+  "Send an \='paused state notification."
   (when (and jabber-chatstates-requested jabber-chatting-with)
     (setq jabber-chatstates-composing-sent nil)
     (jabber-send-sexp-if-connected

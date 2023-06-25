@@ -124,7 +124,7 @@ obtained from `xml-parse-region'."
 
 (defun jabber-process-register-secondtime (jc xml-data closure-data)
   "Receive registration success or failure.
-CLOSURE-DATA is either 'success or 'error.
+CLOSURE-DATA is either \='success or \='error.
 
 JC is the Jabber connection.
 XML-DATA is the parsed tree data from the stream (stanzas)

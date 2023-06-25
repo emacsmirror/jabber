@@ -528,7 +528,7 @@ Call CALLBACK with JC and CLOSURE-DATA as first and second
 arguments and result as third argument when result is available.
 On success, result is (IDENTITIES FEATURES), where each identity is [\"name\"
 \"category\" \"type\"], and each feature is a string.
-On error, result is the error node, recognizable by (eq (car result) 'error).
+On error, result is the error node, recognizable by (eq (car result) \='error).
 
 If CALLBACK is nil, just fetch data.  If FORCE is non-nil,
 invalidate cache and get fresh data."
@@ -592,7 +592,7 @@ arguments and items result as third argument when result is
 available.
 On success, result is a list of items, where each
 item is [\"name\" \"jid\" \"node\"] (some values may be nil).
-On error, result is the error node, recognizable by (eq (car result) 'error).
+On error, result is the error node, recognizable by (eq (car result) \='error).
 
 If CALLBACK is nil, just fetch data.  If FORCE is non-nil,
 invalidate cache and get fresh data."

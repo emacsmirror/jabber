@@ -29,7 +29,7 @@
 XML-DATA should have one child element, <x/>, in the jabber:x:data
 namespace.
 
-TYPE is either 'request or 'response.
+TYPE is either \='request or \='response.
 
 Returned alist has field name as key, and value is a list of offered
 alternatives."
@@ -65,7 +65,7 @@ alternatives."
   "Transform a feature alist into an <x/> node int the jabber:x:data namespace.
 Note that this is not the reverse of `jabber-fn-parse'.
 
-TYPE is either 'request or 'response."
+TYPE is either \='request or \='response."
   (let ((requestp (eq type 'request)))
     `(x ((xmlns . "jabber:x:data")
 	 (type . ,(if requestp "form" "submit")))
