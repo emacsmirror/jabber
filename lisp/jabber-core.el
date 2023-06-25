@@ -945,7 +945,8 @@ DATA is any sexp."
 JC is the Jabber connection.
 XML-DATA is the parsed tree data from the stream (stanzas)
 obtained from `xml-parse-region'."
-  (let* ((tag (jabber-xml-node-name xml-data))
+  (let* ((jabber-xml-data xml-data)
+         (tag (jabber-xml-node-name xml-data))
 	 (functions (eval (cdr (assq tag '((iq . jabber-iq-chain)
 					   (presence . jabber-presence-chain)
 					   (message . jabber-message-chain)))))))

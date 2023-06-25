@@ -54,6 +54,10 @@
 (defvar jabber-process-buffer " *-jabber-process-*"
   "The name of the process buffer.")
 
+;; Shared between jabber-core.el and jabber-alert.el
+
+(defvar jabber-xml-data nil "")
+
 (defcustom jabber-debug-keep-process-buffers nil
   "If nil, kill process buffers when the process dies.
 Contents of process buffers might be useful for debugging."

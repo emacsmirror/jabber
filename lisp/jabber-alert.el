@@ -414,7 +414,7 @@ at a more manageable level when there are lots of users.
 
 This function is not called directly, but can be used as the value for
 `jabber-alert-presence-message-function'."
-  (when (get-buffer (jabber-chat-get-buffer (jabber-xml-get-attribute xml-data 'from)))
+  (when (get-buffer (jabber-chat-get-buffer (jabber-xml-get-attribute jabber-xml-data 'from)))
     (jabber-presence-default-message who oldstatus newstatus statustext)))
 
 (defun jabber-presence-wave (who _oldstatus _newstatus _statustext proposed-alert)
