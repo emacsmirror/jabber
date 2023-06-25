@@ -481,6 +481,14 @@ you (@code{jabber-muc-looks-personaling-symbols})---see ``jabber-chat''
 customization group. Defaults are sane, so it is unlikely that you would
 want to change this, but... it is Emacs!
 
+By default presence updates are logged in the groupchat buffer.
+Presence updates include announcements when a member joins or leaves a
+room, as well as moderator actions, like kicks or bans.  These
+announcements can clutter up the group discussion, especially when
+other participants using mobile clients experiencing frequent network
+disconnect and reconnects.  Which of these announcements and how they
+are rendered can be configured (@xref{Presence announcements}).
+
 @cindex Topic, MUC
 @findex jabber-muc-set-topic
 To change the topic of a groupchat, type @kbd{M-x jabber-muc-set-topic}.
@@ -504,6 +512,7 @@ jabber-muc-names}.  This gives a list of nicknames,
 
 @menu
 * Configuration::
+* Presence announcements::
 * Invitations::
 * Private messages::
 * MUC Administration::
@@ -545,6 +554,31 @@ Please note, that @code{jabber-muc-default-nicknames} and
 accounts---if you connect several accounts, both will try to connect to
 the same chat rooms, or use the same nickname.  This will lead to
 confusion.
+
+@node Presence announcements
+@section Presence announcements
+
+@vindex jabber-muc-decorate-presence-patterns
+
+To limit, highlight, or deemphasize presences announcement messages,
+customize the variable @code{jabber-muc-decorate-presence-patterns}.
+
+@code{jabber-muc-decorate-presence-patterns} is a list of pairs
+consisting of a regular expression and a face.  When a presence
+announcement matches a regular expression pattern, it will be
+displayed with the associated face.  If the face is @code{nil}, the
+announcement will not be added to the groupchat.  For example, the
+customization:
+
+@example
+'(jabber-muc-decorate-presence-patterns
+  '(("\\( enters the room ([^)]+)\\| has left the chatroom\\)$")
+    ("." . jabber-muc-presence-dim)))
+@end example
+
+This suppresses display of membership changes (join and leave events)
+and deemphasizes moderator action to set them off from surrounding
+chat messages.
 
 @node Invitations, Private messages, Configuration, Groupchat
 @section Invitations

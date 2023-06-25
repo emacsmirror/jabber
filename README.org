@@ -87,6 +87,8 @@ To activate logging of all chats, set =jabber-history-enabled= to =t=.  By defau
 
 By default, jabber.el will send a confirmation when messages sent to you are delivered and displayed, and also send "contact is typing" notifications.  To change this, type =M-x customize-group RET jabber-events=, and set the three =jabber-events-confirm-*= variables to nil.
 
+By default, jabber.el logs all MUC presence announcements to the chat buffer.  With the advent of mobile clients that frequently lose and regain network connectivity, the user left/joined messages can flood the chat.  Customize =jabber-muc-decorate-presence-patterns= to hide or deemphasize presence announcements.  See the manual for details [[info:jabber#Presence announcements][(info "(jabber) Presence announcements")]].
+
 ** File transfer
 :PROPERTIES:
 :CUSTOM_ID: file-transfer
@@ -343,6 +345,8 @@ To install the Info documentation, copy =jabber.info= to =/usr/local/info= and r
   - tmux support
 + Case Duckworth (acdw)
   - [[https://codeberg.org/emacs-jabber/emacs-jabber/pulls/2][PR #2]]
++ Hugh Daschbach (hdasch)
+  - MUC presence announcements
 
 ** Maintainers
 :PROPERTIES:
