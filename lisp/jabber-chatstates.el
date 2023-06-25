@@ -64,7 +64,7 @@ nil - don't send states")
           "")))
 
 (add-hook 'jabber-chat-send-hooks 'jabber-chatstates-when-sending)
-(defun jabber-chatstates-when-sending (text id)
+(defun jabber-chatstates-when-sending (_text _id)
   (jabber-chatstates-update-message)
   (jabber-chatstates-stop-timer)
   (when (and jabber-chatstates-confirm jabber-chatstates-requested)
@@ -128,7 +128,7 @@ It can be sent and cancelled several times.")
 
 ;;; COMMON
 
-(defun jabber-handle-incoming-message-chatstates (jc xml-data)
+(defun jabber-handle-incoming-message-chatstates (_jc xml-data)
   (when (get-buffer (jabber-chat-get-buffer (jabber-xml-get-attribute xml-data 'from)))
     (with-current-buffer (jabber-chat-get-buffer (jabber-xml-get-attribute xml-data 'from))
       (cond

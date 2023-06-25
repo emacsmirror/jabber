@@ -477,7 +477,7 @@ obtained from `xml-parse-region'."
 (defalias 'jabber-groupchat-render-config 'jabber-muc-render-config
   "Deprecated.  See `jabber-muc-render-config' instead.")
 
-(defun jabber-muc-submit-config (&rest ignore)
+(defun jabber-muc-submit-config (&rest _ignore)
   "Submit MUC configuration form."
 
   (jabber-send-iq jabber-buffer-connection jabber-submit-to
@@ -490,7 +490,7 @@ obtained from `xml-parse-region'."
 (defalias 'jabber-groupchat-submit-config 'jabber-muc-submit-config
   "Deprecated.  See `jabber-muc-submit-config' instead.")
 
-(defun jabber-muc-cancel-config (&rest ignore)
+(defun jabber-muc-cancel-config (&rest _ignore)
   "Cancel MUC configuration form."
 
   (jabber-send-iq jabber-buffer-connection jabber-submit-to
@@ -788,7 +788,7 @@ JC is the Jabber connection."
 
 (add-to-list 'jabber-body-printers 'jabber-muc-print-invite)
 
-(defun jabber-muc-print-invite (xml-data who mode)
+(defun jabber-muc-print-invite (xml-data _who mode)
   "Print MUC invitation.
 
 XML-DATA is the parsed tree data from the stream (stanzas)
@@ -907,7 +907,7 @@ include groupchat invites."
 (add-to-list 'jabber-jid-muc-menu
 	     (cons "Open private chat" 'jabber-muc-private))
 
-(defun jabber-muc-private (jc group nickname)
+(defun jabber-muc-private (_jc group nickname)
   "Open private chat with NICKNAME in GROUP.
 
 JC is the Jabber connection."
@@ -989,7 +989,7 @@ Return nil if X-MUC is nil."
 	     'face 'jabber-chat-prompt-foreign
 	     'help-echo (concat (format-time-string "On %Y-%m-%d %H:%M:%S" timestamp) " from " nick " in " jabber-group)))))
 
-(defun jabber-muc-system-prompt (&rest ignore)
+(defun jabber-muc-system-prompt (&rest _ignore)
   "Print system prompt for MUC."
   (insert (jabber-propertize
 	   (format-spec jabber-groupchat-prompt-format

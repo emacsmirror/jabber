@@ -142,7 +142,7 @@ obtained from `xml-parse-region'."
 	;; The hash is incorrect.
 	(jabber-caps-try-next jc hash node ver)))))
 
-(defun jabber-process-caps-info-error (jc xml-data closure-data)
+(defun jabber-process-caps-info-error (jc _xml-data closure-data)
   (cl-destructuring-bind (hash node ver) closure-data
     (jabber-caps-try-next jc hash node ver)))
 
@@ -409,7 +409,7 @@ obtained from `xml-parse-region'."
       ;; No such node
       (jabber-signal-error "Cancel" 'item-not-found))))
 
-(defun jabber-disco-return-client-info (&optional jc xml-data)
+(defun jabber-disco-return-client-info (&optional _jc _xml-data)
   `(
     ;; If running under a window system, this is
     ;; a GUI client.  If not, it is a console client.

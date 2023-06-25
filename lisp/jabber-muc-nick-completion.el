@@ -96,7 +96,7 @@ Optional argument GROUP to look."
                 (cons (cons group room-activity)
                       *jabber-muc-participant-last-speaking*)))))))
 
-(defun jabber-muc-track-message-time (nick group buffer text &optional title)
+(defun jabber-muc-track-message-time (nick group _buffer text &optional _title)
   "Tracks time of NICK's last speaking in GROUP."
   (when nick
     (let ((time (float-time)))

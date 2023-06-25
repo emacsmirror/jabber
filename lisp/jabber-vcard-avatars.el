@@ -81,7 +81,7 @@ JC is the Jabber connection."
 		  #'jabber-vcard-avatars-vcard (cons jid sha1-hash)
 		  #'ignore nil))
 
-(defun jabber-vcard-avatars-vcard (jc iq closure)
+(defun jabber-vcard-avatars-vcard (_jc iq closure)
   "Get the photo from the vCard, and set the avatar."
   (let ((from (car closure))
 	(sha1-hash (cdr closure))

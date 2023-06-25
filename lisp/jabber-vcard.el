@@ -330,7 +330,7 @@ JC is the Jabber connection."
 					(PCODE . "Post code")
 					(CTRY . "Country")))
 
-(defun jabber-vcard-display (jc xml-data)
+(defun jabber-vcard-display (_jc xml-data)
   "Display received vcard.
 
 JC is the Jabber connection.
@@ -409,7 +409,7 @@ obtained from `xml-parse-region'."
 	      (insert "\n"))
 	  (error (insert "Couldn't display photo\n")))))))
 
-(defun jabber-vcard-do-edit (jc xml-data closure-data)
+(defun jabber-vcard-do-edit (jc xml-data _closure-data)
   (let ((parsed (jabber-vcard-parse (jabber-iq-query xml-data)))
 	start-position)
     (with-current-buffer (get-buffer-create "Edit vcard")
@@ -539,7 +539,7 @@ obtained from `xml-parse-region'."
       (switch-to-buffer (current-buffer))
       (goto-char start-position))))
 
-(defun jabber-vcard-submit (&rest ignore)
+(defun jabber-vcard-submit (&rest _ignore)
   (let ((to-publish (jabber-vcard-reassemble
 		     (mapcar (lambda (entry)
 			       (cons (car entry) (widget-value (cdr entry))))

@@ -98,7 +98,7 @@ obtained from `xml-parse-region'."
     (widget-setup)
     (widget-minor-mode 1)))
 
-(defun jabber-submit-register (&rest ignore)
+(defun jabber-submit-register (&rest _ignore)
   "Submit registration input.  See `jabber-process-register-or-search'."
   (let* ((registerp (plist-get (fsm-get-state-data jabber-buffer-connection) :registerp))
 	 (handler (if registerp
@@ -137,7 +137,7 @@ obtained from `xml-parse-region'."
   (sit-for 3)
     (jabber-disconnect-one jc))
 
-(defun jabber-remove-register (&rest ignore)
+(defun jabber-remove-register (&rest _ignore)
   "Cancel registration.  See `jabber-process-register-or-search'."
 
   (if (or jabber-silent-mode (yes-or-no-p (concat "Are you sure that you want to cancel your registration to " jabber-submit-to "? ")))

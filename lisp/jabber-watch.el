@@ -30,7 +30,7 @@ when they come online, with comment strings as values."
   :group 'jabber-watch)
 
 (defun jabber-presence-watch (who oldstatus newstatus
-				  statustext proposed-alert)
+				  _statustext proposed-alert)
   "Send a message if one of your extra-important buddies comes online.
 The buddies are stored in `jabber-watch-alist' and are added and removed by
 calling `jabber-watch-add' and `jabber-watch-remove'."

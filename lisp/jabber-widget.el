@@ -40,12 +40,12 @@ One of:
 
 (define-widget 'jid 'string
   "JID widget."
-  :value-to-internal (lambda (widget value)
+  :value-to-internal (lambda (_widget value)
 		       (let ((displayname (jabber-jid-rostername value)))
 			 (if displayname
 			     (format "%s <%s>" displayname value)
 			   value)))
-  :value-to-external (lambda (widget value)
+  :value-to-external (lambda (_widget value)
 		       (if (string-match "<\\([^>]+\\)>[ \t]*$" value)
 			   (match-string 1 value)
 			 value))

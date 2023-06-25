@@ -51,7 +51,7 @@
                    (const :tag "Critical" "critical"))
     :group 'jabber-alerts)
 
-  (defun jabber-message-notifications (from buffer text title)
+  (defun jabber-message-notifications (from _buffer text title)
     "Show a message through the notifications.el interface"
     (let
         ((body (or (jabber-escape-xml text) " "))

@@ -305,14 +305,14 @@ Optional PRESENCE mean personal presence request or alert."
   (ignore-errors
     (jabber-activity-mode-line-update)))
 
-(defun jabber-activity-add (from buffer text proposed-alert)
+(defun jabber-activity-add (from _buffer _text _proposed-alert)
   "Add a JID to mode line when `jabber-activity-show-p'."
   (when (funcall jabber-activity-show-p from)
     (add-to-list 'jabber-activity-jids from)
     (add-to-list 'jabber-activity-personal-jids from)
     (jabber-activity-mode-line-update)))
 
-(defun jabber-activity-add-muc (nick group buffer text proposed-alert)
+(defun jabber-activity-add-muc (_nick group _buffer text _proposed-alert)
   "Add a JID to mode line when `jabber-activity-show-p'."
   (when (funcall jabber-activity-show-p group)
     (add-to-list 'jabber-activity-jids group)
@@ -320,7 +320,7 @@ Optional PRESENCE mean personal presence request or alert."
       (add-to-list 'jabber-activity-personal-jids group))
     (jabber-activity-mode-line-update)))
 
-(defun jabber-activity-presence (who oldstatus newstatus statustext proposed-alert)
+(defun jabber-activity-presence (who _oldstatus newstatus _statustext _proposed-alert)
   "Add a JID to mode line on subscription requests."
   (when (string= newstatus "subscribe")
     (add-to-list 'jabber-activity-jids (symbol-name who))

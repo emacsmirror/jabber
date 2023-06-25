@@ -143,7 +143,7 @@ obtained from `xml-parse-region'."
 
 (add-hook 'jabber-chat-send-hooks 'jabber-history-send-hook)
 
-(defun jabber-history-send-hook (body id)
+(defun jabber-history-send-hook (body _id)
   "Log outgoing message to log file."
   (when (and (not jabber-use-global-history)
 	     (not (file-directory-p jabber-history-dir)))

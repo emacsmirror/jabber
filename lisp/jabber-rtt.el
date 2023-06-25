@@ -52,7 +52,7 @@
   '(add-to-list 'jabber-message-chain #'jabber-rtt-handle-message t))
 
 ;;;###autoload
-(defun jabber-rtt-handle-message (jc xml-data)
+(defun jabber-rtt-handle-message (_jc xml-data)
   ;; We could support this for MUC as well, if useful.
   (when (and (not (jabber-muc-message-p xml-data))
 	     (get-buffer (jabber-chat-get-buffer (jabber-xml-get-attribute xml-data 'from))))

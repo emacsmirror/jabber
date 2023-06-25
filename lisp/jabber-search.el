@@ -42,7 +42,7 @@ JC is the Jabber connection."
 
 ;; `jabber-submit-search' is called when the "submit" button of the search
 ;; form is activated.
-(defun jabber-submit-search (&rest ignore)
+(defun jabber-submit-search (&rest _ignore)
   "Submit search.  See `jabber-process-register-or-search'."
 
   (let ((text (concat "Search at " jabber-submit-to)))
@@ -63,7 +63,7 @@ JC is the Jabber connection."
 
   (message "Search sent"))
 
-(defun jabber-process-search-result (jc xml-data)
+(defun jabber-process-search-result (_jc xml-data)
   "Receive and display search results.
 
 JC is the Jabber connection.

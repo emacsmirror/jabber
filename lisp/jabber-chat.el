@@ -570,7 +570,7 @@ obtained from `xml-parse-region'."
       (concat "Error: " (jabber-parse-error the-error))
       'face 'jabber-chat-error))))
 
-(defun jabber-chat-print-subject (xml-data who mode)
+(defun jabber-chat-print-subject (xml-data _who mode)
   "Print subject of given <message/>, if any.
 
 XML-DATA is the parsed tree data from the stream (stanzas)
@@ -626,7 +626,7 @@ obtained from `xml-parse-region'."
 			   ((:local :muc-local) 'jabber-chat-text-local))))))
       t)))
 
-(defun jabber-chat-print-url (xml-data who mode)
+(defun jabber-chat-print-url (xml-data _who mode)
   "Print URLs provided in jabber:x:oob namespace.
 
 XML-DATA is the parsed tree data from the stream (stanzas)
@@ -648,7 +648,7 @@ obtained from `xml-parse-region'."
                     (format "%s <%s>" desc url))))))
     foundp))
 
-(defun jabber-chat-goto-address (xml-data who mode)
+(defun jabber-chat-goto-address (_xml-data _who mode)
   "Call `goto-address' on the newly written text.
 
 XML-DATA is the parsed tree data from the stream (stanzas)

@@ -66,7 +66,7 @@ probably reading the message).")
 		  " (typing a message)"))))
 
 (add-hook 'jabber-chat-send-hooks 'jabber-events-when-sending)
-(defun jabber-events-when-sending (text id)
+(defun jabber-events-when-sending (_text _id)
   (setq jabber-events-arrived nil)
   (jabber-events-update-message)
   `((x ((xmlns . "jabber:x:event"))

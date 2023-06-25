@@ -61,7 +61,7 @@ obtained from `xml-parse-region'."
                   'jabber-silent-process-data "Time request failed"))
 
 ;; called by jabber-process-data
-(defun jabber-process-time (jc xml-data)
+(defun jabber-process-time (_jc xml-data)
   "Handle results from urn:xmpp:time requests.
 
 JC is the Jabber Connection.
@@ -79,7 +79,7 @@ obtained from `xml-parse-region'."
       (format "%s has time: %s %s"
               from (format-time-string "%Y-%m-%d %T" (jabber-parse-time utc)) tzo))))
 
-(defun jabber-process-legacy-time (jc xml-data)
+(defun jabber-process-legacy-time (_jc xml-data)
   "Handle results from jabber:iq:time requests.
 
 JC is the Jabber connection.
@@ -136,7 +136,7 @@ JC is the Jabber connection."
 		  #'jabber-silent-process-data #'jabber-process-last
 		  #'jabber-silent-process-data "Idle time request failed"))
 
-(defun jabber-process-last (jc xml-data)
+(defun jabber-process-last (_jc xml-data)
   "Handle results from jabber:iq:last requests.
 
 JC is the Jabber connection.

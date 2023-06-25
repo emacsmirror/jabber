@@ -54,13 +54,13 @@ get it, and then it just gets deleted."
                   (ewoc-prev work-ewoc delete-before)
                 (ewoc-delete work-ewoc delete-before))))))
 
-(defun jabber-truncate-muc (nick group buffer text proposed-alert)
+(defun jabber-truncate-muc (_nick _group buffer _text _proposed-alert)
   "Clean old history from MUC buffers.
 `jabber-log-lines-to-keep' specifies the number of lines to
 keep."
   (jabber-truncate-top buffer))
 
-(defun jabber-truncate-chat (from buffer text proposed-alert)
+(defun jabber-truncate-chat (_from buffer _text _proposed-alert)
   "Clean old history from chat buffers.
 `jabber-log-lines-to-keep' specifies the number of lines to
 keep.

@@ -255,15 +255,15 @@ JC is the Jabber connection."
     (dolist (hook '(jabber-presence-hooks jabber-alert-presence-hooks))
       (run-hook-with-args hook (jabber-jid-symbol from) nil "subscribe" presence-status (funcall jabber-alert-presence-message-function (jabber-jid-symbol from) nil "subscribe" presence-status)))))
 
-(defun jabber-subscription-accept-mutual (&rest ignored)
+(defun jabber-subscription-accept-mutual (&rest _ignored)
   (message "Subscription accepted; reciprocal subscription request sent")
   (jabber-subscription-reply "subscribed" "subscribe"))
 
-(defun jabber-subscription-accept-one-way (&rest ignored)
+(defun jabber-subscription-accept-one-way (&rest _ignored)
   (message "Subscription accepted")
   (jabber-subscription-reply "subscribed"))
 
-(defun jabber-subscription-decline (&rest ignored)
+(defun jabber-subscription-decline (&rest _ignored)
   (message "Subscription declined")
   (jabber-subscription-reply "unsubscribed"))
 
