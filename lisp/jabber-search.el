@@ -74,7 +74,7 @@ obtained from `xml-parse-region'."
   ;; which is not necessarily the case.
   (let ((query (jabber-iq-query xml-data))
 	(have-xdata nil)
-	xdata fields (jid-fields 0))
+	xdata fields)
 
     ;; First, check for results in jabber:x:data form.
     (dolist (x (jabber-xml-get-children query 'x))

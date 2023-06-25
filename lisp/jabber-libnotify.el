@@ -71,7 +71,7 @@ Dbus is faster but require emacs23+, use shell as a fallback."
                   (or jabber-libnotify-message-header " ")
                   text))))
     ;; Possible errors include not finding the notify-send binary.
-    (condition-case e
+    (condition-case _e
         (cond
          ((eq jabber-libnotify-method 'shell)
           (let ((process-connection-type nil))

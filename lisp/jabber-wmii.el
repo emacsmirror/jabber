@@ -34,7 +34,7 @@ If nil the message has to be cleared by other means, i.e. from wmiirc.")
 
 (defun jabber-wmii-clear ()
   "Clear any previous message output through wmii window manager."
-  (condition-case e
+  (condition-case _e
       (call-process "wmiir" nil nil nil "remove" "/rbar/jabber")
     (error nil)))
 
@@ -47,7 +47,7 @@ If nil the message has to be cleared by other means, i.e. from wmiirc.")
       (insert  jabber-wmii-color " " (or title text)))
     ;; Possible errors include not finding the wmiir binary, and
     ;; too many pipes open because of message flood.
-    (condition-case e
+    (condition-case _e
 	(call-process "wmiir" tmp nil nil "create" "/rbar/jabber")
       (error nil))
     (delete-file tmp))

@@ -201,7 +201,7 @@ all strings still are unique and at least
 		#'(lambda (x) (cons x (funcall jabber-activity-make-string x)))
 		jids)
 	       #'(lambda (x y) (string-lessp (cdr x) (cdr y))))))
-    (cl-loop for ((prev-jid . prev) (cur-jid . cur) (next-jid . next))
+    (cl-loop for ((_prev-jid . prev) (cur-jid . cur) (_next-jid . next))
 	  on (cons nil alist)
 	  until (null cur)
 	  collect

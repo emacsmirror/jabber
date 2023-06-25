@@ -728,26 +728,7 @@ three being lists of JID symbols.
 JC is the Jabber connection."
   (let* ((roster (plist-get (fsm-get-state-data jc) :roster))
 	 (hash (plist-get (fsm-get-state-data jc) :roster-hash))
-	 (ewoc (plist-get (fsm-get-state-data jc) :roster-ewoc))
-	 (all-groups (plist-get (fsm-get-state-data jc) :roster-groups))
-	 (terminator
-	  (lambda (deleted-items)
-	    (dolist (delete-this deleted-items)
-	      (let ((groups (get delete-this 'groups))
-		    (terminator
-		     (lambda (g)
-		       (let*
-			   ((group (or g jabber-roster-default-group-name))
-			    (buddies (gethash group hash)))
-			 (when (not buddies)
-			   (setq new-groups (append new-groups (list group))))
-			 (puthash group
-				  (delq delete-this buddies)
-				  hash)))))
-		(if groups
-		    (dolist (group groups)
-		      (terminator group))
-		  (terminator groups)))))))
+	 (all-groups (plist-get (fsm-get-state-data jc) :roster-groups)))
 
     ;; fix a old-roster
     (dolist (delete-this deleted-items)

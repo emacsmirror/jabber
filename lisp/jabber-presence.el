@@ -146,7 +146,6 @@ obtained from `xml-parse-region'."
   ;; XXX: use JC argument
   (let ((roster (plist-get (fsm-get-state-data jc) :roster))
 	(from (jabber-xml-get-attribute xml-data 'from))
-	(to (jabber-xml-get-attribute xml-data 'to))
 	(type (jabber-xml-get-attribute xml-data 'type))
 	(presence-show (car (jabber-xml-node-children
 			     (car (jabber-xml-get-children xml-data 'show)))))

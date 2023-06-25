@@ -144,8 +144,7 @@ XML-DATA is the parsed tree data from the stream (stanzas)
 obtained from `xml-parse-region'."
   (let* ((from (jabber-xml-get-attribute xml-data 'from))
 	 (query (jabber-iq-query xml-data))
-	 (seconds (jabber-xml-get-attribute query 'seconds))
-	 (message (car (jabber-xml-node-children query))))
+	 (seconds (jabber-xml-get-attribute query 'seconds)))
     (cond
      ((jabber-jid-resource from)
       ;; Full JID: idle time

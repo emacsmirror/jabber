@@ -173,7 +173,6 @@ DEFAULTS takes precedence over values specified in the form."
     (let* ((var (jabber-xml-get-attribute field 'var))
 	   (label (jabber-xml-get-attribute field 'label))
 	   (type (jabber-xml-get-attribute field 'type))
-	   (required (jabber-xml-get-children field 'required))
 	   (values (jabber-xml-get-children field 'value))
 	   (options (jabber-xml-get-children field 'option))
 	   (desc (car (jabber-xml-get-children field 'desc)))
@@ -342,7 +341,6 @@ Return a list of strings, each of which to be included as cdata in a
   "Render single-record search results."
   (dolist (field (jabber-xml-get-children xdata 'field))
     (let ((label (jabber-xml-get-attribute field 'label))
-	  (type (jabber-xml-get-attribute field 'type))
 	  (values (mapcar #'(lambda (val)
 			      (car (jabber-xml-node-children val)))
 			  (jabber-xml-get-children field 'value))))

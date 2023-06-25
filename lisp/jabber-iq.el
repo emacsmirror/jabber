@@ -176,9 +176,7 @@ See section 9.3 of XMPP Core."
 JC is the Jabber connection.
 XML-DATA is the parsed tree data from the stream (stanzas)
 obtained from `xml-parse-region'."
-  (let ((from (or (jabber-xml-get-attribute xml-data 'from) (plist-get (fsm-get-state-data jc) :server)))
-	(xmlns (jabber-iq-xmlns xml-data))
-	(type (jabber-xml-get-attribute xml-data 'type)))
+  (let ((from (or (jabber-xml-get-attribute xml-data 'from) (plist-get (fsm-get-state-data jc) :server))))
     (with-current-buffer (get-buffer-create (format-spec jabber-browse-buffer-format
                                                          (list (cons ?n from))))
       (if (not (eq major-mode 'jabber-browse-mode))

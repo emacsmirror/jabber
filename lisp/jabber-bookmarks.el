@@ -197,11 +197,11 @@ JC is the Jabber connection."
 	   (lambda (entry)
 	     (cl-case (car entry)
 	       (url
-		(cl-destructuring-bind (symbol url name) entry
+		(cl-destructuring-bind (_symbol url name) entry
 		  `(url ((url . ,url)
 			 (name . ,name)))))
 	       (conference
-		(cl-destructuring-bind (symbol jid name autojoin nick password)
+		(cl-destructuring-bind (_symbol jid name autojoin nick password)
 		    entry
 		  `(conference ((jid . ,jid)
 				(name . ,name)

@@ -857,21 +857,20 @@ obtained from `xml-parse-region'."
 
 JC is the Jabber connection."
   (interactive (list (jabber-read-account)))
-  (let ((nickname (plist-get (fsm-get-state-data jc) :username)))
-    (when (bound-and-true-p jabber-muc-autojoin)
-      (dolist (group jabber-muc-autojoin)
-	(jabber-muc-join jc group (or
-					 (cdr (assoc group jabber-muc-default-nicknames))
-					 (plist-get (fsm-get-state-data jc) :username)))))
-    (jabber-get-bookmarks
-     jc
-     (lambda (jc bookmarks)
-       (dolist (bookmark bookmarks)
-	 (setq bookmark (jabber-parse-conference-bookmark bookmark))
-	 (when (and bookmark (plist-get bookmark :autojoin))
-	   (jabber-muc-join jc (plist-get bookmark :jid)
-				  (or (plist-get bookmark :nick)
-				      (plist-get (fsm-get-state-data jc) :username)))))))))
+  (when (bound-and-true-p jabber-muc-autojoin)
+    (dolist (group jabber-muc-autojoin)
+      (jabber-muc-join jc group (or
+                                 (cdr (assoc group jabber-muc-default-nicknames))
+                                 (plist-get (fsm-get-state-data jc) :username)))))
+  (jabber-get-bookmarks
+   jc
+   (lambda (jc bookmarks)
+     (dolist (bookmark bookmarks)
+       (setq bookmark (jabber-parse-conference-bookmark bookmark))
+       (when (and bookmark (plist-get bookmark :autojoin))
+         (jabber-muc-join jc (plist-get bookmark :jid)
+                          (or (plist-get bookmark :nick)
+                              (plist-get (fsm-get-state-data jc) :username))))))))
 
 ;;;###autoload
 (defun jabber-muc-message-p (message)

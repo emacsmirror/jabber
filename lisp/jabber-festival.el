@@ -21,7 +21,7 @@
 
 (eval-when-compile (require 'jabber-alert))
 
-(condition-case e
+(condition-case _e
     (progn
       ;; Most people don't have Festival, so this will often fail
       (require 'festival)

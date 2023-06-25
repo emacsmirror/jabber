@@ -28,11 +28,10 @@
 (defun jabber-awesome-message (text &optional title)
   "Show MSG in Awesome"
   ;; Possible errors include not finding the awesome binary.
-  (condition-case e
+  (condition-case _e
       (let ((process-connection-type))
         (shell-command-to-string (format "echo 'naughty.notify({text = \"%s\" %s})' | awesome-client -"
-					 (or title text) jabber-awesome-args))
-        )
+					 (or title text) jabber-awesome-args)))
     (error nil)))
 
 (define-jabber-alert awesome "Show a message through the Awesome window manager"

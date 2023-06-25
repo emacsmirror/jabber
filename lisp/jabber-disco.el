@@ -73,7 +73,7 @@ obtained from `xml-parse-region'."
 	 (c (jabber-xml-path xml-data '(("http://jabber.org/protocol/caps" . "c")))))
     (when (and (null type) c)
       (jabber-xml-let-attributes
-	  (ext hash node ver) c
+	  (_ext hash  node ver) c
 	(cond
 	 (hash
 	  ;; If the <c/> element has a hash attribute, it follows the

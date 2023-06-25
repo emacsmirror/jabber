@@ -55,10 +55,6 @@
     "Show a message through the notifications.el interface"
     (let
         ((body (or (jabber-escape-xml text) " "))
-         (head (jabber-escape-xml
-                (or title
-                    (or jabber-notifications-message-header " ")
-                    text)))
          (avatar-hash (get (jabber-jid-symbol from) 'avatar-hash)))
       (notifications-notify
        :title title
