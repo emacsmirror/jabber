@@ -92,7 +92,6 @@ obtained from `xml-parse-region'."
 		     (nick . (label "Nickname" column 30))
 		     (jid . (label "JID" column 45))
 		     (email . (label "E-mail" column 65))))
-      (setq jid-fields 1)
 
       (dolist (field-cons fields)
 	(indent-to (plist-get (cdr field-cons) 'column) 1)

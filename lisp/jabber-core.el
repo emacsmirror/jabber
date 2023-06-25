@@ -152,6 +152,14 @@ problems."
 ;; jabber-connect and jabber-connect-all should load jabber.el, not
 ;; just jabber-core.el, when autoloaded.
 
+;; Global reference declarations
+
+(defvar jabber-debug-keep-process-buffers) ; jabber.el
+(defvar jabber-silent-mode)             ; jabber.el
+(defvar jabber-account-list)            ; jabber.el
+
+;;
+
 ;;;###autoload (autoload 'jabber-connect-all "jabber" "Connect to all configured Jabber accounts.\nSee `jabber-account-list'.\nIf no accounts are configured (or ARG supplied), call `jabber-connect' interactively." t)
 (defun jabber-connect-all (&optional arg)
   "Connect to all configured Jabber accounts.
@@ -162,8 +170,8 @@ With many prefix arguments, one less is passed to `jabber-connect'."
   (interactive "P")
   (let ((accounts
 	 (cl-remove-if (lambda (account)
-		      (cdr (assq :disabled (cdr account))))
-		    jabber-account-list)))
+		         (cdr (assq :disabled (cdr account))))
+		       jabber-account-list)))
     (if (or (null accounts) arg)
 	(let ((current-prefix-arg
 	       (cond

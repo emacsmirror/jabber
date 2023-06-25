@@ -98,6 +98,13 @@ First item is the symbol naming the method.
 Second item is the connect function.
 Third item is the send function.")
 
+;; Global reference declarations
+
+(defvar jabber-process-buffer)          ; jabber.el
+(defvar jabber-debug-keep-process-buffers) ; jabber.el
+
+;;
+
 (defun jabber-get-connect-function (type)
   "Get the connect function associated with TYPE.
 TYPE is a symbol; see `jabber-connection-type'."

@@ -163,6 +163,10 @@ It is called after `jabber-activity-mode-string' and
 (put 'jabber-activity-mode-string 'risky-local-variable t)
 (put 'jabber-activity-count-string 'risky-local-variable t)
 
+;; Global reference declarations
+
+(defvar jabber-silent-mode)             ; jabber.el
+
 (defun jabber-activity-make-string-default (jid)
   "Return the nick of the JID.
 If no nick is available, return the user name part of the JID. In

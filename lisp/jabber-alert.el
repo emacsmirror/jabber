@@ -224,6 +224,13 @@ files."
   :type 'function
   :group 'jabber-alerts)
 
+;; Global reference declarations
+
+(defvar jabber-presence-strings)        ; jabber.el
+(defvar jabber-xml-data)                ; jabber.el
+
+;;
+
 (defmacro define-jabber-alert (name docstring function)
   "Define a new family of external alert hooks.
 Use this macro when your hooks do nothing except displaying a string
