@@ -63,6 +63,8 @@ Values are lists of nickname strings.")
 (defvar jabber-muc-nickname-history ()
   "Keeps track of previously referred-to nicknames.")
 
+(defvar jabber-muc-print-hook nil "List of MUC alert hooks.")
+
 (defcustom jabber-muc-default-nicknames nil
   "Default nickname for specific MUC rooms."
   :group 'jabber-chat
@@ -1007,7 +1009,6 @@ Return nil if X-MUC is nil."
 
 JC is the Jabber connection."
   (when (jabber-muc-message-p xml-data)
-    (defvar printers nil)
     (let* ((from (jabber-xml-get-attribute xml-data 'from))
 	   (group (jabber-jid-user from))
 	   (nick (jabber-jid-resource from))
@@ -1018,16 +1019,16 @@ JC is the Jabber connection."
 		   :muc-local)
 		  (t :muc-foreign)))
 	   (body-text (car (jabber-xml-node-children
-			   (car (jabber-xml-get-children
-				 xml-data 'body)))))
+			    (car (jabber-xml-get-children
+				  xml-data 'body)))))
 
-	   (printers (append jabber-muc-printers jabber-chat-printers)))
+	   (jabber-muc-print-hook (append jabber-muc-printers jabber-chat-printers)))
 
       (with-current-buffer (jabber-muc-create-buffer jc group)
 	(jabber-muc-snarf-topic xml-data)
 	;; Call alert hooks only when something is output
 	(when (or error-p
-		  (run-hook-with-args-until-success 'printers xml-data type :printp))
+		  (run-hook-with-args-until-success 'jabber-muc-print-hook xml-data type :printp))
 	  (jabber-maybe-print-rare-time
 	   (ewoc-enter-last jabber-chat-ewoc (list type xml-data :time (current-time))))
 
