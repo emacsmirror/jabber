@@ -43,8 +43,7 @@ get it, and then it just gets deleted."
            (ewoc-prev
             work-ewoc
             (ewoc-locate work-ewoc
-                         (save-excursion
-                           (set-buffer buffer)
+                         (with-current-buffer buffer
                            (goto-char (point-max))
                            (forward-line (- jabber-log-lines-to-keep))
                            (point))))))
