@@ -130,7 +130,7 @@ JC is the Jabber connection."
 	  (when (>= (current-column) (min fill-column width))
 	    (save-restriction
 	      (narrow-to-region (min (1+ (point)) (point-max))
-				(point-at-bol))
+				(line-beginning-position))
 	      (let ((goback (point-marker)))
 		(fill-paragraph nil)
 		(goto-char (marker-position goback)))))
