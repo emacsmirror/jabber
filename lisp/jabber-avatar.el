@@ -219,8 +219,7 @@ AVATAR may be one of:
 
     (unless (string= hash (get jid-symbol 'avatar-hash))
       (put jid-symbol 'avatar (funcall image))
-      (put jid-symbol 'avatar-hash hash)
-      (jabber-presence-update-roster jid-symbol))))
+      (put jid-symbol 'avatar-hash hash))))
 
 (defun jabber-create-image (file-or-data &optional type data-p)
   "Create an image from FILE-OR-DATA.
