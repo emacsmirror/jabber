@@ -63,11 +63,12 @@ please check their documentation for more information."
   :group 'jabber-httpupload
   :type 'function)
 
-(defcustom jabber-httpupload-record-command "sox -d -t ogg $(filename).ogg"
-  "What is the command used to record audio?
-Use $(filename) where the temporal filename should be."
-  :group 'jabber-httpupload
-  :type 'function)
+;; TODO Recording and sending audio
+;; (defcustom jabber-httpupload-record-command "sox -d -t ogg $(filename).ogg"
+;;   "What is the command used to record audio?
+;; Use $(filename) where the temporal filename should be."
+;;   :group 'jabber-httpupload
+;;   :type 'function)
 
 ;; Disco is used to discover if HTTP Upload is supported on the server
 ;; side. Two queries are used:
@@ -562,18 +563,16 @@ EXTRA-DATA is a list `(jid)"
                       (jabber-httpupload-ignore-certificate jc))
       (error "Cannot upload the file.  Error: %S" err))))
 
-;; ** TODO Recording and sending audio **
-
-;; TODO
-(defun jabber-httpupload--record-audio ()
-  "Create a new audio record and save the file into a temporal directory."
-  (let ((process (start-process-shell-command
-                  "jabber-httpupload-record-audio"
-                  (current-buffer)
-                  (replace-string "$(filename"
-                                  "/tmp/jabber-httpupload-record"
-                                  jabber-httpupload-record-command))))
-    (set-process-sentinel process #'jabber-httpupload-record-sentinel)))
+;; TODO Recording and sending audio **
+;; (defun jabber-httpupload--record-audio ()
+;;   "Create a new audio record and save the file into a temporal directory."
+;;   (let ((process (start-process-shell-command
+;;                   "jabber-httpupload-record-audio"
+;;                   (current-buffer)
+;;                   (replace-string "$(filename"
+;;                                   "/tmp/jabber-httpupload-record"
+;;                                   jabber-httpupload-record-command))))
+;;     (set-process-sentinel process #'jabber-httpupload-record-sentinel)))
 
 ;; * Add hooks *
 ;; Some function should start automatically.
