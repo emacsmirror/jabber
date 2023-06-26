@@ -35,6 +35,7 @@
   "Methods used to keep track of idleness.
 This is a list of functions that takes no arguments, and returns the
 number of seconds since the user was active, or nil on error."
+  :type 'hook
   :group 'jabber-autoaway
   :options '(jabber-current-idle-time
              jabber-xprintidle-get-idle-time
