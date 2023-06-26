@@ -198,7 +198,9 @@
 This lets the recipient see every change made to the message up
 until it's sent.  The recipient's client needs to implement
 XEP-0301, In-Band Real Time Text."
-  nil " Real-Time" nil
+  :init-value nil
+  :lighter " Real-Time"
+  :keymap nil
   (if (null jabber-rtt-send-mode)
       (progn
 	(remove-hook 'after-change-functions #'jabber-rtt--queue-update t)
