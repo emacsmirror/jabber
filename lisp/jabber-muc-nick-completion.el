@@ -107,19 +107,18 @@ Optional argument GROUP to look."
 	   (+ time jabber-muc-personal-message-bonus)
 	 time)))))
 
-  (defun jabber-sort-nicks (nicks group)
-    "Return list of NICKS in GROUP, sorted."
-    (cl-letf* ((times (cdr (assoc group *jabber-muc-participant-last-speaking*)))
-	       ((symbol-function 'fetch-time) (lambda (nick) (or (assoc nick times)
-								 (cons nick 0))))
-	       ((symbol-function 'cmp) (lambda (nt1 nt2)
-					 (let ((t1 (cdr nt1))
-					       (t2 (cdr nt2)))
-					   (if (and (zerop t1) (zerop t2))
-					       (string< (car nt1)
-							(car nt2))
-					     (> t1 t2))))))
-      (mapcar #'car (sort (mapcar #'fetch-time nicks) #'cmp))))
+(defun jabber-sort-nicks (nicks group)
+  "Return list of NICKS in GROUP, sorted."
+  (let ((times (cdr (assoc group *jabber-muc-participant-last-speaking*))))
+    (cl-flet ((fetch-time (nick) (or (assoc nick times) (cons nick 0)))
+              (cmp (nt1 nt2)
+                (let ((t1 (cdr nt1))
+                      (t2 (cdr nt2)))
+                  (if (and (zerop t1) (zerop t2))
+                      (string< (car nt1)
+                               (car nt2))
+                    (> t1 t2)))))
+      (mapcar #'car (sort (mapcar #'fetch-time nicks) #'cmp)))))
 
 (defun jabber-muc-beginning-of-line ()
   "Return position of line begining."
