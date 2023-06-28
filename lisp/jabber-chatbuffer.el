@@ -49,6 +49,12 @@ window or at `fill-column', whichever is shorter."
 ;;;###autoload
 (make-variable-buffer-local 'jabber-buffer-connection)
 
+(defvar jabber-chat-mode-map
+  (let ((map (make-sparse-keymap)))
+    (set-keymap-parent map jabber-common-keymap)
+    (define-key map "\r" 'jabber-chat-buffer-send)
+    map))
+
 (defun jabber-chat-mode (jc ewoc-pp)
   "Jabber chat mode.
 \\{jabber-chat-mode-map}
@@ -93,12 +99,6 @@ JC is the Jabber connection."
   (>= (point) jabber-point-insert))
 (put 'jabber-chat-mode 'flyspell-mode-predicate
   'jabber-chat-mode-flyspell-verify)
-
-(defvar jabber-chat-mode-map
-  (let ((map (make-sparse-keymap)))
-    (set-keymap-parent map jabber-common-keymap)
-    (define-key map "\r" 'jabber-chat-buffer-send)
-    map))
 
 (defun jabber-chat-buffer-send ()
   (interactive)

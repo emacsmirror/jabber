@@ -289,15 +289,6 @@ Examples:
   (lambda (&rest _ignore) (beep)))
 
 ;; Message alert hooks
-(defun jabber-message-default-message (from buffer _text)
-  (when (or jabber-message-alert-same-buffer
-	    (not (memq (selected-window) (get-buffer-window-list buffer))))
-    (if (jabber-muc-sender-p from)
-	(format "Private message from %s in %s"
-		(jabber-jid-resource from)
-		(jabber-jid-displayname (jabber-jid-user from)))
-      (format "Message from %s" (jabber-jid-displayname from)))))
-
 (defcustom jabber-message-alert-same-buffer t
   "If nil, don't display message alerts for the current buffer."
   :type 'boolean
@@ -307,6 +298,15 @@ Examples:
   "If nil, don't display MUC alerts for your own messages."
   :type 'boolean
   :group 'jabber-alerts)
+
+(defun jabber-message-default-message (from buffer _text)
+  (when (or jabber-message-alert-same-buffer
+	    (not (memq (selected-window) (get-buffer-window-list buffer))))
+    (if (jabber-muc-sender-p from)
+	(format "Private message from %s in %s"
+		(jabber-jid-resource from)
+		(jabber-jid-displayname (jabber-jid-user from)))
+      (format "Message from %s" (jabber-jid-displayname from)))))
 
 (defun jabber-message-wave (from _buffer _text title)
   "Play the wave file specified in `jabber-alert-message-wave'."

@@ -48,6 +48,77 @@ to symbols accepted by `secure-hash'.
 
 XEP-0115 currently recommends SHA-1, but let's be future-proof.")
 
+;; Keys are ("jid" . "node"), where "node" is nil if appropriate.
+;; Values are (identities features), where each identity is ["name"
+;; "category" "type"], and each feature is a string.
+(defvar jabber-disco-info-cache (make-hash-table :test 'equal))
+
+;; Keys are ("jid" . "node").  Values are (items), where each
+;; item is ["name" "jid" "node"] (some values may be nil).
+(defvar jabber-disco-items-cache (make-hash-table :test 'equal))
+
+(defvar jabber-advertised-features
+  (list "http://jabber.org/protocol/disco#info")
+  "Features advertised on service discovery requests.
+
+Don't add your feature to this list directly.  Instead, call
+`jabber-disco-advertise-feature'.")
+
+(defvar jabber-disco-items-nodes
+  (list
+   (list "" nil nil))
+  "Alist of node names and information about returning disco item data.
+Key is node name as a string, or \"\" for no node specified.  Value is
+a list of two items.
+
+First item is data to return.  If it is a function, that function is
+called and its return value is used; if it is a list, that list is
+used.  The list should be the XML data to be returned inside the
+<query/> element, like this:
+
+\((item ((name . \"Name of first item\")
+	(jid . \"first.item\")
+	(node . \"node\"))))
+
+Second item is access control function.  That function is passed the
+JID, and returns non-nil if access is granted.  If the second item is
+nil, access is always granted.")
+
+(defvar jabber-disco-info-nodes
+  (list
+   (list "" #'jabber-disco-return-client-info nil))
+  "Alist of node names and information returning disco info data.
+Key is node name as a string, or \"\" for no node specified.  Value is
+a list of two items.
+
+First item is data to return.  If it is a function, that function is
+called and its return value is used; if it is a list, that list is
+used.  The list should be the XML data to be returned inside the
+<query/> element, like this:
+
+\((identity ((category . \"client\")
+	    (type . \"pc\")
+	    (name . \"Jabber client\")))
+ (feature ((var . \"some-feature\"))))
+
+Second item is access control function.  That function is passed the
+JID, and returns non-nil if access is granted.  If the second item is
+nil, access is always granted.")
+
+;; Global reference declarations
+
+(declare-function jabber-send-current-presence "jabber-presence.el"
+                  (&optional _ignore))
+(declare-function jabber-xdata-formtype "jabber-widget.el" (x))
+(defvar jabber-presence-element-functions) ; jabber-presence.el
+
+;;
+
+(add-to-list 'jabber-iq-get-xmlns-alist
+	     (cons "http://jabber.org/protocol/disco#info" 'jabber-return-disco-info))
+(add-to-list 'jabber-iq-get-xmlns-alist
+	     (cons "http://jabber.org/protocol/disco#items" 'jabber-return-disco-info))
+
 (defun jabber-caps-get-cached (jid)
   "Get disco info from Entity Capabilities cache.
 JID should be a string containing a full JID.
@@ -319,58 +390,6 @@ the right node."
 (eval-after-load "jabber-presence"
   '(add-to-list 'jabber-presence-element-functions #'jabber-caps-presence-element))
 
-(defvar jabber-advertised-features
-  (list "http://jabber.org/protocol/disco#info")
-  "Features advertised on service discovery requests.
-
-Don't add your feature to this list directly.  Instead, call
-`jabber-disco-advertise-feature'.")
-
-(defvar jabber-disco-items-nodes
-  (list
-   (list "" nil nil))
-  "Alist of node names and information about returning disco item data.
-Key is node name as a string, or \"\" for no node specified.  Value is
-a list of two items.
-
-First item is data to return.  If it is a function, that function is
-called and its return value is used; if it is a list, that list is
-used.  The list should be the XML data to be returned inside the
-<query/> element, like this:
-
-\((item ((name . \"Name of first item\")
-	(jid . \"first.item\")
-	(node . \"node\"))))
-
-Second item is access control function.  That function is passed the
-JID, and returns non-nil if access is granted.  If the second item is
-nil, access is always granted.")
-
-(defvar jabber-disco-info-nodes
-  (list
-   (list "" #'jabber-disco-return-client-info nil))
-  "Alist of node names and information returning disco info data.
-Key is node name as a string, or \"\" for no node specified.  Value is
-a list of two items.
-
-First item is data to return.  If it is a function, that function is
-called and its return value is used; if it is a list, that list is
-used.  The list should be the XML data to be returned inside the
-<query/> element, like this:
-
-\((identity ((category . \"client\")
-	    (type . \"pc\")
-	    (name . \"Jabber client\")))
- (feature ((var . \"some-feature\"))))
-
-Second item is access control function.  That function is passed the
-JID, and returns non-nil if access is granted.  If the second item is
-nil, access is always granted.")
-
-(add-to-list 'jabber-iq-get-xmlns-alist
-	     (cons "http://jabber.org/protocol/disco#info" 'jabber-return-disco-info))
-(add-to-list 'jabber-iq-get-xmlns-alist
-	     (cons "http://jabber.org/protocol/disco#items" 'jabber-return-disco-info))
 (defun jabber-return-disco-info (jc xml-data)
   "Respond to a service discovery request.
 See XEP-0030.
@@ -512,15 +531,6 @@ obtained from `xml-parse-region'."
 	      'jabber-account jc
 	      'jabber-node node))))
       (insert "No items found.\n"))))
-
-;; Keys are ("jid" . "node"), where "node" is nil if appropriate.
-;; Values are (identities features), where each identity is ["name"
-;; "category" "type"], and each feature is a string.
-(defvar jabber-disco-info-cache (make-hash-table :test 'equal))
-
-;; Keys are ("jid" . "node").  Values are (items), where each
-;; item is ["name" "jid" "node"] (some values may be nil).
-(defvar jabber-disco-items-cache (make-hash-table :test 'equal))
 
 (defun jabber-disco-get-info (jc jid node callback closure-data &optional force)
   "Get disco info for JID and NODE, using connection JC.
