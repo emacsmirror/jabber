@@ -226,8 +226,14 @@ files."
 
 ;; Global reference declarations
 
+(declare-function jabber-chat-get-buffer "jabber-chat.el" (chat-with))
+(declare-function jabber-chat-send "jabber-chat.el" (jc body))
+(declare-function jabber-muc-sender-p "jabber-muc.el" (jid))
 (defvar jabber-presence-strings)        ; jabber.el
 (defvar jabber-xml-data)                ; jabber.el
+(defvar *jabber-active-groupchats*)     ; jabber-muc.el
+(defvar jabber-roster-buffer)           ; jabber-core.el
+(defvar jabber-buffer-connection)       ; jabber-chatbuffer.el
 
 ;;
 
@@ -479,6 +485,8 @@ NAME: the name of the sender."
   (let ((sn (symbol-name name)))
     (let ((func (intern (format "%s-personal" sn))))
     `(progn
+       (declare-function jabber-muc-looks-like-personal-p "jabber-muc-nick-completion.el"
+                         (message &optional group))
        (defun ,func (nick group buffer text title)
          (if (jabber-muc-looks-like-personal-p text group)
              (,name nick group buffer text title)))

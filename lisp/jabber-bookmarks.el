@@ -26,7 +26,12 @@
 (require 'jabber-private)
 (require 'jabber-widget)
 
+;; Global reference declarations
 
+(defvar jabber-muc-default-nicknames)   ; jabber-muc.el
+(defvar jabber-muc-autojoin)            ; jabber-muc.el
+
+;;
 
 (defvar jabber-bookmarks (make-hash-table :test 'equal)
   "Mapping from full JIDs to bookmarks.

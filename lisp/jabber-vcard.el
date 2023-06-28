@@ -72,6 +72,15 @@
   "The avatar structure for the photo in the vCard edit buffer.")
 (make-variable-buffer-local 'jabber-vcard-photo)
 
+;; Global reference declarations
+
+(declare-function jabber-vcard-avatars-update-current
+                  "jabber-vcard-avatars.el" (jc new-hash))
+(defvar jabber-vcard-fields)            ; jabber-vcard.el
+(defvar jabber-buffer-connection)       ; jabber-chatbuffer.el
+
+;;
+
 (defun jabber-vcard-parse (vcard)
   "Parse the vCard XML structure given in VCARD.
 The top node should be the `vCard' node."

@@ -43,6 +43,12 @@ func	- function taking connection object and entire IQ stanza as
 
 Use the function `jabber-ahc-add' to add a command to this list.")
 
+;; Global reference declarations
+
+(defvar jabber-jid-info-menu)           ; jabber-menu.el
+(defvar jabber-buffer-connection)       ; jabber-chatbuffer.el
+
+;;
 
 ;;; SERVER
 (add-to-list 'jabber-disco-info-nodes

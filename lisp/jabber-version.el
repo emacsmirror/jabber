@@ -30,6 +30,12 @@
   :type 'boolean
   :group 'jabber)
 
+;; Global reference declarations
+
+;; (defvar jabber-jid-info-menu)           ; jabber-menu.el
+
+;;
+
 (add-to-list 'jabber-jid-info-menu
 	     (cons "Request software version" 'jabber-get-version))
 (defun jabber-get-version (jc to)

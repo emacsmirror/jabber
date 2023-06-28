@@ -36,6 +36,12 @@ One of:
 (defvar jabber-submit-to nil
   "JID of the entity to which form data is to be sent.")
 
+;; Global reference declarations
+
+(defvar *jabber-roster*)                ; jabber-core.el
+
+;;
+
 (jabber-disco-advertise-feature "jabber:x:data")
 
 (define-widget 'jid 'string

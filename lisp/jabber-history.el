@@ -95,6 +95,14 @@ number after the last rotation."
   :type 'integer
   :group 'jabber-history)
 
+;; Global reference declarations
+
+(declare-function jabber-muc-message-p "jabber-muc.el"(message))
+(defvar jabber-chatting-with)           ; jabber-chatbuffer.el
+(defvar jabber-buffer-connection)       ; jabber-buffer-connection.el
+
+;;
+
 (defvar jabber-history-inhibit-received-message-functions nil
   "Functions determining whether to log an incoming message stanza.
 The functions in this list are called with two arguments,

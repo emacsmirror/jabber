@@ -61,6 +61,12 @@ probably reading the message).")
   "Human-readable presentation of event information.")
 (make-variable-buffer-local 'jabber-events-message)
 
+;; Global reference declarations
+
+(declare-function jabber-muc-message-p "jabber-muc.el" (message))
+
+;;
+
 (defun jabber-events-update-message ()
   (setq jabber-events-message
 	(concat (cdr (assq jabber-events-arrived

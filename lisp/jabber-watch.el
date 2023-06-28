@@ -30,6 +30,12 @@ when they come online, with comment strings as values."
   :type '(alist :key-type symbol :value-type string)
   :group 'jabber-watch)
 
+;; Global reference declarations
+
+;; (defvar jabber-presence-hooks)          ; jabber-alert.el
+
+;;
+
 (defun jabber-presence-watch (who oldstatus newstatus
 				  _statustext proposed-alert)
   "Send a message if one of your extra-important buddies comes online.

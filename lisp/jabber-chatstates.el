@@ -58,7 +58,13 @@ nil - don't send states")
   "Human-readable presentation of chat state information.")
 (make-variable-buffer-local 'jabber-chatstates-message)
 
-;;; INCOMING
+;; Global reference declarations
+
+(defvar jabber-chatstates-composing-sent) ; jabber-chatstates.el
+
+;;
+
+;; INCOMING
 ;;; Code for requesting chat state notifications from others and handling
 ;;; them.
 

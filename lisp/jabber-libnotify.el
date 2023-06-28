@@ -58,6 +58,12 @@ Dbus is faster but require emacs23+, use shell as a fallback."
 
 (defvar jabber-libnotify-id 0)
 
+;; Global reference declarations
+
+(declare-function jabber-escape-xml "jabber-xml.el" (string))
+
+;;
+
 (defun jabber-libnotify-next-id ()
   "Return the next notification id."
   (setq jabber-libnotify-id (+ jabber-libnotify-id 1)))

@@ -23,6 +23,15 @@
 (require 'jabber-xml)
 (require 'jabber-iq)
 
+;; Global reference declarations
+
+;; (declare-function jabber-iq-query "jabber-util.el" (xml-data))
+;; (declare-function jabber-xml-node-children "jabber-xml.el" (node))
+;; (declare-function jabber-send-iq "jabber-iq.el"
+;;                   (jc to type query success-callback success-closure-data
+;; 		      error-callback error-closure-data &optional result-id))
+;;
+
 ;;;###autoload
 (defun jabber-private-get (jc node-name namespace success-callback error-callback)
   "Retrieve an item from private XML storage.

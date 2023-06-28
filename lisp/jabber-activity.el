@@ -164,7 +164,14 @@ It is called after `jabber-activity-mode-string' and
 
 ;; Global reference declarations
 
+(declare-function jabber-chat-get-buffer "jabber-chat.el" (chat-with))
+(declare-function jabber-muc-get-buffer "jabber-muc.el" (group))
+(declare-function jabber-muc-private-get-buffer "jabber-muc.el"
+                  (group nickname))
+(declare-function jabber-muc-sender-p "jabber-muc.el" (jid))
 (defvar jabber-silent-mode)             ; jabber.el
+
+;;
 
 (defun jabber-activity-make-string-default (jid)
   "Return the nick of the JID.

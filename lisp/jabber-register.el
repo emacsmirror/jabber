@@ -22,6 +22,14 @@
 (require 'jabber-iq)
 (require 'jabber-widget)
 
+;; Global reference declarations
+
+(declare-function jabber-submit-search "jabber-search.el" (&rest _ignore))
+(defvar jabber-buffer-connection)       ; jabber-chatbuffer.el
+(defvar jabber-silent-mode)             ; jabber.el
+
+;;
+
 (add-to-list 'jabber-jid-service-menu
 	     (cons "Register with service" 'jabber-get-register))
 (defun jabber-get-register (jc to)

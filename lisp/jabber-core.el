@@ -151,9 +151,32 @@ problems."
 
 ;; Global reference declarations
 
+(declare-function jabber-send-iq "jabber-iq.el"
+                  (jc to type query success-callback success-closure-data
+		      error-callback error-closure-data &optional result-id))
+(declare-function jabber-muc-connection-closed "jabber-muc.el" (bare-jid))
+(declare-function jabber-roster-update "jabber-roster.el"
+                  (jc new-items changed-items deleted-items))
+(declare-function jabber-display-roster "jabber-roster.el" ())
+(declare-function jabber-process-roster "jabber-presence.el"
+                  (jc xml-data closure-data))
+(declare-function jabber-initial-roster-failure "jabber-presence.el"
+                  (jc xml-data _closure-data))
+(declare-function jabber-get-auth "jabber-logon.el" (jc to session-id))
+(declare-function jabber-get-register "jabber-register.el" (jc to))
+(declare-function jabber-get-connect-function "jabber-conn.el" (type))
+(declare-function jabber-get-send-function "jabber-conn.el" (type))
+(declare-function jabber-starttls-process-input "jabber-conn.el"
+                  (fsm xml-data))
+(declare-function jabber-starttls-initiate "jabber-conn.el" (fsm))
+(declare-function jabber-mode-line-presence-update "jabber-modeline.el" ())
 (defvar jabber-debug-keep-process-buffers) ; jabber.el
 (defvar jabber-silent-mode)             ; jabber.el
 (defvar jabber-account-list)            ; jabber.el
+(defvar jabber-xml-data)                ; jabber.el
+(defvar jabber-default-connection-type) ; jabber-conn.el
+(defvar jabber-connect-methods)         ; jabber-conn.el
+(defvar jabber-mode-line-mode)          ; jabber-modeline.el
 
 ;;
 

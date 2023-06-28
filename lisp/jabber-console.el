@@ -68,6 +68,13 @@ what kind of chat buffer is being created.")
     (define-key map "\r" 'jabber-chat-buffer-send)
     map))
 
+;; Global reference declarations
+
+(declare-function jabber-send-string "jabber-core.el" (jc string))
+(defvar jabber-buffer-connection)       ; jabber-chatbuffer.el
+
+;;
+
 (defun jabber-console-create-buffer (jc)
   (with-current-buffer
 	  (get-buffer-create (format jabber-console-name-format (jabber-connection-bare-jid jc)))

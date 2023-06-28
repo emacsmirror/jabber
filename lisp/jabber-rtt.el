@@ -29,6 +29,16 @@
 (require 'jabber-core)
 (require 'ewoc)
 
+;; Global reference declarations
+
+(declare-function jabber-chat-get-buffer "jabber-chat.el" (chat-with))
+(declare-function jabber-muc-message-p "jabber-muc.el"(message))
+(defvar jabber-message-chain)           ; jabber-core.el
+(defvar jabber-chat-ewoc)               ; jabber-chatbuffer.el
+(defvar jabber-buffer-connection)       ; jabber-chatbuffer.el
+(defvar jabber-chatting-with)           ; jabber-chat.el
+(defvar jabber-point-insert)            ; jabber-console.el
+
 ;;;; Handling incoming events
 
 ;;;###autoload

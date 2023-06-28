@@ -58,6 +58,16 @@ Note that \":\" or alike not needed (it appended in other string)"
 (defvar *jabber-muc-participant-last-speaking* nil
   "Global alist in form (group . ((member . time-of-last-speaking) ...) ...).")
 
+;; Global reference declarations
+
+(defvar jabber-group)                   ; jabber-muc.el
+(defvar *jabber-active-groupchats*)     ; jabber-muc.el
+(defvar jabber-muc-default-nicknames)   ; jabber-muc.el
+(defvar jabber-muc-participants)        ; jabber-muc.el
+(defvar jabber-chatting-with)           ; jabber-chat.el
+
+;;
+
 (defun jabber-my-nick (&optional group)
   "Return my jabber nick in GROUP."
   (let ((room (or group jabber-group)))

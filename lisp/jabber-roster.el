@@ -244,6 +244,23 @@ Trailing newlines are always removed, regardless of this variable."
     ;;(define-key map "D" 'jabber-disconnect)
     map))
 
+;; Global reference declarations
+
+(declare-function jabber-muc-read-my-nickname "jabber-muc.el"
+                  (jc group &optional default))
+(declare-function jabber-muc-join "jabber-muc.el"
+                  (jc group nickname &optional popup))
+(declare-function jabber-chat-with "jabber-chat.el"
+                  (jc jid &optional other-window))
+(declare-function jabber-disco-get-info "jabber-disco.el"
+                  (jc jid node callback closure-data &optional force))
+(defvar *jabber-current-show*)          ; jabber.el
+(defvar jabber-presence-strings)        ; jabber.el
+(defvar *jabber-current-status*)        ; jabber.el
+(defvar jabber-presence-faces)          ; jabber.el
+
+;;
+
 (defun jabber-roster-ret-action-at-point ()
   "Action for RET.
 Before try to roll up/down group.  Eval `chat-with-jid-at-point' is no group at

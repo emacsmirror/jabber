@@ -27,6 +27,11 @@
 (require 'jabber-widget)
 (require 'jabber-chat)
 
+;; Global reference declarations
+
+(defvar jabber-buffer-connection)       ; jabber-chatbuffer.el
+
+;;
 
 ;;;###autoload
 (defun jabber-compose (jc &optional recipient)

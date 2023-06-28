@@ -37,6 +37,13 @@
 
 (defvar jabber-mode-line-contacts nil)
 
+;; Global reference declarations
+
+(defvar *jabber-current-show*)          ; jabber.el
+(defvar jabber-presence-strings)        ; jabber.el
+
+;;
+
 (defadvice jabber-send-presence (after jsp-update-mode-line
 				       (show status priority))
   (jabber-mode-line-presence-update))

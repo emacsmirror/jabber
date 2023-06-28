@@ -33,6 +33,19 @@
 (defvar jabber-jid-history nil
   "History of entered JIDs.")
 
+;; Global reference declarations
+
+(declare-function jabber-chat-with "jabber-chat.el"
+                  (jc jid &optional other-window))
+(declare-function jabber-ahc-execute-command "jabber-ahc.el" (jc to node))
+(declare-function jabber-get-register "jabber-register.el" (jc to))
+(declare-function jabber-muc-read-my-nickname "jabber-muc.el"
+                  (jc group &optional default))
+(declare-function jabber-muc-join "jabber-muc.el"
+                  (jc group nickname &optional popup))
+
+;;
+
 (defalias 'jabber-propertize 'propertize)
 
 (defsubst jabber-read-with-input-method (prompt &optional initial-contents history default-value)

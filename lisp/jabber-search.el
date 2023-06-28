@@ -21,6 +21,12 @@
 
 (require 'jabber-register)
 
+;; Global reference declarations
+
+(defvar jabber-buffer-connection)       ; jabber-chatbuffer.el
+
+;;
+
 (add-to-list 'jabber-jid-service-menu
 	     (cons "Search directory" 'jabber-get-search))
 (defun jabber-get-search (jc to)

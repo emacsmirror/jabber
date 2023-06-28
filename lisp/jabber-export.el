@@ -31,6 +31,12 @@
 
 (defvar jabber-import-subscription-p-widget nil)
 
+;; Global reference declarations
+
+(defvar jabber-buffer-connection)       ; jabber-chatbuffer.el
+
+;;
+
 ;;;###autoload
 (defun jabber-export-roster (jc)
   "Export roster for connection JC."

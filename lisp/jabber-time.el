@@ -27,6 +27,12 @@
 
 (require 'time-date)
 
+;; Global reference declarations
+
+(defvar jabber-jid-info-menu)           ; jabber-menu.el
+
+;;
+
 (add-to-list 'jabber-jid-info-menu (cons "Request time" 'jabber-get-time))
 
 (defun jabber-get-time (jc to)

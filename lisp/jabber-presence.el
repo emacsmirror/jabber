@@ -35,6 +35,43 @@ stanza.")
 (defvar jabber-presence-history ()
   "Keeps track of previously used presence status types.")
 
+;; Global reference declarations
+
+(declare-function jabber-display-roster "jabber-roster.el" ())
+(declare-function jabber-roster-update "jabber-roster.el"
+                  (jc new-items changed-items deleted-items))
+(declare-function jabber-chat-create-buffer "jabber-chat.el" (jc chat-with))
+(declare-function jabber-muc-get-buffer "jabber-muc.el" (group))
+(declare-function jabber-muc-process-presence "jabber-muc.el" (jc presence))
+(declare-function jabber-muc-presence-p "jabber-muc.el" (presence))
+(defvar jabber-chatting-with)           ; jabber-chat.el
+(defvar *jabber-active-groupchats*)     ; jabber-muc.el
+(defvar jabber-buffer-connection)       ; jabber-chatbuffer.el
+(defvar jabber-chat-ewoc)               ; jabber-chatbuffer.el
+(defvar *jabber-current-priority*)      ; jabber.el
+(defvar jabber-default-priority)        ; jabber.el
+(defvar *jabber-current-show*)          ; jabber.el
+(defvar *jabber-current-status*)        ; jabber.el
+(defvar *jabber-current-priority*)      ; jabber.el
+(defvar *jabber-current-status*)        ; jabber.el
+(defvar *jabber-current-show*)          ; jabber.el
+(defvar *jabber-current-priority*)      ; jabber.el
+(defvar *jabber-current-show*)          ; jabber.el
+(defvar *jabber-current-status*)        ; jabber.el
+(defvar *jabber-current-status*)        ; jabber.el
+(defvar *jabber-current-priority*)      ; jabber.el
+(defvar *jabber-current-status*)        ; jabber.el
+(defvar *jabber-current-priority*)      ; jabber.el
+(defvar jabber-default-show)            ; jabber.el
+(defvar jabber-default-status)          ; jabber.el
+(defvar jabber-default-priority)        ; jabber.el
+(defvar *jabber-current-show*)          ; jabber.el
+(defvar *jabber-current-status*)        ; jabber.el
+(defvar *jabber-current-priority*)      ; jabber.el
+(defvar jabber-silent-mode)             ; jabber.el
+
+;;
+
 (add-to-list 'jabber-iq-set-xmlns-alist
 	     (cons "jabber:iq:roster" (function (lambda (jc x) (jabber-process-roster jc x nil)))))
 (defun jabber-process-roster (jc xml-data closure-data)

@@ -210,6 +210,21 @@ message.
 The functions should return a list of XML nodes they want to be
 added to the outgoing message.")
 
+;; Global reference declarations
+
+(declare-function jabber-compose "jabber-compose.el" (jc &optional recipient))
+(declare-function jabber-muc-private-create-buffer "jabber-muc.el"
+                  (jc group nickname))
+(declare-function jabber-muc-print-prompt "jabber-muc.el"
+                  (xml-data &optional local dont-print-nick-p))
+(declare-function jabber-muc-private-print-prompt "jabber-muc.el" (xml-data))
+(declare-function jabber-muc-system-prompt "jabber-muc.el" (&rest _ignore))
+(declare-function jabber-muc-message-p "jabber-muc.el"(message))
+(declare-function jabber-muc-sender-p "jabber-muc.el" (jid))
+(declare-function jabber-muc-private-message-p "jabber-muc.el" (message))
+(defvar jabber-group)                   ; jabber-muc.el
+;;
+
 (defvar jabber-chat-earliest-backlog nil
   "Float-time of earliest backlog entry inserted into buffer.
 nil if no backlog has been inserted.")

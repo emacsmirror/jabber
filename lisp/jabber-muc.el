@@ -166,6 +166,34 @@ The format is that of `mode-line-format' and `header-line-format'."
   :type 'sexp
   :group 'jabber-chat)
 
+;; Global reference declarations
+
+(declare-function jabber-presence-children "jabber-presence.el" (jc))
+(declare-function jabber-vcard-get "jabber-vcard.el" (jc jid))
+(declare-function jabber-parse-conference-bookmark "jabber-bookmarks.el"
+                  (node))
+;; (declare-function jabber-get-bookmarks "jabber-bookmarks.el"
+;;                   (jc cont &optional refresh))
+;; (declare-function jabber-get-conference-data "jabber-bookmarks.el"
+;;                   (jc conference-jid cont &optional key))
+(declare-function jabber-send-message "jabber-chat.el"
+                  (jc to subject body type))
+(declare-function jabber-maybe-print-rare-time "jabber-chat.el" (node))
+(declare-function jabber-chat-pp "jabber-chat.el" (data))
+(declare-function jabber-chat-mode "jabber-chatbuffer.el" (jc ewoc-pp))
+(defvar jabber-silent-mode)             ; jabber.el
+(defvar jabber-alert-muc-function)      ; jabber-alert.el
+(defvar jabber-body-printers)           ; jabber-chat.el
+(defvar jabber-buffer-connection)       ; jabber-chatbuffer.el
+(defvar jabber-chat-delayed-time-format) ; jabber-chat.el
+(defvar jabber-chat-delayed-time-format) ; jabber-chat.el
+(defvar jabber-chat-ewoc)               ; jabber-chatbuffer.el
+(defvar jabber-chat-printers)           ; jabber-chat.el
+(defvar jabber-chat-time-format)        ; jabber-chat.el
+(defvar jabber-send-function)           ; jabber-console.el
+
+;;
+
 ;;;###autoload
 (defvar jabber-muc-printers '()
   "List of functions that may be able to print part of a MUC message.
