@@ -90,7 +90,8 @@
 (defcustom jabber-post-connect-hooks '(jabber-send-current-presence
 				       jabber-muc-autojoin
 				       jabber-whitespace-ping-start
-				       jabber-vcard-avatars-find-current)
+				       jabber-vcard-avatars-find-current
+				       jabber-enable-carbons)
   "*Hooks run after successful connection and authentication.
 The functions should accept one argument, the connection object."
   :type 'hook

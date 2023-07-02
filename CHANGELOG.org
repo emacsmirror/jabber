@@ -7,6 +7,11 @@ The format is based on [[https://keepachangelog.com/en/1.0.0/][Keep a Changelog]
 :PROPERTIES:
 :CUSTOM_ID: new-features-jabberel-latest-git
 :END:
+** Enable carbons by default
+:PROPERTIES:
+:CUSTOM_ID: enable-carbons-by-default
+:END:
+Enable support for XEP-0280 (message carbons) by default.
 ** Support for reading passwords from netrc/authinfo files
 :PROPERTIES:
 :CUSTOM_ID: support-reading-passwords-from-netrc-authinfo-files
