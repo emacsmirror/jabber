@@ -5,7 +5,7 @@
 
 ;;; Code:
 
-(defun jabber-carbon-success (_jc xml-data _context)
+(defun jabber-carbon-success (jc xml-data _context)
   (when (equal "result" (jabber-xml-get-attribute xml-data 'type))
     (message "Carbons feature successfully enabled for %s"
              (jabber-connection-jid jc))))
