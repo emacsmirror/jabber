@@ -36,16 +36,7 @@
 
 (ignore-errors (require 'starttls))
 
-(eval-and-compile
-  (or (ignore-errors (require 'srv))
-      (ignore-errors
-        (let ((load-path (cons (expand-file-name
-                                "jabber-fallback-lib"
-                                (file-name-directory (locate-library "jabber")))
-                               load-path)))
-          (require 'srv)))
-      (error
-       "The srv library was not found in `load-path' or jabber-fallback-lib/ directory")))
+(require 'srv)
 
 (defgroup jabber-conn nil "Jabber Connection Settings."
   :group 'jabber)
