@@ -38,23 +38,14 @@
 ;; 4. [RFC 7622] Extensible Messaging and Presence Protocol (XMPP): Address Format
 ;;    https://datatracker.ietf.org/doc/rfc7622/
 
+;;; Code:
 (require 'cl-lib)
 
 (require 'jabber-util)
 (require 'jabber-logon)
 (require 'jabber-conn)
-;;; Code:
 
-(eval-and-compile
-  (or (ignore-errors (require 'fsm))
-      (ignore-errors
-        (let ((load-path (cons (expand-file-name
-                                "jabber-fallback-lib"
-                                (file-name-directory (locate-library "jabber")))
-                               load-path)))
-          (require 'fsm)))
-      (error
-       "The fsm library was not found in `load-path' or jabber-fallback-lib/ directory")))
+(require 'fsm)
 
 (require 'jabber-sasl)
 (require 'jabber-console)

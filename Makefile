@@ -9,11 +9,9 @@ autoload:
 	--eval="(package-generate-autoloads \"jabber\" default-directory)"
 
 compile:
-	emacs -q -Q --batch \
+	emacs -q -Q -L . -L lisp -L lisp/jabber-fallback-lib --batch \
 	--eval="(setq print-length nil)" \
-	--eval="(add-to-list 'load-path \"$(pwd)\")" \
-	--eval="(add-to-list 'load-path \"jabber-fallback-lib\")" \
-	-f batch-byte-compile lisp/
+	-f batch-byte-compile lisp/*.el
 
 lint-check-declare:
 	for file in lisp/*.el ; do \
