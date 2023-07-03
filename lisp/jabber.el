@@ -56,7 +56,7 @@
 
 ;; Shared between jabber-core.el and jabber-alert.el
 
-(defvar jabber-xml-data nil "")
+(defvar jabber-xml-data)
 
 (defcustom jabber-debug-keep-process-buffers nil
   "If nil, kill process buffers when the process dies.

@@ -67,8 +67,8 @@ See `jabber-connect-methods'.")
 (defcustom jabber-connection-ssl-program nil
   "Program used for SSL/TLS connections.
 nil means prefer gnutls but fall back to openssl.
-‘gnutls’ means use gnutls (through `open-tls-stream').
-‘openssl’ means use openssl (through `open-ssl-stream')."
+\='gnutls\=' means use gnutls (through `open-tls-stream').
+\='openssl means use openssl (through `open-ssl-stream')."
   :type '(choice (const :tag "Prefer gnutls, fall back to openssl" nil)
 		 (const :tag "Use gnutls" gnutls)
 		 (const :tag "Use openssl" openssl))

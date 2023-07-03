@@ -148,7 +148,7 @@ All hooks refrain from action if this function returns nil."
   "Hooks run when an info request is completed.
 
 First argument is WHAT, a symbol telling the kind of info request completed.
-That might be \=’roster, for requested roster updates, and \=’browse, for
+That might be \='roster, for requested roster updates, and \='browse, for
 browse requests.  Second argument in BUFFER, a buffer containing the result.
 Third argument is PROPOSED-ALERT, containing the string returned by
 `jabber-alert-info-message-function' for these arguments."
