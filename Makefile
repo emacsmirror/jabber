@@ -11,7 +11,7 @@ autoload:
 compile:
 	emacs -q -Q -L . -L lisp -L lisp/jabber-fallback-lib --batch \
 	--eval="(setq print-length nil)" \
-	-f batch-byte-compile lisp/
+	-f batch-byte-compile lisp/*.el
 
 lint-check-declare:
 	for file in lisp/*.el ; do \
