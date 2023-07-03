@@ -20,21 +20,7 @@
 
 ;;; Code:
 
-(eval-when-compile (require 'cl-lib))	;for ignore-errors
-;; we need hexrgb-hsv-to-hex:
-(eval-and-compile
-  (or (ignore-errors (require 'hexrgb))
-      ;; jabber-fallback-lib/ from jabber/lisp/jabber-fallback-lib
-      (ignore-errors
-        (let* ((source    (or (locate-library "jabber")
-                              load-file-name))
-               (load-path (cons (expand-file-name
-                                 "jabber-fallback-lib"
-                                 (file-name-directory source))
-                                load-path)))
-          (require 'hexrgb)))
-      (error
-       "The hexrgb library was not found in `load-path' or jabber-fallback-lib/ directory")))
+(require 'color)
 
 ;;;;##########################################################################
 ;;;;  User Options, Variables
@@ -68,10 +54,24 @@ added in #RGB notation for unknown nicks."
   :type 'float
   :group 'jabber-chat)
 
+(defun jabber-muc-nick-hsv-to-hsl (h s v)
+  "Convert color consisting of H, S and V to list of HSL values."
+  ;; https://en.wikipedia.org/wiki/HSL_and_HSV#HSV_to_HSL
+  (let* ((hue h)
+         (luminance (* v (- 1 (/ s 2.0))))
+         (saturation (if (or (= luminance 0) (= luminance 1))
+                         0
+                       (/ (- v luminance) (min luminance (- 1 luminance))))))
+    (list hue saturation luminance)))
+
 (defun jabber-muc-nick-gen-color (nick)
   "Return a good enough color from the available pool."
-  (let ((hue (/ (mod (string-to-number (substring (md5 nick) 0 6) 16) 360) 360.0)))
-    (hexrgb-hsv-to-hex hue jabber-muc-nick-saturation jabber-muc-nick-value)))
+  (let* ((pool-index (mod (string-to-number (substring (md5 nick) 0 6) 16) 360))
+         (hue (/ pool-index 360.0))
+         (saturation jabber-muc-nick-saturation)
+         (value jabber-muc-nick-value)
+         (hsl (jabber-muc-nick-hsv-to-hsl hue saturation value)))
+    (apply #'color-rgb-to-hex (apply #'color-hsl-to-rgb hsl))))
 
 (defun jabber-muc-nick-get-color (nick)
   "Get NICKs color."

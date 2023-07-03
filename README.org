@@ -39,7 +39,7 @@ Old resources
 :END:
 jabber.el runs on GNU Emacs 27.1 or later.
 
-The file hexrgb.el (http://www.emacswiki.org/emacs/hexrgb.el) is needed for MUC nick coloring feature.  A copy is located in the compat directory, and used if the configure script doesn't find another copy already installed.
+The file hexrgb.el (http://www.emacswiki.org/emacs/hexrgb.el) used to be required for the MUC nick coloring feature. However, the code depending on it has been reworked to instead use the built-in color.el library.
 
 ** Encrypted connections
 :PROPERTIES:
@@ -274,7 +274,7 @@ To install the Info documentation, copy =jabber.info= to =/usr/local/info= and r
 
 6. Push and create your PR.
 
-* TODO maintenance [0%]
+* TODO maintenance [16%]
 :PROPERTIES:
 :CUSTOM_ID: maintenance
 :END:
@@ -283,7 +283,7 @@ To install the Info documentation, copy =jabber.info= to =/usr/local/info= and r
    * [ ] =jabber-jid-username=
    * [ ] =jabber-jid-server=
    * [ ] =jabber-jid-resource=
-3. [ ] hexrgb.el is not available on MELPA
+3. [X] Remove dependency on hexrgb.el (it's not available on MELPA)
 4. [ ] Migrate tests to ERT/Buttercup/etc
 5. [ ] Add Windows support to developer tutorial
 6. [ ] Create testing for tutorial
