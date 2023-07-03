@@ -20,13 +20,14 @@
 ;; along with this program; if not, write to the Free Software
 ;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-(require 'jabber-presence)
+(require 'cl-lib)
 (require 'jabber-util)
 (require 'jabber-alert)
 (require 'jabber-keymap)
-(require 'format-spec)
-(require 'cl-lib)				;for `find'
 (require 'jabber-private)
+(require 'jabber-presence)
+(require 'format-spec)
+(require 'ewoc)
 
 (defgroup jabber-roster nil "roster display options"
   :group 'jabber)

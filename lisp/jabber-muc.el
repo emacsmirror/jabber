@@ -20,7 +20,8 @@
 ;; along with this program; if not, write to the Free Software
 ;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-(require 'jabber-chat)
+(require 'cl-lib)
+
 (require 'jabber-widget)
 (require 'jabber-disco)
 (require 'jabber-muc-nick-coloring)
@@ -29,7 +30,7 @@
 ;; jabber-get-bookmarks and jabber-parse-conference-bookmark):
 (require 'jabber-bookmarks)
 
-(require 'cl-lib)
+(require 'ewoc)
 
 ;;;###autoload
 (defvar *jabber-active-groupchats* nil

@@ -24,6 +24,10 @@
 ;;; Code:
 
 (eval-when-compile (require 'cl-lib))
+(require 'jabber-disco)
+(require 'jabber-core)
+(require 'jabber-core)
+(require 'ewoc)
 
 ;;;; Handling incoming events
 

@@ -19,9 +19,9 @@
 ;; along with this program; if not, write to the Free Software
 ;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-(require 'jabber-util)
-
 (require 'cl-lib)
+(require 'jabber-util)
+(require 'jabber-xml)
 
 (defgroup jabber-alerts nil "auditory and visual alerts for jabber events"
   :group 'jabber)

@@ -24,7 +24,7 @@
 (require 'jabber-alert)
 (require 'jabber-util)
 (require 'jabber-menu)
-(require 'jabber-muc)
+(require 'ewoc)
 
 (defvar jabber-presence-element-functions nil
   "List of functions returning extra elements for <presence/> stanzas.

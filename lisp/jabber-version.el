@@ -22,6 +22,8 @@
 (require 'jabber-iq)
 (require 'jabber-util)
 (require 'jabber-ourversion)
+(require 'jabber-disco)
+(require 'jabber-menu)
 
 (defcustom jabber-version-show t
   "Show our client version to others.  Acts on loading."

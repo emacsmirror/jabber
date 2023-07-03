@@ -23,6 +23,8 @@
 
 (eval-when-compile (require 'cl-lib))
 (require 'time-date)
+(require 'jabber-util)
+(require 'jabber-presence)
 
 (defgroup jabber-autoaway nil
   "Change status to away after idleness."

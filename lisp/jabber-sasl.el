@@ -19,6 +19,8 @@
 ;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 (require 'cl-lib)
+(require 'fsm)
+(require 'jabber-util)
 
 ;;; This file uses sasl.el from FLIM or Gnus.  If it can't be found,
 ;;; jabber-core.el won't use the SASL functions.

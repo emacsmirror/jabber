@@ -19,10 +19,12 @@
 ;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 (require 'jabber-core)
+(require 'jabber-alert)
 (require 'jabber-chatbuffer)
 (require 'jabber-history)
 (require 'jabber-menu)                  ;we need jabber-jid-chat-menu
 (require 'ewoc)
+(require 'goto-addr)
 (eval-when-compile (require 'cl-lib))
 
 (defgroup jabber-chat nil "chat display options"

@@ -42,6 +42,11 @@
 ;;       (message msg)
 ;;       (jabber-screen-message msg)))
 
+(require 'jabber-util)
+(require 'jabber-iq)
+(require 'jabber-xml)
+(require 'jabber-chat)
+
 ;;;###autoload
 (defun jabber-gmail-subscribe (jc)
   "Subscribe to gmail notifications.

@@ -41,14 +41,11 @@
 ;;; Code:
 (require 'cl-lib)
 
-(require 'jabber-util)
-(require 'jabber-logon)
-(require 'jabber-conn)
+(require 'jabber-sasl)
+(require 'jabber-xml)
+(require 'jabber-console)
 
 (require 'fsm)
-
-(require 'jabber-sasl)
-(require 'jabber-console)
 
 (defvar jabber-connections nil
   "List of jabber-connection FSMs.")

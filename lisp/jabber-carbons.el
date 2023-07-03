@@ -5,6 +5,12 @@
 
 ;;; Code:
 
+(require 'jabber-util)
+(require 'jabber-xml)
+(require 'jabber-menu)
+(require 'jabber-iq)
+(require 'jabber-disco)
+
 (defun jabber-carbon-success (jc xml-data _context)
   (when (equal "result" (jabber-xml-get-attribute xml-data 'type))
     (message "Carbons feature successfully enabled for %s"

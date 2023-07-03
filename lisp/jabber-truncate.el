@@ -18,13 +18,19 @@
 ;; along with this program; if not, write to the Free Software
 ;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-(require 'jabber-chat)
 (require 'jabber-alert)
+(require 'ewoc)
 
 (require 'cl-lib)
 
 (defvar jabber-log-lines-to-keep 1000
   "Maximum number of lines in chat buffer.")
+
+;; Global reference declarations
+
+(defvar jabber-chat-ewoc)               ; jabber-chatbuffer.el
+
+;;
 
 (defun jabber-truncate-top (buffer &optional ewoc)
   "Clean old history from a chat BUFFER.

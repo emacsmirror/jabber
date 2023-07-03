@@ -25,6 +25,8 @@
 ;; A collection of functions, that hide the details of transmitting to
 ;; and from a Jabber Server. Mostly inspired by Gnus.
 
+(require 'jabber-core)
+(require 'fsm)
 (eval-when-compile (require 'cl-lib))
 
 ;; Emacs 24 can be linked with GnuTLS

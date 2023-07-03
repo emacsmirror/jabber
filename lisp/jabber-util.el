@@ -22,7 +22,10 @@
 ;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 (require 'cl-lib)
+(require 'jabber-xml)
+(require 'fsm)
 (require 'password-cache)
+
 (condition-case nil
     (require 'auth-source)
   (error nil))

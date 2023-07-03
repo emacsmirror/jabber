@@ -20,6 +20,11 @@
 ;; Boston, MA 02111-1307, USA.
 
 (require 'cl-lib)
+(require 'jabber-core)
+(require 'jabber-util)
+(require 'jabber-chat)
+(require 'jabber-chatbuffer)
+(require 'jabber-xml)
 
 (defgroup jabber-events nil
   "Message events and notifications."

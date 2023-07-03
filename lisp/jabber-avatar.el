@@ -42,6 +42,7 @@
 
 (require 'mailcap)
 (eval-when-compile (require 'cl-lib))
+(require 'jabber-util)
 
 ;;;; Variables
 

@@ -20,6 +20,7 @@
 ;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 (require 'jabber-util)
+(require 'jabber-alert)
 
 (defcustom jabber-watch-alist nil
   "Alist of buddies for which an extra notification should be sent

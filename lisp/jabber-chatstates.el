@@ -23,6 +23,12 @@
 ;;   notifications are handled on receipt.
 
 (require 'cl-lib)
+(require 'jabber-core)
+(require 'jabber-util)
+(require 'jabber-chat)
+(require 'jabber-chatbuffer)
+(require 'jabber-disco)
+(require 'jabber-xml)
 
 (defgroup jabber-chatstates nil
   "Chat state notifications."

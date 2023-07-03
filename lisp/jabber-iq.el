@@ -21,6 +21,7 @@
 
 (require 'jabber-core)
 (require 'jabber-util)
+(require 'jabber-alert)
 (require 'jabber-keymap)
 
 (defvar *jabber-open-info-queries* nil

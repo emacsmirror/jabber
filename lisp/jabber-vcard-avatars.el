@@ -25,6 +25,11 @@
 
 ;;; Code:
 
+(require 'jabber-util)
+(require 'jabber-xml)
+(require 'jabber-vcard)
+(require 'jabber-presence)
+(require 'jabber-iq)
 (require 'jabber-avatar)
 
 (defcustom jabber-vcard-avatars-retrieve (and (fboundp 'display-images-p)

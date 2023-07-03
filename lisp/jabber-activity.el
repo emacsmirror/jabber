@@ -39,11 +39,10 @@
 
 ;;; Code:
 
+(require 'cl-lib)
 (require 'jabber-core)
-(require 'jabber-alert)
 (require 'jabber-util)
 (require 'jabber-muc-nick-completion)   ;we need jabber-muc-looks-like-personal-p
-(require 'cl-lib)
 
 (defgroup jabber-activity nil
   "Activity tracking options."

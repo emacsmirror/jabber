@@ -22,6 +22,12 @@
 
 ;;; Code:
 
+(require 'jabber-core)
+(require 'jabber-util)
+(require 'jabber-widget)
+(require 'jabber-chat)
+
+
 ;;;###autoload
 (defun jabber-compose (jc &optional recipient)
   "Create a buffer for composing a Jabber message.

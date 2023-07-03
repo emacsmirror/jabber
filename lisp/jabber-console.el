@@ -24,6 +24,8 @@
 
 (require 'jabber-keymap)
 (require 'jabber-util)
+(require 'jabber-truncate)
+(require 'xml)
 (require 'ewoc)
 (require 'sgml-mode) ;we base on this mode to hightlight XML
 
