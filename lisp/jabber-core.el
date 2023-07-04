@@ -44,6 +44,7 @@
 (require 'jabber-sasl)
 (require 'jabber-xml)
 (require 'jabber-console)
+(require 'jabber-keepalive)
 
 (require 'fsm)
 

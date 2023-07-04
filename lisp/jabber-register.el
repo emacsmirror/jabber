@@ -24,6 +24,8 @@
 
 ;; Global reference declarations
 
+(declare-function jabber-disconnect-one "jabber-core.el"
+                  (jc &optional dont-redisplay))
 (declare-function jabber-submit-search "jabber-search.el" (&rest _ignore))
 (defvar jabber-buffer-connection)       ; jabber-chatbuffer.el
 (defvar jabber-silent-mode)             ; jabber.el

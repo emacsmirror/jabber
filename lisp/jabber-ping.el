@@ -23,6 +23,12 @@
 (require 'jabber-menu)
 (require 'jabber-disco)
 
+;; Global reference declarations
+
+(defvar jabber-connections)                ; jabber-core.el
+
+;;
+
 (add-to-list 'jabber-jid-info-menu
 	     (cons "Ping" 'jabber-ping))
 

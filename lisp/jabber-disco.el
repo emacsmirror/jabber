@@ -23,9 +23,14 @@
 (require 'jabber-xml)
 (require 'jabber-menu)
 
+;; Global reference declarations
+
+(defvar jabber-presence-chain)          ; jabber-core.el
+(defvar jabber-connections)             ; jabber-core.el
+
+;;
 ;;; Respond to disco requests
 
-;;;###autoload
 (eval-after-load "jabber-core"
   '(add-to-list 'jabber-presence-chain #'jabber-process-caps))
 

@@ -26,6 +26,7 @@
 (require 'jabber-keymap)
 (require 'jabber-private)
 (require 'jabber-presence)
+(require 'jabber-carbons)
 (require 'format-spec)
 (require 'ewoc)
 

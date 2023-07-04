@@ -55,6 +55,15 @@
 (defvar jabber-keepalive-debug nil
   "Log keepalive traffic when non-nil.")
 
+;; Global reference declarations
+
+(declare-function jabber-send-string "jabber-core.el" (jc string))
+(declare-function jabber-disconnect-one "jabber-core.el"
+                  (jc &optional dont-redisplay))
+(defvar jabber-connections)             ; jabber-core.el
+
+;;
+
 ;;;###autoload
 (defun jabber-keepalive-start (&optional _jc)
   "Activate keepalive.
