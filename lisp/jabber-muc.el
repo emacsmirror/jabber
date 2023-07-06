@@ -1075,7 +1075,8 @@ JC is the Jabber connection."
 
 (defface jabber-muc-presence-dim
   '((t (:foreground "dark grey" :weight light :slant italic)))
-  "face for diminished presence notifications.")
+  "face for diminished presence notifications."
+  :group 'jabber-alerts)
 
 (defcustom jabber-muc-decorate-presence-patterns nil
   "List of regular expressions and face pairs.
