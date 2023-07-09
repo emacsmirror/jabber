@@ -30,11 +30,12 @@
 (eval-when-compile (require 'cl-lib))
 
 ;; Emacs 24 can be linked with GnuTLS
-(require 'gnutls nil t)
-
-;; Try two different TLS/SSL libraries, but don't fail if none available.
-(or (require 'tls nil t)
-    (require 'ssl nil t))
+(condition-case e
+    (require 'gnutls)
+  (file-missing
+   (info
+    "(emacs-gnutls) Help For Users")
+   (signal (car e) (cdr e))))
 
 (require 'starttls nil t)
 
@@ -105,6 +106,12 @@ Third item is the send function.")
 (declare-function starttls-negotiate "starttls.el" (process))
 (declare-function starttls-open-stream "starttls.el"
                   (name buffer host port))
+(declare-function gnutls-negotiate "gnutls.el"
+                  (&rest spec
+                         &key process type hostname priority-string
+                         trustfiles crlfiles keylist min-prime-bits
+                         verify-flags verify-error verify-hostname-error
+                         &allow-other-keys))
 (defvar jabber-process-buffer)          ; jabber.el
 (defvar jabber-debug-keep-process-buffers) ; jabber.el
 
