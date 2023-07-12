@@ -204,11 +204,11 @@ The following is a brief summary about the stanza processing.
 5. Call all of their functions with the jabber connection and XML data as parameters .
 6. Continue in the same state.
 
-* Tutorials
+* How-to guides
 :PROPERTIES:
-:CUSTOM_ID: tutorials
+:CUSTOM_ID: how-to-guides
 :END:
-** Installation
+** How to install jabber.el
 :PROPERTIES:
 :CUSTOM_ID: installation
 :END:
@@ -246,10 +246,6 @@ If all goes well, =jabber.el= commands like =jabber-connect= should now be avail
 
 To install the Info documentation, copy =jabber.info= to =/usr/local/info= and run ="install-info /usr/local/info/jabber.info"=.
 
-* How-to guides
-:PROPERTIES:
-:CUSTOM_ID: how-to-guides
-:END:
 ** How to contribute to jabber.el
 :PROPERTIES:
 :CUSTOM_ID: how-to-contribute
