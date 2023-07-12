@@ -3,11 +3,13 @@
 #+DESCRIPTION: Documentation
 #+startup: inlineimages
 
-* Explanation
+* Description
 :PROPERTIES:
 :CUSTOM_ID: explanation
 :END:
-This is jabber.el 0.8.92, an XMPP client for Emacs.  XMPP (also known as 'Jabber') is an instant messaging system; see http://xmpp.org for more information.
+jabber.el is an [[http://xmpp.org][XMPP]] client for Emacs.  XMPP (also known as 'Jabber') is an IETF-standard federated instant messaging protocol.
+
+To try it out, see the [[#installation][install instructions]].
 
 New resources
 + [[https://codeberg.org/emacs-jabber/emacs-jabber/][project page]]
@@ -223,7 +225,9 @@ If all goes well, =jabber.el= commands like =jabber-connect= should now be avail
 :PROPERTIES:
 :CUSTOM_ID: from-source
 :END:
-1. Clone the repository by typing the following into a terminal -
+1. Ensure you have =git=, and Emacs 27.1 or newer
+
+2. Clone the repository by typing the following into a terminal -
    #+BEGIN_SRC shell
    mkdir ~/emacs-jabber/
    cd ~/emacs-jabber/
@@ -231,9 +235,9 @@ If all goes well, =jabber.el= commands like =jabber-connect= should now be avail
    make
    #+END_SRC
 
-2. Add the following lines to your =init.el= -
+3. Add the following lines to your =init.el= -
    #+BEGIN_SRC emacs-lisp
-   (add-to-list 'load-path "~/emacs-jabber/")
+   (add-to-list 'load-path "~/emacs-jabber/lisp/")
    (load "~/emacs-jabber/jabber-autoloads")
    #+END_SRC
    ...and, while still in your =init.el=, type =M-x eval-buffer RET=.
@@ -250,7 +254,7 @@ To install the Info documentation, copy =jabber.info= to =/usr/local/info= and r
 :PROPERTIES:
 :CUSTOM_ID: how-to-contribute
 :END:
-1. Fork and clone the repository.
+1. Fork the repository, then clone your fork.
    #+BEGIN_SRC shell :tangle no
      mkdir ~/git/ && cd ~/git/
      git clone https://codeberg.org/YOUR-ACCOUNT/emacs-jabber
@@ -263,7 +267,7 @@ To install the Info documentation, copy =jabber.info= to =/usr/local/info= and r
                 '(indent-lint package-lint relint nameless))
       #+END_SRC
 
-3. Make your edits to, then run =make dev= to tangle, compile, and run linters. Try to address their output.
+3. Make your edits, then run =make dev= to run the byte compiler and linters. Try to address any warnings they emit.
 
 4. Try to follow [[https://cbea.ms/git-commit/#seven-rules][the seven rules of a great Git commit message]] in your commits.
 
@@ -361,3 +365,4 @@ To install the Info documentation, copy =jabber.info= to =/usr/local/info= and r
 + contrapunctus
   - literate Org migration
   - Makefile (shoutout to tomasino of #team@irc.tilde.chat for the Makefile-debugging help)
+  - migration back to traditional source files
