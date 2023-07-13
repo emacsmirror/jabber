@@ -30,12 +30,7 @@
 (eval-when-compile (require 'cl-lib))
 
 ;; Emacs 24 can be linked with GnuTLS
-(condition-case e
-    (require 'gnutls)
-  (file-missing
-   (info
-    "(emacs-gnutls) Help For Users")
-   (signal (car e) (cdr e))))
+(require 'gnutls nil t)
 
 (require 'starttls nil t)
 
