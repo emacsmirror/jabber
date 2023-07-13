@@ -106,13 +106,13 @@ It is possible to make various web browsers pass links starting with "xmpp:" to 
 :PROPERTIES:
 :CUSTOM_ID: further-reading
 :END:
-Developer documentation is available in [[file:DEV.org][DEV.org]].
+Documentation for developers is present in [[file:DEV.org][DEV.org]].
 
 * How-to guides
 :PROPERTIES:
 :CUSTOM_ID: how-to-guides
 :END:
-See also - [[file:DEV.org#how-to-guides][developer-oriented how-to guides]].
+See also - [[file:DEV.org#how-to-guides][how-to guides in the developer documentation]].
 
 ** How to install jabber.el
 :PROPERTIES:
