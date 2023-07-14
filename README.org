@@ -10,6 +10,10 @@ jabber.el is an [[http://xmpp.org][XMPP]] client for Emacs.  XMPP (also known as
 
 To try it out, see the [[#installation][install instructions]].
 
+** Community
+:PROPERTIES:
+:CUSTOM_ID: community
+:END:
 New resources
 + [[https://codeberg.org/emacs-jabber/emacs-jabber/][project page]]
 + chat: [[xmpp:emacs@salas.suchat.org?join][xmpp:emacs@salas.suchat.org?join]] (general Emacs and jabber.el talk)
@@ -68,7 +72,7 @@ Note that only the connection from you to the server is encrypted; there is no g
 :END:
 To connect to a Jabber server, type =C-x C-j C-c= (or equivalently =M-x jabber-connect-all=) and enter your JID.  With prefix argument, register a new account.  You can set your JID permanently with =M-x jabber-customize=.
 
-Your roster is displayed in a buffer called *-jabber-*.  To disconnect, type =C-x C-j C-d= or =M-x jabber-disconnect=.
+Your roster is displayed in a buffer called =*-jabber-*=.  To disconnect, type =C-x C-j C-d= or =M-x jabber-disconnect=.
 
 You may want to use the menu bar to execute Jabber commands.  To enable the Jabber menu, type =M-x jabber-menu=.
 
@@ -101,6 +105,12 @@ This release of jabber.el contains support for file transfer.  You may need to c
 :CUSTOM_ID: xmpp-uris
 :END:
 It is possible to make various web browsers pass links starting with "xmpp:" to jabber.el.  In the ideal case, this works right after running "make install".  Otherwise, see the manual, section "XMPP URIs".
+
+** Design
+:PROPERTIES:
+:CUSTOM_ID: design
+:END:
+As a XMPP client, jabber.el is mostly just a face in the crowd, except that it uses buffers where GUI clients have windows.  There is a roster buffer, and to chat with someone you open a chat buffer, and there are buffers for interaction with servers and services.  Then again, jabber.el delivers excellent console performance and customizable hooks (if you have speech synthesizer software, hook it up to your presence alerts).
 
 ** Further reading
 :PROPERTIES:
@@ -151,6 +161,32 @@ If all goes well, =jabber.el= commands like =jabber-connect= should now be avail
 If all goes well, =jabber.el= commands like =jabber-connect= should now be available in the =M-x= menu.
 
 To install the Info documentation, copy =jabber.info= to =/usr/local/info= and run ="install-info /usr/local/info/jabber.info"=.
+
+** How to register an account
+:PROPERTIES:
+:CUSTOM_ID: how-to-register
+:END:
+If you don't have an XMPP account, you need to register one.
+
+1. Set up your own server, or use a public server. Curated lists of public servers may be found at https://compliance.conversations.im/old/ and https://providers.xmpp.net/.
+
+2. If your server supports In-Band Registration, you can register from Emacs by typing =C-u M-x jabber-connect=.
+   1. Enter your desired JID in the form =username@server.tld=.
+   2. Fill out and send the registration form.
+
+3. If your server does not support In-Band Registration, register on the server website.
+
+** How to use jabber.el
+:PROPERTIES:
+:CUSTOM_ID: how-to-use
+:END:
+1. Connect to your server by typing =C-x C-j C-c= (=jabber-connect=). Enter your JID and password.
+
+# basic operation - switching buffers, chatting, contacts
+
+3. If you wish to disconnect, type =M-x jabber-disconnect= or =C-x C-j C-d=.
+
+   * To disconnect just one account, type =M-x jabber-disconnect-one= or =C-u C-x C-j C-d=.
 
 * TODO maintenance [16%]
 :PROPERTIES:
