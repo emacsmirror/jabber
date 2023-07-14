@@ -10,6 +10,19 @@ jabber.el is an [[http://xmpp.org][XMPP]] client for Emacs.  XMPP (also known as
 
 To try it out, see the [[#installation][install instructions]].
 
+** Why XMPP?
+:PROPERTIES:
+:CUSTOM_ID: why-xmpp
+:END:
+XMPP is the only instant messaging protocol which simultaneously -
+1. has most features you expect from modern chat - offline messages, multi-device support, file transfer, message correction, A/V calls, end-to-end encryption, etc. (Excludes IRC, Tox, Briar, etc.)
+2. is federated, rather than centralized. (Excludes WhatsApp, Discord, Telegram, Signal, ...)
+3. has highly efficient server implementations. A single XMPP server on a Raspberry Pi can serve thousands of users. (Excludes Matrix.)
+4. has a rich ecosystem of FOSS clients and servers. (Excludes WhatsApp, Discord, Telegram, Signal, ...)
+5. is an established IETF standard. (Excludes Matrix, Tox, Telegram, Signal, ...)
+6. is governed and evolved by an open community of users and developers.
+7. has outlasted all competition over 24 years. (Unless IRC counts.)
+
 ** Community
 :PROPERTIES:
 :CUSTOM_ID: community
