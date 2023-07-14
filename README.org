@@ -113,6 +113,51 @@ Useful tips for debugging:
 - You can set the [[file:jabber.org::#debug-log-xml][jabber-debug-log-xml]] custom variable to ~t~ to enable the XML debug console.
 - The XML console is a buffer called ~*-jabber-console-ACCOUNT-*~ by default. Enable ~jabber-debug-log-xml~ and switch to that buffer to see the incoming and outgoing XML stanzas. See [[file:jabber.org::#xml-console-mode][xml-console-mode]].
 
+Common connection issues
+
+When a connection fails, there is usually a message in the echo area describing the failure.  If the echo area has already been cleared, check the ~*Messages*~ buffer.
+
+Here are some of the common connection failure modes:
+
+*** No response beyond "Connecting..."
+
+#+begin_example
+Connecting to <server-name>:5222...
+#+end_example
+
+This is likely a DNS lookup failure.  Check the XMPP server name in ~jabber-account-list~.
+
+*** Host unknown
+#+begin_example
+<user-jid>: connection lost: ‘Unexpected stanza (error ((xmlns . http://etherx.jabber.org/streams)) (host-unknown ((xmlns . urn:ietf:params:xml:ns:xmpp-streams))) (text ((xmlns . urn:ietf:params:xml:ns:xmpp-streams)) This server does not serve <server-name>))’
+#+end_example
+
+This is likely a server misconfiguration in ~jabber-account-list~, or a misconfiguration of the XMPP server.  Verify the Jabber ID (jid) specified in ~jabber-account-list~.  If that looks correct, ensure the XMPP server responds to the configured port with something like:
+
+Alternatively, check for ~DNS~ ~SRV~ records pointing to an alternate port:
+
+#+begin_src sh
+dig  srv _xmpp-client._tcp.ccss.com
+# -or-
+dig  srv _xmpps-client._tcp.ccss.com
+#+end_src
+
+Check connectivity to the host and port with a tool like ~nc~ or ~openssl s_client~.
+
+*** Authentication failure
+#+begin_example
+STARTTLS encryption required, but disabled/non-functional at our end
+#+end_example
+This likely means that the "gnutls" package is not available.  Check
+#+begin_src emacs-lisp
+(gnutls-available-p)
+#+end_src
+if that returns ~nil~, consult
+#+begin_src emacs-lisp
+(info "(emacs-gnutls) Help For Users")
+#+end_src
+for more details and potential mitigation.
+
 ** fsm.el - the Finite State Machine library
 :PROPERTIES:
 :CUSTOM_ID: fsm
