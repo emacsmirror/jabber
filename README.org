@@ -1,13 +1,14 @@
-#+TITLE: jabber.el
-#+SUBTITLE: XMPP client for Emacs
+#+TITLE: jabber.el - an XMPP client for Emacs
 #+DESCRIPTION: Documentation
 #+startup: inlineimages
 
-* Explanation
+* Description
 :PROPERTIES:
 :CUSTOM_ID: explanation
 :END:
-This is jabber.el 0.8.92, an XMPP client for Emacs.  XMPP (also known as 'Jabber') is an instant messaging system; see http://xmpp.org for more information.
+jabber.el is an [[http://xmpp.org][XMPP]] client for Emacs.  XMPP (also known as 'Jabber') is an IETF-standard federated instant messaging protocol.
+
+To try it out, see the [[#installation][install instructions]].
 
 New resources
 + [[https://codeberg.org/emacs-jabber/emacs-jabber/][project page]]
@@ -40,7 +41,7 @@ Old resources
 :END:
 jabber.el runs on GNU Emacs 27.1 or later.
 
-The file hexrgb.el (http://www.emacswiki.org/emacs/hexrgb.el) used to be required for the MUC nick coloring feature. However, the code depending on it has been reworked to instead use the built-in color.el library.
+The file hexrgb.el (http://www.emacswiki.org/emacs/hexrgb.el) used to be required for the MUC nick coloring feature. However, the code depending on it has been reworked to instead use the =color.el= library, which is part of Emacs.
 
 ** Encrypted connections
 :PROPERTIES:
@@ -102,16 +103,60 @@ This release of jabber.el contains support for file transfer.  You may need to c
 :END:
 It is possible to make various web browsers pass links starting with "xmpp:" to jabber.el.  In the ideal case, this works right after running "make install".  Otherwise, see the manual, section "XMPP URIs".
 
-** Debugging tips
+** Further reading
 :PROPERTIES:
-:CUSTOM_ID: debugging-tips
+:CUSTOM_ID: further-reading
 :END:
-Useful tips for debugging:
+Documentation for developers is present in [[file:DEV.org][DEV.org]].
 
-- There is a buffer called ~*fsm-debug*~ that displays all transitions and errors during the event handling.
-- There is a =jabber-debug= customization group.
-- You can set the [[file:jabber.org::#debug-log-xml][jabber-debug-log-xml]] custom variable to ~t~ to enable the XML debug console.
-- The XML console is a buffer called ~*-jabber-console-ACCOUNT-*~ by default. Enable ~jabber-debug-log-xml~ and switch to that buffer to see the incoming and outgoing XML stanzas. See [[file:jabber.org::#xml-console-mode][xml-console-mode]].
+* How-to guides
+:PROPERTIES:
+:CUSTOM_ID: how-to-guides
+:END:
+See also - [[file:DEV.org#how-to-guides][how-to guides in the developer documentation]].
+
+** How to install jabber.el
+:PROPERTIES:
+:CUSTOM_ID: installation
+:END:
+*** from MELPA
+:PROPERTIES:
+:CUSTOM_ID: from-melpa
+:END:
+1. Add the MELPA repositories to your Emacs - https://melpa.org/#/getting-started
+2. Type =M-x package-install RET jabber RET=
+
+If all goes well, =jabber.el= commands like =jabber-connect= should now be available in the =M-x= menu.
+
+*** from source
+:PROPERTIES:
+:CUSTOM_ID: from-source
+:END:
+1. Ensure you have =git=, and Emacs 27.1 or newer
+
+2. Clone the repository by typing the following into a terminal -
+   #+BEGIN_SRC shell
+   mkdir ~/emacs-jabber/
+   cd ~/emacs-jabber/
+   git clone https://codeberg.org/emacs-jabber/emacs-jabber
+   make
+   #+END_SRC
+
+3. Add the following lines to your =init.el= -
+   #+BEGIN_SRC emacs-lisp
+   (add-to-list 'load-path "~/emacs-jabber/lisp/")
+   (load "~/emacs-jabber/jabber-autoloads")
+   #+END_SRC
+   ...and, while still in your =init.el=, type =M-x eval-buffer RET=.
+
+If all goes well, =jabber.el= commands like =jabber-connect= should now be available in the =M-x= menu.
+
+To install the Info documentation, copy =jabber.info= to =/usr/local/info= and run ="install-info /usr/local/info/jabber.info"=.
+
+* Troubleshooting
+:PROPERTIES:
+:CUSTOM_ID: troubleshooting
+:END:
 
 Common connection issues
 
@@ -137,9 +182,9 @@ This is likely a server misconfiguration in ~jabber-account-list~, or a misconfi
 Alternatively, check for ~DNS~ ~SRV~ records pointing to an alternate port:
 
 #+begin_src sh
-dig  srv _xmpp-client._tcp.ccss.com
+dig srv _xmpp-client._tcp.ccss.com
 # -or-
-dig  srv _xmpps-client._tcp.ccss.com
+dig srv _xmpps-client._tcp.ccss.com
 #+end_src
 
 Check connectivity to the host and port with a tool like ~nc~ or ~openssl s_client~.
@@ -157,168 +202,6 @@ if that returns ~nil~, consult
 (info "(emacs-gnutls) Help For Users")
 #+end_src
 for more details and potential mitigation.
-
-** fsm.el - the Finite State Machine library
-:PROPERTIES:
-:CUSTOM_ID: fsm
-:END:
-fsm.el implements functions to define multiple [[https://en.wikipedia.org/wiki/Finite-state_machine][finite state machines]] (FSM), their states, and all the events associated to each of them.
-
-The following is a list of the most important functions or macros defined in this library:
-
-- ~(define-state-machine name &key start sleep)~
-- ~(define-state fsm-name state-name arglist &body body)~
-- ~(define-enter-state fsm-name state-name arglist &body body)~
-- ~(define-fsm name &key strat sleep states ...)~
-- ~(fsm-send fsm event &optional callback)~
-- ~(fsm-call fsm event)~
-
-It is required a name and the starting state to define a new FSM. The ~define-state-machine~ creates a new function called ~start-NAME~. Its ~start~ argument is a function argument and body definition used by the created function. The result of the new function must be a list ~(STATE STATE-DATA [TIMEOUT])~ which is the starting state of the machine.
-
-See [[file:jabber.org::*jabber-connection][jabber-connection]] section for an example. Its ~:start~ parameter explicitly mentioned, and its value is a list with the arguments ( ~(username server resource ...)~ ), a docstring ( ~"Start a jabber connection."~ ) and the body of the ~start-jabber-connection~ function.
-
-The machine requires states. They are defined with the ~define-state~ function.
-
-** The jabber-connection FSM
-:PROPERTIES:
-:CUSTOM_ID: jabber-connection-fsm
-:END:
-jabber.el use a finite state machine (FSM) to track the current Jabber connection step. It defines a FSM called [[file:jabber.org::#fsm-connection][jabber-connection]] (or ~jc~ when it is used as parameter in functions) and several states along with their sentinels. The Org-mode tag ~:fsm:~ is used at jabber.org headlines to describe FSM definitions.
-
-*** States
-:PROPERTIES:
-:CUSTOM_ID: states
-:END:
-The following graph shows the states and their transitions, as of commit [[https://tildegit.org/wgreenhouse/emacs-jabber/commit/dddcccb926f422b03d22a66b60db46f1266eb141][dddcccb926]] (2021-03-20). The nodes represent the states and the arrows are events.
-
-All states have filter and sentinel events that do not change the FSM state. Also, they have a ~:do-disconnect~ event that change the FSM to the ~nil~ state except for the ~connecting~ state.
-
-Some state changes depend on the event and the data received, in this case, the event name has a number added. For instance, ~:stream-start1~, ~:stream-start2~ and ~:stream-start3~ is the same event (~:stream-start~) but triggers different states changes depending on the data received.
-
-#+name: fig:states
-#+BEGIN_SRC graphviz-dot :file images/states-dot.png :exports results :tangle no
-  digraph "jabber-connection" {
-          nil;
-
-          connecting -> connected [label=":connected"];
-          connecting -> nil [label=":connection-failed"];
-          connecting -> defer [label=":do-disconnect"];
-
-          connected -> "connected" [label=":filter, :sentinel, :stream-start1,"];
-          connected -> "register-account" [label=":stream-start2, :stanza1"];
-          connected -> "legacy-auth" [label=":stream-start3"];
-          connected -> "starttls" [label=":stanza2"];
-          connected -> "sasl-auth" [label=":stanza3"];
-
-          "register-account" -> "register-account" [label=":stanza"];
-
-          starttls -> connected [label=":stanza"];
-
-          "legacy-auth" -> "legacy-auth" [label=":stanza"];
-          "legacy-auth" -> "session-established" [label=":authontication-success"];
-          "legacy-auth" -> "nil" [label=":authentication-failure"];
-
-          "sasl-auth" -> "sasl-auth" [label=":stanza"];
-          "sasl-auth" -> "legacy-auth" [label=":use-legacy-auth-instead"];
-          "sasl-auth" -> bind [label=":authentication-success"];
-          "sasl-auth" -> nil [label=":authentication-failure"];
-
-          bind -> bind [label=":stream-start, :stanza1"];
-          bind -> nil [label=":stanza2, :bind-failure, :session-failure"];
-          bind -> "session-established" [label=":bind-success, :session-success"];
-
-          "session-established" -> "session-established" [label=":stanza; :roster-update, :timeout, :send-if-connected"];
-  }
-#+END_SRC
-
-#+caption: Implemented states in the Jabber FSM.
-#+RESULTS: fig:states
-[[file:images/states-dot.png]]
-
-** Stanza processing
-:PROPERTIES:
-:CUSTOM_ID: stanza-processing
-:END:
-The following is a brief summary about the stanza processing.
-
-1. The ~:session-established~ state is reached.
-2. The FSM receives the event ~:stanza~ at the ~:session-established~ state.
-3. If no error has been found, call ~jabber-process-input~. See [[file:jabber.org::*jabber-process-input][jabber-process-input]] section.
-4. Select one of the following variables depending on the type of message received: ~jabber-iq-chain~, ~jabber-presence-chain~ and ~jabber-message-chain~. All of them contains a list of functions that process its type of message.
-5. Call all of their functions with the jabber connection and XML data as parameters .
-6. Continue in the same state.
-
-* Tutorials
-:PROPERTIES:
-:CUSTOM_ID: tutorials
-:END:
-** Installation
-:PROPERTIES:
-:CUSTOM_ID: installation
-:END:
-*** from MELPA
-:PROPERTIES:
-:CUSTOM_ID: from-melpa
-:END:
-1. Add the MELPA repositories to your Emacs - https://melpa.org/#/getting-started
-2. Type =M-x package-install RET jabber RET=
-
-If all goes well, =jabber.el= commands like =jabber-connect= should now be available in the =M-x= menu.
-
-*** from source
-:PROPERTIES:
-:CUSTOM_ID: from-source
-:END:
-1. Clone the repository by typing the following into a terminal -
-   #+BEGIN_SRC shell
-   mkdir ~/emacs-jabber/
-   cd ~/emacs-jabber/
-   git clone https://codeberg.org/emacs-jabber/emacs-jabber
-   make
-   #+END_SRC
-
-2. Add the following lines to your =init.el= -
-   #+BEGIN_SRC emacs-lisp
-   (add-to-list 'load-path "~/emacs-jabber/")
-   (load "~/emacs-jabber/jabber-autoloads")
-   #+END_SRC
-   ...and, while still in your =init.el=, type =M-x eval-buffer RET=.
-
-If all goes well, =jabber.el= commands like =jabber-connect= should now be available in the =M-x= menu.
-
-To install the Info documentation, copy =jabber.info= to =/usr/local/info= and run ="install-info /usr/local/info/jabber.info"=.
-
-* How-to guides
-:PROPERTIES:
-:CUSTOM_ID: how-to-guides
-:END:
-** How to contribute to jabber.el
-:PROPERTIES:
-:CUSTOM_ID: how-to-contribute
-:END:
-1. Fork and clone the repository.
-   #+BEGIN_SRC shell :tangle no
-     mkdir ~/git/ && cd ~/git/
-     git clone https://codeberg.org/YOUR-ACCOUNT/emacs-jabber
-   #+END_SRC
-   + You can also send patches to [[mailto:wgreenhouse@tilde.club][wgreenhouse@tilde.club]], using [[https://git-send-email.io/][git-send-email]]. In that case, you don't need to fork the repository or create an account.
-
-2. Optionally, evaluate the following to install additional development tools (requires MELPA to be set up as package source) -
-      #+BEGIN_SRC emacs-lisp :tangle no
-        (mapcar #'package-install
-                '(indent-lint package-lint relint nameless))
-      #+END_SRC
-
-3. Make your edits to, then run =make dev= to tangle, compile, and run linters. Try to address their output.
-
-4. Try to follow [[https://cbea.ms/git-commit/#seven-rules][the seven rules of a great Git commit message]] in your commits.
-
-5. Update the documentation.
-   1. Add your name to the [[#contributors][list of contributors]].
-   2. Document user-facing changes in [[file:CHANGELOG.org][CHANGELOG.org]].
-   3. Update or add other documentation in this [[file:README.org][README.org]] if necessary. Try to follow the [[https://diataxis.fr/][Diataxis Framework]].
-
-6. Push and create your PR.
 
 * TODO maintenance [16%]
 :PROPERTIES:
@@ -407,3 +290,4 @@ To install the Info documentation, copy =jabber.info= to =/usr/local/info= and r
 + contrapunctus
   - literate Org migration
   - Makefile (shoutout to tomasino of #team@irc.tilde.chat for the Makefile-debugging help)
+  - migration back to traditional source files
