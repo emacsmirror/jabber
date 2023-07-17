@@ -18,10 +18,20 @@
 ;; along with this program; if not, write to the Free Software
 ;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+(require 'cl-lib)
+
+(require 'jabber-disco)
+(require 'jabber-muc-nick-completion)
+(require 'jabber-chatbuffer)
 (require 'jabber-private)
 (require 'jabber-widget)
 
-(require 'cl-lib)
+;; Global reference declarations
+
+(defvar jabber-muc-default-nicknames)   ; jabber-muc.el
+(defvar jabber-muc-autojoin)            ; jabber-muc.el
+
+;;
 
 (defvar jabber-bookmarks (make-hash-table :test 'equal)
   "Mapping from full JIDs to bookmarks.
@@ -197,11 +207,11 @@ JC is the Jabber connection."
 	   (lambda (entry)
 	     (cl-case (car entry)
 	       (url
-		(cl-destructuring-bind (symbol url name) entry
+		(cl-destructuring-bind (_symbol url name) entry
 		  `(url ((url . ,url)
 			 (name . ,name)))))
 	       (conference
-		(cl-destructuring-bind (symbol jid name autojoin nick password)
+		(cl-destructuring-bind (_symbol jid name autojoin nick password)
 		    entry
 		  `(conference ((jid . ,jid)
 				(name . ,name)

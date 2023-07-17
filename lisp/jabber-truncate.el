@@ -18,13 +18,19 @@
 ;; along with this program; if not, write to the Free Software
 ;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-(require 'jabber-chat)
 (require 'jabber-alert)
+(require 'ewoc)
 
 (require 'cl-lib)
 
 (defvar jabber-log-lines-to-keep 1000
   "Maximum number of lines in chat buffer.")
+
+;; Global reference declarations
+
+(defvar jabber-chat-ewoc)               ; jabber-chatbuffer.el
+
+;;
 
 (defun jabber-truncate-top (buffer &optional ewoc)
   "Clean old history from a chat BUFFER.
@@ -43,8 +49,7 @@ get it, and then it just gets deleted."
            (ewoc-prev
             work-ewoc
             (ewoc-locate work-ewoc
-                         (save-excursion
-                           (set-buffer buffer)
+                         (with-current-buffer buffer
                            (goto-char (point-max))
                            (forward-line (- jabber-log-lines-to-keep))
                            (point))))))
@@ -54,13 +59,13 @@ get it, and then it just gets deleted."
                   (ewoc-prev work-ewoc delete-before)
                 (ewoc-delete work-ewoc delete-before))))))
 
-(defun jabber-truncate-muc (nick group buffer text proposed-alert)
+(defun jabber-truncate-muc (_nick _group buffer _text _proposed-alert)
   "Clean old history from MUC buffers.
 `jabber-log-lines-to-keep' specifies the number of lines to
 keep."
   (jabber-truncate-top buffer))
 
-(defun jabber-truncate-chat (from buffer text proposed-alert)
+(defun jabber-truncate-chat (_from buffer _text _proposed-alert)
   "Clean old history from chat buffers.
 `jabber-log-lines-to-keep' specifies the number of lines to
 keep.

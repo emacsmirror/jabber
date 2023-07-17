@@ -19,6 +19,19 @@
 ;; the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 ;; Boston, MA 02111-1307, USA.
 
+(require 'jabber-util)
+(require 'jabber-xml)
+(require 'jabber-iq)
+
+;; Global reference declarations
+
+;; (declare-function jabber-iq-query "jabber-util.el" (xml-data))
+;; (declare-function jabber-xml-node-children "jabber-xml.el" (node))
+;; (declare-function jabber-send-iq "jabber-iq.el"
+;;                   (jc to type query success-callback success-closure-data
+;; 		      error-callback error-closure-data &optional result-id))
+;;
+
 ;;;###autoload
 (defun jabber-private-get (jc node-name namespace success-callback error-callback)
   "Retrieve an item from private XML storage.

@@ -22,6 +22,7 @@
 (require 'jabber-iq)
 (require 'jabber-xml)
 (require 'jabber-util)
+(require 'jabber-menu)
 
 ;; jabber.el can perform browse requests, but will not answer them.
 

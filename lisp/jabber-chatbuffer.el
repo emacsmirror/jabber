@@ -18,6 +18,8 @@
 ;; along with this program; if not, write to the Free Software
 ;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+(require 'jabber-util)
+(require 'jabber-core)
 (require 'jabber-keymap)
 
 (defvar jabber-point-insert nil
@@ -46,6 +48,12 @@ window or at `fill-column', whichever is shorter."
   "The connection used by this buffer.")
 ;;;###autoload
 (make-variable-buffer-local 'jabber-buffer-connection)
+
+(defvar jabber-chat-mode-map
+  (let ((map (make-sparse-keymap)))
+    (set-keymap-parent map jabber-common-keymap)
+    (define-key map "\r" 'jabber-chat-buffer-send)
+    map))
 
 (defun jabber-chat-mode (jc ewoc-pp)
   "Jabber chat mode.
@@ -92,12 +100,6 @@ JC is the Jabber connection."
 (put 'jabber-chat-mode 'flyspell-mode-predicate
   'jabber-chat-mode-flyspell-verify)
 
-(defvar jabber-chat-mode-map
-  (let ((map (make-sparse-keymap)))
-    (set-keymap-parent map jabber-common-keymap)
-    (define-key map "\r" 'jabber-chat-buffer-send)
-    map))
-
 (defun jabber-chat-buffer-send ()
   (interactive)
   ;; If user accidentally hits RET without writing anything, just
@@ -130,7 +132,7 @@ JC is the Jabber connection."
 	  (when (>= (current-column) (min fill-column width))
 	    (save-restriction
 	      (narrow-to-region (min (1+ (point)) (point-max))
-				(point-at-bol))
+				(line-beginning-position))
 	      (let ((goback (point-marker)))
 		(fill-paragraph nil)
 		(goto-char (marker-position goback)))))

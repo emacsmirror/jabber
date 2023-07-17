@@ -20,13 +20,15 @@
 ;; along with this program; if not, write to the Free Software
 ;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-(require 'jabber-presence)
+(require 'cl-lib)
 (require 'jabber-util)
 (require 'jabber-alert)
 (require 'jabber-keymap)
-(require 'format-spec)
-(require 'cl-lib)				;for `find'
 (require 'jabber-private)
+(require 'jabber-presence)
+(require 'jabber-carbons)
+(require 'format-spec)
+(require 'ewoc)
 
 (defgroup jabber-roster nil "roster display options"
   :group 'jabber)
@@ -242,6 +244,23 @@ Trailing newlines are always removed, regardless of this variable."
     (define-key map "H" 'jabber-roster-toggle-binding-display)
     ;;(define-key map "D" 'jabber-disconnect)
     map))
+
+;; Global reference declarations
+
+(declare-function jabber-muc-read-my-nickname "jabber-muc.el"
+                  (jc group &optional default))
+(declare-function jabber-muc-join "jabber-muc.el"
+                  (jc group nickname &optional popup))
+(declare-function jabber-chat-with "jabber-chat.el"
+                  (jc jid &optional other-window))
+(declare-function jabber-disco-get-info "jabber-disco.el"
+                  (jc jid node callback closure-data &optional force))
+(defvar *jabber-current-show*)          ; jabber.el
+(defvar jabber-presence-strings)        ; jabber.el
+(defvar *jabber-current-status*)        ; jabber.el
+(defvar jabber-presence-faces)          ; jabber.el
+
+;;
 
 (defun jabber-roster-ret-action-at-point ()
   "Action for RET.
@@ -583,8 +602,7 @@ H        Toggle displaying this text
 					  (plist-get (fsm-get-state-data jc) :server))
 					 'face 'jabber-title-medium)
 		      "\n__________________________________\n")
-		     "__________________________________"))
-	      (new-groups '()))
+		     "__________________________________")))
 	  (plist-put(fsm-get-state-data jc) :roster-ewoc ewoc)
 	  (dolist (group (plist-get (fsm-get-state-data jc) :roster-groups))
 	    (let* ((group-name (car group))
@@ -728,26 +746,7 @@ three being lists of JID symbols.
 JC is the Jabber connection."
   (let* ((roster (plist-get (fsm-get-state-data jc) :roster))
 	 (hash (plist-get (fsm-get-state-data jc) :roster-hash))
-	 (ewoc (plist-get (fsm-get-state-data jc) :roster-ewoc))
-	 (all-groups (plist-get (fsm-get-state-data jc) :roster-groups))
-	 (terminator
-	  (lambda (deleted-items)
-	    (dolist (delete-this deleted-items)
-	      (let ((groups (get delete-this 'groups))
-		    (terminator
-		     (lambda (g)
-		       (let*
-			   ((group (or g jabber-roster-default-group-name))
-			    (buddies (gethash group hash)))
-			 (when (not buddies)
-			   (setq new-groups (append new-groups (list group))))
-			 (puthash group
-				  (delq delete-this buddies)
-				  hash)))))
-		(if groups
-		    (dolist (group groups)
-		      (terminator group))
-		  (terminator groups)))))))
+	 (all-groups (plist-get (fsm-get-state-data jc) :roster-groups)))
 
     ;; fix a old-roster
     (dolist (delete-this deleted-items)

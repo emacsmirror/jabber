@@ -25,16 +25,14 @@
 ;; A collection of functions, that hide the details of transmitting to
 ;; and from a Jabber Server. Mostly inspired by Gnus.
 
+(require 'jabber-core)
+(require 'fsm)
 (eval-when-compile (require 'cl-lib))
 
 ;; Emacs 24 can be linked with GnuTLS
-(ignore-errors (require 'gnutls))
+(require 'gnutls nil t)
 
-;; Try two different TLS/SSL libraries, but don't fail if none available.
-(or (ignore-errors (require 'tls))
-    (ignore-errors (require 'ssl)))
-
-(ignore-errors (require 'starttls))
+(require 'starttls nil t)
 
 (require 'srv)
 
@@ -65,8 +63,8 @@ See `jabber-connect-methods'.")
 (defcustom jabber-connection-ssl-program nil
   "Program used for SSL/TLS connections.
 nil means prefer gnutls but fall back to openssl.
-'gnutls' means use gnutls (through `open-tls-stream').
-'openssl means use openssl (through `open-ssl-stream')."
+\='gnutls\=' means use gnutls (through `open-tls-stream').
+\='openssl means use openssl (through `open-ssl-stream')."
   :type '(choice (const :tag "Prefer gnutls, fall back to openssl" nil)
 		 (const :tag "Use gnutls" gnutls)
 		 (const :tag "Use openssl" openssl))
@@ -97,6 +95,22 @@ or later."
 First item is the symbol naming the method.
 Second item is the connect function.
 Third item is the send function.")
+
+;; Global reference declarations
+
+(declare-function starttls-negotiate "starttls.el" (process))
+(declare-function starttls-open-stream "starttls.el"
+                  (name buffer host port))
+(declare-function gnutls-negotiate "gnutls.el"
+                  (&rest spec
+                         &key process type hostname priority-string
+                         trustfiles crlfiles keylist min-prime-bits
+                         verify-flags verify-error verify-hostname-error
+                         &allow-other-keys))
+(defvar jabber-process-buffer)          ; jabber.el
+(defvar jabber-debug-keep-process-buffers) ; jabber.el
+
+;;
 
 (defun jabber-get-connect-function (type)
   "Get the connect function associated with TYPE.

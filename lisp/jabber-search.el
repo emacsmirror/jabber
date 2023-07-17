@@ -21,6 +21,12 @@
 
 (require 'jabber-register)
 
+;; Global reference declarations
+
+(defvar jabber-buffer-connection)       ; jabber-chatbuffer.el
+
+;;
+
 (add-to-list 'jabber-jid-service-menu
 	     (cons "Search directory" 'jabber-get-search))
 (defun jabber-get-search (jc to)
@@ -42,7 +48,7 @@ JC is the Jabber connection."
 
 ;; `jabber-submit-search' is called when the "submit" button of the search
 ;; form is activated.
-(defun jabber-submit-search (&rest ignore)
+(defun jabber-submit-search (&rest _ignore)
   "Submit search.  See `jabber-process-register-or-search'."
 
   (let ((text (concat "Search at " jabber-submit-to)))
@@ -63,7 +69,7 @@ JC is the Jabber connection."
 
   (message "Search sent"))
 
-(defun jabber-process-search-result (jc xml-data)
+(defun jabber-process-search-result (_jc xml-data)
   "Receive and display search results.
 
 JC is the Jabber connection.
@@ -74,7 +80,7 @@ obtained from `xml-parse-region'."
   ;; which is not necessarily the case.
   (let ((query (jabber-iq-query xml-data))
 	(have-xdata nil)
-	xdata fields (jid-fields 0))
+	xdata fields)
 
     ;; First, check for results in jabber:x:data form.
     (dolist (x (jabber-xml-get-children query 'x))
@@ -92,7 +98,6 @@ obtained from `xml-parse-region'."
 		     (nick . (label "Nickname" column 30))
 		     (jid . (label "JID" column 45))
 		     (email . (label "E-mail" column 65))))
-      (setq jid-fields 1)
 
       (dolist (field-cons fields)
 	(indent-to (plist-get (cdr field-cons) 'column) 1)

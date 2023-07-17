@@ -41,14 +41,12 @@
 ;;; Code:
 (require 'cl-lib)
 
-(require 'jabber-util)
-(require 'jabber-logon)
-(require 'jabber-conn)
+(require 'jabber-sasl)
+(require 'jabber-xml)
+(require 'jabber-console)
+(require 'jabber-keepalive)
 
 (require 'fsm)
-
-(require 'jabber-sasl)
-(require 'jabber-console)
 
 (defvar jabber-connections nil
   "List of jabber-connection FSMs.")
@@ -152,6 +150,37 @@ problems."
 ;; jabber-connect and jabber-connect-all should load jabber.el, not
 ;; just jabber-core.el, when autoloaded.
 
+;; Global reference declarations
+
+(declare-function jabber-send-iq "jabber-iq.el"
+                  (jc to type query success-callback success-closure-data
+		      error-callback error-closure-data &optional result-id))
+(declare-function jabber-muc-connection-closed "jabber-muc.el" (bare-jid))
+(declare-function jabber-roster-update "jabber-roster.el"
+                  (jc new-items changed-items deleted-items))
+(declare-function jabber-display-roster "jabber-roster.el" ())
+(declare-function jabber-process-roster "jabber-presence.el"
+                  (jc xml-data closure-data))
+(declare-function jabber-initial-roster-failure "jabber-presence.el"
+                  (jc xml-data _closure-data))
+(declare-function jabber-get-auth "jabber-logon.el" (jc to session-id))
+(declare-function jabber-get-register "jabber-register.el" (jc to))
+(declare-function jabber-get-connect-function "jabber-conn.el" (type))
+(declare-function jabber-get-send-function "jabber-conn.el" (type))
+(declare-function jabber-starttls-process-input "jabber-conn.el"
+                  (fsm xml-data))
+(declare-function jabber-starttls-initiate "jabber-conn.el" (fsm))
+(declare-function jabber-mode-line-presence-update "jabber-modeline.el" ())
+(defvar jabber-debug-keep-process-buffers) ; jabber.el
+(defvar jabber-silent-mode)             ; jabber.el
+(defvar jabber-account-list)            ; jabber.el
+(defvar jabber-xml-data)                ; jabber.el
+(defvar jabber-default-connection-type) ; jabber-conn.el
+(defvar jabber-connect-methods)         ; jabber-conn.el
+(defvar jabber-mode-line-mode)          ; jabber-modeline.el
+
+;;
+
 ;;;###autoload (autoload 'jabber-connect-all "jabber" "Connect to all configured Jabber accounts.\nSee `jabber-account-list'.\nIf no accounts are configured (or ARG supplied), call `jabber-connect' interactively." t)
 (defun jabber-connect-all (&optional arg)
   "Connect to all configured Jabber accounts.
@@ -162,8 +191,8 @@ With many prefix arguments, one less is passed to `jabber-connect'."
   (interactive "P")
   (let ((accounts
 	 (cl-remove-if (lambda (account)
-		      (cdr (assq :disabled (cdr account))))
-		    jabber-account-list)))
+		         (cdr (assq :disabled (cdr account))))
+		       jabber-account-list)))
     (if (or (null accounts) arg)
 	(let ((current-prefix-arg
 	       (cond
@@ -937,7 +966,8 @@ DATA is any sexp."
 JC is the Jabber connection.
 XML-DATA is the parsed tree data from the stream (stanzas)
 obtained from `xml-parse-region'."
-  (let* ((tag (jabber-xml-node-name xml-data))
+  (let* ((jabber-xml-data xml-data)
+         (tag (jabber-xml-node-name xml-data))
 	 (functions (eval (cdr (assq tag '((iq . jabber-iq-chain)
 					   (presence . jabber-presence-chain)
 					   (message . jabber-message-chain)))))))

@@ -22,13 +22,29 @@
 ;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 (require 'cl-lib)
+(require 'jabber-xml)
+(require 'fsm)
 (require 'password-cache)
+
 (condition-case nil
     (require 'auth-source)
   (error nil))
 
 (defvar jabber-jid-history nil
   "History of entered JIDs.")
+
+;; Global reference declarations
+
+(declare-function jabber-chat-with "jabber-chat.el"
+                  (jc jid &optional other-window))
+(declare-function jabber-ahc-execute-command "jabber-ahc.el" (jc to node))
+(declare-function jabber-get-register "jabber-register.el" (jc to))
+(declare-function jabber-muc-read-my-nickname "jabber-muc.el"
+                  (jc group &optional default))
+(declare-function jabber-muc-join "jabber-muc.el"
+                  (jc group nickname &optional popup))
+
+;;
 
 (defalias 'jabber-propertize 'propertize)
 

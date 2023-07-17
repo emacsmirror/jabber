@@ -20,6 +20,11 @@
 ;; Boston, MA 02111-1307, USA.
 
 (require 'cl-lib)
+(require 'jabber-core)
+(require 'jabber-util)
+(require 'jabber-chat)
+(require 'jabber-chatbuffer)
+(require 'jabber-xml)
 
 (defgroup jabber-events nil
   "Message events and notifications."
@@ -56,6 +61,12 @@ probably reading the message).")
   "Human-readable presentation of event information.")
 (make-variable-buffer-local 'jabber-events-message)
 
+;; Global reference declarations
+
+(declare-function jabber-muc-message-p "jabber-muc.el" (message))
+
+;;
+
 (defun jabber-events-update-message ()
   (setq jabber-events-message
 	(concat (cdr (assq jabber-events-arrived
@@ -66,7 +77,7 @@ probably reading the message).")
 		  " (typing a message)"))))
 
 (add-hook 'jabber-chat-send-hooks 'jabber-events-when-sending)
-(defun jabber-events-when-sending (text id)
+(defun jabber-events-when-sending (_text _id)
   (setq jabber-events-arrived nil)
   (jabber-events-update-message)
   `((x ((xmlns . "jabber:x:event"))

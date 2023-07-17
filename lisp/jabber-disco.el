@@ -23,9 +23,14 @@
 (require 'jabber-xml)
 (require 'jabber-menu)
 
+;; Global reference declarations
+
+(defvar jabber-presence-chain)          ; jabber-core.el
+(defvar jabber-connections)             ; jabber-core.el
+
+;;
 ;;; Respond to disco requests
 
-;;;###autoload
 (eval-after-load "jabber-core"
   '(add-to-list 'jabber-presence-chain #'jabber-process-caps))
 
@@ -47,6 +52,77 @@ Maps names defined in http://www.iana.org/assignments/hash-function-text-names
 to symbols accepted by `secure-hash'.
 
 XEP-0115 currently recommends SHA-1, but let's be future-proof.")
+
+;; Keys are ("jid" . "node"), where "node" is nil if appropriate.
+;; Values are (identities features), where each identity is ["name"
+;; "category" "type"], and each feature is a string.
+(defvar jabber-disco-info-cache (make-hash-table :test 'equal))
+
+;; Keys are ("jid" . "node").  Values are (items), where each
+;; item is ["name" "jid" "node"] (some values may be nil).
+(defvar jabber-disco-items-cache (make-hash-table :test 'equal))
+
+(defvar jabber-advertised-features
+  (list "http://jabber.org/protocol/disco#info")
+  "Features advertised on service discovery requests.
+
+Don't add your feature to this list directly.  Instead, call
+`jabber-disco-advertise-feature'.")
+
+(defvar jabber-disco-items-nodes
+  (list
+   (list "" nil nil))
+  "Alist of node names and information about returning disco item data.
+Key is node name as a string, or \"\" for no node specified.  Value is
+a list of two items.
+
+First item is data to return.  If it is a function, that function is
+called and its return value is used; if it is a list, that list is
+used.  The list should be the XML data to be returned inside the
+<query/> element, like this:
+
+\((item ((name . \"Name of first item\")
+	(jid . \"first.item\")
+	(node . \"node\"))))
+
+Second item is access control function.  That function is passed the
+JID, and returns non-nil if access is granted.  If the second item is
+nil, access is always granted.")
+
+(defvar jabber-disco-info-nodes
+  (list
+   (list "" #'jabber-disco-return-client-info nil))
+  "Alist of node names and information returning disco info data.
+Key is node name as a string, or \"\" for no node specified.  Value is
+a list of two items.
+
+First item is data to return.  If it is a function, that function is
+called and its return value is used; if it is a list, that list is
+used.  The list should be the XML data to be returned inside the
+<query/> element, like this:
+
+\((identity ((category . \"client\")
+	    (type . \"pc\")
+	    (name . \"Jabber client\")))
+ (feature ((var . \"some-feature\"))))
+
+Second item is access control function.  That function is passed the
+JID, and returns non-nil if access is granted.  If the second item is
+nil, access is always granted.")
+
+;; Global reference declarations
+
+(declare-function jabber-send-current-presence "jabber-presence.el"
+                  (&optional _ignore))
+(declare-function jabber-xdata-formtype "jabber-widget.el" (x))
+(defvar jabber-presence-element-functions) ; jabber-presence.el
+
+;;
+
+(add-to-list 'jabber-iq-get-xmlns-alist
+	     (cons "http://jabber.org/protocol/disco#info" 'jabber-return-disco-info))
+(add-to-list 'jabber-iq-get-xmlns-alist
+	     (cons "http://jabber.org/protocol/disco#items" 'jabber-return-disco-info))
 
 (defun jabber-caps-get-cached (jid)
   "Get disco info from Entity Capabilities cache.
@@ -73,7 +149,7 @@ obtained from `xml-parse-region'."
 	 (c (jabber-xml-path xml-data '(("http://jabber.org/protocol/caps" . "c")))))
     (when (and (null type) c)
       (jabber-xml-let-attributes
-	  (ext hash node ver) c
+	  (_ext hash  node ver) c
 	(cond
 	 (hash
 	  ;; If the <c/> element has a hash attribute, it follows the
@@ -142,7 +218,7 @@ obtained from `xml-parse-region'."
 	;; The hash is incorrect.
 	(jabber-caps-try-next jc hash node ver)))))
 
-(defun jabber-process-caps-info-error (jc xml-data closure-data)
+(defun jabber-process-caps-info-error (jc _xml-data closure-data)
   (cl-destructuring-bind (hash node ver) closure-data
     (jabber-caps-try-next jc hash node ver)))
 
@@ -319,58 +395,6 @@ the right node."
 (eval-after-load "jabber-presence"
   '(add-to-list 'jabber-presence-element-functions #'jabber-caps-presence-element))
 
-(defvar jabber-advertised-features
-  (list "http://jabber.org/protocol/disco#info")
-  "Features advertised on service discovery requests.
-
-Don't add your feature to this list directly.  Instead, call
-`jabber-disco-advertise-feature'.")
-
-(defvar jabber-disco-items-nodes
-  (list
-   (list "" nil nil))
-  "Alist of node names and information about returning disco item data.
-Key is node name as a string, or \"\" for no node specified.  Value is
-a list of two items.
-
-First item is data to return.  If it is a function, that function is
-called and its return value is used; if it is a list, that list is
-used.  The list should be the XML data to be returned inside the
-<query/> element, like this:
-
-\((item ((name . \"Name of first item\")
-	(jid . \"first.item\")
-	(node . \"node\"))))
-
-Second item is access control function.  That function is passed the
-JID, and returns non-nil if access is granted.  If the second item is
-nil, access is always granted.")
-
-(defvar jabber-disco-info-nodes
-  (list
-   (list "" #'jabber-disco-return-client-info nil))
-  "Alist of node names and information returning disco info data.
-Key is node name as a string, or \"\" for no node specified.  Value is
-a list of two items.
-
-First item is data to return.  If it is a function, that function is
-called and its return value is used; if it is a list, that list is
-used.  The list should be the XML data to be returned inside the
-<query/> element, like this:
-
-\((identity ((category . \"client\")
-	    (type . \"pc\")
-	    (name . \"Jabber client\")))
- (feature ((var . \"some-feature\"))))
-
-Second item is access control function.  That function is passed the
-JID, and returns non-nil if access is granted.  If the second item is
-nil, access is always granted.")
-
-(add-to-list 'jabber-iq-get-xmlns-alist
-	     (cons "http://jabber.org/protocol/disco#info" 'jabber-return-disco-info))
-(add-to-list 'jabber-iq-get-xmlns-alist
-	     (cons "http://jabber.org/protocol/disco#items" 'jabber-return-disco-info))
 (defun jabber-return-disco-info (jc xml-data)
   "Respond to a service discovery request.
 See XEP-0030.
@@ -409,7 +433,7 @@ obtained from `xml-parse-region'."
       ;; No such node
       (jabber-signal-error "Cancel" 'item-not-found))))
 
-(defun jabber-disco-return-client-info (&optional jc xml-data)
+(defun jabber-disco-return-client-info (&optional _jc _xml-data)
   `(
     ;; If running under a window system, this is
     ;; a GUI client.  If not, it is a console client.
@@ -513,22 +537,13 @@ obtained from `xml-parse-region'."
 	      'jabber-node node))))
       (insert "No items found.\n"))))
 
-;; Keys are ("jid" . "node"), where "node" is nil if appropriate.
-;; Values are (identities features), where each identity is ["name"
-;; "category" "type"], and each feature is a string.
-(defvar jabber-disco-info-cache (make-hash-table :test 'equal))
-
-;; Keys are ("jid" . "node").  Values are (items), where each
-;; item is ["name" "jid" "node"] (some values may be nil).
-(defvar jabber-disco-items-cache (make-hash-table :test 'equal))
-
 (defun jabber-disco-get-info (jc jid node callback closure-data &optional force)
   "Get disco info for JID and NODE, using connection JC.
 Call CALLBACK with JC and CLOSURE-DATA as first and second
 arguments and result as third argument when result is available.
 On success, result is (IDENTITIES FEATURES), where each identity is [\"name\"
 \"category\" \"type\"], and each feature is a string.
-On error, result is the error node, recognizable by (eq (car result) 'error).
+On error, result is the error node, recognizable by (eq (car result) \='error).
 
 If CALLBACK is nil, just fetch data.  If FORCE is non-nil,
 invalidate cache and get fresh data."
@@ -592,7 +607,7 @@ arguments and items result as third argument when result is
 available.
 On success, result is a list of items, where each
 item is [\"name\" \"jid\" \"node\"] (some values may be nil).
-On error, result is the error node, recognizable by (eq (car result) 'error).
+On error, result is the error node, recognizable by (eq (car result) \='error).
 
 If CALLBACK is nil, just fetch data.  If FORCE is non-nil,
 invalidate cache and get fresh data."

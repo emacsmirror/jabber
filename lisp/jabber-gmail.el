@@ -42,6 +42,11 @@
 ;;       (message msg)
 ;;       (jabber-screen-message msg)))
 
+(require 'jabber-util)
+(require 'jabber-iq)
+(require 'jabber-xml)
+(require 'jabber-chat)
+
 ;;;###autoload
 (defun jabber-gmail-subscribe (jc)
   "Subscribe to gmail notifications.
@@ -81,7 +86,7 @@ See http://code.google.com/apis/talk/jep_extensions/gmail.html#requestmail"
 		  #'jabber-gmail-process-mailbox nil
 		  #'jabber-process-data "Gmail query" "gmail-query"))
 
-(defun jabber-gmail-process-mailbox (jc xml-sexp &rest ignore)
+(defun jabber-gmail-process-mailbox (_jc xml-sexp &rest _ignore)
   "Process gmail query response.
 See http://code.google.com/apis/talk/jep_extensions/gmail.html#response"
   (let ((ts (jabber-xml-node-children

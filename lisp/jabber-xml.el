@@ -20,7 +20,6 @@
 ;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 (require 'xml)
-(require 'jabber-util)
 (eval-when-compile
   (require 'cl-lib))
 
@@ -106,7 +105,7 @@ SEXP should be in the form:
 
 (defun jabber-xml-skip-tag-forward (&optional dont-recurse-into-stream)
   "Skip to end of tag or matching closing tag if present.
-Return t iff after a closing tag, otherwise throws an 'unfinished
+Return t iff after a closing tag, otherwise throws an \='unfinished
 tag with value nil.
 If DONT-RECURSE-INTO-STREAM is non-nil, stop after an opening
 <stream:stream> tag.

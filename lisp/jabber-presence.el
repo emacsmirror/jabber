@@ -24,7 +24,7 @@
 (require 'jabber-alert)
 (require 'jabber-util)
 (require 'jabber-menu)
-(require 'jabber-muc)
+(require 'ewoc)
 
 (defvar jabber-presence-element-functions nil
   "List of functions returning extra elements for <presence/> stanzas.
@@ -35,11 +35,48 @@ stanza.")
 (defvar jabber-presence-history ()
   "Keeps track of previously used presence status types.")
 
+;; Global reference declarations
+
+(declare-function jabber-display-roster "jabber-roster.el" ())
+(declare-function jabber-roster-update "jabber-roster.el"
+                  (jc new-items changed-items deleted-items))
+(declare-function jabber-chat-create-buffer "jabber-chat.el" (jc chat-with))
+(declare-function jabber-muc-get-buffer "jabber-muc.el" (group))
+(declare-function jabber-muc-process-presence "jabber-muc.el" (jc presence))
+(declare-function jabber-muc-presence-p "jabber-muc.el" (presence))
+(defvar jabber-chatting-with)           ; jabber-chat.el
+(defvar *jabber-active-groupchats*)     ; jabber-muc.el
+(defvar jabber-buffer-connection)       ; jabber-chatbuffer.el
+(defvar jabber-chat-ewoc)               ; jabber-chatbuffer.el
+(defvar *jabber-current-priority*)      ; jabber.el
+(defvar jabber-default-priority)        ; jabber.el
+(defvar *jabber-current-show*)          ; jabber.el
+(defvar *jabber-current-status*)        ; jabber.el
+(defvar *jabber-current-priority*)      ; jabber.el
+(defvar *jabber-current-status*)        ; jabber.el
+(defvar *jabber-current-show*)          ; jabber.el
+(defvar *jabber-current-priority*)      ; jabber.el
+(defvar *jabber-current-show*)          ; jabber.el
+(defvar *jabber-current-status*)        ; jabber.el
+(defvar *jabber-current-status*)        ; jabber.el
+(defvar *jabber-current-priority*)      ; jabber.el
+(defvar *jabber-current-status*)        ; jabber.el
+(defvar *jabber-current-priority*)      ; jabber.el
+(defvar jabber-default-show)            ; jabber.el
+(defvar jabber-default-status)          ; jabber.el
+(defvar jabber-default-priority)        ; jabber.el
+(defvar *jabber-current-show*)          ; jabber.el
+(defvar *jabber-current-status*)        ; jabber.el
+(defvar *jabber-current-priority*)      ; jabber.el
+(defvar jabber-silent-mode)             ; jabber.el
+
+;;
+
 (add-to-list 'jabber-iq-set-xmlns-alist
 	     (cons "jabber:iq:roster" (function (lambda (jc x) (jabber-process-roster jc x nil)))))
 (defun jabber-process-roster (jc xml-data closure-data)
   "Process an incoming roster infoquery result.
-CLOSURE-DATA should be 'initial if initial roster push, nil otherwise.
+CLOSURE-DATA should be \='initial if initial roster push, nil otherwise.
 JC is the Jabber connection.
 XML-DATA is the parsed tree data from the stream (stanzas)
 obtained from `xml-parse-region'."
@@ -146,7 +183,6 @@ obtained from `xml-parse-region'."
   ;; XXX: use JC argument
   (let ((roster (plist-get (fsm-get-state-data jc) :roster))
 	(from (jabber-xml-get-attribute xml-data 'from))
-	(to (jabber-xml-get-attribute xml-data 'to))
 	(type (jabber-xml-get-attribute xml-data 'type))
 	(presence-show (car (jabber-xml-node-children
 			     (car (jabber-xml-get-children xml-data 'show)))))
@@ -255,15 +291,15 @@ JC is the Jabber connection."
     (dolist (hook '(jabber-presence-hooks jabber-alert-presence-hooks))
       (run-hook-with-args hook (jabber-jid-symbol from) nil "subscribe" presence-status (funcall jabber-alert-presence-message-function (jabber-jid-symbol from) nil "subscribe" presence-status)))))
 
-(defun jabber-subscription-accept-mutual (&rest ignored)
+(defun jabber-subscription-accept-mutual (&rest _ignored)
   (message "Subscription accepted; reciprocal subscription request sent")
   (jabber-subscription-reply "subscribed" "subscribe"))
 
-(defun jabber-subscription-accept-one-way (&rest ignored)
+(defun jabber-subscription-accept-one-way (&rest _ignored)
   (message "Subscription accepted")
   (jabber-subscription-reply "subscribed"))
 
-(defun jabber-subscription-decline (&rest ignored)
+(defun jabber-subscription-decline (&rest _ignored)
   (message "Subscription declined")
   (jabber-subscription-reply "unsubscribed"))
 

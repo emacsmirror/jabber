@@ -21,17 +21,20 @@
 (eval-when-compile (require 'jabber-alert))
 
 (defvar jabber-wmii-color "#ffffff #335577 #447799"
-  "Color specification as needed by the wmii window manager for the jabber alert messages.")
+  "Color specification for the wmii window manager.
+This color specification is used for presenting alert messages.")
 
 (defvar jabber-wmii-reset-time "20 sec"
-  "If non-nil time to reset wmii message.  If nil the message has to be cleared by other means, i.e. from wmiirc.")
+  "Duration of alert message presentation.
+If non-nil, duration of wmii message visibility.
+If nil the message has to be cleared by other means, i.e. from wmiirc.")
 
 (defvar jabber-wmii-timer nil
   "Timer to clear wmii message.")
 
 (defun jabber-wmii-clear ()
   "Clear any previous message output through wmii window manager."
-  (condition-case e
+  (condition-case _e
       (call-process "wmiir" nil nil nil "remove" "/rbar/jabber")
     (error nil)))
 
@@ -44,7 +47,7 @@
       (insert  jabber-wmii-color " " (or title text)))
     ;; Possible errors include not finding the wmiir binary, and
     ;; too many pipes open because of message flood.
-    (condition-case e
+    (condition-case _e
 	(call-process "wmiir" tmp nil nil "create" "/rbar/jabber")
       (error nil))
     (delete-file tmp))

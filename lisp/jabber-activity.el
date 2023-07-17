@@ -39,11 +39,10 @@
 
 ;;; Code:
 
+(require 'cl-lib)
 (require 'jabber-core)
-(require 'jabber-alert)
 (require 'jabber-util)
 (require 'jabber-muc-nick-completion)   ;we need jabber-muc-looks-like-personal-p
-(require 'cl-lib)
 
 (defgroup jabber-activity nil
   "Activity tracking options."
@@ -163,6 +162,17 @@ It is called after `jabber-activity-mode-string' and
 (put 'jabber-activity-mode-string 'risky-local-variable t)
 (put 'jabber-activity-count-string 'risky-local-variable t)
 
+;; Global reference declarations
+
+(declare-function jabber-chat-get-buffer "jabber-chat.el" (chat-with))
+(declare-function jabber-muc-get-buffer "jabber-muc.el" (group))
+(declare-function jabber-muc-private-get-buffer "jabber-muc.el"
+                  (group nickname))
+(declare-function jabber-muc-sender-p "jabber-muc.el" (jid))
+(defvar jabber-silent-mode)             ; jabber.el
+
+;;
+
 (defun jabber-activity-make-string-default (jid)
   "Return the nick of the JID.
 If no nick is available, return the user name part of the JID. In
@@ -201,7 +211,7 @@ all strings still are unique and at least
 		#'(lambda (x) (cons x (funcall jabber-activity-make-string x)))
 		jids)
 	       #'(lambda (x y) (string-lessp (cdr x) (cdr y))))))
-    (cl-loop for ((prev-jid . prev) (cur-jid . cur) (next-jid . next))
+    (cl-loop for ((_prev-jid . prev) (cur-jid . cur) (_next-jid . next))
 	  on (cons nil alist)
 	  until (null cur)
 	  collect
@@ -224,7 +234,9 @@ all strings still are unique and at least
       (get-buffer (jabber-muc-get-buffer jid))))
 
 (defun jabber-activity-show-p-default (jid)
-  "Return non-nil if there is an invisible buffer for JID, and JID is not in `jabber-activity-banned'."
+  "Return non-nil if JID should be hidden.
+A JID should be hidden when there is an invisible buffer for JID,
+and JID is not in `jabber-activity-banned'."
   (let ((buffer (jabber-activity-find-buffer-name jid)))
     (and (buffer-live-p buffer)
 	 (not (get-buffer-window buffer 'visible))
@@ -303,14 +315,14 @@ Optional PRESENCE mean personal presence request or alert."
   (ignore-errors
     (jabber-activity-mode-line-update)))
 
-(defun jabber-activity-add (from buffer text proposed-alert)
+(defun jabber-activity-add (from _buffer _text _proposed-alert)
   "Add a JID to mode line when `jabber-activity-show-p'."
   (when (funcall jabber-activity-show-p from)
     (add-to-list 'jabber-activity-jids from)
     (add-to-list 'jabber-activity-personal-jids from)
     (jabber-activity-mode-line-update)))
 
-(defun jabber-activity-add-muc (nick group buffer text proposed-alert)
+(defun jabber-activity-add-muc (_nick group _buffer text _proposed-alert)
   "Add a JID to mode line when `jabber-activity-show-p'."
   (when (funcall jabber-activity-show-p group)
     (add-to-list 'jabber-activity-jids group)
@@ -318,7 +330,7 @@ Optional PRESENCE mean personal presence request or alert."
       (add-to-list 'jabber-activity-personal-jids group))
     (jabber-activity-mode-line-update)))
 
-(defun jabber-activity-presence (who oldstatus newstatus statustext proposed-alert)
+(defun jabber-activity-presence (who _oldstatus newstatus _statustext _proposed-alert)
   "Add a JID to mode line on subscription requests."
   (when (string= newstatus "subscribe")
     (add-to-list 'jabber-activity-jids (symbol-name who))

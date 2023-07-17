@@ -1153,7 +1153,6 @@ interface and do other useful things.
 @cindex autoaway
 @cindex idle
 @cindex xprintidle
-@vindex jabber-autoaway-method
 @vindex jabber-autoaway-methods
 @findex jabber-current-idle-time
 @findex jabber-xprintidle-program

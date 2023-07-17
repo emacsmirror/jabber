@@ -42,6 +42,7 @@
 
 (require 'mailcap)
 (eval-when-compile (require 'cl-lib))
+(require 'jabber-util)
 
 ;;;; Variables
 
@@ -122,7 +123,7 @@ If MIME-TYPE is not specified, try to find it from the image data."
 				(jpeg "image/jpeg")
 				(gif "image/gif")))))))
     (jabber-avatar-compute-size
-     (make-avatar :mime-type mime-type :sha1-sum sha1-sum :base64-data base64-data :bytes bytes))))
+     (make-avatar :mime-type type :sha1-sum sha1-sum :base64-data base64-data :bytes bytes))))
 
 ;; XXX: This function is based on an outdated version of XEP-0084.
 ;; (defun jabber-avatar-from-data-node (data-node)
@@ -175,7 +176,6 @@ If there is no cached image, return nil."
   "Cache the AVATAR."
   (let* ((id (avatar-sha1-sum avatar))
 	 (base64-data (avatar-base64-data avatar))
-	 (mime-type (avatar-mime-type avatar))
 	 (filename (expand-file-name id jabber-avatar-cache-directory)))
     (unless (file-directory-p jabber-avatar-cache-directory)
       (make-directory jabber-avatar-cache-directory t))
@@ -220,8 +220,7 @@ AVATAR may be one of:
 
     (unless (string= hash (get jid-symbol 'avatar-hash))
       (put jid-symbol 'avatar (funcall image))
-      (put jid-symbol 'avatar-hash hash)
-      (jabber-presence-update-roster jid-symbol))))
+      (put jid-symbol 'avatar-hash hash))))
 
 (defun jabber-create-image (file-or-data &optional type data-p)
   "Create an image from FILE-OR-DATA.

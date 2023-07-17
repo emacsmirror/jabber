@@ -23,6 +23,12 @@
 (require 'jabber-menu)
 (require 'jabber-disco)
 
+;; Global reference declarations
+
+(defvar jabber-connections)                ; jabber-core.el
+
+;;
+
 (add-to-list 'jabber-jid-info-menu
 	     (cons "Ping" 'jabber-ping))
 
@@ -44,7 +50,7 @@ TO is full JID.  All connected JIDs is used."
     (jabber-ping-send jc to 'jabber-silent-process-data 'jabber-process-ping "Ping is unsupported")))
 
 ;; called by jabber-process-data
-(defun jabber-process-ping (jc xml-data)
+(defun jabber-process-ping (_jc xml-data)
   "Handle results from ping requests.
 
 JC is the Jabber connection.

@@ -20,10 +20,22 @@
 ;; Boston, MA 02111-1307, USA.
 
 (require 'cl-lib)
+(require 'jabber-core)
+(require 'jabber-util)
+(require 'jabber-xml)
+(require 'jabber-widget)
+(require 'fsm)
+(require 'widget)
 
 (defvar jabber-export-roster-widget nil)
 
 (defvar jabber-import-subscription-p-widget nil)
+
+;; Global reference declarations
+
+(defvar jabber-buffer-connection)       ; jabber-chatbuffer.el
+
+;;
 
 ;;;###autoload
 (defun jabber-export-roster (jc)

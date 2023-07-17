@@ -22,6 +22,16 @@
 (require 'jabber-iq)
 (require 'jabber-widget)
 
+;; Global reference declarations
+
+(declare-function jabber-disconnect-one "jabber-core.el"
+                  (jc &optional dont-redisplay))
+(declare-function jabber-submit-search "jabber-search.el" (&rest _ignore))
+(defvar jabber-buffer-connection)       ; jabber-chatbuffer.el
+(defvar jabber-silent-mode)             ; jabber.el
+
+;;
+
 (add-to-list 'jabber-jid-service-menu
 	     (cons "Register with service" 'jabber-get-register))
 (defun jabber-get-register (jc to)
@@ -98,7 +108,7 @@ obtained from `xml-parse-region'."
     (widget-setup)
     (widget-minor-mode 1)))
 
-(defun jabber-submit-register (&rest ignore)
+(defun jabber-submit-register (&rest _ignore)
   "Submit registration input.  See `jabber-process-register-or-search'."
   (let* ((registerp (plist-get (fsm-get-state-data jabber-buffer-connection) :registerp))
 	 (handler (if registerp
@@ -124,7 +134,7 @@ obtained from `xml-parse-region'."
 
 (defun jabber-process-register-secondtime (jc xml-data closure-data)
   "Receive registration success or failure.
-CLOSURE-DATA is either 'success or 'error.
+CLOSURE-DATA is either \='success or \='error.
 
 JC is the Jabber connection.
 XML-DATA is the parsed tree data from the stream (stanzas)
@@ -137,7 +147,7 @@ obtained from `xml-parse-region'."
   (sit-for 3)
     (jabber-disconnect-one jc))
 
-(defun jabber-remove-register (&rest ignore)
+(defun jabber-remove-register (&rest _ignore)
   "Cancel registration.  See `jabber-process-register-or-search'."
 
   (if (or jabber-silent-mode (yes-or-no-p (concat "Are you sure that you want to cancel your registration to " jabber-submit-to "? ")))

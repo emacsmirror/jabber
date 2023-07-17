@@ -49,12 +49,20 @@
   :group 'jabber-alerts)
 
 (defcustom jabber-libnotify-method (if (featurep 'dbus) 'dbus 'shell)
-  "Specifies the method for libnotify call. Dbus is more faster but require emacs23+"
+  "Specifies the method for libnotify call.
+Dbus is faster but require emacs23+, use shell as a fallback."
+  ;; TODO: why the distinction now that jabber.el requires Emacs version 27.1?
   :type '(choice (const :tag "Shell" shell)
                  (const :tag "D-Bus" dbus))
   :group 'jabber-alerts)
 
 (defvar jabber-libnotify-id 0)
+
+;; Global reference declarations
+
+(declare-function jabber-escape-xml "jabber-xml.el" (string))
+
+;;
 
 (defun jabber-libnotify-next-id ()
   "Return the next notification id."
@@ -69,7 +77,7 @@
                   (or jabber-libnotify-message-header " ")
                   text))))
     ;; Possible errors include not finding the notify-send binary.
-    (condition-case e
+    (condition-case _e
         (cond
          ((eq jabber-libnotify-method 'shell)
           (let ((process-connection-type nil))

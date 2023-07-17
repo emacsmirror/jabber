@@ -55,8 +55,17 @@
 (defvar jabber-keepalive-debug nil
   "Log keepalive traffic when non-nil.")
 
+;; Global reference declarations
+
+(declare-function jabber-send-string "jabber-core.el" (jc string))
+(declare-function jabber-disconnect-one "jabber-core.el"
+                  (jc &optional dont-redisplay))
+(defvar jabber-connections)             ; jabber-core.el
+
+;;
+
 ;;;###autoload
-(defun jabber-keepalive-start (&optional jc)
+(defun jabber-keepalive-start (&optional _jc)
   "Activate keepalive.
 That is, regularly send a ping request to the server, and
 disconnect it if it doesn't answer.  See variable `jabber-keepalive-interval'
@@ -97,7 +106,7 @@ for all accounts regardless of the argument."
     ;; Getting a response at all is.
     (jabber-ping-send c nil 'jabber-keepalive-got-response nil nil)))
 
-(defun jabber-keepalive-got-response (jc &rest args)
+(defun jabber-keepalive-got-response (jc &rest _args)
   (when jabber-keepalive-debug
     (message "%s: got keepalive response from %s"
 	     (current-time-string)
@@ -142,7 +151,7 @@ If you want to verify that the server is able to answer, see
   "Timer object for whitespace pings.")
 
 ;;;###autoload
-(defun jabber-whitespace-ping-start (&optional jc)
+(defun jabber-whitespace-ping-start (&optional _jc)
   "Start sending whitespace pings at regular intervals.
 See `jabber-whitespace-ping-interval'.
 

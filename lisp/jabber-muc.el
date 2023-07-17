@@ -20,7 +20,8 @@
 ;; along with this program; if not, write to the Free Software
 ;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-(require 'jabber-chat)
+(require 'cl-lib)
+
 (require 'jabber-widget)
 (require 'jabber-disco)
 (require 'jabber-muc-nick-coloring)
@@ -29,7 +30,7 @@
 ;; jabber-get-bookmarks and jabber-parse-conference-bookmark):
 (require 'jabber-bookmarks)
 
-(require 'cl-lib)
+(require 'ewoc)
 
 ;;;###autoload
 (defvar *jabber-active-groupchats* nil
@@ -62,6 +63,8 @@ Values are lists of nickname strings.")
 
 (defvar jabber-muc-nickname-history ()
   "Keeps track of previously referred-to nicknames.")
+
+(defvar jabber-muc-print-hook nil "List of MUC alert hooks.")
 
 (defcustom jabber-muc-default-nicknames nil
   "Default nickname for specific MUC rooms."
@@ -162,6 +165,34 @@ Fields available:
 The format is that of `mode-line-format' and `header-line-format'."
   :type 'sexp
   :group 'jabber-chat)
+
+;; Global reference declarations
+
+(declare-function jabber-presence-children "jabber-presence.el" (jc))
+(declare-function jabber-vcard-get "jabber-vcard.el" (jc jid))
+(declare-function jabber-parse-conference-bookmark "jabber-bookmarks.el"
+                  (node))
+;; (declare-function jabber-get-bookmarks "jabber-bookmarks.el"
+;;                   (jc cont &optional refresh))
+;; (declare-function jabber-get-conference-data "jabber-bookmarks.el"
+;;                   (jc conference-jid cont &optional key))
+(declare-function jabber-send-message "jabber-chat.el"
+                  (jc to subject body type))
+(declare-function jabber-maybe-print-rare-time "jabber-chat.el" (node))
+(declare-function jabber-chat-pp "jabber-chat.el" (data))
+(declare-function jabber-chat-mode "jabber-chatbuffer.el" (jc ewoc-pp))
+(defvar jabber-silent-mode)             ; jabber.el
+(defvar jabber-alert-muc-function)      ; jabber-alert.el
+(defvar jabber-body-printers)           ; jabber-chat.el
+(defvar jabber-buffer-connection)       ; jabber-chatbuffer.el
+(defvar jabber-chat-delayed-time-format) ; jabber-chat.el
+(defvar jabber-chat-delayed-time-format) ; jabber-chat.el
+(defvar jabber-chat-ewoc)               ; jabber-chatbuffer.el
+(defvar jabber-chat-printers)           ; jabber-chat.el
+(defvar jabber-chat-time-format)        ; jabber-chat.el
+(defvar jabber-send-function)           ; jabber-console.el
+
+;;
 
 ;;;###autoload
 (defvar jabber-muc-printers '()
@@ -477,7 +508,7 @@ obtained from `xml-parse-region'."
 (defalias 'jabber-groupchat-render-config 'jabber-muc-render-config
   "Deprecated.  See `jabber-muc-render-config' instead.")
 
-(defun jabber-muc-submit-config (&rest ignore)
+(defun jabber-muc-submit-config (&rest _ignore)
   "Submit MUC configuration form."
 
   (jabber-send-iq jabber-buffer-connection jabber-submit-to
@@ -490,7 +521,7 @@ obtained from `xml-parse-region'."
 (defalias 'jabber-groupchat-submit-config 'jabber-muc-submit-config
   "Deprecated.  See `jabber-muc-submit-config' instead.")
 
-(defun jabber-muc-cancel-config (&rest ignore)
+(defun jabber-muc-cancel-config (&rest _ignore)
   "Cancel MUC configuration form."
 
   (jabber-send-iq jabber-buffer-connection jabber-submit-to
@@ -662,17 +693,16 @@ JC is the Jabber connection."
 (defun jabber-muc-print-names (participants)
   "Format and return data in PARTICIPANTS."
   (let ((mlist) (plist) (vlist) (nlist))
-    (mapcar (lambda (x)
-              (let ((role (plist-get (cdr x) 'role)))
-                (cond ((string= role "moderator")
-                       (add-to-list 'mlist x))
-                      ((string= role "participant")
-                       (add-to-list 'plist x))
-                      ((string= role "visitor")
-                       (add-to-list 'vlist x))
-                      ((string= role "none")
-                       (add-to-list 'nlist x)))))
-            participants)
+    (dolist (participant  participants)
+      (let ((role (plist-get (cdr participant) 'role)))
+        (cond ((string= role "moderator")
+               (push participant mlist))
+              ((string= role "participant")
+               (push participant plist))
+              ((string= role "visitor")
+               (push participant vlist))
+              ((string= role "none")
+               (push participant nlist)))))
     (concat
      (apply 'concat "\nModerators:\n" (mapcar 'jabber-muc-format-names mlist))
      (apply 'concat "\nParticipants:\n" (mapcar 'jabber-muc-format-names plist))
@@ -788,7 +818,7 @@ JC is the Jabber connection."
 
 (add-to-list 'jabber-body-printers 'jabber-muc-print-invite)
 
-(defun jabber-muc-print-invite (xml-data who mode)
+(defun jabber-muc-print-invite (xml-data _who mode)
   "Print MUC invitation.
 
 XML-DATA is the parsed tree data from the stream (stanzas)
@@ -857,21 +887,20 @@ obtained from `xml-parse-region'."
 
 JC is the Jabber connection."
   (interactive (list (jabber-read-account)))
-  (let ((nickname (plist-get (fsm-get-state-data jc) :username)))
-    (when (bound-and-true-p jabber-muc-autojoin)
-      (dolist (group jabber-muc-autojoin)
-	(jabber-muc-join jc group (or
-					 (cdr (assoc group jabber-muc-default-nicknames))
-					 (plist-get (fsm-get-state-data jc) :username)))))
-    (jabber-get-bookmarks
-     jc
-     (lambda (jc bookmarks)
-       (dolist (bookmark bookmarks)
-	 (setq bookmark (jabber-parse-conference-bookmark bookmark))
-	 (when (and bookmark (plist-get bookmark :autojoin))
-	   (jabber-muc-join jc (plist-get bookmark :jid)
-				  (or (plist-get bookmark :nick)
-				      (plist-get (fsm-get-state-data jc) :username)))))))))
+  (when (bound-and-true-p jabber-muc-autojoin)
+    (dolist (group jabber-muc-autojoin)
+      (jabber-muc-join jc group (or
+                                 (cdr (assoc group jabber-muc-default-nicknames))
+                                 (plist-get (fsm-get-state-data jc) :username)))))
+  (jabber-get-bookmarks
+   jc
+   (lambda (jc bookmarks)
+     (dolist (bookmark bookmarks)
+       (setq bookmark (jabber-parse-conference-bookmark bookmark))
+       (when (and bookmark (plist-get bookmark :autojoin))
+         (jabber-muc-join jc (plist-get bookmark :jid)
+                          (or (plist-get bookmark :nick)
+                              (plist-get (fsm-get-state-data jc) :username))))))))
 
 ;;;###autoload
 (defun jabber-muc-message-p (message)
@@ -907,7 +936,7 @@ include groupchat invites."
 (add-to-list 'jabber-jid-muc-menu
 	     (cons "Open private chat" 'jabber-muc-private))
 
-(defun jabber-muc-private (jc group nickname)
+(defun jabber-muc-private (_jc group nickname)
   "Open private chat with NICKNAME in GROUP.
 
 JC is the Jabber connection."
@@ -989,7 +1018,7 @@ Return nil if X-MUC is nil."
 	     'face 'jabber-chat-prompt-foreign
 	     'help-echo (concat (format-time-string "On %Y-%m-%d %H:%M:%S" timestamp) " from " nick " in " jabber-group)))))
 
-(defun jabber-muc-system-prompt (&rest ignore)
+(defun jabber-muc-system-prompt (&rest _ignore)
   "Print system prompt for MUC."
   (insert (jabber-propertize
 	   (format-spec jabber-groupchat-prompt-format
@@ -1009,7 +1038,6 @@ Return nil if X-MUC is nil."
 
 JC is the Jabber connection."
   (when (jabber-muc-message-p xml-data)
-    (defvar printers nil)
     (let* ((from (jabber-xml-get-attribute xml-data 'from))
 	   (group (jabber-jid-user from))
 	   (nick (jabber-jid-resource from))
@@ -1020,16 +1048,16 @@ JC is the Jabber connection."
 		   :muc-local)
 		  (t :muc-foreign)))
 	   (body-text (car (jabber-xml-node-children
-			   (car (jabber-xml-get-children
-				 xml-data 'body)))))
+			    (car (jabber-xml-get-children
+				  xml-data 'body)))))
 
-	   (printers (append jabber-muc-printers jabber-chat-printers)))
+	   (jabber-muc-print-hook (append jabber-muc-printers jabber-chat-printers)))
 
       (with-current-buffer (jabber-muc-create-buffer jc group)
 	(jabber-muc-snarf-topic xml-data)
 	;; Call alert hooks only when something is output
 	(when (or error-p
-		  (run-hook-with-args-until-success 'printers xml-data type :printp))
+		  (run-hook-with-args-until-success 'jabber-muc-print-hook xml-data type :printp))
 	  (jabber-maybe-print-rare-time
 	   (ewoc-enter-last jabber-chat-ewoc (list type xml-data :time (current-time))))
 
@@ -1047,7 +1075,8 @@ JC is the Jabber connection."
 
 (defface jabber-muc-presence-dim
   '((t (:foreground "dark grey" :weight light :slant italic)))
-  "face for diminished presence notifications.")
+  "face for diminished presence notifications."
+  :group 'jabber-alerts)
 
 (defcustom jabber-muc-decorate-presence-patterns nil
   "List of regular expressions and face pairs.

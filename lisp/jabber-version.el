@@ -22,11 +22,19 @@
 (require 'jabber-iq)
 (require 'jabber-util)
 (require 'jabber-ourversion)
+(require 'jabber-disco)
+(require 'jabber-menu)
 
 (defcustom jabber-version-show t
   "Show our client version to others.  Acts on loading."
   :type 'boolean
   :group 'jabber)
+
+;; Global reference declarations
+
+;; (defvar jabber-jid-info-menu)           ; jabber-menu.el
+
+;;
 
 (add-to-list 'jabber-jid-info-menu
 	     (cons "Request software version" 'jabber-get-version))
@@ -44,7 +52,7 @@ JC is the Jabber connection."
 		  #'jabber-process-data "Version request failed"))
 
 ;; called by jabber-process-data
-(defun jabber-process-version (jc xml-data)
+(defun jabber-process-version (_jc xml-data)
   "Handle results from jabber:iq:version requests.
 
 JC is the Jabber connection.

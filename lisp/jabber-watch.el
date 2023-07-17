@@ -20,6 +20,7 @@
 ;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 (require 'jabber-util)
+(require 'jabber-alert)
 
 (defcustom jabber-watch-alist nil
   "Alist of buddies for which an extra notification should be sent
@@ -29,8 +30,14 @@ when they come online, with comment strings as values."
   :type '(alist :key-type symbol :value-type string)
   :group 'jabber-watch)
 
+;; Global reference declarations
+
+;; (defvar jabber-presence-hooks)          ; jabber-alert.el
+
+;;
+
 (defun jabber-presence-watch (who oldstatus newstatus
-				  statustext proposed-alert)
+				  _statustext proposed-alert)
   "Send a message if one of your extra-important buddies comes online.
 The buddies are stored in `jabber-watch-alist' and are added and removed by
 calling `jabber-watch-add' and `jabber-watch-remove'."

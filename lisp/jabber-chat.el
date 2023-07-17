@@ -19,10 +19,12 @@
 ;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 (require 'jabber-core)
+(require 'jabber-alert)
 (require 'jabber-chatbuffer)
 (require 'jabber-history)
 (require 'jabber-menu)                  ;we need jabber-jid-chat-menu
 (require 'ewoc)
+(require 'goto-addr)
 (eval-when-compile (require 'cl-lib))
 
 (defgroup jabber-chat nil "chat display options"
@@ -207,6 +209,21 @@ message.
 
 The functions should return a list of XML nodes they want to be
 added to the outgoing message.")
+
+;; Global reference declarations
+
+(declare-function jabber-compose "jabber-compose.el" (jc &optional recipient))
+(declare-function jabber-muc-private-create-buffer "jabber-muc.el"
+                  (jc group nickname))
+(declare-function jabber-muc-print-prompt "jabber-muc.el"
+                  (xml-data &optional local dont-print-nick-p))
+(declare-function jabber-muc-private-print-prompt "jabber-muc.el" (xml-data))
+(declare-function jabber-muc-system-prompt "jabber-muc.el" (&rest _ignore))
+(declare-function jabber-muc-message-p "jabber-muc.el"(message))
+(declare-function jabber-muc-sender-p "jabber-muc.el" (jid))
+(declare-function jabber-muc-private-message-p "jabber-muc.el" (message))
+(defvar jabber-group)                   ; jabber-muc.el
+;;
 
 (defvar jabber-chat-earliest-backlog nil
   "Float-time of earliest backlog entry inserted into buffer.
@@ -570,7 +587,7 @@ obtained from `xml-parse-region'."
       (concat "Error: " (jabber-parse-error the-error))
       'face 'jabber-chat-error))))
 
-(defun jabber-chat-print-subject (xml-data who mode)
+(defun jabber-chat-print-subject (xml-data _who mode)
   "Print subject of given <message/>, if any.
 
 XML-DATA is the parsed tree data from the stream (stanzas)
@@ -626,7 +643,7 @@ obtained from `xml-parse-region'."
 			   ((:local :muc-local) 'jabber-chat-text-local))))))
       t)))
 
-(defun jabber-chat-print-url (xml-data who mode)
+(defun jabber-chat-print-url (xml-data _who mode)
   "Print URLs provided in jabber:x:oob namespace.
 
 XML-DATA is the parsed tree data from the stream (stanzas)
@@ -648,7 +665,7 @@ obtained from `xml-parse-region'."
                     (format "%s <%s>" desc url))))))
     foundp))
 
-(defun jabber-chat-goto-address (xml-data who mode)
+(defun jabber-chat-goto-address (_xml-data _who mode)
   "Call `goto-address' on the newly written text.
 
 XML-DATA is the parsed tree data from the stream (stanzas)

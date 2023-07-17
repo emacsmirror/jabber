@@ -24,6 +24,20 @@
 ;;; Code:
 
 (eval-when-compile (require 'cl-lib))
+(require 'jabber-disco)
+(require 'jabber-core)
+(require 'jabber-core)
+(require 'ewoc)
+
+;; Global reference declarations
+
+(declare-function jabber-chat-get-buffer "jabber-chat.el" (chat-with))
+(declare-function jabber-muc-message-p "jabber-muc.el"(message))
+(defvar jabber-message-chain)           ; jabber-core.el
+(defvar jabber-chat-ewoc)               ; jabber-chatbuffer.el
+(defvar jabber-buffer-connection)       ; jabber-chatbuffer.el
+(defvar jabber-chatting-with)           ; jabber-chat.el
+(defvar jabber-point-insert)            ; jabber-console.el
 
 ;;;; Handling incoming events
 
@@ -52,7 +66,7 @@
   '(add-to-list 'jabber-message-chain #'jabber-rtt-handle-message t))
 
 ;;;###autoload
-(defun jabber-rtt-handle-message (jc xml-data)
+(defun jabber-rtt-handle-message (_jc xml-data)
   ;; We could support this for MUC as well, if useful.
   (when (and (not (jabber-muc-message-p xml-data))
 	     (get-buffer (jabber-chat-get-buffer (jabber-xml-get-attribute xml-data 'from))))
@@ -198,7 +212,9 @@
 This lets the recipient see every change made to the message up
 until it's sent.  The recipient's client needs to implement
 XEP-0301, In-Band Real Time Text."
-  nil " Real-Time" nil
+  :init-value nil
+  :lighter " Real-Time"
+  :keymap nil
   (if (null jabber-rtt-send-mode)
       (progn
 	(remove-hook 'after-change-functions #'jabber-rtt--queue-update t)

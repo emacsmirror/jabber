@@ -20,6 +20,8 @@
 ;; along with this program; if not, write to the Free Software
 ;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+(require 'jabber-chatbuffer)
+
 ;;; User customizations here:
 (defcustom jabber-muc-completion-delimiter ": "
   "String to add to end of completion line."
@@ -55,6 +57,16 @@ Note that \":\" or alike not needed (it appended in other string)"
 
 (defvar *jabber-muc-participant-last-speaking* nil
   "Global alist in form (group . ((member . time-of-last-speaking) ...) ...).")
+
+;; Global reference declarations
+
+(defvar jabber-group)                   ; jabber-muc.el
+(defvar *jabber-active-groupchats*)     ; jabber-muc.el
+(defvar jabber-muc-default-nicknames)   ; jabber-muc.el
+(defvar jabber-muc-participants)        ; jabber-muc.el
+(defvar jabber-chatting-with)           ; jabber-chat.el
+
+;;
 
 (defun jabber-my-nick (&optional group)
   "Return my jabber nick in GROUP."
@@ -96,7 +108,7 @@ Optional argument GROUP to look."
                 (cons (cons group room-activity)
                       *jabber-muc-participant-last-speaking*)))))))
 
-(defun jabber-muc-track-message-time (nick group buffer text &optional title)
+(defun jabber-muc-track-message-time (nick group _buffer text &optional _title)
   "Tracks time of NICK's last speaking in GROUP."
   (when nick
     (let ((time (float-time)))
@@ -107,19 +119,18 @@ Optional argument GROUP to look."
 	   (+ time jabber-muc-personal-message-bonus)
 	 time)))))
 
-  (defun jabber-sort-nicks (nicks group)
-    "Return list of NICKS in GROUP, sorted."
-    (cl-letf* ((times (cdr (assoc group *jabber-muc-participant-last-speaking*)))
-	       ((symbol-function 'fetch-time) (lambda (nick) (or (assoc nick times)
-								 (cons nick 0))))
-	       ((symbol-function 'cmp) (lambda (nt1 nt2)
-					 (let ((t1 (cdr nt1))
-					       (t2 (cdr nt2)))
-					   (if (and (zerop t1) (zerop t2))
-					       (string< (car nt1)
-							(car nt2))
-					     (> t1 t2))))))
-      (mapcar #'car (sort (mapcar #'fetch-time nicks) #'cmp))))
+(defun jabber-sort-nicks (nicks group)
+  "Return list of NICKS in GROUP, sorted."
+  (let ((times (cdr (assoc group *jabber-muc-participant-last-speaking*))))
+    (cl-flet ((fetch-time (nick) (or (assoc nick times) (cons nick 0)))
+              (cmp (nt1 nt2)
+                (let ((t1 (cdr nt1))
+                      (t2 (cdr nt2)))
+                  (if (and (zerop t1) (zerop t2))
+                      (string< (car nt1)
+                               (car nt2))
+                    (> t1 t2)))))
+      (mapcar #'car (sort (mapcar #'fetch-time nicks) #'cmp)))))
 
 (defun jabber-muc-beginning-of-line ()
   "Return position of line begining."

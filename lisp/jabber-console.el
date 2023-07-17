@@ -24,6 +24,8 @@
 
 (require 'jabber-keymap)
 (require 'jabber-util)
+(require 'jabber-truncate)
+(require 'xml)
 (require 'ewoc)
 (require 'sgml-mode) ;we base on this mode to hightlight XML
 
@@ -65,6 +67,13 @@ what kind of chat buffer is being created.")
     (set-keymap-parent map jabber-common-keymap)
     (define-key map "\r" 'jabber-chat-buffer-send)
     map))
+
+;; Global reference declarations
+
+(declare-function jabber-send-string "jabber-core.el" (jc string))
+(defvar jabber-buffer-connection)       ; jabber-chatbuffer.el
+
+;;
 
 (defun jabber-console-create-buffer (jc)
   (with-current-buffer

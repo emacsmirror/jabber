@@ -23,20 +23,21 @@
 
 (eval-when-compile (require 'cl-lib))
 (require 'time-date)
+(require 'jabber-util)
+(require 'jabber-presence)
 
 (defgroup jabber-autoaway nil
   "Change status to away after idleness."
   :group 'jabber)
 
 (defcustom jabber-autoaway-methods
-  (if (fboundp 'jabber-autoaway-method)
-      (list jabber-autoaway-method)
-    (list 'jabber-current-idle-time
-          'jabber-xprintidle-get-idle-time
-          'jabber-termatime-get-idle-time))
+  (list 'jabber-current-idle-time
+        'jabber-xprintidle-get-idle-time
+        'jabber-termatime-get-idle-time)
   "Methods used to keep track of idleness.
 This is a list of functions that takes no arguments, and returns the
 number of seconds since the user was active, or nil on error."
+  :type 'hook
   :group 'jabber-autoaway
   :options '(jabber-current-idle-time
              jabber-xprintidle-get-idle-time
@@ -97,12 +98,23 @@ information about priority."
   "Seconds of idle time the last time we checked.
 This is used to detect whether the user has become unidle.")
 
+;; Global reference declarations
+
+(defvar *jabber-current-status*)        ; jabber.el
+(defvar *jabber-current-show*)          ; jabber.el
+(defvar *jabber-current-priority*)      ; jabber.el
+(defvar jabber-default-show)            ; jabber.el
+(defvar jabber-default-priority)        ; jabber.el
+(defvar jabber-default-status)          ; jabber.el
+
+;;
+
 (defun jabber-autoaway-message (&rest args)
   (when jabber-autoaway-verbose
     (apply #'message args)))
 
 ;;;###autoload
-(defun jabber-autoaway-start (&optional ignored)
+(defun jabber-autoaway-start (&optional _ignored)
   "Start autoaway timer.
 The IGNORED argument is there so you can put this function in
 `jabber-post-connect-hooks'."

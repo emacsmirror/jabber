@@ -19,6 +19,8 @@
 ;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 (require 'cl-lib)
+(require 'fsm)
+(require 'jabber-util)
 
 ;;; This file uses sasl.el from FLIM or Gnus.  If it can't be found,
 ;;; jabber-core.el won't use the SASL functions.
@@ -34,8 +36,15 @@
 
 (require 'jabber-xml)
 
+;; Global reference declarations
+
+(declare-function jabber-send-sexp "jabber-core.el" (jc sexp))
+(defvar jabber-silent-mode)             ; jabber.el
+
+;;
+
 (defun jabber-sasl-start-auth (jc stream-features)
-"Start the SASL authentication mechanism.
+  "Start the SASL authentication mechanism.
 JC is The Jabber Connection.
 STREAM-FEATURES the XML parsed \"stream features\" answer (it is used
 with `jabber-xml-get-chidlren')."

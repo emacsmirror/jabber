@@ -72,6 +72,15 @@
   "The avatar structure for the photo in the vCard edit buffer.")
 (make-variable-buffer-local 'jabber-vcard-photo)
 
+;; Global reference declarations
+
+(declare-function jabber-vcard-avatars-update-current
+                  "jabber-vcard-avatars.el" (jc new-hash))
+(defvar jabber-vcard-fields)            ; jabber-vcard.el
+(defvar jabber-buffer-connection)       ; jabber-chatbuffer.el
+
+;;
+
 (defun jabber-vcard-parse (vcard)
   "Parse the vCard XML structure given in VCARD.
 The top node should be the `vCard' node."
@@ -330,7 +339,7 @@ JC is the Jabber connection."
 					(PCODE . "Post code")
 					(CTRY . "Country")))
 
-(defun jabber-vcard-display (jc xml-data)
+(defun jabber-vcard-display (_jc xml-data)
   "Display received vcard.
 
 JC is the Jabber connection.
@@ -409,7 +418,7 @@ obtained from `xml-parse-region'."
 	      (insert "\n"))
 	  (error (insert "Couldn't display photo\n")))))))
 
-(defun jabber-vcard-do-edit (jc xml-data closure-data)
+(defun jabber-vcard-do-edit (jc xml-data _closure-data)
   (let ((parsed (jabber-vcard-parse (jabber-iq-query xml-data)))
 	start-position)
     (with-current-buffer (get-buffer-create "Edit vcard")
@@ -539,7 +548,7 @@ obtained from `xml-parse-region'."
       (switch-to-buffer (current-buffer))
       (goto-char start-position))))
 
-(defun jabber-vcard-submit (&rest ignore)
+(defun jabber-vcard-submit (&rest _ignore)
   (let ((to-publish (jabber-vcard-reassemble
 		     (mapcar (lambda (entry)
 			       (cons (car entry) (widget-value (cdr entry))))

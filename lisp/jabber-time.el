@@ -20,11 +20,18 @@
 ;; the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 ;; Boston, MA 02110-1301, USA.
 
+(require 'jabber-disco)
 (require 'jabber-iq)
 (require 'jabber-util)
 (require 'jabber-autoaway)
 
 (require 'time-date)
+
+;; Global reference declarations
+
+(defvar jabber-jid-info-menu)           ; jabber-menu.el
+
+;;
 
 (add-to-list 'jabber-jid-info-menu (cons "Request time" 'jabber-get-time))
 
@@ -61,7 +68,7 @@ obtained from `xml-parse-region'."
                   'jabber-silent-process-data "Time request failed"))
 
 ;; called by jabber-process-data
-(defun jabber-process-time (jc xml-data)
+(defun jabber-process-time (_jc xml-data)
   "Handle results from urn:xmpp:time requests.
 
 JC is the Jabber Connection.
@@ -79,7 +86,7 @@ obtained from `xml-parse-region'."
       (format "%s has time: %s %s"
               from (format-time-string "%Y-%m-%d %T" (jabber-parse-time utc)) tzo))))
 
-(defun jabber-process-legacy-time (jc xml-data)
+(defun jabber-process-legacy-time (_jc xml-data)
   "Handle results from jabber:iq:time requests.
 
 JC is the Jabber connection.
@@ -136,7 +143,7 @@ JC is the Jabber connection."
 		  #'jabber-silent-process-data #'jabber-process-last
 		  #'jabber-silent-process-data "Idle time request failed"))
 
-(defun jabber-process-last (jc xml-data)
+(defun jabber-process-last (_jc xml-data)
   "Handle results from jabber:iq:last requests.
 
 JC is the Jabber connection.
@@ -144,8 +151,7 @@ XML-DATA is the parsed tree data from the stream (stanzas)
 obtained from `xml-parse-region'."
   (let* ((from (jabber-xml-get-attribute xml-data 'from))
 	 (query (jabber-iq-query xml-data))
-	 (seconds (jabber-xml-get-attribute query 'seconds))
-	 (message (car (jabber-xml-node-children query))))
+	 (seconds (jabber-xml-get-attribute query 'seconds)))
     (cond
      ((jabber-jid-resource from)
       ;; Full JID: idle time

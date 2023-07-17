@@ -19,8 +19,8 @@
 ;; along with this program; if not, write to the Free Software
 ;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-(require 'jabber-core)
 (require 'jabber-util)
+(require 'jabber-alert)
 (require 'jabber-keymap)
 
 (defvar *jabber-open-info-queries* nil
@@ -55,6 +55,13 @@ These fields are available at this moment:
   :type 'string
   :group 'jabber-browse)
 
+;; Global reference declarations
+
+(declare-function jabber-send-sexp "jabber-core.el"  (jc sexp))
+(defvar jabber-iq-chain)                ; jabber-core.el
+
+;;
+
 (defun jabber-browse-mode ()
 "Jabber browse mode.
 \\{jabber-browse-mode-map}"
@@ -69,7 +76,8 @@ These fields are available at this moment:
 
 (put 'jabber-browse-mode 'mode-class 'special)
 
-(add-to-list 'jabber-iq-chain 'jabber-process-iq)
+(eval-after-load "jabber-core"
+  '(add-to-list 'jabber-iq-chain 'jabber-process-iq))
 (defun jabber-process-iq (jc xml-data)
   "Process an incoming iq stanza.
 
@@ -176,9 +184,7 @@ See section 9.3 of XMPP Core."
 JC is the Jabber connection.
 XML-DATA is the parsed tree data from the stream (stanzas)
 obtained from `xml-parse-region'."
-  (let ((from (or (jabber-xml-get-attribute xml-data 'from) (plist-get (fsm-get-state-data jc) :server)))
-	(xmlns (jabber-iq-xmlns xml-data))
-	(type (jabber-xml-get-attribute xml-data 'type)))
+  (let ((from (or (jabber-xml-get-attribute xml-data 'from) (plist-get (fsm-get-state-data jc) :server))))
     (with-current-buffer (get-buffer-create (format-spec jabber-browse-buffer-format
                                                          (list (cons ?n from))))
       (if (not (eq major-mode 'jabber-browse-mode))

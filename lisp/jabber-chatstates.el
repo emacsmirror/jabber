@@ -23,6 +23,12 @@
 ;;   notifications are handled on receipt.
 
 (require 'cl-lib)
+(require 'jabber-core)
+(require 'jabber-util)
+(require 'jabber-chat)
+(require 'jabber-chatbuffer)
+(require 'jabber-disco)
+(require 'jabber-xml)
 
 (defgroup jabber-chatstates nil
   "Chat state notifications."
@@ -52,7 +58,13 @@ nil - don't send states")
   "Human-readable presentation of chat state information.")
 (make-variable-buffer-local 'jabber-chatstates-message)
 
-;;; INCOMING
+;; Global reference declarations
+
+(defvar jabber-chatstates-composing-sent) ; jabber-chatstates.el
+
+;;
+
+;; INCOMING
 ;;; Code for requesting chat state notifications from others and handling
 ;;; them.
 
@@ -64,7 +76,7 @@ nil - don't send states")
           "")))
 
 (add-hook 'jabber-chat-send-hooks 'jabber-chatstates-when-sending)
-(defun jabber-chatstates-when-sending (text id)
+(defun jabber-chatstates-when-sending (_text _id)
   (jabber-chatstates-update-message)
   (jabber-chatstates-stop-timer)
   (when (and jabber-chatstates-confirm jabber-chatstates-requested)
@@ -85,22 +97,22 @@ It can be sent and cancelled several times.")
 (make-variable-buffer-local 'jabber-chatstates-composing-sent)
 
 (defvar jabber-chatstates-paused-timer nil
-  "Timer that counts down from 'composing state to 'paused.")
+  "Timer that counts down from \='composing state to \='paused.")
 (make-variable-buffer-local 'jabber-chatstates-paused-timer)
 
 (defun jabber-chatstates-stop-timer ()
-  "Stop the 'paused timer."
+  "Stop the \='paused timer."
   (when jabber-chatstates-paused-timer
     (cancel-timer jabber-chatstates-paused-timer)))
 
 (defun jabber-chatstates-kick-timer ()
-  "Start (or restart) the 'paused timer as approriate."
+  "Start (or restart) the \='paused timer as approriate."
   (jabber-chatstates-stop-timer)
   (setq jabber-chatstates-paused-timer
         (run-with-timer 5 nil 'jabber-chatstates-send-paused)))
 
 (defun jabber-chatstates-send-paused ()
-  "Send an 'paused state notification."
+  "Send an \='paused state notification."
   (when (and jabber-chatstates-requested jabber-chatting-with)
     (setq jabber-chatstates-composing-sent nil)
     (jabber-send-sexp-if-connected
@@ -128,7 +140,7 @@ It can be sent and cancelled several times.")
 
 ;;; COMMON
 
-(defun jabber-handle-incoming-message-chatstates (jc xml-data)
+(defun jabber-handle-incoming-message-chatstates (_jc xml-data)
   (when (get-buffer (jabber-chat-get-buffer (jabber-xml-get-attribute xml-data 'from)))
     (with-current-buffer (jabber-chat-get-buffer (jabber-xml-get-attribute xml-data 'from))
       (cond
