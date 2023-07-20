@@ -183,7 +183,7 @@ If you don't have an XMPP account, you need to register one.
 1. Set up your own server, or use a public server. Curated lists of public servers may be found at https://compliance.conversations.im/old/ and https://providers.xmpp.net/.
 
 2. If your server supports In-Band Registration, you can register from Emacs -
-   1. Press =C-u C-x C-j C-c=, or =C-u M-x jabber-connect=​.
+   1. Press =C-u C-x C-j C-c=, or =C-u M-x jabber-connect=.
    2. Enter your desired JID in the form =username@server.tld=.
    3. Fill out and send the registration form.
 
