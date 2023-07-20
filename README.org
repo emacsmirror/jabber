@@ -8,7 +8,7 @@
 :END:
 jabber.el is an [[http://xmpp.org][XMPP]] client for Emacs.  XMPP (also known as 'Jabber') is an IETF-standard federated instant messaging protocol.
 
-To try it out, see the [[#installation][install instructions]].
+To try it out, see the [[#how-to-install][install instructions]].
 
 ** Why XMPP?
 :PROPERTIES:
@@ -139,7 +139,7 @@ See also - [[file:DEV.org#how-to-guides][how-to guides in the developer document
 
 ** How to install jabber.el
 :PROPERTIES:
-:CUSTOM_ID: installation
+:CUSTOM_ID: how-to-install
 :END:
 *** from MELPA
 :PROPERTIES:
