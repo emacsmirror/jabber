@@ -183,21 +183,32 @@ If you don't have an XMPP account, you need to register one.
 
 1. Set up your own server, or use a public server. Curated lists of public servers may be found at https://compliance.conversations.im/old/ and https://providers.xmpp.net/.
 
-2. If your server supports In-Band Registration, you can register from Emacs by typing =C-u M-x jabber-connect=.
-   1. Enter your desired JID in the form =username@server.tld=.
-   2. Fill out and send the registration form.
+2. If your server supports In-Band Registration, you can register from Emacs -
+   1. Press =C-u C-x C-j C-c=, or =C-u M-x jabber-connect=​.
+   2. Enter your desired JID in the form =username@server.tld=.
+   3. Fill out and send the registration form.
 
 3. If your server does not support In-Band Registration, register on the server website.
 
-** How to use jabber.el
+** How to chat with jabber.el
 :PROPERTIES:
-:CUSTOM_ID: how-to-use
+:CUSTOM_ID: how-to-chat
 :END:
-1. Connect to your server by typing =C-x C-j C-c= (=jabber-connect=). Enter your JID and password.
+1. Connect to your server by typing =C-x C-j C-c= (or =M-x jabber-connect=). Enter your JID and password.
 
-# basic operation - switching buffers, chatting, contacts
+2. Open a chat buffer in one of the following ways -
 
-3. If you wish to disconnect, type =M-x jabber-disconnect= or =C-x C-j C-d=.
+   + Place point on a contact in the roster buffer, and hit =RET=.
+
+   + Press =C-x C-j C-j= (=M-x jabber-chat-with=) and enter a JID in the minibuffer.
+
+     - This can also be used to join MUCs.
+
+3. In the chat buffer, type your message and hit =RET= to send it.
+
+   + To insert a newline in your message, press =C-j=.
+
+4. If you wish to disconnect, type =M-x jabber-disconnect= or =C-x C-j C-d=.
 
    * To disconnect just one account, type =M-x jabber-disconnect-one= or =C-u C-x C-j C-d=.
 
