@@ -166,7 +166,7 @@ If all goes well, =jabber.el= commands like =jabber-connect= should now be avail
 3. Add the following lines to your =init.el= -
    #+BEGIN_SRC emacs-lisp
    (add-to-list 'load-path "~/emacs-jabber/lisp/")
-   (load "~/emacs-jabber/jabber-autoloads")
+   (load "~/emacs-jabber/lisp/jabber-autoloads")
    #+END_SRC
    ...and, while still in your =init.el=, type =M-x eval-buffer RET=.
 
