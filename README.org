@@ -45,19 +45,18 @@ Old resources
 :PROPERTIES:
 :CUSTOM_ID: upstream-differences
 :END:
-1. (WIP) Support for [[https://xmpp.org/extensions/xep-0363.html][XEP-0363: HTTP File Upload]]
+1. Support for [[https://xmpp.org/extensions/xep-0363.html][XEP-0363: HTTP File Upload]]
 2. Support for [[https://xmpp.org/extensions/xep-0280.html][XEP-0280: Message Carbons]]
-3. Use of the deprecated =cl= library is almost completely replaced with =cl-lib=
-4. Build system changed from Autotools to a =Makefile=
-5. Lots of cleanup by addressing =checkdoc= and byte-compiler warnings - addition/improvement of docstrings, function/variable declarations, etc
+3. External dependency =hexrgb.el= has been replaced with the =color.el= library built into Emacs
+4. Use of the deprecated =cl= library is almost completely replaced with =cl-lib=
+5. Build system changed from Autotools to a =Makefile=
+6. Lots of cleanup by addressing =checkdoc= and byte-compiler warnings - addition/improvement of docstrings, function/variable declarations, etc
 
 ** Requirements
 :PROPERTIES:
 :CUSTOM_ID: requirements
 :END:
 jabber.el runs on GNU Emacs 27.1 or later.
-
-The file hexrgb.el (http://www.emacswiki.org/emacs/hexrgb.el) used to be required for the MUC nick coloring feature. However, the code depending on it has been reworked to instead use the =color.el= library, which is part of Emacs.
 
 ** Encrypted connections
 :PROPERTIES:
