@@ -1,4 +1,4 @@
-;;; jabber.el --- a minimal jabber client  -*- lexical-binding: t; -*-
+;;; jabber.el --- A minimal Jabber client  -*- lexical-binding: t; -*-
 
 ;; Author: Magnus Henoch <mange@freemail.hu>
 ;; Maintainer: wgreenhouse <wgreenhouse@tilde.club>

@@ -23,6 +23,18 @@ XMPP is the only instant messaging protocol which simultaneously -
 6. is governed and evolved by an open community of users and developers.
 7. has outlasted all competition over 24 years. (Unless IRC counts.)
 
+** Differences from [[https://github.com/legoscia/emacs-jabber][upstream]]
+:PROPERTIES:
+:CUSTOM_ID: upstream-differences
+:END:
+1. More features - [[https://xmpp.org/extensions/xep-0363.html][XEP-0363: HTTP File Upload]], [[https://xmpp.org/extensions/xep-0280.html][XEP-0280: Message Carbons]]
+2. Support for XEmacs and old Emacs versions has been dropped
+3. The external dependency =hexrgb.el= has been replaced with =color.el= (which is part of Emacs)
+4. The deprecated =cl= library has been replaced with =cl-lib=
+5. Build system has been changed from Autotools to a =Makefile=
+6. =lexical-binding= is used in all files
+7. Lots of cleanup by addressing =checkdoc= and byte-compiler warnings - addition/improvement of docstrings, function/variable declarations, etc
+
 ** Community
 :PROPERTIES:
 :CUSTOM_ID: community
@@ -41,23 +53,13 @@ Old resources
   * http://dir.gmane.org/gmane.emacs.jabber.general
 + chat: jabber.el@conference.jabber.se and emacs@conference.jabber.ru (Russian, English)
 
-** Differences from [[https://github.com/legoscia/emacs-jabber][upstream]]
-:PROPERTIES:
-:CUSTOM_ID: upstream-differences
-:END:
-1. Support for [[https://xmpp.org/extensions/xep-0363.html][XEP-0363: HTTP File Upload]]
-2. Support for [[https://xmpp.org/extensions/xep-0280.html][XEP-0280: Message Carbons]]
-3. External dependency =hexrgb.el= has been replaced with the =color.el= library built into Emacs
-4. Use of the deprecated =cl= library is almost completely replaced with =cl-lib=
-5. Build system changed from Autotools to a =Makefile=
-6. Use of =lexical-binding= in all files
-7. Lots of cleanup by addressing =checkdoc= and byte-compiler warnings - addition/improvement of docstrings, function/variable declarations, etc
-
 ** Requirements
 :PROPERTIES:
 :CUSTOM_ID: requirements
 :END:
-jabber.el runs on GNU Emacs 27.1 or later.
+jabber.el requires GNU Emacs 27.1 or later.
+
+Two required libraries, =fsm.el= and =srv.el=, are present in [[file:lisp/jabber-fallback-lib/][lisp/jabber-fallback-lib/]].
 
 ** Encrypted connections
 :PROPERTIES:
