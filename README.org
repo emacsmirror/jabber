@@ -271,20 +271,6 @@ If you don't have an XMPP account, you need to register one.
 
    * To disconnect just one account, type =M-x jabber-disconnect-one= or =C-u C-x C-j C-d=.
 
-* TODO maintenance [16%]
-:PROPERTIES:
-:CUSTOM_ID: maintenance
-:END:
-1. [ ] Satisfy =M-x checkdoc=
-2. [ ] Use =rx= where regular expressions get hairy
-   * [ ] =jabber-jid-username=
-   * [ ] =jabber-jid-server=
-   * [ ] =jabber-jid-resource=
-3. [X] Remove dependency on hexrgb.el (it's not available on MELPA)
-4. [ ] Migrate tests to ERT/Buttercup/etc
-5. [ ] Add Windows support to developer tutorial
-6. [ ] Create testing for tutorial
-
 * Credits
 :PROPERTIES:
 :CUSTOM_ID: credits

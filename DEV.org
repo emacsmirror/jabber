@@ -113,6 +113,8 @@ The following is a brief summary about the stanza processing.
 :PROPERTIES:
 :CUSTOM_ID: how-to-contribute
 :END:
+# TODO - add steps for developers on Windows
+
 1. Fork the repository, then clone your fork.
    #+BEGIN_SRC shell :tangle no
      mkdir ~/git/ && cd ~/git/
