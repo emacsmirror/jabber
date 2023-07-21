@@ -8,8 +8,25 @@
 :END:
 jabber.el is an [[http://xmpp.org][XMPP]] client for Emacs.  XMPP (also known as 'Jabber') is an IETF-standard federated instant messaging protocol.
 
-To try it out, see the [[#installation][install instructions]].
+To try it out, see the [[#how-to-install][install instructions]].
 
+** Why XMPP?
+:PROPERTIES:
+:CUSTOM_ID: why-xmpp
+:END:
+XMPP is the only instant messaging protocol which simultaneously -
+1. has most features you expect from modern chat - offline messages, multi-device support, file transfer, message correction, A/V calls, end-to-end encryption, etc. (Excludes IRC, Tox, Briar, etc.)
+2. is federated, rather than centralized. (Excludes WhatsApp, Discord, Telegram, Signal, ...)
+3. has highly efficient server implementations. A single XMPP server on a Raspberry Pi can serve thousands of users. (Excludes Matrix.)
+4. has a rich ecosystem of FOSS clients and servers. (Excludes WhatsApp, Discord, Telegram, Signal, ...)
+5. is an established IETF standard. (Excludes Matrix, Tox, Telegram, Signal, ...)
+6. is governed and evolved by an open community of users and developers.
+7. has outlasted all competition over 24 years. (Unless IRC counts.)
+
+** Community
+:PROPERTIES:
+:CUSTOM_ID: community
+:END:
 New resources
 + [[https://codeberg.org/emacs-jabber/emacs-jabber/][project page]]
 + chat: [[xmpp:emacs@salas.suchat.org?join][xmpp:emacs@salas.suchat.org?join]] (general Emacs and jabber.el talk)
@@ -28,20 +45,19 @@ Old resources
 :PROPERTIES:
 :CUSTOM_ID: upstream-differences
 :END:
-1. (WIP) Support for [[https://xmpp.org/extensions/xep-0363.html][XEP-0363: HTTP File Upload]]
+1. Support for [[https://xmpp.org/extensions/xep-0363.html][XEP-0363: HTTP File Upload]]
 2. Support for [[https://xmpp.org/extensions/xep-0280.html][XEP-0280: Message Carbons]]
-3. All jabber packages now enable lexical-binding
-4. Use of the deprecated =cl= library has been completely replaced with =cl-lib=
+3. External dependency =hexrgb.el= has been replaced with the =color.el= library built into Emacs
+4. Use of the deprecated =cl= library is almost completely replaced with =cl-lib=
 5. Build system changed from Autotools to a =Makefile=
-6. Lots of cleanup by addressing =checkdoc= and byte-compiler warnings - addition/improvement of docstrings, function/variable declarations, etc
+6. Use of =lexical-binding= in all files
+7. Lots of cleanup by addressing =checkdoc= and byte-compiler warnings - addition/improvement of docstrings, function/variable declarations, etc
 
 ** Requirements
 :PROPERTIES:
 :CUSTOM_ID: requirements
 :END:
 jabber.el runs on GNU Emacs 27.1 or later.
-
-The file hexrgb.el (http://www.emacswiki.org/emacs/hexrgb.el) used to be required for the MUC nick coloring feature. However, the code depending on it has been reworked to instead use the =color.el= library, which is part of Emacs.
 
 ** Encrypted connections
 :PROPERTIES:
@@ -69,7 +85,7 @@ Note that only the connection from you to the server is encrypted; there is no g
 :END:
 To connect to a Jabber server, type =C-x C-j C-c= (or equivalently =M-x jabber-connect-all=) and enter your JID.  With prefix argument, register a new account.  You can set your JID permanently with =M-x jabber-customize=.
 
-Your roster is displayed in a buffer called *-jabber-*.  To disconnect, type =C-x C-j C-d= or =M-x jabber-disconnect=.
+Your roster is displayed in a buffer called =*-jabber-*=.  To disconnect, type =C-x C-j C-d= or =M-x jabber-disconnect=.
 
 You may want to use the menu bar to execute Jabber commands.  To enable the Jabber menu, type =M-x jabber-menu=.
 
@@ -103,6 +119,71 @@ This release of jabber.el contains support for file transfer.  You may need to c
 :END:
 It is possible to make various web browsers pass links starting with "xmpp:" to jabber.el.  In the ideal case, this works right after running "make install".  Otherwise, see the manual, section "XMPP URIs".
 
+** Design
+:PROPERTIES:
+:CUSTOM_ID: design
+:END:
+As a XMPP client, jabber.el is mostly just a face in the crowd, except that it uses buffers where GUI clients have windows.  There is a roster buffer, and to chat with someone you open a chat buffer, and there are buffers for interaction with servers and services.  Then again, jabber.el delivers excellent console performance and customizable hooks (if you have speech synthesizer software, hook it up to your presence alerts).
+
+** Troubleshooting
+:PROPERTIES:
+:CUSTOM_ID: troubleshooting
+:END:
+
+Common connection issues
+
+When a connection fails, there is usually a message in the echo area describing the failure.  If the echo area has already been cleared, check the ~*Messages*~ buffer.
+
+Here are some of the common connection failure modes:
+
+*** No response beyond "Connecting..."
+:PROPERTIES:
+:CUSTOM_ID: no-response-beyond-connecting
+:END:
+
+#+begin_example
+Connecting to <server-name>:5222...
+#+end_example
+
+This is likely a DNS lookup failure.  Check the XMPP server name in ~jabber-account-list~.
+
+*** Host unknown
+:PROPERTIES:
+:CUSTOM_ID: host-unknown
+:END:
+#+begin_example
+<user-jid>: connection lost: ‘Unexpected stanza (error ((xmlns . http://etherx.jabber.org/streams)) (host-unknown ((xmlns . urn:ietf:params:xml:ns:xmpp-streams))) (text ((xmlns . urn:ietf:params:xml:ns:xmpp-streams)) This server does not serve <server-name>))’
+#+end_example
+
+This is likely a server misconfiguration in ~jabber-account-list~, or a misconfiguration of the XMPP server.  Verify the Jabber ID (jid) specified in ~jabber-account-list~.  If that looks correct, ensure the XMPP server responds to the configured port with something like:
+
+Alternatively, check for ~DNS~ ~SRV~ records pointing to an alternate port:
+
+#+begin_src sh
+dig srv _xmpp-client._tcp.ccss.com
+# -or-
+dig srv _xmpps-client._tcp.ccss.com
+#+end_src
+
+Check connectivity to the host and port with a tool like ~nc~ or ~openssl s_client~.
+
+*** Authentication failure
+:PROPERTIES:
+:CUSTOM_ID: authentication-failure
+:END:
+#+begin_example
+STARTTLS encryption required, but disabled/non-functional at our end
+#+end_example
+This likely means that the "gnutls" package is not available.  Check
+#+begin_src emacs-lisp
+(gnutls-available-p)
+#+end_src
+if that returns ~nil~, consult
+#+begin_src emacs-lisp
+(info "(emacs-gnutls) Help For Users")
+#+end_src
+for more details and potential mitigation.
+=======
 ** Further reading
 :PROPERTIES:
 :CUSTOM_ID: further-reading
@@ -117,7 +198,7 @@ See also - [[file:DEV.org#how-to-guides][how-to guides in the developer document
 
 ** How to install jabber.el
 :PROPERTIES:
-:CUSTOM_ID: installation
+:CUSTOM_ID: how-to-install
 :END:
 *** from MELPA
 :PROPERTIES:
@@ -145,7 +226,7 @@ If all goes well, =jabber.el= commands like =jabber-connect= should now be avail
 3. Add the following lines to your =init.el= -
    #+BEGIN_SRC emacs-lisp
    (add-to-list 'load-path "~/emacs-jabber/lisp/")
-   (load "~/emacs-jabber/jabber-autoloads")
+   (load "~/emacs-jabber/lisp/jabber-autoloads")
    #+END_SRC
    ...and, while still in your =init.el=, type =M-x eval-buffer RET=.
 
@@ -153,55 +234,42 @@ If all goes well, =jabber.el= commands like =jabber-connect= should now be avail
 
 To install the Info documentation, copy =jabber.info= to =/usr/local/info= and run ="install-info /usr/local/info/jabber.info"=.
 
-* Troubleshooting
+** How to register an account
 :PROPERTIES:
-:CUSTOM_ID: troubleshooting
+:CUSTOM_ID: how-to-register
 :END:
+If you don't have an XMPP account, you need to register one.
 
-Common connection issues
+1. Set up your own server, or use a public server. Curated lists of public servers may be found at https://compliance.conversations.im/old/ and https://providers.xmpp.net/.
 
-When a connection fails, there is usually a message in the echo area describing the failure.  If the echo area has already been cleared, check the ~*Messages*~ buffer.
+2. If your server supports In-Band Registration, you can register from Emacs -
+   1. Press =C-u C-x C-j C-c=, or =C-u M-x jabber-connect=.
+   2. Enter your desired JID in the form =username@server.tld=.
+   3. Fill out and send the registration form.
 
-Here are some of the common connection failure modes:
+3. If your server does not support In-Band Registration, register on the server website.
 
-*** No response beyond "Connecting..."
+** How to chat with jabber.el
+:PROPERTIES:
+:CUSTOM_ID: how-to-chat
+:END:
+1. Connect to your server by typing =C-x C-j C-c= (or =M-x jabber-connect=). Enter your JID and password.
 
-#+begin_example
-Connecting to <server-name>:5222...
-#+end_example
+2. Open a chat buffer in one of the following ways -
 
-This is likely a DNS lookup failure.  Check the XMPP server name in ~jabber-account-list~.
+   + Place point on a contact in the roster buffer, and hit =RET=.
 
-*** Host unknown
-#+begin_example
-<user-jid>: connection lost: ‘Unexpected stanza (error ((xmlns . http://etherx.jabber.org/streams)) (host-unknown ((xmlns . urn:ietf:params:xml:ns:xmpp-streams))) (text ((xmlns . urn:ietf:params:xml:ns:xmpp-streams)) This server does not serve <server-name>))’
-#+end_example
+   + Press =C-x C-j C-j= (=M-x jabber-chat-with=) and enter a JID in the minibuffer.
 
-This is likely a server misconfiguration in ~jabber-account-list~, or a misconfiguration of the XMPP server.  Verify the Jabber ID (jid) specified in ~jabber-account-list~.  If that looks correct, ensure the XMPP server responds to the configured port with something like:
+     - This can also be used to join MUCs.
 
-Alternatively, check for ~DNS~ ~SRV~ records pointing to an alternate port:
+3. In the chat buffer, type your message and hit =RET= to send it.
 
-#+begin_src sh
-dig srv _xmpp-client._tcp.ccss.com
-# -or-
-dig srv _xmpps-client._tcp.ccss.com
-#+end_src
+   + To insert a newline in your message, press =C-j=.
 
-Check connectivity to the host and port with a tool like ~nc~ or ~openssl s_client~.
+4. If you wish to disconnect, type =M-x jabber-disconnect= or =C-x C-j C-d=.
 
-*** Authentication failure
-#+begin_example
-STARTTLS encryption required, but disabled/non-functional at our end
-#+end_example
-This likely means that the "gnutls" package is not available.  Check
-#+begin_src emacs-lisp
-(gnutls-available-p)
-#+end_src
-if that returns ~nil~, consult
-#+begin_src emacs-lisp
-(info "(emacs-gnutls) Help For Users")
-#+end_src
-for more details and potential mitigation.
+   * To disconnect just one account, type =M-x jabber-disconnect-one= or =C-u C-x C-j C-d=.
 
 * TODO maintenance [16%]
 :PROPERTIES:

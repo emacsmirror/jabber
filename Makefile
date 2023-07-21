@@ -6,7 +6,7 @@ dev: autoload compile lint
 
 autoload:
 	emacs -q --batch --eval="(require 'package)" \
-	--eval="(package-generate-autoloads \"jabber\" default-directory)"
+	--eval="(package-generate-autoloads \"jabber\" \"lisp\")"
 
 compile:
 	emacs -q -Q -L . -L lisp -L lisp/jabber-fallback-lib --batch \
