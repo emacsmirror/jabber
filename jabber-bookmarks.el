@@ -1,4 +1,4 @@
-;; jabber-bookmarks.el - bookmarks according to XEP-0048
+;;; jabber-bookmarks.el --- bookmarks according to XEP-0048  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2007, 2008 - Magnus Henoch - mange@freemail.hu
 
@@ -18,10 +18,12 @@
 ;; along with this program; if not, write to the Free Software
 ;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+;;; Code:
+
 (require 'jabber-private)
 (require 'jabber-widget)
 
-(require 'cl)
+(require 'cl-lib)
 
 (defvar jabber-bookmarks (make-hash-table :test 'equal)
   "Mapping from full JIDs to bookmarks.
@@ -44,18 +46,15 @@ immediately, and return nil if it is not in the cache."
          cache conference-jid key)))
     (jabber-get-bookmarks 
      jc
-     (lexical-let ((conference-jid conference-jid)
-		   (key key)
-		   (cont cont))
-       (lambda (jc result)
-	 (let ((entry (jabber-get-conference-data-internal result conference-jid key)))
-	   (funcall cont jc entry)))))))
+     (lambda (jc result)
+       (let ((entry (jabber-get-conference-data-internal result conference-jid key)))
+	 (funcall cont jc entry))))))
 
 (defun jabber-get-conference-data-internal (result conference-jid key)
-  (let ((entry (dolist (node result)
+  (let ((entry (cl-dolist (node result)
 		(when (and (eq (jabber-xml-node-name node) 'conference)
 			   (string= (jabber-xml-get-attribute node 'jid) conference-jid))
-		  (return (jabber-parse-conference-bookmark node))))))
+		  (cl-return (jabber-parse-conference-bookmark node))))))
     (if key
 	(plist-get entry key)
       entry)))
@@ -84,8 +83,7 @@ If REFRESH is non-nil, always fetch bookmarks."
   (let ((bookmarks (gethash (jabber-connection-bare-jid jc) jabber-bookmarks)))
     (if (and (not refresh) bookmarks)
 	(run-with-timer 0 nil cont jc (when (listp bookmarks) bookmarks))
-      (lexical-let* ((cont cont)
-		     (callback (lambda (jc result) (jabber-get-bookmarks-1 jc result cont))))
+      (let* ((callback (lambda (jc result) (jabber-get-bookmarks-1 jc result cont))))
 	(jabber-private-get jc 'storage "storage:bookmarks"
 			    callback callback)))))
 
@@ -128,11 +126,11 @@ on success or failure, respectively."
   (setq bookmarks
 	(mapcar
 	 (lambda (e)
-	   (case (jabber-xml-node-name e)
-	     (url
+	   (pcase (jabber-xml-node-name e)
+	     ('url
 	      (list 'url (or (jabber-xml-get-attribute e 'url) "")
 		    (or (jabber-xml-get-attribute e 'name) "")))
-	     (conference
+	     ('conference
 	      (list 'conference
 		    (or (jabber-xml-get-attribute e 'jid) "")
 		    (or (jabber-xml-get-attribute e 'name) "")
@@ -188,19 +186,19 @@ on success or failure, respectively."
     (switch-to-buffer (current-buffer))
     (goto-char (point-min))))
 
-(defun jabber-bookmarks-submit (&rest ignore)
+(defun jabber-bookmarks-submit (&rest _ignore)
   (let ((bookmarks (widget-value (cdr (assq 'bookmarks jabber-widget-alist)))))
     (setq bookmarks
 	  (mapcar
 	   (lambda (entry)
-	     (case (car entry)
-	       (url
-		(destructuring-bind (symbol url name) entry
+	     (pcase (car entry)
+	       ('url
+		(pcase-let ((`(,_symbol ,url ,name) entry))
 		  `(url ((url . ,url)
 			 (name . ,name)))))
-	       (conference
-		(destructuring-bind (symbol jid name autojoin nick password)
-		    entry
+	       ('conference
+		(pcase-let ((`(,_symbol ,jid ,name ,autojoin ,nick ,password)
+		             entry))
 		  `(conference ((jid . ,jid)
 				(name . ,name)
 				(autojoin . ,(if autojoin
@@ -219,26 +217,26 @@ on success or failure, respectively."
      'jabber-report-success "Storing bookmarks"
      'jabber-report-success "Storing bookmarks")))
 
-(defun jabber-bookmarks-import (&rest ignore)
+(defun jabber-bookmarks-import (&rest _ignore)
   (let* ((value (widget-value (cdr (assq 'bookmarks jabber-widget-alist))))
 	 (conferences (mapcar 
-		       'cdr
-		       (remove-if-not
+		       #'cdr
+		       (cl-remove-if-not
 			(lambda (entry)
 			  (eq (car entry) 'conference))
 			value))))
     (dolist (default-nickname jabber-muc-default-nicknames)
-      (destructuring-bind (muc-jid . nick) default-nickname
-	(let ((entry (assoc muc-jid conferences)))
-	  (if entry
-	      (setf (fourth entry) nick)
-	    (setq entry (list muc-jid "" nil nick ""))
-	    (push entry conferences)
-	    (push (cons 'conference entry) value)))))
+      (pcase-let* ((`(,muc-jid . ,nick) default-nickname)
+	           (entry (assoc muc-jid conferences)))
+	(if entry
+	    (setf (nth 3 entry) nick)
+	  (setq entry (list muc-jid "" nil nick ""))
+	  (push entry conferences)
+	  (push (cons 'conference entry) value))))
     (dolist (autojoin jabber-muc-autojoin)
       (let ((entry (assoc autojoin conferences)))
 	(if entry
-	    (setf (third entry) t)
+	    (setf (nth 2 entry) t)
 	  (setq entry (list autojoin "" t "" ""))
 	  (push (cons 'conference entry) value))))
     (widget-value-set (cdr (assq 'bookmarks jabber-widget-alist)) value)

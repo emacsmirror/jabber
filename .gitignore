@@ -9,7 +9,8 @@ configure
 elc-stamp
 *.tar*
 *.zip
-jabber-autoloads.el
+/jabber-autoloads.el
+/jabber-pkg.el
 jabber-ourversion.el
 jabber.info
 emacs-jabber.schemas

@@ -1,4 +1,4 @@
-;; jabber-awesome.el - emacs-jabber interface to awesome and naughty
+;;; jabber-awesome.el --- emacs-jabber interface to awesome and naughty  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2009 - Evgenii Terechkov - evg@altlinux.org
 
@@ -28,7 +28,7 @@
 (defun jabber-awesome-message (text &optional title)
   "Show MSG in Awesome"
   ;; Possible errors include not finding the awesome binary.
-  (condition-case e
+  (condition-case nil
       (let ((process-connection-type))
         (shell-command-to-string (format "echo 'naughty.notify({text = \"%s\" %s})' | awesome-client -"
 					 (or title text) jabber-awesome-args))

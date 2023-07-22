@@ -1,4 +1,4 @@
-;; jabber-disco.el - service discovery functions
+;;; jabber-disco.el --- service discovery functions  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
 ;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
@@ -111,7 +111,7 @@ See JEP-0030."
       ;; No such node
       (jabber-signal-error "cancel" 'item-not-found))))
 
-(defun jabber-disco-return-client-info (&optional jc xml-data)
+(defun jabber-disco-return-client-info (&optional _jc _xml-data)
   `(
     ;; If running under a window system, this is
     ;; a GUI client.  If not, it is a console client.
@@ -222,7 +222,7 @@ Call CALLBACK with JC and CLOSURE-DATA as first and second
 arguments and result as third argument when result is available.
 On success, result is (IDENTITIES FEATURES), where each identity is [\"name\"
 \"category\" \"type\"], and each feature is a string.
-On error, result is the error node, recognizable by (eq (car result) 'error).
+On error, result is the error node, recognizable by (eq (car result) \\='error).
 
 If CALLBACK is nil, just fetch data.  If FORCE is non-nil,
 invalidate cache and get fresh data."
@@ -283,7 +283,7 @@ arguments and items result as third argument when result is
 available.
 On success, result is a list of items, where each
 item is [\"name\" \"jid\" \"node\"] (some values may be nil).
-On error, result is the error node, recognizable by (eq (car result) 'error).
+On error, result is the error node, recognizable by (eq (car result) \\='error).
 
 If CALLBACK is nil, just fetch data.  If FORCE is non-nil,
 invalidate cache and get fresh data."
@@ -397,7 +397,7 @@ Return (IDENTITIES FEATURES), or nil if not in cache."
 	 (c (jabber-xml-path xml-data '(("http://jabber.org/protocol/caps" . "c")))))
     (when (and (null type) c)
       (jabber-xml-let-attributes
-	  (ext hash node ver) c
+	  (_ext hash node ver) c
 	(cond
 	 (hash
 	  ;; If the <c/> element has a hash attribute, it follows the
@@ -422,15 +422,15 @@ Return (IDENTITIES FEATURES), or nil if not in cache."
 	    (setf (cdr resource-entry) new-resource-plist)
 	  (push (cons resource new-resource-plist) (get symbol 'resources))))
 
-      (flet ((request-disco-info
-	      ()
-	      (jabber-send-iq
-	       jc jid
-	       "get"
-	       `(query ((xmlns . "http://jabber.org/protocol/disco#info")
-			(node . ,(concat node "#" ver))))
-	       #'jabber-process-caps-info-result (list hash node ver)
-	       #'jabber-process-caps-info-error (list hash node ver))))
+      (cl-flet ((request-disco-info
+	          ()
+	          (jabber-send-iq
+	           jc jid
+	           "get"
+	           `(query ((xmlns . "http://jabber.org/protocol/disco#info")
+			    (node . ,(concat node "#" ver))))
+		   #'jabber-process-caps-info-result (list hash node ver)
+		   #'jabber-process-caps-info-error (list hash node ver))))
 	(cond
 	 ((and (consp cache-entry)
 	       (floatp (car cache-entry)))
@@ -439,7 +439,7 @@ Return (IDENTITIES FEATURES), or nil if not in cache."
 	      ;; We asked someone about this hash less than 10 seconds ago.
 	      ;; Let's add the new JID to the entry, just in case that
 	      ;; doesn't work out.
-	      (pushnew jid (cdr cache-entry) :test #'string=)
+	      (cl-pushnew jid (cdr cache-entry) :test #'string=)
 	    ;; We asked someone about it more than 10 seconds ago.
 	    ;; They're probably not going to answer.  Let's ask
 	    ;; this contact about it instead.
@@ -456,18 +456,18 @@ Return (IDENTITIES FEATURES), or nil if not in cache."
 	  (puthash (cons jid nil) cache-entry jabber-disco-info-cache)))))))
 
 (defun jabber-process-caps-info-result (jc xml-data closure-data)
-  (destructuring-bind (hash node ver) closure-data
-    (let* ((key (cons hash ver))
-	   (query (jabber-iq-query xml-data))
-	   (verification-string (jabber-caps-ver-string query hash)))
-      (if (string= ver verification-string)
-	  ;; The hash is correct; save info.
-	  (puthash key (jabber-disco-parse-info xml-data) jabber-caps-cache)
-	;; The hash is incorrect.
-	(jabber-caps-try-next jc hash node ver)))))
+  (pcase-let* ((`(,hash ,node ,ver) closure-data)
+	       (key (cons hash ver))
+	       (query (jabber-iq-query xml-data))
+	       (verification-string (jabber-caps-ver-string query hash)))
+    (if (string= ver verification-string)
+	;; The hash is correct; save info.
+	(puthash key (jabber-disco-parse-info xml-data) jabber-caps-cache)
+      ;; The hash is incorrect.
+      (jabber-caps-try-next jc hash node ver))))
 
-(defun jabber-process-caps-info-error (jc xml-data closure-data)
-  (destructuring-bind (hash node ver) closure-data
+(defun jabber-process-caps-info-error (jc _xml-data closure-data)
+  (pcase-let ((`(,hash ,node ,ver) closure-data))
     (jabber-caps-try-next jc hash node ver)))
 
 (defun jabber-caps-try-next (jc hash node ver)
@@ -499,7 +499,7 @@ Return (IDENTITIES FEATURES), or nil if not in cache."
 	   (disco-features (mapcar (lambda (f) (jabber-xml-get-attribute f 'var))
 			     (jabber-xml-get-children query 'feature)))
 	   (maybe-forms (jabber-xml-get-children query 'x))
-	   (forms (remove-if-not
+	   (forms (cl-remove-if-not
 		   (lambda (x)
 		     ;; Keep elements that are forms and have a FORM_TYPE,
 		     ;; according to XEP-0128.

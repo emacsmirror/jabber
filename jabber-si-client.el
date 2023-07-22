@@ -1,4 +1,4 @@
-;; jabber-si-client.el - send stream requests, by JEP-0095
+;;; jabber-si-client.el --- send stream requests, by JEP-0095  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2004 - Magnus Henoch - mange@freemail.hu
 
@@ -18,6 +18,8 @@
 ;; along with this program; if not, write to the Free Software
 ;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+;;; Code:
+
 (require 'jabber-iq)
 (require 'jabber-feature-neg)
 
@@ -32,7 +34,7 @@ See `jabber-si-stream-methods'.
 MIME-TYPE is the MIME type to specify.
 Returns the SID."
 
-  (let ((sid (apply 'format "emacs-sid-%d.%d.%d" (current-time))))
+  (let ((sid (apply #'format "emacs-sid-%d.%d.%d" (current-time))))
     (jabber-send-iq jc jid "set"
 		    `(si ((xmlns . "http://jabber.org/protocol/si")
 			  (id . ,sid)
@@ -43,7 +45,7 @@ Returns the SID."
 			 (feature ((xmlns . "http://jabber.org/protocol/feature-neg"))
 				  ,(jabber-fn-encode (list
 						      (cons "stream-method"
-							    (mapcar 'car jabber-si-stream-methods)))
+							    (mapcar #'car jabber-si-stream-methods)))
 						     'request)))
 		    #'jabber-si-initiate-process (cons profile-function sid)
 		    ;; XXX: use other function here?

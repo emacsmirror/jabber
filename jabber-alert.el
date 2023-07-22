@@ -1,4 +1,4 @@
-;; jabber-alert.el - alert hooks
+;;; jabber-alert.el --- alert hooks  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2003, 2004, 2005, 2007, 2008 - Magnus Henoch - mange@freemail.hu
 ;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
@@ -21,7 +21,7 @@
 
 (require 'jabber-util)
 
-(require 'cl)
+(require 'cl-lib)
 
 (defgroup jabber-alerts nil "auditory and visual alerts for jabber events"
   :group 'jabber)
@@ -44,8 +44,7 @@ other uses, see `jabber-message-hooks'."
 	     jabber-message-echo
 	     jabber-message-switch
 	     jabber-message-display
-	     jabber-message-scroll)
-  :group 'jabber-alerts)
+	     jabber-message-scroll))
 
 (defvar jabber-message-hooks nil
   "Internal hooks run when a new message arrives.
@@ -64,8 +63,7 @@ should be displayed.
 The provided hooks displaying a text message get it from this function,
 and show no message if it returns nil.  Other hooks do what they do
 every time."
-  :type 'function
-  :group 'jabber-alerts)
+  :type 'function)
 
 (defcustom jabber-alert-muc-hooks '(jabber-muc-echo jabber-muc-scroll)
   "Hooks run when a new MUC message arrives.
@@ -82,8 +80,7 @@ not have to call it themselves."
 	     jabber-muc-echo
 	     jabber-muc-switch
 	     jabber-muc-display
-	     jabber-muc-scroll)
-  :group 'jabber-alerts)
+	     jabber-muc-scroll))
 
 (defvar jabber-muc-hooks '()
   "Internal hooks run when a new MUC message arrives.
@@ -102,8 +99,7 @@ nil if no message should be displayed.
 The provided hooks displaying a text message get it from this function,
 and show no message if it returns nil.  Other hooks do what they do
 every time."
-  :type 'function
-  :group 'jabber-alerts)
+  :type 'function)
 
 (defcustom jabber-alert-presence-hooks 
   '(jabber-presence-echo)
@@ -121,8 +117,7 @@ one of \"subscribe\", \"unsubscribe\", \"subscribed\" and
 	     jabber-presence-wave
 	     jabber-presence-switch
 	     jabber-presence-display
-	     jabber-presence-echo)
-  :group 'jabber-alerts)
+	     jabber-presence-echo))
 
 (defvar jabber-presence-hooks '(jabber-presence-watch)
   "Internal hooks run when a user's presence changes.
@@ -141,8 +136,7 @@ if no message should be displayed.
 
 The provided hooks displaying a text message get it from this function.
 All hooks refrain from action if this function returns nil."
-  :type 'function
-  :group 'jabber-alerts)
+  :type 'function)
 
 (defcustom jabber-alert-info-message-hooks '(jabber-info-display jabber-info-echo)
   "Hooks run when an info request is completed.
@@ -157,8 +151,7 @@ Third argument is PROPOSED-ALERT, containing the string returned by
 	     jabber-info-wave
 	     jabber-info-echo
 	     jabber-info-switch
-	     jabber-info-display)
-  :group 'jabber-alerts)
+	     jabber-info-display))
 
 (defvar jabber-info-message-hooks '()
   "Internal hooks run when an info request is completed.
@@ -172,57 +165,48 @@ except that it's not meant to be customized by the user.")
 
 Arguments are WHAT, a symbol telling the kind of info request completed,
 and BUFFER, a buffer containing the result."
-  :type 'function
-  :group 'jabber-alerts)
+  :type 'function)
 
 (defcustom jabber-info-message-alist
   '((roster . "Roster display updated")
     (browse . "Browse request completed"))
   "Alist for info alert messages, used by `jabber-info-default-message'."
   :type '(alist :key-type symbol :value-type string
-		:options (roster browse))
-  :group 'jabber-alerts)
+		:options (roster browse)))
 
 (defcustom jabber-alert-message-wave ""
   "A sound file to play when a message arrived.
 See `jabber-alert-message-wave-alist' if you want other sounds
 for specific contacts."
-  :type 'file
-  :group 'jabber-alerts)
+  :type 'file)
 
 (defcustom jabber-alert-message-wave-alist nil
   "Specific sound files for messages from specific contacts.
 The keys are regexps matching the JID, and the values are sound
 files."
-  :type '(alist :key-type regexp :value-type file)
-  :group 'jabber-alerts)
+  :type '(alist :key-type regexp :value-type file))
 
 (defcustom jabber-alert-muc-wave ""
   "a sound file to play when a MUC message arrived"
-  :type 'file
-  :group 'jabber-alerts)
+  :type 'file)
 
 (defcustom jabber-alert-presence-wave ""
   "a sound file to play when a presence arrived"
-  :type 'file
-  :group 'jabber-alerts)
+  :type 'file)
 
 (defcustom jabber-alert-presence-wave-alist nil
   "Specific sound files for presence from specific contacts.
 The keys are regexps matching the JID, and the values are sound
 files."
-  :type '(alist :key-type regexp :value-type file)
-  :group 'jabber-alerts)
+  :type '(alist :key-type regexp :value-type file))
 
 (defcustom jabber-alert-info-wave ""
   "a sound file to play when an info query result arrived"
-  :type 'file
-  :group 'jabber-alerts)
+  :type 'file)
 
 (defcustom jabber-play-sound-file 'play-sound-file
   "a function to call to play alert sound files"
-  :type 'function
-  :group 'jabber-alerts)
+  :type 'function)
 
 (defmacro define-jabber-alert (name docstring function)
   "Define a new family of external alert hooks.
@@ -239,7 +223,7 @@ lambda form or a quoted function name.
 The created functions are inserted as options in Customize.
 
 Examples:
-\(define-jabber-alert foo \"Send foo alert\" 'foo-message)
+\(define-jabber-alert foo \"Send foo alert\" \\='foo-message)
 \(define-jabber-alert bar \"Send bar alert\" 
   (lambda (msg) (bar msg 42)))"
   (let ((sn (symbol-name name)))
@@ -248,35 +232,35 @@ Examples:
 	  (pres (intern (format "jabber-presence-%s" sn)))
 	  (info (intern (format "jabber-info-%s" sn))))
       `(progn
-	 (defun ,msg (from buffer text title)
+	 (defun ,msg (_from _buffer text title)
 	   ,docstring
 	   (when title
 	     (funcall ,function text title)))
-	 (pushnew (quote ,msg) (get 'jabber-alert-message-hooks 'custom-options))
-	 (defun ,muc (nick group buffer text title)
+	 (cl-pushnew (quote ,msg) (get 'jabber-alert-message-hooks 'custom-options))
+	 (defun ,muc (_nick _group _buffer text title)
 	   ,docstring
 	   (when title
 	     (funcall ,function text title)))
-	 (pushnew (quote ,muc) (get 'jabber-alert-muc-hooks 'custom-options))
-	 (defun ,pres (who oldstatus newstatus statustext title)
+	 (cl-pushnew (quote ,muc) (get 'jabber-alert-muc-hooks 'custom-options))
+	 (defun ,pres (_who _oldstatus _newstatus statustext title)
 	   ,docstring
 	   (when title
 	     (funcall ,function statustext title)))
-	 (pushnew (quote ,pres) (get 'jabber-alert-presence-hooks 'custom-options))
-	 (defun ,info (infotype buffer text)
+	 (cl-pushnew (quote ,pres) (get 'jabber-alert-presence-hooks 'custom-options))
+	 (defun ,info (_infotype _buffer text)
 	   ,docstring
 	   (when text
 	     (funcall ,function text)))
-	 (pushnew (quote ,info) (get 'jabber-alert-info-message-hooks 'custom-options))))))
+	 (cl-pushnew (quote ,info) (get 'jabber-alert-info-message-hooks 'custom-options))))))
 
 ;; Alert hooks
 (define-jabber-alert echo "Show a message in the echo area"
   (lambda (text &optional title) (message "%s" (or title text))))
 (define-jabber-alert beep "Beep on event"
-  (lambda (&rest ignore) (beep)))
+  (lambda (&rest _ignore) (beep)))
 
 ;; Message alert hooks
-(defun jabber-message-default-message (from buffer text)
+(defun jabber-message-default-message (from buffer _text)
   (when (or jabber-message-alert-same-buffer
 	    (not (memq (selected-window) (get-buffer-window-list buffer))))
     (if (jabber-muc-sender-p from)
@@ -287,37 +271,35 @@ Examples:
 
 (defcustom jabber-message-alert-same-buffer t
   "If nil, don't display message alerts for the current buffer."
-  :type 'boolean
-  :group 'jabber-alerts)
+  :type 'boolean)
 
 (defcustom jabber-muc-alert-self nil
   "If nil, don't display MUC alerts for your own messages."
-  :type 'boolean
-  :group 'jabber-alerts)
+  :type 'boolean)
 
-(defun jabber-message-wave (from buffer text title)
+(defun jabber-message-wave (from _buffer _text title)
   "Play the wave file specified in `jabber-alert-message-wave'"
   (when title
     (let* ((case-fold-search t)
 	   (bare-jid (jabber-jid-user from))
-	   (sound-file (or (dolist (entry jabber-alert-message-wave-alist)
+	   (sound-file (or (cl-dolist (entry jabber-alert-message-wave-alist)
 			     (when (string-match (car entry) bare-jid)
-			       (return (cdr entry))))
+			       (cl-return (cdr entry))))
 			   jabber-alert-message-wave)))
       (unless (equal sound-file "")
 	(funcall jabber-play-sound-file sound-file)))))
 
-(defun jabber-message-display (from buffer text title)
+(defun jabber-message-display (_from buffer _text title)
   "Display the buffer where a new message has arrived."
   (when title
     (display-buffer buffer)))
 
-(defun jabber-message-switch (from buffer text title)
+(defun jabber-message-switch (_from buffer _text title)
   "Switch to the buffer where a new message has arrived."
   (when title
     (switch-to-buffer buffer)))
 
-(defun jabber-message-scroll (from buffer text title)
+(defun jabber-message-scroll (_from buffer _text _title)
   "Scroll all nonselected windows where the chat buffer is displayed."
   ;; jabber-chat-buffer-display will DTRT with point in the buffer.
   ;; But this change will not take effect in nonselected windows.
@@ -339,7 +321,7 @@ Examples:
 	(set-window-point w new-point-max)))))
 
 ;; MUC alert hooks
-(defun jabber-muc-default-message (nick group buffer text)
+(defun jabber-muc-default-message (nick group buffer _text)
   (when (or jabber-message-alert-same-buffer
 	    (not (memq (selected-window) (get-buffer-window-list buffer))))
     (if nick
@@ -349,29 +331,29 @@ Examples:
 						group)))
       (format "Message in %s" (jabber-jid-displayname group)))))
 
-(defun jabber-muc-wave (nick group buffer text title)
+(defun jabber-muc-wave (_nick _group _buffer _text title)
   "Play the wave file specified in `jabber-alert-muc-wave'"
   (when title
     (funcall jabber-play-sound-file jabber-alert-muc-wave)))
 
-(defun jabber-muc-display (nick group buffer text title)
+(defun jabber-muc-display (_nick _group buffer _text title)
   "Display the buffer where a new message has arrived."
   (when title
     (display-buffer buffer)))
 
-(defun jabber-muc-switch (nick group buffer text title)
+(defun jabber-muc-switch (_nick _group buffer _text title)
   "Switch to the buffer where a new message has arrived."
   (when title
     (switch-to-buffer buffer)))
 
-(defun jabber-muc-scroll (nick group buffer text title)
+(defun jabber-muc-scroll (_nick _group buffer _text _title)
   "Scroll buffer even if it is in an unselected window."
   (jabber-message-scroll nil buffer nil nil))
 
 ;; Presence alert hooks
-(defun jabber-presence-default-message (who oldstatus newstatus statustext)
+(defun jabber-presence-default-message (who oldstatus newstatus _statustext)
   "This function returns nil if OLDSTATUS and NEWSTATUS are equal, and in other
-cases a string of the form \"'name' (jid) is now NEWSTATUS (STATUSTEXT)\".
+cases a string of the form \"\\='name\\=' (jid) is now NEWSTATUS (STATUSTEXT)\".
 
 This function is not called directly, but is the default for
 `jabber-alert-presence-message-function'."
@@ -406,14 +388,14 @@ This function is not called directly, but can be used as the value for
   (when (get-buffer (jabber-chat-get-buffer (jabber-xml-get-attribute xml-data 'from)))
     (jabber-presence-default-message who oldstatus newstatus statustext)))
 
-(defun jabber-presence-wave (who oldstatus newstatus statustext proposed-alert)
+(defun jabber-presence-wave (who _oldstatus _newstatus _statustext proposed-alert)
   "Play the wave file specified in `jabber-alert-presence-wave'"
   (when proposed-alert
     (let* ((case-fold-search t)
 	   (bare-jid (symbol-name who))
-	   (sound-file (or (dolist (entry jabber-alert-presence-wave-alist)
+	   (sound-file (or (cl-dolist (entry jabber-alert-presence-wave-alist)
 			     (when (string-match (car entry) bare-jid)
-			       (return (cdr entry))))
+			       (cl-return (cdr entry))))
 			   jabber-alert-presence-wave)))
       (unless (equal sound-file "")
 	(funcall jabber-play-sound-file sound-file)))))
@@ -423,12 +405,12 @@ This function is not called directly, but can be used as the value for
 ;;   "Update the roster display by calling `jabber-display-roster'"
 ;;   (jabber-display-roster))
 
-(defun jabber-presence-display (who oldstatus newstatus statustext proposed-alert)
+(defun jabber-presence-display (_who _oldstatus _newstatus _statustext proposed-alert)
   "Display the roster buffer"
   (when proposed-alert
     (display-buffer jabber-roster-buffer)))
 
-(defun jabber-presence-switch (who oldstatus newstatus statustext proposed-alert)
+(defun jabber-presence-switch (_who _oldstatus _newstatus _statustext proposed-alert)
   "Switch to the roster buffer"
   (when proposed-alert
     (switch-to-buffer jabber-roster-buffer)))
@@ -443,17 +425,17 @@ This function uses `jabber-info-message-alist' to find a message."
   (concat (cdr (assq infotype jabber-info-message-alist))
 	  " (buffer "(buffer-name buffer) ")"))
 
-(defun jabber-info-wave (infotype buffer proposed-alert)
+(defun jabber-info-wave (_infotype _buffer proposed-alert)
   "Play the wave file specified in `jabber-alert-info-wave'"
   (if proposed-alert
       (funcall jabber-play-sound-file jabber-alert-info-wave)))
 
-(defun jabber-info-display (infotype buffer proposed-alert)
+(defun jabber-info-display (_infotype buffer proposed-alert)
   "Display buffer of completed request"
   (when proposed-alert
     (display-buffer buffer)))
 
-(defun jabber-info-switch (infotype buffer proposed-alert)
+(defun jabber-info-switch (_infotype buffer proposed-alert)
   "Switch to buffer of completed request"
   (when proposed-alert
     (switch-to-buffer buffer)))
@@ -467,7 +449,7 @@ This function uses `jabber-info-message-alist' to find a message."
        (defun ,func (nick group buffer text title)
          (if (jabber-muc-looks-like-personal-p text group)
              (,name nick group buffer text title)))
-       (pushnew (quote ,func) (get 'jabber-alert-muc-hooks 'custom-options)))))
+       (cl-pushnew (quote ,func) (get 'jabber-alert-muc-hooks 'custom-options)))))
   )
 
 (define-personal-jabber-alert jabber-muc-beep)
@@ -480,34 +462,33 @@ This function uses `jabber-info-message-alist' to find a message."
   "Specific phrases to autoanswer on specific message.
 The keys are regexps matching the incoming message text, and the values are
 autoanswer phrase."
-  :type '(alist :key-type regexp :value-type string)
-  :group 'jabber-alerts)
+  :type '(alist :key-type regexp :value-type string))
 
 (defun jabber-autoanswer-answer (from buffer text proposed-alert)
   "Answer automaticaly when incoming text matches first element
 of `jabber-autoanswer-alist'"
   (when (and from buffer text proposed-alert jabber-autoanswer-alist)
     (let ((message
-           (dolist (entry jabber-autoanswer-alist)
+           (cl-dolist (entry jabber-autoanswer-alist)
              (when (string-match (car entry) text)
-               (return (cdr entry))))))
+               (cl-return (cdr entry))))))
       (if message
           (jabber-chat-send jabber-buffer-connection message)))
     ))
-(pushnew 'jabber-autoanswer-answer (get 'jabber-alert-message-hooks 'custom-options))
+(cl-pushnew 'jabber-autoanswer-answer (get 'jabber-alert-message-hooks 'custom-options))
 
 (defun jabber-autoanswer-answer-muc (nick group buffer text proposed-alert)
   "Answer automaticaly when incoming text matches first element
 of `jabber-autoanswer-alist'"
   (when (and nick group buffer text proposed-alert jabber-autoanswer-alist)
     (let ((message
-           (dolist (entry jabber-autoanswer-alist)
+           (cl-dolist (entry jabber-autoanswer-alist)
              (when (string-match (car entry) text)
-               (return (cdr entry))))))
+               (cl-return (cdr entry))))))
       (if message
           (jabber-chat-send jabber-buffer-connection message)))
     ))
-(pushnew 'jabber-autoanswer-answer-muc (get 'jabber-alert-muc-hooks 'custom-options))
+(cl-pushnew 'jabber-autoanswer-answer-muc (get 'jabber-alert-muc-hooks 'custom-options))
 
 (provide 'jabber-alert)
 

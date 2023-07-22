@@ -1,4 +1,4 @@
-;; jabber-ft-server.el - handle incoming file transfers, by JEP-0096
+;;; jabber-ft-server.el --- handle incoming file transfers, by JEP-0096  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2003, 2004, 2007 - Magnus Henoch - mange@freemail.hu
 ;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
@@ -38,7 +38,7 @@
 		   'jabber-ft-accept
 		   'jabber-ft-server-connected))
 
-(defun jabber-ft-accept (jc xml-data)
+(defun jabber-ft-accept (_jc xml-data)
   "Receive IQ stanza containing file transfer request, ask user"
   (let* ((from (jabber-xml-get-attribute xml-data 'from))
 	 (query (jabber-iq-query xml-data))
@@ -47,11 +47,11 @@
 	 (file (car (jabber-xml-get-children query 'file)))
 	 (name (jabber-xml-get-attribute file 'name))
 	 (size (jabber-xml-get-attribute file 'size))
-	 (date (jabber-xml-get-attribute file 'date))
+	 ;; (date (jabber-xml-get-attribute file 'date))
 	 (md5-hash (jabber-xml-get-attribute file 'hash))
 	 (desc (car (jabber-xml-node-children
 		     (car (jabber-xml-get-children file 'desc)))))
-	 (range (car (jabber-xml-get-children file 'range))))
+	 ) ;; (range (car (jabber-xml-get-children file 'range)))
     (unless (and name size)
       ;; both name and size must be present
       (jabber-signal-error "modify" 'bad-request))
@@ -91,7 +91,7 @@
     ;; to support range, return something sensible here
     nil))
 
-(defun jabber-ft-server-connected (jc jid sid send-data-function)
+(defun jabber-ft-server-connected (_jc _jid _sid send-data-function)
   ;; We don't really care about the send-data-function.  But if it's
   ;; a string, it means that we have no connection.
   (if (stringp send-data-function)
@@ -99,7 +99,7 @@
     ;; On success, we just return our data receiving function.
     'jabber-ft-data))
 
-(defun jabber-ft-data (jc jid sid data)
+(defun jabber-ft-data (_jc jid sid data)
   "Receive chunk of transferred file."
   (let ((buffer (cdr (assoc (list sid jid) jabber-ft-sessions))))
     (with-current-buffer buffer

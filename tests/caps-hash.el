@@ -1,4 +1,4 @@
-;; Test disco hash against examples in XEP-0115
+;; Test disco hash against examples in XEP-0115  -*- lexical-binding: t; -*-
 
 (message "Let's go")
 (condition-case e

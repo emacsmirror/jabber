@@ -1,4 +1,4 @@
-;;; jabber-private.el --- jabber:iq:private API by JEP-0049
+;;; jabber-private.el --- jabber:iq:private API by JEP-0049  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2005  Magnus Henoch
 
@@ -18,6 +18,8 @@
 ;; along with GNU Emacs; see the file COPYING.  If not, write to
 ;; the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 ;; Boston, MA 02111-1307, USA.
+
+;;; Code:
 
 ;;;###autoload
 (defun jabber-private-get (jc node-name namespace success-callback error-callback)

@@ -1,4 +1,4 @@
-;; jabber-muc.el - advanced MUC functions
+;;; jabber-muc.el --- advanced MUC functions  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2010 - Kirill A. Korinskiy - catap@catap.ru
 ;; Copyright (C) 2003, 2004, 2007, 2008, 2009, 2010 - Magnus Henoch - mange@freemail.hu
@@ -20,6 +20,8 @@
 ;; along with this program; if not, write to the Free Software
 ;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+;;; Code:
+
 (require 'jabber-chat)
 (require 'jabber-widget)
 (require 'jabber-disco)
@@ -29,7 +31,7 @@
 ;; jabber-get-bookmarks and jabber-parse-conference-bookmark):
 (require 'jabber-bookmarks)
 
-(require 'cl)
+(require 'cl-lib)
 
 ;;;###autoload
 (defvar *jabber-active-groupchats* nil
@@ -190,7 +192,7 @@ This function is idempotent."
 
     (set (make-local-variable 'jabber-group) group)
     (make-local-variable 'jabber-muc-topic)
-    (setq jabber-send-function 'jabber-muc-send)
+    (setq jabber-send-function #'jabber-muc-send)
     (setq header-line-format jabber-muc-header-line-format)
     (current-buffer)))
 
@@ -212,7 +214,7 @@ This function is idempotent."
       (jabber-chat-mode jc #'jabber-chat-pp))
 
     (set (make-local-variable 'jabber-chatting-with) (concat group "/" nickname))
-    (setq jabber-send-function 'jabber-chat-send)
+    (setq jabber-send-function #'jabber-chat-send)
     (setq header-line-format jabber-muc-private-header-line-format)
 
     (current-buffer)))
@@ -255,8 +257,8 @@ this JID.  Suitable to call when the connection is closed."
 	  (when (string= bare-jid
 			 (jabber-connection-bare-jid jabber-buffer-connection))
 	    (setq *jabber-active-groupchats*
-		  (delete* room *jabber-active-groupchats*
-			   :key #'car :test #'string=))
+		  (cl-delete room *jabber-active-groupchats*
+			     :key #'car :test #'string=))
 	    (setq jabber-muc-participants
 		  (delq room-entry jabber-muc-participants))))))))
 
@@ -431,7 +433,7 @@ enter it."
 		  #'jabber-process-data #'jabber-muc-render-config
 		  #'jabber-process-data "MUC configuration request failed"))
 
-(defalias 'jabber-groupchat-get-config 'jabber-muc-get-config
+(defalias 'jabber-groupchat-get-config #'jabber-muc-get-config
   "Deprecated. See `jabber-muc-get-config' instead.")
 
 (defun jabber-muc-render-config (jc xml-data)
@@ -458,10 +460,10 @@ enter it."
     (widget-setup)
     (widget-minor-mode 1))))
 
-(defalias 'jabber-groupchat-render-config 'jabber-muc-render-config
+(defalias 'jabber-groupchat-render-config #'jabber-muc-render-config
   "Deprecated. See `jabber-muc-render-config' instead.")
 
-(defun jabber-muc-submit-config (&rest ignore)
+(defun jabber-muc-submit-config (&rest _ignore)
   "Submit MUC configuration form."
 
   (jabber-send-iq jabber-buffer-connection jabber-submit-to
@@ -471,10 +473,10 @@ enter it."
 		  #'jabber-report-success "MUC configuration"
 		  #'jabber-report-success "MUC configuration"))
 
-(defalias 'jabber-groupchat-submit-config 'jabber-muc-submit-config
+(defalias 'jabber-groupchat-submit-config #'jabber-muc-submit-config
   "Deprecated. See `jabber-muc-submit-config' instead.")
 
-(defun jabber-muc-cancel-config (&rest ignore)
+(defun jabber-muc-cancel-config (&rest _ignore)
   "Cancel MUC configuration form."
 
   (jabber-send-iq jabber-buffer-connection jabber-submit-to
@@ -483,7 +485,7 @@ enter it."
 			  (x ((xmlns . "jabber:x:data") (type . "cancel"))))
 		  nil nil nil nil))
 
-(defalias 'jabber-groupchat-cancel-config 'jabber-muc-cancel-config
+(defalias 'jabber-groupchat-cancel-config #'jabber-muc-cancel-config
   "Deprecated. See `jabber-muc-cancel-config' instead.")
 
 (add-to-list 'jabber-jid-muc-menu
@@ -508,11 +510,11 @@ groupchat buffer."
     (jabber-disco-get-info jc group nil #'jabber-muc-join-2
 			   (list group nickname popup))))
 
-(defalias 'jabber-groupchat-join 'jabber-muc-join
+(defalias 'jabber-groupchat-join #'jabber-muc-join
   "Deprecated. Use `jabber-muc-join' instead.")
 
 (defun jabber-muc-join-2 (jc closure result)
-  (destructuring-bind (group nickname popup) closure
+  (pcase-let ((`(,group ,nickname ,popup) closure))
     (let* ( ;; Either success...
 	  (identities (car result))
 	  (features (cadr result))
@@ -542,9 +544,9 @@ groupchat buffer."
       ;; error, give the chat room the benefit of the doubt.  (Needed
       ;; for ejabberd's mod_irc, for example)
       (when (or condition
-                (find "conference" (if (sequencep identities) identities nil)
-                      :key (lambda (i) (aref i 1))
-                      :test #'string=))
+                (cl-find "conference" (if (sequencep identities) identities nil)
+                         :key (lambda (i) (aref i 1))
+                         :test #'string=))
         (let ((password
 	     ;; Is the room password-protected?
 	     (when (member "muc_passwordprotected" features)
@@ -554,7 +556,7 @@ groupchat buffer."
 
 	(jabber-muc-join-3 jc group nickname password popup))))))
 
-(defalias 'jabber-groupchat-join-2 'jabber-muc-join-2
+(defalias 'jabber-groupchat-join-2 #'jabber-muc-join-2
   "Deprecated. See `jabber-muc-join-2' instead.")
 
 (defun jabber-muc-join-3 (jc group nickname password popup)
@@ -582,7 +584,7 @@ groupchat buffer."
     (let ((buffer (jabber-muc-create-buffer jc group)))
       (switch-to-buffer buffer))))
 
-(defalias 'jabber-groupchat-join-3 'jabber-muc-join-3
+(defalias 'jabber-groupchat-join-3 #'jabber-muc-join-3
   "Deprecated. See `jabber-muc-join-3' instead.")
 
 (defun jabber-muc-read-my-nickname (jc group &optional default)
@@ -600,7 +602,7 @@ groupchat buffer."
 (add-to-list 'jabber-jid-muc-menu
 	     (cons "Change nickname" 'jabber-muc-nick))
 
-(defalias 'jabber-muc-nick 'jabber-muc-join)
+(defalias 'jabber-muc-nick #'jabber-muc-join)
 
 (add-to-list 'jabber-jid-muc-menu
 	     (cons "Leave groupchat" 'jabber-muc-leave))
@@ -614,7 +616,7 @@ groupchat buffer."
 		      `(presence ((to . ,(format "%s/%s" group (cdr whichgroup)))
 				  (type . "unavailable"))))))
 
-(defalias 'jabber-groupchat-leave 'jabber-muc-leave
+(defalias 'jabber-groupchat-leave #'jabber-muc-leave
   "Deprecated. Use `jabber-muc-leave' instead.")
 
 (add-to-list 'jabber-jid-muc-menu
@@ -638,23 +640,22 @@ groupchat buffer."
 
 (defun jabber-muc-print-names (participants)
   "Format and return data in PARTICIPANTS."
-  (let ((mlist) (plist) (vlist) (nlist))
-    (mapcar (lambda (x)
-              (let ((role (plist-get (cdr x) 'role)))
-                (cond ((string= role "moderator")
-                       (add-to-list 'mlist x))
-                      ((string= role "participant")
-                       (add-to-list 'plist x))
-                      ((string= role "visitor")
-                       (add-to-list 'vlist x))
-                      ((string= role "none")
-                       (add-to-list 'nlist x)))))
-            participants)
+  (let ((mlist) (plist) (vlist) (nlist) dummy)
+    (mapc (lambda (x)
+            (let ((role (plist-get (cdr x) 'role)))
+              (cl-pushnew x (pcase role
+                              ("moderator"   mlist)
+                              ("participant" plist)
+                              ("visitor"     vlist)
+                              ("none"        nlist)
+                              (_ dummy))
+                          :test #'equal)))
+          participants)
     (concat
-     (apply 'concat "\nModerators:\n" (mapcar 'jabber-muc-format-names mlist))
-     (apply 'concat "\nParticipants:\n" (mapcar 'jabber-muc-format-names plist))
-     (apply 'concat "\nVisitors:\n" (mapcar 'jabber-muc-format-names vlist))
-     (apply 'concat "\nNones:\n" (mapcar 'jabber-muc-format-names nlist)))
+     (apply #'concat "\nModerators:\n" (mapcar #'jabber-muc-format-names mlist))
+     (apply #'concat "\nParticipants:\n" (mapcar #'jabber-muc-format-names plist))
+     (apply #'concat "\nVisitors:\n" (mapcar #'jabber-muc-format-names vlist))
+     (apply #'concat "\nNones:\n" (mapcar #'jabber-muc-format-names nlist)))
     ))
 
 (add-to-list 'jabber-jid-muc-menu
@@ -755,9 +756,9 @@ group, else it is a JID."
 
 (add-to-list 'jabber-body-printers 'jabber-muc-print-invite)
 
-(defun jabber-muc-print-invite (xml-data who mode)
+(defun jabber-muc-print-invite (xml-data _who mode)
   "Print MUC invitation"
-  (dolist (x (jabber-xml-get-children xml-data 'x))
+  (cl-dolist (x (jabber-xml-get-children xml-data 'x))
     (when (string= (jabber-xml-get-attribute x 'xmlns) "http://jabber.org/protocol/muc#user")
       (let ((invitation (car (jabber-xml-get-children x 'invite))))
 	(when invitation
@@ -775,9 +776,10 @@ group, else it is a JID."
 	      (insert "\n\n")
 
 	      (let ((action
-		     `(lambda (&rest ignore) (interactive)
-			(jabber-muc-join jabber-buffer-connection ,group
-					       (jabber-muc-read-my-nickname jabber-buffer-connection ,group)))))
+		     (lambda (&rest _ignore) (interactive)
+		       (jabber-muc-join jabber-buffer-connection group
+					(jabber-muc-read-my-nickname
+					 jabber-buffer-connection group)))))
 		(if (fboundp 'insert-button)
 		    (insert-button "Accept"
 				   'action action)
@@ -791,20 +793,20 @@ group, else it is a JID."
 		(insert "\t")
 
 		(let ((action
-		       `(lambda (&rest ignore) (interactive)
-			  (let ((reason
-				 (jabber-read-with-input-method
-				  "Reason: ")))
-			    (jabber-send-sexp
-			     jabber-buffer-connection
-			     (list 'message
-				   (list (cons 'to ,group))
-				   (list 'x
-					 (list (cons 'xmlns "http://jabber.org/protocol/muc#user"))
-					 (list 'decline
-					       (list (cons 'to ,inviter))
-					       (unless (zerop (length reason))
-						 (list 'reason nil reason))))))))))
+		       (lambda (&rest _ignore) (interactive)
+			 (let ((reason
+				(jabber-read-with-input-method
+				 "Reason: ")))
+			   (jabber-send-sexp
+			    jabber-buffer-connection
+			    `(message
+			      ((to . ,group))
+			      (x
+			       ((xmlns . "http://jabber.org/protocol/muc#user"))
+			       (decline
+				((to . ,inviter))
+				,(unless (zerop (length reason))
+				   `(reason nil ,reason))))))))))
 		  (if (fboundp 'insert-button)
 		      (insert-button "Decline"
 				     'action action)
@@ -814,12 +816,12 @@ group, else it is a JID."
 		      (insert (jabber-propertize "Decline"
 						 'keymap keymap
 						 'face 'highlight))))))))
-	  (return t))))))
+	  (cl-return t))))))
 
 (defun jabber-muc-autojoin (jc)
   "Join rooms specified in account bookmarks and global `jabber-muc-autojoin'."
   (interactive (list (jabber-read-account)))
-  (let ((nickname (plist-get (fsm-get-state-data jc) :username)))
+  ;; (let ((nickname (plist-get (fsm-get-state-data jc) :username)))
     (when (bound-and-true-p jabber-muc-autojoin)
       (dolist (group jabber-muc-autojoin)
 	(jabber-muc-join jc group (or
@@ -833,7 +835,7 @@ group, else it is a JID."
 	 (when (and bookmark (plist-get bookmark :autojoin))
 	   (jabber-muc-join jc (plist-get bookmark :jid)
 				  (or (plist-get bookmark :nick)
-				      (plist-get (fsm-get-state-data jc) :username)))))))))
+				      (plist-get (fsm-get-state-data jc) :username)))))))) ;; )
 
 ;;;###autoload
 (defun jabber-muc-message-p (message)
@@ -869,7 +871,7 @@ include groupchat invites."
 (add-to-list 'jabber-jid-muc-menu
 	     (cons "Open private chat" 'jabber-muc-private))
 
-(defun jabber-muc-private (jc group nickname)
+(defun jabber-muc-private (_jc group nickname)
   "Open private chat with NICKNAME in GROUP."
   (interactive
    (jabber-muc-argument-list
@@ -880,7 +882,7 @@ include groupchat invites."
   "Return non-nil if PRESENCE is presence from groupchat."
   (let ((from (jabber-xml-get-attribute presence 'from))
 	(type (jabber-xml-get-attribute presence 'type))
-	(muc-marker (find-if 
+	(muc-marker (cl-find-if 
 		     (lambda (x) (equal (jabber-xml-get-attribute x 'xmlns)
 				   "http://jabber.org/protocol/muc#user"))
 		     (jabber-xml-get-children presence 'x))))
@@ -894,9 +896,9 @@ include groupchat invites."
   "Parse X-MUC in the muc#user namespace and return a plist.
 Return nil if X-MUC is nil."
   ;; XXX: parse <actor/> and <reason/> tags?  or maybe elsewhere?
-  (apply 'nconc (mapcar (lambda (prop) (list (car prop) (cdr prop)))
-			(jabber-xml-node-attributes
-			 (car (jabber-xml-get-children x-muc 'item))))))
+  (apply #'nconc (mapcar (lambda (prop) (list (car prop) (cdr prop)))
+			 (jabber-xml-node-attributes
+			  (car (jabber-xml-get-children x-muc 'item))))))
 
 (defun jabber-muc-print-prompt (xml-data &optional local dont-print-nick-p)
   "Print MUC prompt for message in XML-DATA."
@@ -949,7 +951,7 @@ Return nil if X-MUC is nil."
 	     'face 'jabber-chat-prompt-foreign
 	     'help-echo (concat (format-time-string "On %Y-%m-%d %H:%M:%S" timestamp) " from " nick " in " jabber-group)))))
 
-(defun jabber-muc-system-prompt (&rest ignore)
+(defun jabber-muc-system-prompt (&rest _ignore)
   "Print system prompt for MUC."
   (insert (jabber-propertize
 	   (format-spec jabber-groupchat-prompt-format
@@ -962,7 +964,7 @@ Return nil if X-MUC is nil."
 	   'face 'jabber-chat-prompt-system
 	   'help-echo (format-time-string "System message on %Y-%m-%d %H:%M:%S"))))
 
-(add-to-list 'jabber-message-chain 'jabber-muc-process-message)
+(add-to-list 'jabber-message-chain #'jabber-muc-process-message)
 
 (defun jabber-muc-process-message (jc xml-data)
   "If XML-DATA is a groupchat message, handle it as such."
@@ -986,7 +988,10 @@ Return nil if X-MUC is nil."
 	(jabber-muc-snarf-topic xml-data)
 	;; Call alert hooks only when something is output
 	(when (or error-p
-		  (run-hook-with-args-until-success 'printers xml-data type :printp))
+		  (let ((res nil))
+		    (while (and printers (not res))
+		      (setq res (funcall (pop printers) xml-data type :printp)))
+		    res))
 	  (jabber-maybe-print-rare-time
 	   (ewoc-enter-last jabber-chat-ewoc (list type xml-data :time (current-time))))
 
@@ -1005,7 +1010,7 @@ Return nil if X-MUC is nil."
 (defun jabber-muc-process-presence (jc presence)
   (let* ((from (jabber-xml-get-attribute presence 'from))
 	 (type (jabber-xml-get-attribute presence 'type))
-	 (x-muc (find-if 
+	 (x-muc (cl-find-if 
 		 (lambda (x) (equal (jabber-xml-get-attribute x 'xmlns)
 			       "http://jabber.org/protocol/muc#user"))
 		 (jabber-xml-get-children presence 'x)))

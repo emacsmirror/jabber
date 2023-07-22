@@ -1,10 +1,13 @@
-;; jabber.el - a minimal jabber client
+;;; jabber.el --- A minimal Jabber client  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
 ;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
 
 ;; SSL - Support, mostly inspired by Gnus
 ;; Copyright (C) 2005 - Georg Lehner - jorge@magma.com.ni
+
+;; Version: 0
+;; Package-Requires: ()
 
 ;; This file is a part of jabber.el.
 
@@ -250,4 +253,4 @@ Contents of process buffers might be useful for debugging."
 
 (provide 'jabber)
 
-;;; arch-tag: 5145153e-4d19-4dc2-800c-b1282feb155d
+;;; jabber.el ends here.

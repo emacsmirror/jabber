@@ -1,4 +1,4 @@
-;; jabber-ahc.el - Ad-Hoc Commands by JEP-0050
+;; jabber-ahc.el - Ad-Hoc Commands by JEP-0050  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
 ;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
@@ -87,7 +87,7 @@ access allowed.  nil means open for everyone."
 		     (plist (cdr command)))
 		 (let ((acl (plist-get plist 'acl))
 		       (name (plist-get plist 'name))
-		       (func (plist-get plist 'func)))
+		       ) ;; (func (plist-get plist 'func))
 		   (when (or (not (functionp acl))
 			     (funcall acl jc jid))
 		     `(item ((name . ,name)
@@ -203,7 +203,10 @@ access allowed.  nil means open for everyone."
 			   children
 			 (cons (intern default-action) children)))))))
 	      (dolist (button-title button-titles)
-		(widget-create 'push-button :notify `(lambda (&rest ignore) (jabber-ahc-submit (quote ,button-title))) (symbol-name button-title))
+		(widget-create 'push-button
+		               :notify (lambda (&rest _ignore)
+		                         (jabber-ahc-submit button-title))
+		               (symbol-name button-title))
 		(widget-insert "\t")))
 	    (widget-insert "\n"))))
 

@@ -1,4 +1,4 @@
-;; jabber-socks5.el - SOCKS5 bytestreams by JEP-0065
+;;; jabber-socks5.el --- SOCKS5 bytestreams by JEP-0065  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2003, 2004, 2007 - Magnus Henoch - mange@freemail.hu
 ;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
@@ -19,6 +19,8 @@
 ;; along with this program; if not, write to the Free Software
 ;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+;;; Code:
+
 (require 'jabber-iq)
 (require 'jabber-disco)
 (require 'jabber-si-server)
@@ -26,7 +28,7 @@
 
 ;; jabber-core will require fsm for us
 (require 'jabber-core)
-(eval-when-compile (require 'cl))
+(eval-when-compile (require 'cl-lib))
 
 (defvar jabber-socks5-pending-sessions nil
   "List of pending sessions.
@@ -88,7 +90,7 @@ proxies have answered."
 		  #'jabber-socks5-process-proxy-response (list callback t)
 		  #'jabber-socks5-process-proxy-response (list callback nil)))
 
-(defun jabber-socks5-process-proxy-response (jc xml-data closure-data)
+(defun jabber-socks5-process-proxy-response (_jc xml-data closure-data)
   "Process response from proxy query."
   (let* ((query (jabber-iq-query xml-data))
 	 (from (jabber-xml-get-attribute xml-data 'from))
@@ -99,7 +101,7 @@ proxies have answered."
 	(setq jabber-socks5-proxies-data
 	      (delq existing-entry jabber-socks5-proxies-data))))
 
-    (destructuring-bind (callback successp) closure-data
+    (pcase-let ((`(,callback ,successp) closure-data))
       (when successp
 	(setq jabber-socks5-proxies-data
 	      (cons (cons from streamhosts)
@@ -150,13 +152,13 @@ set; the target waits for one."
     (jabber-disco-get-items jc
 			    server
 			    nil
-			    (lambda (jc fsm result) 
+			    (lambda (_jc fsm result) 
 			      (fsm-send-sync fsm (cons :items result)))
 			    fsm))
   ;; Spend no more than five seconds looking for a proxy.
   (list state-data 5))
 
-(define-state jabber-socks5 seek-proxies (fsm state-data event callback)
+(define-state jabber-socks5 seek-proxies (fsm state-data event _callback)
   "Collect disco results, looking for a bytestreams proxy."
   ;; We put the number of outstanding requests as :remaining-info in
   ;; the state-data plist.
@@ -171,11 +173,11 @@ set; the target waits for one."
       ;; Each entry is ["name" "jid" "node"].  We send a disco info
       ;; request to everything without a node.
       (when (null (aref entry 2))
-	(lexical-let ((jid (aref entry 1)))
+	(let ((jid (aref entry 1)))
 	  (jabber-disco-get-info 
 	   (plist-get state-data :jc)
 	   jid nil
-	   (lambda (jc fsm result)
+	   (lambda (_jc fsm result)
 	     (fsm-send-sync fsm (list :info jid result)))
 	   fsm))))
     ;; Remember number of requests sent.  But if none, we just go on.
@@ -188,15 +190,15 @@ set; the target waits for one."
     (fsm-debug-output "got disco event")
     ;; Count the response.
     (plist-put state-data :remaining-info (1- (plist-get state-data :remaining-info)))
-    (unless (eq (first (third event)) 'error)
-      (let ((identities (first (third event))))
+    (unless (eq (car (nth 2 event)) 'error)
+      (let ((identities (car (nth 2 event))))
 	;; Is it a bytestream proxy?
-	(when (dolist (identity identities)
+	(when (cl-dolist (identity identities)
 		(when (and (string= (aref identity 1) "proxy")
 			   (string= (aref identity 2) "bytestreams"))
-		  (return t)))
+		  (cl-return t)))
 	  ;; Yes, it is.  Add it to the list.
-	  (push (second event) jabber-socks5-proxies))))
+	  (push (nth 1 event) jabber-socks5-proxies))))
 
     ;; Wait for more responses, if any are to be expected.
     (if (zerop (plist-get state-data :remaining-info))
@@ -212,11 +214,10 @@ set; the target waits for one."
 (define-enter-state jabber-socks5 query-proxies (fsm state-data)
   (jabber-socks5-query-all-proxies
    (plist-get state-data :jc)
-   (lexical-let ((fsm fsm))
-     (lambda () (fsm-send-sync fsm :proxies))))
+   (lambda () (fsm-send-sync fsm :proxies)))
   (list state-data 5))
 
-(define-state jabber-socks5 query-proxies (fsm state-data event callback)
+(define-state jabber-socks5 query-proxies (_fsm state-data event _callback)
   "Query proxies in `jabber-socks5-proxies'."
   (cond
    ;; Can't handle the iq stanza yet...
@@ -263,9 +264,8 @@ set; the target waits for one."
 		jabber-socks5-proxies-data)
 	     ;; (fast ((xmlns . "http://affinix.com/jabber/stream")))
 	     )
-     (lexical-let ((fsm fsm))
-       (lambda (jc xml-data closure-data)
-	 (fsm-send-sync fsm (list :iq xml-data)))) 
+     (lambda (_jc xml-data _closure-data)
+       (fsm-send-sync fsm (list :iq xml-data))) 
      nil
      ;; TODO: error handling
      #'jabber-report-success "SOCKS5 negotiation"))
@@ -275,16 +275,16 @@ set; the target waits for one."
 
 (add-to-list 'jabber-iq-set-xmlns-alist
 	     (cons "http://jabber.org/protocol/bytestreams" 'jabber-socks5-process))
-(defun jabber-socks5-process (jc xml-data)
+(defun jabber-socks5-process (_jc xml-data)
   "Accept IQ get for SOCKS5 bytestream"
   (let* ((jid (jabber-xml-get-attribute xml-data 'from))
-	 (id (jabber-xml-get-attribute xml-data 'id))
+	 ;; (id (jabber-xml-get-attribute xml-data 'id))
 	 (query (jabber-iq-query xml-data))
 	 (sid (jabber-xml-get-attribute query 'sid))
-	 (session (dolist (pending-session jabber-socks5-pending-sessions)
+	 (session (cl-dolist (pending-session jabber-socks5-pending-sessions)
 		    (when (and (equal sid (nth 0 pending-session))
 			       (equal jid (nth 1 pending-session)))
-		      (return pending-session)))))
+		      (cl-return pending-session)))))
     ;; check that we really are expecting this session
     (unless session
       (jabber-signal-error "auth" 'not-acceptable))
@@ -294,7 +294,7 @@ set; the target waits for one."
 
     ;; find streamhost to connect to
 ;;     (let* ((streamhosts (jabber-xml-get-children query 'streamhost))
-;; 	   (streamhost (dolist (streamhost streamhosts)
+;; 	   (streamhost (cl-dolist (streamhost streamhosts)
 ;; 			 (let ((connection (jabber-socks5-connect streamhost sid jid (concat jabber-username "@" jabber-server "/" jabber-resource))))
 ;; 			   (when connection
 ;; 			     ;; We select the first streamhost that we are able to connect to.
@@ -303,7 +303,7 @@ set; the target waits for one."
 ;; 			     ;; Now set the filter, for the rest of the output
 ;; 			     (set-process-filter connection #'jabber-socks5-filter)
 ;; 			     (set-process-sentinel connection #'jabber-socks5-sentinel)
-;; 			     (return streamhost))))))
+;; 			     (cl-return streamhost))))))
 ;;       (unless streamhost
 ;; 	(jabber-signal-error "cancel" 'item-not-found))
       
@@ -316,7 +316,7 @@ set; the target waits for one."
 ;;       )
     ))
 
-(define-state jabber-socks5 initiate (fsm state-data event callback)
+(define-state jabber-socks5 initiate (fsm state-data event _callback)
   (let* ((jc (plist-get state-data :jc))
 	 (jc-data (fsm-get-state-data jc))
 	 (our-jid (concat (plist-get jc-data :username) "@"
@@ -332,7 +332,7 @@ set; the target waits for one."
 
      ;; Incoming IQ
      ((eq (car-safe event) :iq)
-      (let ((xml-data (second event)))
+      (let ((xml-data (nth 1 event)))
 	;; This is either type "set" (with a list of streamhosts to
 	;; use), or a "result" (indicating the streamhost finally used
 	;; by the other party).
@@ -415,10 +415,10 @@ set; the target waits for one."
 	 (error (list 'fail '() nil)))))))
 
 (define-state jabber-socks5-connection wait-for-connection
-  (fsm state-data event callback)
+  (_fsm state-data event _callback)
   (cond
    ((eq (car-safe event) :sentinel)
-    (let ((string (third event)))
+    (let ((string (nth 2 event)))
       (cond
        ;; Connection succeeded
        ((string= (substring string 0 4) "open")
@@ -428,7 +428,7 @@ set; the target waits for one."
 	(list 'fail state-data nil)))))))
 
 (define-enter-state jabber-socks5-connection authenticate
-  (fsm state-data)
+  (_fsm state-data)
   "Send authenticate command."
   ;; version: 5.  number of auth methods supported: 1.
   ;; which one: no authentication.
@@ -436,24 +436,24 @@ set; the target waits for one."
   (list state-data 30))
 
 (define-state jabber-socks5-connection authenticate
-  (fsm state-data event callback)
+  (_fsm state-data event _callback)
   "Receive response to authenticate command."
   (cond
    ((eq (car-safe event) :filter)
-    (let ((string (third event)))
+    (let ((string (nth 2 event)))
       ;; should return:
       ;; version: 5.  auth method to use: none
       (if (string= string (string 5 0))
 	  ;; Authenticated.  Send connect command.
 	  (list 'connect state-data nil)
 	;; Authentication failed...
-	(delete-process (second event))
+	(delete-process (nth 1 event))
 	(list 'fail state-data nil))))
 
    ((eq (car-safe event) :sentinel)
     (list 'fail state-data nil))))
 
-(define-enter-state jabber-socks5-connection connect (fsm state-data)
+(define-enter-state jabber-socks5-connection connect (_fsm state-data)
   "Send connect command."
   (let* ((sid (plist-get state-data :sid))
 	 (initiator (plist-get state-data :initiator-jid))
@@ -467,11 +467,11 @@ set; the target waits for one."
     (list state-data 30)))
 
 (define-state jabber-socks5-connection connect
-  (fsm state-data event callback)
+  (_fsm state-data event _callback)
   "Receive response to connect command."
   (cond
    ((eq (car-safe event) :filter)
-    (let ((string (third event)))
+    (let ((string (nth 2 event)))
       (if (string= (substring string 0 2) (string 5 0))
 	  ;; connection established
 	  (progn
@@ -486,26 +486,26 @@ set; the target waits for one."
     (list 'fail state-data nil))))
        
 (define-state jabber-socks5-connection done
-  (fsm state-data event callback)
+  (_fsm _state-data _event _callback)
   ;; ignore all events
   (list 'done nil nil))
 
-(define-enter-state jabber-socks5-connection fail (fsm state-data)
+(define-enter-state jabber-socks5-connection fail (_fsm state-data)
   ;; Notify parent fsm about failure
   (fsm-send (plist-get state-data :socks5-fsm)
 	    :not-connected)
   (list nil nil))
 
 (define-state jabber-socks5-connection fail
-  (fsm state-data event callback)
+  (_fsm _state-data _event _callback)
   ;; ignore all events
   (list 'fail nil nil))
 
 (define-state jabber-socks5 wait-for-connection
-  (fsm state-data event callback)
+  (fsm state-data event _callback)
   (cond
    ((eq (car-safe event) :connected)
-    (destructuring-bind (ignored connection streamhost-jid) event
+    (pcase-let ((`(,_ ,connection ,streamhost-jid) event))
       (setq state-data (plist-put state-data :connection connection))
       ;; If we are expected to tell which streamhost we chose, do so.
       (let ((iq-id (plist-get state-data :iq-id)))
@@ -527,8 +527,8 @@ set; the target waits for one."
 	     `(query ((xmlns . "http://jabber.org/protocol/bytestreams")
 		      (sid . ,(plist-get state-data :sid)))
 		     (activate nil ,(plist-get state-data :jid)))
-	     (lambda (jc xml-data fsm) (fsm-send-sync fsm :activated)) fsm
-	     (lambda (jc xml-data fsm) (fsm-send-sync fsm :activation-failed)) fsm)
+	     (lambda (_jc _xml-data fsm) (fsm-send-sync fsm :activated)) fsm
+	     (lambda (_jc _xml-data fsm) (fsm-send-sync fsm :activation-failed)) fsm)
 	    (list 'wait-for-activation state-data 10))
 	;; Otherwise, we just let the data flow.
 	(list 'stream-activated state-data nil))))
@@ -542,7 +542,7 @@ set; the target waits for one."
     (list 'fail (plist-put state-data :error "Timeout when connecting to streamhosts") nil))))
 
 (define-state jabber-socks5 wait-for-activation
-  (fsm state-data event callback)
+  (_fsm state-data event _callback)
   (cond
    ((eq event :activated)
     (list 'stream-activated state-data nil))
@@ -552,7 +552,7 @@ set; the target waits for one."
    ;; Stray events from earlier state
    ((eq (car-safe event) :connected)
     ;; We just close the connection
-    (delete-process (second event))
+    (delete-process (nth 1 event))
     (list 'wait-for-activation state-data :keep))
    ((eq event :not-connected)
     (list 'wait-for-activation state-data :keep))))
@@ -573,14 +573,13 @@ set; the target waits for one."
 		     :profile-data-function
 		     (funcall profile-function
 			      jc jid sid
-			      (lexical-let ((fsm fsm))
-				(lambda (data)
-				  (fsm-send fsm (list :send data))))))
+			      (lambda (data)
+				(fsm-send fsm (list :send data)))))
 	  nil)))
 			    
 
 (define-state jabber-socks5 stream-activated
-  (fsm state-data event callback)
+  (fsm state-data event _callback)
   (let ((jc (plist-get state-data :jc))
 	(connection (plist-get state-data :connection))
 	(profile-data-function (plist-get state-data :profile-data-function))
@@ -588,33 +587,33 @@ set; the target waits for one."
 	(jid (plist-get state-data :jid)))
     (cond
      ((eq (car-safe event) :send)
-      (process-send-string connection (second event))
+      (process-send-string connection (nth 1 event))
       (list 'stream-activated state-data nil))
 
      ((eq (car-safe event) :filter)
       ;; Pass data from connection to profile data function
       ;; If the data function requests it, tear down the connection.
-      (unless (funcall profile-data-function jc jid sid (third event))
-	(fsm-send fsm (list :sentinel (second event) "shutdown")))
+      (unless (funcall profile-data-function jc jid sid (nth 2 event))
+	(fsm-send fsm (list :sentinel (nth 1 event) "shutdown")))
 
       (list 'stream-activated state-data nil))
 
      ((eq (car-safe event) :sentinel)
       ;; Connection terminated.  Shuffle together the remaining data,
       ;; and kill the buffer.
-      (delete-process (second event))
+      (delete-process (nth 1 event))
       (funcall profile-data-function jc jid sid nil)
       (list 'closed nil nil))
 
      ;; Stray events from earlier state
      ((eq (car-safe event) :connected)
       ;; We just close the connection
-      (delete-process (second event))
+      (delete-process (nth 1 event))
       (list 'stream-activated state-data nil))
      ((eq event :not-connected)
       (list 'stream-activated state-data nil)))))
 
-(define-enter-state jabber-socks5 fail (fsm state-data)
+(define-enter-state jabber-socks5 fail (_fsm state-data)
   "Tell our caller that we failed."
   (let ((jc (plist-get state-data :jc))
 	(jid (plist-get state-data :jid))
@@ -656,8 +655,8 @@ This function simply starts a state machine."
 ;; 		    `(query ((xmlns . "http://jabber.org/protocol/bytestreams")
 ;; 			     (sid . ,sid))
 ;; 			    (activate () ,jid))
-;; 		    (lexical-let ((jid jid) (sid sid) (profile-function profile-function)
-;; 				  (connection connection))
+;; 		    (let ((jid jid) (sid sid) (profile-function profile-function)
+;; 			  (connection connection))
 ;; 		      (lambda (xml-data closure-data)
 ;; 			(jabber-socks5-client-3 xml-data jid sid profile-function connection))) nil
 ;; 		       ;; TODO: report error to contact?
@@ -669,9 +668,8 @@ This function simply starts a state machine."
 ;;   ;; information, beyond success confirmation.
 
 ;;   (funcall profile-function jid sid 
-;; 	   (lexical-let ((proxy-connection proxy-connection))
 ;; 	     (lambda (data)
-;; 	       (process-send-string proxy-connection data)))))
+;; 	       (process-send-string proxy-connection data))))
 
 (provide 'jabber-socks5)
 

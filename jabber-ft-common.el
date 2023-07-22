@@ -1,4 +1,4 @@
-;;; jabber-ft-common.el --- Common functions for sending and receiving files (JEP-0096)
+;;; jabber-ft-common.el --- Common functions for sending and receiving files (JEP-0096)  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2006, 2008  Magnus Henoch
 
@@ -35,7 +35,7 @@ argument."
 Return nil if no MD5 summing program is available."
   (when jabber-ft-md5sum-program
     (with-temp-buffer
-      (apply 'call-process (car jabber-ft-md5sum-program) nil t nil
+      (apply #'call-process (car jabber-ft-md5sum-program) nil t nil
 	     (append (cdr jabber-ft-md5sum-program) (list file-name)))
       ;; Output is "hexsum filename"
       (goto-char (point-min))

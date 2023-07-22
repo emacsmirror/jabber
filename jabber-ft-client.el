@@ -1,4 +1,4 @@
-;; jabber-ft-client.el - send file transfer requests, by JEP-0096
+;;; jabber-ft-client.el --- send file transfer requests, by JEP-0096  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2004 - Magnus Henoch - mange@freemail.hu
 
@@ -18,7 +18,9 @@
 ;; along with this program; if not, write to the Free Software
 ;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-(eval-when-compile (require 'cl))
+;;; Code:
+
+(eval-when-compile (require 'cl-lib))
 
 (require 'jabber-si-client)
 (require 'jabber-util)
@@ -47,12 +49,12 @@
 				,@(when hash
 				    (list (cons 'hash hash))))
 			       (desc () ,desc))
-			(lexical-let ((filename filename))
-			  (lambda (jc jid sid send-data-function)
+			(let ((filename filename))
+			  (lambda (_jc jid sid send-data-function)
 			    (jabber-ft-do-send
 			     jid sid send-data-function filename))))))
 
-(defun jabber-ft-do-send (jid sid send-data-function filename)
+(defun jabber-ft-do-send (_jid _sid send-data-function filename)
   (if (stringp send-data-function)
       (message "File sending failed: %s" send-data-function)
     (with-temp-buffer

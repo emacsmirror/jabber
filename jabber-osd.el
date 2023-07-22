@@ -1,4 +1,4 @@
-;;; jabber-osd.el --- OSD support for jabber.el
+;;; jabber-osd.el --- OSD support for jabber.el  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2008 - Terechkov Evgenii - evg@altlinux.org
 
@@ -21,7 +21,7 @@
 
 (eval-when-compile (require 'jabber-alert))
 
-(condition-case e
+(condition-case nil
     (progn
       ;; Most people don't have osd.el, so this will often fail
       (require 'osd)

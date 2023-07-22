@@ -1,4 +1,4 @@
-;;; jabber-chatstate.el --- Chat state notification (XEP-0085) implementation
+;;; jabber-chatstate.el --- Chat state notification (XEP-0085) implementation  -*- lexical-binding: t; -*-
 
 ;; Author: Ami Fischman <ami@fischman.org>
 ;; (based entirely on jabber-events.el by Magnus Henoch <mange@freemail.hu>)
@@ -22,7 +22,9 @@
 ;; - Currently only active/composing notifications are /sent/ though all 5
 ;;   notifications are handled on receipt.
 
-(require 'cl)
+;;; Code:
+
+(require 'cl-lib)
 
 (defgroup jabber-chatstates nil
   "Chat state notifications."
@@ -33,7 +35,6 @@
 
 (defcustom jabber-chatstates-confirm t
   "Send notifications about chat states?"
-  :group 'jabber-chatstates
   :type 'boolean)
 
 (defvar jabber-chatstates-requested 'first-time
@@ -53,8 +54,8 @@ nil - don't send states")
 (make-variable-buffer-local 'jabber-chatstates-message)
 
 ;;; INCOMING
-;;; Code for requesting chat state notifications from others and handling
-;;; them.
+;; Code for requesting chat state notifications from others and handling
+;; them.
 
 (defun jabber-chatstates-update-message ()
   (setq jabber-chatstates-message
@@ -63,8 +64,8 @@ nil - don't send states")
             (format " (%s)" (symbol-name jabber-chatstates-last-state))
           "")))
 
-(add-hook 'jabber-chat-send-hooks 'jabber-chatstates-when-sending)
-(defun jabber-chatstates-when-sending (text id)
+(add-hook 'jabber-chat-send-hooks #'jabber-chatstates-when-sending)
+(defun jabber-chatstates-when-sending (_text _id)
   (jabber-chatstates-update-message)
   (jabber-chatstates-stop-timer)
   (when (and jabber-chatstates-confirm jabber-chatstates-requested)
@@ -76,8 +77,8 @@ nil - don't send states")
     `((active ((xmlns . ,jabber-chatstates-xmlns))))))
 
 ;;; OUTGOING
-;;; Code for handling requests for chat state notifications and providing
-;;; them, modulo user preferences.
+;; Code for handling requests for chat state notifications and providing
+;; them, modulo user preferences.
 
 (defvar jabber-chatstates-composing-sent nil
   "Has composing notification been sent?
@@ -85,22 +86,22 @@ It can be sent and cancelled several times.")
 (make-variable-buffer-local 'jabber-chatstates-composing-sent)
 
 (defvar jabber-chatstates-paused-timer nil
-  "Timer that counts down from 'composing state to 'paused.")
+  "Timer that counts down from `composing' state to `paused'.")
 (make-variable-buffer-local 'jabber-chatstates-paused-timer)
 
 (defun jabber-chatstates-stop-timer ()
-  "Stop the 'paused timer."
+  "Stop the `paused' timer."
   (when jabber-chatstates-paused-timer
     (cancel-timer jabber-chatstates-paused-timer)))
 
 (defun jabber-chatstates-kick-timer ()
-  "Start (or restart) the 'paused timer as approriate."
+  "Start (or restart) the `paused' timer as approriate."
   (jabber-chatstates-stop-timer)
   (setq jabber-chatstates-paused-timer
-        (run-with-timer 5 nil 'jabber-chatstates-send-paused)))
+        (run-with-timer 5 nil #'jabber-chatstates-send-paused)))
 
 (defun jabber-chatstates-send-paused ()
-  "Send an 'paused state notification."
+  "Send a `paused' state notification."
   (when (and jabber-chatstates-requested jabber-chatting-with)
     (setq jabber-chatstates-composing-sent nil)
     (jabber-send-sexp-if-connected
@@ -128,33 +129,33 @@ It can be sent and cancelled several times.")
 
 ;;; COMMON
 
-(defun jabber-handle-incoming-message-chatstates (jc xml-data)
+(defun jabber-handle-incoming-message-chatstates (_jc xml-data)
   (when (get-buffer (jabber-chat-get-buffer (jabber-xml-get-attribute xml-data 'from)))
     (with-current-buffer (jabber-chat-get-buffer (jabber-xml-get-attribute xml-data 'from))
       (cond
        ;; If we get an error message, we shouldn't report any
        ;; events, as the requests are mirrored from us.
        ((string= (jabber-xml-get-attribute xml-data 'type) "error")
-        (remove-hook 'post-command-hook 'jabber-chatstates-after-change t)
+        (remove-hook 'post-command-hook #'jabber-chatstates-after-change t)
         (setq jabber-chatstates-requested nil))
 
        (t
 	(let ((state
 	       (or
 		(let ((node
-		       (find jabber-chatstates-xmlns
-			     (jabber-xml-node-children xml-data)
-			     :key #'(lambda (x) (jabber-xml-get-attribute x 'xmlns))
-			     :test #'string=)))
+		       (cl-find jabber-chatstates-xmlns
+			        (jabber-xml-node-children xml-data)
+			        :key #'(lambda (x) (jabber-xml-get-attribute x 'xmlns))
+			        :test #'string=)))
 		  (jabber-xml-node-name node))
 		(let ((node
 		       ;; XXX: this is how we interoperate with
 		       ;; Google Talk.  We should really use a
 		       ;; namespace-aware XML parser.
-		       (find jabber-chatstates-xmlns
-			     (jabber-xml-node-children xml-data)
-			     :key #'(lambda (x) (jabber-xml-get-attribute x 'xmlns:cha))
-			     :test #'string=)))
+		       (cl-find jabber-chatstates-xmlns
+			        (jabber-xml-node-children xml-data)
+			        :key #'(lambda (x) (jabber-xml-get-attribute x 'xmlns:cha))
+			        :test #'string=)))
 		  (when node
 		    ;; Strip the "cha:" prefix
 		    (let ((name (symbol-name (jabber-xml-node-name node))))
@@ -163,13 +164,13 @@ It can be sent and cancelled several times.")
 	  ;; Set up hooks for composition notification
 	  (when (and jabber-chatstates-confirm state)
 	    (setq jabber-chatstates-requested t)
-	    (add-hook 'post-command-hook 'jabber-chatstates-after-change nil t))
+	    (add-hook 'post-command-hook #'jabber-chatstates-after-change nil t))
 
 	  (setq jabber-chatstates-last-state state)
 	  (jabber-chatstates-update-message)))))))
 
 ;; Add function last in chain, so a chat buffer is already created.
-(add-to-list 'jabber-message-chain 'jabber-handle-incoming-message-chatstates t)
+(add-to-list 'jabber-message-chain #'jabber-handle-incoming-message-chatstates t)
 
 (jabber-disco-advertise-feature "http://jabber.org/protocol/chatstates")
 

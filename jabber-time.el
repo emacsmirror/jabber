@@ -1,4 +1,4 @@
-;; jabber-time.el - time reporting by XEP-0012, XEP-0090, XEP-0202
+;;; jabber-time.el --- time reporting by XEP-0012, XEP-0090, XEP-0202  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2006, 2010 - Kirill A. Kroinskiy - catap@catap.ru
 ;; Copyright (C) 2006 - Magnus Henoch - mange@freemail.hu
@@ -19,6 +19,8 @@
 ;; along with GNU Emacs; see the file COPYING.  If not, write to
 ;; the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 ;; Boston, MA 02110-1301, USA.
+
+;;; Code:
 
 (require 'jabber-iq)
 (require 'jabber-util)
@@ -56,7 +58,7 @@
 
 
 ;; called by jabber-process-data
-(defun jabber-process-time (jc xml-data)
+(defun jabber-process-time (_jc xml-data)
   "Handle results from urn:xmpp:time requests."
   (let* ((from (jabber-xml-get-attribute xml-data 'from))
          (time (or (car (jabber-xml-get-children xml-data 'time))
@@ -70,7 +72,7 @@
       (format "%s has time: %s %s"
               from (format-time-string "%Y-%m-%d %T" (jabber-parse-time utc)) tzo))))
 
-(defun jabber-process-legacy-time (jc xml-data)
+(defun jabber-process-legacy-time (_jc xml-data)
   "Handle results from jabber:iq:time requests."
   (let* ((from (jabber-xml-get-attribute xml-data 'from))
          (query (jabber-iq-query xml-data))
@@ -119,12 +121,13 @@
 		  #'jabber-silent-process-data #'jabber-process-last
 		  #'jabber-silent-process-data "Idle time request failed"))
 
-(defun jabber-process-last (jc xml-data)
+(defun jabber-process-last (_jc xml-data)
   "Handle resultts from jabber:iq:last requests."
   (let* ((from (jabber-xml-get-attribute xml-data 'from))
 	 (query (jabber-iq-query xml-data))
 	 (seconds (jabber-xml-get-attribute query 'seconds))
-	 (message (car (jabber-xml-node-children query))))
+	 ;; (message (car (jabber-xml-node-children query)))
+	 )
     (cond
      ((jabber-jid-resource from)
       ;; Full JID: idle time

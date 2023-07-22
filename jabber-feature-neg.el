@@ -1,4 +1,4 @@
-;; jabber-feature-neg.el - Feature Negotiation by JEP-0020
+;;; jabber-feature-neg.el --- Feature Negotiation by JEP-0020  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
 ;; Copyright (C) 2003, 2004 - Magnus Henoch - mange@freemail.hu
@@ -20,7 +20,7 @@
 ;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 (require 'jabber-disco)
-(require 'cl)
+(require 'cl-lib)
 
 (jabber-disco-advertise-feature "http://jabber.org/protocol/feature-neg")
 
@@ -29,7 +29,7 @@
 XML-DATA should have one child element, <x/>, in the jabber:x:data
 namespace.
 
-TYPE is either 'request or 'response.
+TYPE is either `request' or `response'.
 
 Returned alist has field name as key, and value is a list of offered
 alternatives."
@@ -65,7 +65,7 @@ alternatives."
   "Transform a feature alist into an <x/> node int the jabber:x:data namespace.
 Note that this is not the reverse of `jabber-fn-parse'.
 
-TYPE is either 'request or 'response."
+TYPE is either `request' or `response'."
   (let ((requestp (eq type 'request)))
     `(x ((xmlns . "jabber:x:data")
 	 (type . ,(if requestp "form" "submit")))
@@ -96,10 +96,10 @@ protocols."
 	(their-vars (mapcar #'car theirs)))
     
     ;; are the same variables being negotiated?
-    (sort vars 'string-lessp)
-    (sort their-vars 'string-lessp)
-    (let ((mine-but-not-theirs (set-difference vars their-vars :test 'string=))
-	  (theirs-but-not-mine (set-difference their-vars vars :test 'string=)))
+    (sort vars #'string-lessp)
+    (sort their-vars #'string-lessp)
+    (let ((mine-but-not-theirs (cl-set-difference vars their-vars :test #'string=))
+	  (theirs-but-not-mine (cl-set-difference their-vars vars :test #'string=)))
       (when mine-but-not-theirs
 	(jabber-signal-error "modify" 'not-acceptable (car mine-but-not-theirs)))
       (when theirs-but-not-mine
@@ -109,7 +109,8 @@ protocols."
 	(dolist (var vars)
 	  (let ((my-options (cdr (assoc var mine)))
 		(their-options (cdr (assoc var theirs))))
-	    (let ((common-options (intersection my-options their-options :test 'string=)))
+	    (let ((common-options
+	           (cl-intersection my-options their-options :test #'string=)))
 	      (if common-options
 		  ;; we have a match; but which one to use?
 		  ;; the first one will probably work

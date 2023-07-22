@@ -1,4 +1,4 @@
-;; jabber-console.el - XML Console mode
+;;; jabber-console.el --- XML Console mode  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2009, 2010 - Demyan Rogozhin <demyan.rogozhin@gmail.com>
 
@@ -26,6 +26,9 @@
 (require 'jabber-util)
 (require 'ewoc)
 (require 'sgml-mode) ;we base on this mode to hightlight XML
+
+
+(defvar jabber-log-lines-to-keep)       ;From `jabber-truncate.el'
 
 (defcustom jabber-console-name-format "*-jabber-console-%s-*"
   "Format for console buffer name. %s mean connection jid."
@@ -55,7 +58,7 @@ what kind of chat buffer is being created.")
 (defvar jabber-console-mode-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map jabber-common-keymap)
-    (define-key map "\r" 'jabber-chat-buffer-send)
+    (define-key map "\r" #'jabber-chat-buffer-send)
     map))
 
 (defun jabber-console-create-buffer (jc)
@@ -108,7 +111,7 @@ what kind of chat buffer is being created.")
   (make-local-variable 'jabber-point-insert)
   (make-local-variable 'jabber-console-ewoc)
 
-  (setq jabber-send-function 'jabber-console-send)
+  (setq jabber-send-function #'jabber-console-send)
 
   (unless jabber-console-ewoc
     (setq jabber-console-ewoc

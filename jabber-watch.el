@@ -1,4 +1,4 @@
-;; jabber-watch.el - get notified when certain persons go online
+;;; jabber-watch.el --- get notified when certain persons go online  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2004 - Mathias Dahl
 ;; Copyright (C) 2004 - Magnus Henoch - mange@freemail.hu
@@ -29,9 +29,9 @@ when they come online, with comment strings as values."
   :type '(alist :key-type symbol :value-type string)
   :group 'jabber-watch)
 
-(defun jabber-presence-watch (who oldstatus newstatus
-				  statustext proposed-alert)
-  "Checks if one of your extra-important buddies comes online and
+(defun jabber-presence-watch ( who oldstatus newstatus
+			       _statustext proposed-alert)
+  "Check if one of your extra-important buddies comes online and
 sends a message if that happens. The buddies are stored in
 `jabber-watch-alist' and are added and removed by calling
 `jabber-watch-add' and `jabber-watch-remove.'"
@@ -64,7 +64,7 @@ sends a message if that happens. The buddies are stored in
 (defun jabber-watch-remove (buddy)
   (interactive
    (list (jabber-read-jid-completing "Remove buddy from watch list: "
-				     (or (mapcar 'car jabber-watch-alist)
+				     (or (mapcar #'car jabber-watch-alist)
 					 (error "Watch list is empty"))
 				     t)))
   (setq jabber-watch-alist

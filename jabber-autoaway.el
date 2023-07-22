@@ -1,4 +1,4 @@
-;;; jabber-autoaway.el --- change status to away after idleness
+;;; jabber-autoaway.el --- change status to away after idleness  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2010 - Kirill A. Korinskiy - catap@catap.ru
 ;; Copyright (C) 2010 - Terechkov Evgenii - evg@altlinux.org
@@ -21,7 +21,9 @@
 ;; the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 ;; Boston, MA 02110-1301, USA.
 
-(eval-when-compile (require 'cl))
+;;; Code:
+
+(eval-when-compile (require 'cl-lib))
 (require 'time-date)
 
 (defgroup jabber-autoaway nil
@@ -37,36 +39,30 @@
   "Methods used to keep track of idleness.
 This is a list of functions that takes no arguments, and returns the
 number of seconds since the user was active, or nil on error."
-  :group 'jabber-autoaway
   :options '(jabber-current-idle-time
              jabber-xprintidle-get-idle-time
              jabber-termatime-get-idle-time))
 
 (defcustom jabber-autoaway-timeout 5
   "Minutes of inactivity before changing status to away"
-  :group 'jabber-autoaway
   :type 'number)
 
 (defcustom jabber-autoaway-xa-timeout 10
   "Minutes of inactivity before changing status to xa. Set to 0 to disable."
-  :group 'jabber-autoaway
   :type 'number)
 
 (defcustom jabber-autoaway-status "Idle"
   "Status string for autoaway"
-  :group 'jabber-autoaway
   :type 'string)
 
 (defcustom jabber-autoaway-xa-status "Extended away"
   "Status string for autoaway in xa state"
-  :group 'jabber-autoaway
   :type 'string)
 
 (defcustom jabber-autoaway-priority nil
   "Priority for autoaway.
 If nil, don't change priority.  See the manual for more
 information about priority."
-  :group 'jabber-autoaway
   :type '(choice (const :tag "Don't change")
 		 (integer :tag "Priority"))
   :link '(info-link "(jabber)Presence"))
@@ -75,19 +71,16 @@ information about priority."
   "Priority for autoaway in xa state.
 If nil, don't change priority.  See the manual for more
 information about priority."
-  :group 'jabber-autoaway
   :type '(choice (const :tag "Don't change")
 		 (integer :tag "Priority"))
   :link '(info-link "(jabber)Presence"))
 
 (defcustom jabber-xprintidle-program (executable-find "xprintidle")
   "Name of the xprintidle program"
-  :group 'jabber-autoaway
   :type 'string)
 
 (defcustom jabber-autoaway-verbose nil
   "If nil, don't print autoaway status messages."
-  :group 'jabber-autoaway
   :type 'boolean)
 
 (defvar jabber-autoaway-timer nil)
@@ -101,7 +94,7 @@ This is used to detect whether the user has become unidle.")
     (apply #'message args)))
 
 ;;;###autoload
-(defun jabber-autoaway-start (&optional ignored)
+(defun jabber-autoaway-start (&optional _ignored)
   "Start autoaway timer.
 The IGNORED argument is there so you can put this function in
 `jabber-post-connect-hooks'."
@@ -122,7 +115,8 @@ The IGNORED argument is there so you can put this function in
 (defun jabber-autoaway-get-idle-time ()
   "Get idle time in seconds according to jabber-autoaway-methods.
 Return nil on error."
-  (car (sort (mapcar 'funcall jabber-autoaway-methods) (lambda (a b) (if a (if b (< a b) t) nil)))))
+  (car (sort (mapcar #'funcall jabber-autoaway-methods)
+             (lambda (a b) (if a (if b (< a b) t) nil)))))
 
 (defun jabber-autoaway-timer ()
   ;; We use one-time timers, so reset the variable.

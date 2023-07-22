@@ -1,4 +1,4 @@
-;; jabber-version.el - version reporting by JEP-0092
+;;; jabber-version.el --- version reporting by JEP-0092  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2003, 2004, 2008 - Magnus Henoch - mange@freemail.hu
 ;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
@@ -42,7 +42,7 @@
 		  #'jabber-process-data "Version request failed"))
 
 ;; called by jabber-process-data
-(defun jabber-process-version (jc xml-data)
+(defun jabber-process-version (_jc xml-data)
   "Handle results from jabber:iq:version requests."
   
   (let ((query (jabber-iq-query xml-data)))

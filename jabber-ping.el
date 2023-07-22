@@ -1,4 +1,4 @@
-;; jabber-ping.el - XMPP "Ping" by XEP-0199
+;;; jabber-ping.el --- XMPP "Ping" by XEP-0199  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2009 - Evgenii Terechkov - evg@altlinux.org
 
@@ -43,7 +43,7 @@
     (jabber-ping-send jc to 'jabber-silent-process-data 'jabber-process-ping "Ping is unsupported")))
 
 ;; called by jabber-process-data
-(defun jabber-process-ping (jc xml-data)
+(defun jabber-process-ping (_jc xml-data)
   "Handle results from ping requests."
   (let ((to (jabber-xml-get-attribute xml-data 'from)))
     (format "%s is alive" to)))

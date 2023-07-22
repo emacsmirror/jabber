@@ -1,4 +1,4 @@
-;; jabber-widget.el - display various kinds of forms
+;;; jabber-widget.el --- display various kinds of forms  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2003, 2004, 2007 - Magnus Henoch - mange@freemail.hu
 ;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
@@ -29,8 +29,8 @@
 
 (defvar jabber-form-type nil
   "Type of form.  One of:
-'x-data, jabber:x:data
-'register, as used in jabber:iq:register and jabber:iq:search")
+`x-data', jabber:x:data
+`register', as used in jabber:iq:register and jabber:iq:search")
 
 (defvar jabber-submit-to nil
   "JID of the entity to which form data is to be sent")
@@ -39,18 +39,18 @@
 
 (define-widget 'jid 'string
   "JID widget."
-  :value-to-internal (lambda (widget value)
+  :value-to-internal (lambda (_widget value)
 		       (let ((displayname (jabber-jid-rostername value)))
 			 (if displayname
 			     (format "%s <%s>" displayname value)
 			   value)))
-  :value-to-external (lambda (widget value)
+  :value-to-external (lambda (_widget value)
 		       (if (string-match "<\\([^>]+\\)>[ \t]*$" value)
 			   (match-string 1 value)
 			 value))
-  :complete-function 'jid-complete)
+  :complete-function #'jid-complete)
 
-(defun jid-complete ()
+(defun jid-complete (widget)
   "Perform completion on JID preceding point."
   (interactive)
   ;; mostly stolen from widget-color-complete
@@ -171,7 +171,7 @@ DEFAULTS takes precedence over values specified in the form."
     (let* ((var (jabber-xml-get-attribute field 'var))
 	   (label (jabber-xml-get-attribute field 'label))
 	   (type (jabber-xml-get-attribute field 'type))
-	   (required (jabber-xml-get-children field 'required))
+	   ;; (required (jabber-xml-get-children field 'required))
 	   (values (jabber-xml-get-children field 'value))
 	   (options (jabber-xml-get-children field 'option))
 	   (desc (car (jabber-xml-get-children field 'desc)))
@@ -197,7 +197,7 @@ DEFAULTS takes precedence over values specified in the form."
 	(if (or label var)
 	    (widget-insert (or label var) ":\n"))
 	(push (cons (cons var type)
-		    (apply 'widget-create
+		    (apply #'widget-create
 			   'radio-button-choice 
 			   :value (or (cdr default-value)
 				      (car (xml-node-children (car values))))
@@ -339,7 +339,7 @@ Return a list of strings, each of which to be included as cdata in a <value/> ta
   "Render single-record search results."
   (dolist (field (jabber-xml-get-children xdata 'field))
     (let ((label (jabber-xml-get-attribute field 'label))
-	  (type (jabber-xml-get-attribute field 'type))
+	  ;; (type (jabber-xml-get-attribute field 'type))
 	  (values (mapcar #'(lambda (val)
 			      (car (jabber-xml-node-children val)))
 			  (jabber-xml-get-children field 'value))))

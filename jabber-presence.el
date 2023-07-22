@@ -1,4 +1,4 @@
-;; jabber-presence.el - roster and presence bookkeeping
+;; jabber-presence.el - roster and presence bookkeeping  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
 ;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
@@ -39,7 +39,7 @@ stanza.")
 	     (cons "jabber:iq:roster" (function (lambda (jc x) (jabber-process-roster jc x nil)))))
 (defun jabber-process-roster (jc xml-data closure-data)
   "process an incoming roster infoquery result
-CLOSURE-DATA should be 'initial if initial roster push, nil otherwise."
+CLOSURE-DATA should be `initial' if initial roster push, nil otherwise."
   (let ((roster (plist-get (fsm-get-state-data jc) :roster))
 	(from (jabber-xml-get-attribute xml-data 'from))
 	(type (jabber-xml-get-attribute xml-data 'type))
@@ -134,7 +134,7 @@ CLOSURE-DATA should be 'initial if initial roster push, nil otherwise."
   ;; XXX: use JC argument
   (let ((roster (plist-get (fsm-get-state-data jc) :roster))
 	(from (jabber-xml-get-attribute xml-data 'from))
-	(to (jabber-xml-get-attribute xml-data 'to))
+	;; (to (jabber-xml-get-attribute xml-data 'to))
 	(type (jabber-xml-get-attribute xml-data 'type))
 	(presence-show (car (jabber-xml-node-children
 			     (car (jabber-xml-get-children xml-data 'show)))))
@@ -242,15 +242,15 @@ CLOSURE-DATA should be 'initial if initial roster push, nil otherwise."
     (dolist (hook '(jabber-presence-hooks jabber-alert-presence-hooks))
       (run-hook-with-args hook (jabber-jid-symbol from) nil "subscribe" presence-status (funcall jabber-alert-presence-message-function (jabber-jid-symbol from) nil "subscribe" presence-status)))))
 
-(defun jabber-subscription-accept-mutual (&rest ignored)
+(defun jabber-subscription-accept-mutual (&rest _ignored)
   (message "Subscription accepted; reciprocal subscription request sent")
   (jabber-subscription-reply "subscribed" "subscribe"))
 
-(defun jabber-subscription-accept-one-way (&rest ignored)
+(defun jabber-subscription-accept-one-way (&rest _ignored)
   (message "Subscription accepted")
   (jabber-subscription-reply "subscribed"))
 
-(defun jabber-subscription-decline (&rest ignored)
+(defun jabber-subscription-decline (&rest _ignored)
   (message "Subscription declined")
   (jabber-subscription-reply "unsubscribed"))
 
@@ -348,9 +348,9 @@ CLOSURE-DATA should be 'initial if initial roster push, nil otherwise."
 	 `(show () ,*jabber-current-show*))
     ,(when *jabber-current-priority*
        `(priority () ,(number-to-string *jabber-current-priority*)))
-    ,@(apply 'append (mapcar (lambda (f)
-			       (funcall f jc))
-			     jabber-presence-element-functions))))
+    ,@(apply #'append (mapcar (lambda (f)
+			        (funcall f jc))
+			      jabber-presence-element-functions))))
 
 (defun jabber-send-directed-presence (jc jid type)
   "Send a directed presence stanza to JID.
@@ -427,7 +427,7 @@ With prefix argument, ask for status message."
 			*jabber-current-priority*))
 
 ;;;###autoload
-(defun jabber-send-default-presence (&optional ignore)
+(defun jabber-send-default-presence (&optional _ignore)
   "Send default presence.
 Default presence is specified by `jabber-default-show',
 `jabber-default-status', and `jabber-default-priority'."
@@ -435,7 +435,7 @@ Default presence is specified by `jabber-default-show',
   (jabber-send-presence
    jabber-default-show jabber-default-status jabber-default-priority))
 
-(defun jabber-send-current-presence (&optional ignore)
+(defun jabber-send-current-presence (&optional _ignore)
   "(Re-)send current presence.
 That is, if presence has already been sent, use current settings,
 otherwise send defaults (see `jabber-send-default-presence')."
@@ -539,8 +539,8 @@ Signal an error if there is no JID at point."
   (dolist (jid jids)
     (jabber-roster-change
      jc jid (get jid 'name)
-     (remove-if-not (lambda (g) (not (string= g group)))
-		    (get jid 'groups)))))
+     (cl-remove-if-not (lambda (g) (not (string= g group)))
+		       (get jid 'groups)))))
 
 (defun jabber-roster-edit-group-from-jids (jc jids group)
   "Edit group `group' from all JIDs"
@@ -551,13 +551,13 @@ Signal an error if there is no JID at point."
     (dolist (jid jids)
       (jabber-roster-change
        jc jid (get jid 'name)
-       (remove-duplicates
+       (cl-remove-duplicates
 	(mapcar
 	 (lambda (g) (if (string= g group)
 			 new-group
 		       g))
 	 (get jid 'groups))
-	:test 'string=)))))
+	:test #'string=)))))
 
 
 (provide 'jabber-presence)

@@ -1,4 +1,4 @@
-;; jabber-xml.el - XML functions
+;;; jabber-xml.el --- XML functions  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
 ;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
@@ -22,7 +22,7 @@
 (require 'xml)
 (require 'jabber-util)
 (eval-when-compile
-  (require 'cl))
+  (require 'cl-lib))
 
 (defun jabber-escape-xml (str)
   "escape strings for xml"
@@ -98,7 +98,7 @@
 
 (defun jabber-xml-skip-tag-forward (&optional dont-recurse-into-stream)
   "Skip to end of tag or matching closing tag if present.
-Return t iff after a closing tag, otherwise throws an 'unfinished
+Return t iff after a closing tag, otherwise throws an `unfinished'
 tag with value nil.
 If DONT-RECURSE-INTO-STREAM is true, stop after an opening
 <stream:stream> tag.
@@ -122,7 +122,7 @@ enough for us."
        ((looking-at ">")
 	(goto-char (match-end 0))
 	(unless (and dont-recurse-into-stream (equal node-name "stream:stream"))
-	  (loop 
+	  (cl-loop 
 	   do (skip-chars-forward "^<")
 	   until (looking-at (regexp-quote (concat "</" node-name ">")))
 	   do (jabber-xml-skip-tag-forward))
@@ -214,10 +214,10 @@ any string   character data of this node"
 	  ;; of xml.el.  It will also be more correct.
 	  ;; Now, it only matches explicit namespace declarations.
 	  (setq node
-		(dolist (x (jabber-xml-get-children node (intern (cdr step))))
+		(cl-dolist (x (jabber-xml-get-children node (intern (cdr step))))
 		  (when (string= (jabber-xml-get-attribute x 'xmlns)
 				 (car step))
-		    (return x)))))
+		    (cl-return x)))))
 	 ((stringp step)
 	  (setq node (car (jabber-xml-node-children node)))
 	  (unless (stringp node)
@@ -229,11 +229,11 @@ any string   character data of this node"
 
 (defmacro jabber-xml-let-attributes (attributes xml-data &rest body)
   "Bind variables to the same-name attribute values in XML-DATA."
+  (declare (indent 2) (debug (sexp form body)))
   `(let ,(mapcar #'(lambda (attr)
 		     (list attr `(jabber-xml-get-attribute ,xml-data ',attr)))
 		 attributes)
      ,@body))
-(put 'jabber-xml-let-attributes 'lisp-indent-function 2)
 
 (defun jabber-xml-resolve-namespace-prefixes (xml-data &optional default-ns prefixes)
   (let ((node-name (jabber-xml-node-name xml-data))

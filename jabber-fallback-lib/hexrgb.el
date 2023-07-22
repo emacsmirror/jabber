@@ -1,4 +1,4 @@
-;;; hexrgb.el --- Functions to manipulate colors, including RGB hex strings.
+;;; hexrgb.el --- Functions to manipulate colors, including RGB hex strings.  -*- lexical-binding: t; -*-
 ;;
 ;; Filename: hexrgb.el
 ;; Description: Functions to manipulate colors, including RGB hex strings.
@@ -156,12 +156,7 @@
 ;;
 ;;; Code:
 
-(eval-when-compile (require 'cl)) ;; case; plus, for Emacs < 20: when, unless
-
-;; Unless you first load `hexrgb.el', then either `palette.el' or `eyedropper.el', you will get
-;; warnings about variables and functions with prefix `eyedrop-' when you byte-compile
-;; `hexrgb.el'.  You can ignore these warnings.
-
+(eval-when-compile (require 'cl-lib))
 (defvar eyedrop-picked-foreground)
 (defvar eyedrop-picked-background)
 
@@ -470,7 +465,7 @@ Returns a list of HSV components of value 0.0 to 1.0, inclusive."
   "Convert HUE, SATURATION, VALUE components to RGB (red, green, blue).
 Each input component is 0.0 to 1.0, inclusive.
 Returns a list of RGB components of value 0.0 to 1.0, inclusive."
-  (let (red green blue int-hue fract pp qq tt ww)
+  (let (red green blue int-hue fract pp qq ww)
     (if (hexrgb-approx-equal 0.0 saturation)
         (setq red    value
               green  value
@@ -481,10 +476,10 @@ Returns a list of RGB components of value 0.0 to 1.0, inclusive."
             pp       (* value (- 1 saturation))
             qq       (* value (- 1 (* saturation fract)))
             ww       (* value (- 1 (* saturation (- 1 (- hue int-hue))))))
-      (case int-hue
-        ((0 6) (setq red    value
-                     green  ww
-                     blue   pp))
+      (pcase int-hue
+        ((or 0 6) (setq red    value
+                        green  ww
+                        blue   pp))
         (1 (setq red    qq
                  green  value
                  blue   pp))
@@ -497,9 +492,9 @@ Returns a list of RGB components of value 0.0 to 1.0, inclusive."
         (4 (setq red    ww
                  green  pp
                  blue   value))
-        (otherwise (setq red    value
-                         green  pp
-                         blue   qq))))
+        (_ (setq red    value
+                 green  pp
+                 blue   qq))))
     (list red green blue)))
 
 ;;;###autoload

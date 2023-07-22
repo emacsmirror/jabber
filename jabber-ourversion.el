@@ -1,4 +1,4 @@
-;; jabber-ourversion.el.  Holds the version number in a format that
+;; jabber-ourversion.el.  Holds the version number in a format that  -*- lexical-binding: t; -*-
 ;; configure.ac can read.
 
 ;; On the following line, only change the part between double quotes:

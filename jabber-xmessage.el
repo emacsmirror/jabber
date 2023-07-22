@@ -1,4 +1,4 @@
-;; jabber-xmessage.el - emacs-jabber interface to xmessage
+;;; jabber-xmessage.el --- emacs-jabber interface to xmessage  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2008 - Magnus Henoch
 ;; Copyright (C) 2005 - Mario Domenech Goulart
@@ -34,7 +34,7 @@ Set this to nil to have no timeout."
 	 (timeout-args (when jabber-xmessage-timeout
 			 (list "-timeout" (number-to-string jabber-xmessage-timeout))))
 	 (args (append timeout-args (list (or title text)))))
-    (apply 'start-process "xmessage" nil "xmessage" args)))
+    (apply #'start-process "xmessage" nil "xmessage" args)))
 
 (define-jabber-alert xmessage "Display a message using the xmessage program."
   'jabber-xmessage-display-message)

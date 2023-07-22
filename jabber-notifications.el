@@ -1,4 +1,4 @@
-;; jabber-notifications.el - emacs-jabber interface to notifications.el
+;;; jabber-notifications.el --- emacs-jabber interface to notifications.el  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2014 - Adam Sjøgren - asjo@koldfront.dk
 ;; Copyright (C) 2010 - Kirill A. Korinskiy - catap@catap.ru
@@ -51,14 +51,14 @@
                    (const :tag "Critical" "critical"))
     :group 'jabber-alerts)
 
-  (defun jabber-message-notifications (from buffer text title)
+  (defun jabber-message-notifications (from _buffer text title)
     "Show a message through the notifications.el interface"
     (let
         ((body (or (jabber-escape-xml text) " "))
-         (head (jabber-escape-xml
-                (or title
-                    (or jabber-notifications-message-header " ")
-                    text)))
+         ;; (head (jabber-escape-xml
+         ;;        (or title
+         ;;            (or jabber-notifications-message-header " ")
+         ;;            text)))
          (avatar-hash (get (jabber-jid-symbol from) 'avatar-hash)))
       (notifications-notify
        :title title
@@ -83,9 +83,9 @@
   ;; jabber-*-notifications* requires "from" argument, so we cant use
   ;; define-jabber-alert/define-personal-jabber-alert here and do the
   ;; work by hand:
-  (pushnew 'jabber-message-notifications (get 'jabber-alert-message-hooks 'custom-options))
-  (pushnew 'jabber-muc-notifications (get 'jabber-alert-muc-hooks 'custom-options))
-  (pushnew 'jabber-muc-notifications-personal (get 'jabber-alert-muc-hooks 'custom-options))
+  (cl-pushnew 'jabber-message-notifications (get 'jabber-alert-message-hooks 'custom-options))
+  (cl-pushnew 'jabber-muc-notifications (get 'jabber-alert-muc-hooks 'custom-options))
+  (cl-pushnew 'jabber-muc-notifications-personal (get 'jabber-alert-muc-hooks 'custom-options))
   )
 
 (provide 'jabber-notifications)

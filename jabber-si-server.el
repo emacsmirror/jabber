@@ -1,4 +1,4 @@
-;; jabber-si-server.el - handle incoming stream requests, by JEP-0095
+;;; jabber-si-server.el --- handle incoming stream requests, by JEP-0095  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
 ;; Copyright (C) 2003, 2004 - Magnus Henoch - mange@freemail.hu
@@ -34,7 +34,7 @@
 
 Each entry is a list, containing:
  * The namespace URI of the profile
- * Accept function, taking entire IQ stanza, and signalling a 'forbidden'
+ * Accept function, taking entire IQ stanza, and signalling a `forbidden'
    error if request is declined; returning an XML node to return in
    response, or nil of none needed
  * \"Connection established\" function.  See `jabber-si-stream-methods'.")
@@ -56,10 +56,10 @@ Each entry is a list, containing:
 	  (profile-data (assoc profile jabber-si-profiles)))
       ;; Now, feature negotiation for stream type (errors
       ;; don't match JEP-0095, so convert)
-      (condition-case err
+      (condition-case nil
 	  (setq stream-method (jabber-fn-intersection
 			       (jabber-fn-parse feature 'request)
-			       (list (cons "stream-method" (mapcar 'car jabber-si-stream-methods)))))
+			       (list (cons "stream-method" (mapcar #'car jabber-si-stream-methods)))))
 	(jabber-error
 	 (jabber-signal-error "cancel" 'bad-request nil
 			      '((no-valid-streams ((xmlns . "http://jabber.org/protocol/si")))))))

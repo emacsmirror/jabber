@@ -1,4 +1,4 @@
-;;; jabber-festival.el --- Festival alert hooks
+;;; jabber-festival.el --- Festival alert hooks  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2005  Magnus Henoch
 
@@ -21,7 +21,7 @@
 
 (eval-when-compile (require 'jabber-alert))
 
-(condition-case e
+(condition-case nil
     (progn
       ;; Most people don't have Festival, so this will often fail
       (require 'festival)

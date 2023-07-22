@@ -1,4 +1,4 @@
-;; jabber-menu.el - menu definitions
+;;; jabber-menu.el --- menu definitions  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2003, 2004, 2008 - Magnus Henoch - mange@freemail.hu
 ;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
@@ -20,7 +20,7 @@
 ;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 (require 'jabber-util)
-(eval-when-compile (require 'cl))
+(eval-when-compile (require 'cl-lib))
 
 ;;;###autoload
 (defvar jabber-menu
@@ -133,7 +133,8 @@ With prefix argument, remove it."
   (interactive "P")
   (setq jabber-display-menu (if remove nil t))
   (force-mode-line-update))
-(make-obsolete 'jabber-menu "set the variable `jabber-display-menu' instead.")
+(make-obsolete 'jabber-menu "set the variable `jabber-display-menu' instead."
+               "2008")
 
 ;; This used to be:
 ;; (define-key-after global-map [menu-bar jabber-menu] ...)

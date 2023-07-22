@@ -1,4 +1,4 @@
-;;; jabber-si-common.el --- stream initiation (JEP-0095)
+;;; jabber-si-common.el --- stream initiation (JEP-0095)  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2006  Magnus Henoch
 

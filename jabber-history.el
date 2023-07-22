@@ -1,4 +1,4 @@
-;; jabber-history.el - recording message history
+;;; jabber-history.el --- recording message history  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
 ;; Copyright (C) 2004 - Mathias Dahl
@@ -40,28 +40,24 @@ Jabber history files."
 
 (defcustom jabber-history-enabled nil
   "Non-nil means message logging is enabled."
-  :type 'boolean
-  :group 'jabber-history)
+  :type 'boolean)
 
 (defcustom jabber-history-muc-enabled nil
   "Non-nil means MUC logging is enabled.
 Default is nil, cause MUC logging may be i/o-intensive."
-  :type 'boolean
-  :group 'jabber-history)
+  :type 'boolean)
 
 (defcustom jabber-history-dir
   (locate-user-emacs-file "jabber-history" ".emacs-jabber")
   "Base directory where per-contact history files are stored.
 Used only when `jabber-use-global-history' is nil."
-  :type 'directory
-  :group 'jabber-history)
+  :type 'directory)
 
 (defcustom jabber-global-history-filename
   (locate-user-emacs-file "jabber-global-message-log" ".jabber_global_message_log")
   "Global file where all messages are logged.
 Used when `jabber-use-global-history' is non-nil."
-  :type 'file
-  :group 'jabber-history)
+  :type 'file)
 
 (defcustom jabber-use-global-history
   ;; Using a global history file by default was a bad idea.  Let's
@@ -72,8 +68,7 @@ Used when `jabber-use-global-history' is non-nil."
 If non-nil, `jabber-global-history-filename' is used, otherwise,
 messages are stored in per-user files under the
 `jabber-history-dir' directory."
-  :type 'boolean
-  :group 'jabber-history)
+  :type 'boolean)
 
 (defcustom jabber-history-enable-rotation nil
   "Whether history files should be renamed when reach
@@ -81,16 +76,14 @@ messages are stored in per-user files under the
 will grow indefinitely, otherwise they'll be renamed to
 <history-file>-<number>, where <number> is 1 or the smallest
 number after the last rotation."
-  :type 'boolean
-  :group 'jabber-history)
+  :type 'boolean)
 
 (defcustom jabber-history-size-limit 1024
   "Maximum history file size in kilobytes.
 When history file reaches this limit, it is renamed to
 <history-file>-<number>, where <number> is 1 or the smallest
 number after the last rotation."
-  :type 'integer
-  :group 'jabber-history)
+  :type 'integer)
 
 (defvar jabber-history-inhibit-received-message-functions nil
   "Functions determining whether to log an incoming message stanza.
@@ -113,7 +106,7 @@ in the message history.")
 	(jabber-history-rotate history-file (if try (1+ try) 1))
       (rename-file history-file (concat history-file "-" suffix)))))
 
-(add-to-list 'jabber-message-chain 'jabber-message-history)
+(add-to-list 'jabber-message-chain #'jabber-message-history)
 (defun jabber-message-history (jc xml-data)
   "Log message to log file."
   (when (and (not jabber-use-global-history)
@@ -134,9 +127,9 @@ in the message history.")
 	  (when (and from text)
 	    (jabber-history-log-message "in" from nil text timestamp)))))))
 
-(add-hook 'jabber-chat-send-hooks 'jabber-history-send-hook)
+(add-hook 'jabber-chat-send-hooks #'jabber-history-send-hook)
 
-(defun jabber-history-send-hook (body id)
+(defun jabber-history-send-hook (body _id)
   "Log outgoing message to log file."
   (when (and (not jabber-use-global-history)
 	     (not (file-directory-p jabber-history-dir)))
@@ -220,7 +213,7 @@ of the log file."
 							 history-file)))))
                 (matched-files
 		 (cons (car matched-files)
-		       (sort (cdr matched-files) 'string>-numerical))))
+		       (sort (cdr matched-files) #'string>-numerical))))
             (while (not lines-collected)
               (if (null matched-files)
                   (setq lines-collected t)

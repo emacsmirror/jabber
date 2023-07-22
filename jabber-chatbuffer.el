@@ -1,4 +1,4 @@
-;; jabber-chatbuffer.el - functions common to all chat buffers
+;;; jabber-chatbuffer.el --- functions common to all chat buffers  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2005, 2007, 2008 - Magnus Henoch - mange@freemail.hu
 
@@ -87,19 +87,19 @@ window or at `fill-column', whichever is shorter."
 (defun jabber-chat-mode-flyspell-verify ()
   (>= (point) jabber-point-insert))
 (put 'jabber-chat-mode 'flyspell-mode-predicate
-  'jabber-chat-mode-flyspell-verify)
+  #'jabber-chat-mode-flyspell-verify)
 
 (defvar jabber-chat-mode-map 
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map jabber-common-keymap)
-    (define-key map "\r" 'jabber-chat-buffer-send)
+    (define-key map "\r" #'jabber-chat-buffer-send)
     map))
 
 (defun jabber-chat-buffer-send ()
   (interactive)
   ;; If user accidentally hits RET without writing anything, just
   ;; ignore it.
-  (when (plusp (- (point-max) jabber-point-insert))
+  (when (cl-plusp (- (point-max) jabber-point-insert))
     ;; If connection was lost...
     (unless (memq jabber-buffer-connection jabber-connections)
       ;; ...maybe there is a new connection to the same account.

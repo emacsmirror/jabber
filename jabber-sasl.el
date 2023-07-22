@@ -1,4 +1,4 @@
-;; jabber-sasl.el - SASL authentication
+;;; jabber-sasl.el --- SASL authentication  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
 
@@ -18,19 +18,21 @@
 ;; along with this program; if not, write to the Free Software
 ;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-(require 'cl)
+;;; Code:
 
-;;; This file uses sasl.el from FLIM or Gnus.  If it can't be found,
-;;; jabber-core.el won't use the SASL functions.
+(require 'cl-lib)
+
+;; This file uses sasl.el from FLIM or Gnus.  If it can't be found,
+;; jabber-core.el won't use the SASL functions.
 (eval-and-compile
   (condition-case nil
       (require 'sasl)
     (error nil)))
 
-;;; Alternatives to FLIM would be the command line utility of GNU SASL,
-;;; or anything the Gnus people decide to use.
+;; Alternatives to FLIM would be the command line utility of GNU SASL,
+;; or anything the Gnus people decide to use.
 
-;;; See XMPP-CORE and XMPP-IM for details about the protocol.
+;; See XMPP-CORE and XMPP-IM for details about the protocol.
 
 (require 'jabber-xml)
 
@@ -50,15 +52,15 @@
     ;; No suitable mechanism?
     (if (null mechanism)
 	;; Maybe we can use legacy authentication
-	(let ((iq-auth (find "http://jabber.org/features/iq-auth"
-			  (jabber-xml-get-children stream-features 'auth)
-			  :key #'jabber-xml-get-xmlns
-			  :test #'string=))
+	(let ((iq-auth (cl-find "http://jabber.org/features/iq-auth"
+			        (jabber-xml-get-children stream-features 'auth)
+			        :key #'jabber-xml-get-xmlns
+			        :test #'string=))
 	      ;; Or maybe we have to use STARTTLS, but can't
-	      (starttls (find "urn:ietf:params:xml:ns:xmpp-tls"
-			      (jabber-xml-get-children stream-features 'starttls)
-			      :key #'jabber-xml-get-xmlns
-			      :test #'string=)))
+	      (starttls (cl-find "urn:ietf:params:xml:ns:xmpp-tls"
+			         (jabber-xml-get-children stream-features 'starttls)
+			         :key #'jabber-xml-get-xmlns
+			         :test #'string=)))
 	  (cond
 	   (iq-auth
 	    (fsm-send jc :use-legacy-auth-instead))
@@ -97,17 +99,16 @@
 (defun jabber-sasl-read-passphrase-closure (jc remember)
   "Return a lambda function suitable for `sasl-read-passphrase' for JC.
 Call REMEMBER with the password.  REMEMBER is expected to return it as well."
-  (lexical-let ((password (plist-get (fsm-get-state-data jc) :password))
-		(bare-jid (jabber-connection-bare-jid jc))
-		(remember remember))
+  (let ((password (plist-get (fsm-get-state-data jc) :password))
+	(bare-jid (jabber-connection-bare-jid jc)))
     (if password
-	(lambda (prompt) (funcall remember (copy-sequence password)))
-      (lambda (prompt) (funcall remember (jabber-read-password bare-jid))))))
+	(lambda (_prompt) (funcall remember (copy-sequence password)))
+      (lambda (_prompt) (funcall remember (jabber-read-password bare-jid))))))
 
 (defun jabber-sasl-process-input (jc xml-data sasl-data)
-  (let* ((client (first sasl-data))
-	 (step (second sasl-data))
-	 (passphrase (third sasl-data))
+  (let* ((client (car sasl-data))
+	 (step (nth 1 sasl-data))
+	 (passphrase (nth 2 sasl-data))
 	 (sasl-read-passphrase (jabber-sasl-read-passphrase-closure 
 				jc
 				(lambda (p) (setq passphrase (copy-sequence p)) p))))

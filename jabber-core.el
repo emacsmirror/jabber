@@ -1,4 +1,4 @@
-;; jabber-core.el - core functions
+;;; jabber-core.el --- core functions  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
 ;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
@@ -22,7 +22,7 @@
 ;; along with this program; if not, write to the Free Software
 ;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-(require 'cl)
+(require 'cl-lib)
 
 (require 'jabber-util)
 (require 'jabber-logon)
@@ -81,43 +81,36 @@ The functions should accept one argument, the connection object."
 	     jabber-whitespace-ping-start
 	     jabber-keepalive-start
 	     jabber-vcard-avatars-find-current
-	     jabber-autoaway-start)
-  :group 'jabber-core)
+	     jabber-autoaway-start))
 
 (defcustom jabber-pre-disconnect-hook nil
   "*Hooks run just before voluntary disconnection
 This might be due to failed authentication."
-  :type 'hook
-  :group 'jabber-core)
+  :type 'hook)
 
 (defcustom jabber-lost-connection-hooks nil
   "*Hooks run after involuntary disconnection.
 The functions are called with one argument: the connection object."
-  :type 'hook
-  :group 'jabber-core)
+  :type 'hook)
 
 (defcustom jabber-post-disconnect-hook nil
   "*Hooks run after disconnection"
-  :type 'hook
-  :group 'jabber-core)
+  :type 'hook)
 
 (defcustom jabber-auto-reconnect nil
   "Reconnect automatically after losing connection?
 This will be of limited use unless you have the password library
 installed, and have configured it to cache your password
 indefinitely.  See `password-cache' and `password-cache-expiry'."
-  :type 'boolean
-  :group 'jabber-core)
+  :type 'boolean)
 
 (defcustom jabber-reconnect-delay 5
   "Seconds to wait before reconnecting"
-  :type 'integer
-  :group 'jabber-core)
+  :type 'integer)
 
 (defcustom jabber-roster-buffer "*-jabber-roster-*"
   "The name of the roster buffer"
-  :type 'string
-  :group 'jabber-core)
+  :type 'string)
 
 (defvar jabber-process-buffer " *-jabber-process-*"
   "The name of the process buffer")
@@ -129,8 +122,7 @@ if the server doesn't support it.
 
 Disabling this shouldn't be necessary, but it may solve certain
 problems."
-  :type 'boolean
-  :group 'jabber-core)
+  :type 'boolean)
 
 (defsubst jabber-have-sasl-p ()
   "Return non-nil if SASL functions are available."
@@ -153,9 +145,9 @@ If no accounts are configured (or with prefix argument), call `jabber-connect' i
 With many prefix arguments, one less is passed to `jabber-connect'."
   (interactive "P")
   (let ((accounts
-	 (remove-if (lambda (account)
-		      (cdr (assq :disabled (cdr account))))
-		    jabber-account-list)))
+	 (cl-remove-if (lambda (account)
+		         (cdr (assq :disabled (cdr account))))
+		       jabber-account-list)))
     (if (or (null accounts) arg)
 	(let ((current-prefix-arg
 	       (cond
@@ -330,11 +322,11 @@ With double prefix argument, specify more connection details."
       (list state-data nil))))
 
 (define-state jabber-connection nil
-  (fsm state-data event callback)
+  (fsm state-data event _callback)
   ;; In the `nil' state, the connection is dead.  We wait for a
   ;; :timeout message, meaning to reconnect, or :do-disconnect,
   ;; meaning to cancel reconnection.
-  (case event
+  (pcase event
     (:timeout
      (list :connecting state-data))
     (:do-disconnect
@@ -353,11 +345,11 @@ With double prefix argument, specify more connection details."
   (list state-data nil))
 
 (define-state jabber-connection :connecting
-  (fsm state-data event callback)
-  (case (or (car-safe event) event)
+  (fsm state-data event _callback)
+  (pcase (or (car-safe event) event)
     (:connected
      (let ((connection (cadr event))
-	   (registerp (plist-get state-data :registerp)))
+	   ) ;; (registerp (plist-get state-data :registerp))
 
        (setq state-data (plist-put state-data :connection connection))
 
@@ -410,8 +402,8 @@ With double prefix argument, specify more connection details."
   (list state-data nil))
 
 (define-state jabber-connection :connected
-  (fsm state-data event callback)
-  (case (or (car-safe event) event)
+  (fsm state-data event _callback)
+  (pcase (or (car-safe event) event)
     (:filter
      (let ((process (cadr event))
 	   (string (car (cddr event))))
@@ -477,8 +469,8 @@ With double prefix argument, specify more connection details."
   (list state-data nil))
 
 (define-state jabber-connection :starttls
-  (fsm state-data event callback)
-  (case (or (car-safe event) event)
+  (fsm state-data event _callback)
+  (pcase (or (car-safe event) event)
     (:filter
      (let ((process (cadr event))
 	   (string (car (cddr event))))
@@ -511,9 +503,9 @@ With double prefix argument, specify more connection details."
   (list state-data nil))
 
 (define-state jabber-connection :register-account
-  (fsm state-data event callback)
+  (fsm state-data event _callback)
   ;; The connection will be closed in jabber-register
-  (case (or (car-safe event) event)
+  (pcase (or (car-safe event) event)
     (:filter
      (let ((process (cadr event))
 	   (string (car (cddr event))))
@@ -542,8 +534,8 @@ With double prefix argument, specify more connection details."
   (list state-data nil))
 
 (define-state jabber-connection :legacy-auth
-  (fsm state-data event callback)
-  (case (or (car-safe event) event)
+  (fsm state-data event _callback)
+  (pcase (or (car-safe event) event)
     (:filter
      (let ((process (cadr event))
 	   (string (car (cddr event))))
@@ -587,8 +579,8 @@ With double prefix argument, specify more connection details."
     (list new-state-data nil)))
 
 (define-state jabber-connection :sasl-auth
-  (fsm state-data event callback)
-  (case (or (car-safe event) event)
+  (fsm state-data event _callback)
+  (pcase (or (car-safe event) event)
     (:filter
      (let ((process (cadr event))
 	   (string (car (cddr event))))
@@ -629,8 +621,8 @@ With double prefix argument, specify more connection details."
   (list state-data nil))
 
 (define-state jabber-connection :bind
-  (fsm state-data event callback)
-  (case (or (car-safe event) event)
+  (fsm state-data event _callback)
+  (pcase (or (car-safe event) event)
     (:filter
      (let ((process (cadr event))
 	   (string (car (cddr event))))
@@ -733,8 +725,8 @@ With double prefix argument, specify more connection details."
   "Wait this long before doing presence packet batch processing.")
 
 (define-state jabber-connection :session-established
-  (fsm state-data event callback)
-  (case (or (car-safe event) event)
+  (fsm state-data event _callback)
+  (pcase (or (car-safe event) event)
     (:filter
      (let ((process (cadr event))
 	   (string (car (cddr event))))
@@ -788,9 +780,9 @@ With double prefix argument, specify more connection details."
      (list nil (plist-put state-data
 			  :disconnection-expected t)))))
 
-(defun jabber-disconnect (&optional arg)
+(defun jabber-disconnect (&optional arg interactivep)
   "Disconnect from all Jabber servers. If ARG supplied, disconnect one account."
-  (interactive "P")
+  (interactive "P\np")
   (if arg
       (jabber-disconnect-one (jabber-read-account))
     (unless *jabber-disconnecting*	; avoid reentry
@@ -803,15 +795,15 @@ With double prefix argument, specify more connection details."
 	  (setq jabber-connections nil)
 
 	  (jabber-disconnected)
-	  (when (interactive-p)
+	  (when interactivep
 	    (message "Disconnected from Jabber server(s)")))))))
 
-(defun jabber-disconnect-one (jc &optional dont-redisplay)
+(defun jabber-disconnect-one (jc &optional dont-redisplay interactivep)
   "Disconnect from one Jabber server.
 If DONT-REDISPLAY is non-nil, don't update roster buffer."
-  (interactive (list (jabber-read-account)))
+  (interactive (list (jabber-read-account) nil 'interactive))
   (fsm-send-sync jc :do-disconnect)
-  (when (interactive-p)
+  (when interactivep
     (message "Disconnected from %s"
 	     (jabber-connection-jid jc)))
   (unless dont-redisplay
@@ -843,6 +835,7 @@ DATA is any sexp."
     (goto-char (point-max))
     (insert string)
 
+    (defvar jabber-filtering)
     (unless (boundp 'jabber-filtering)
       (let (jabber-filtering)
 	(jabber-filter process fsm)))))
@@ -853,7 +846,7 @@ DATA is any sexp."
     ;; Start from the beginning
     (goto-char (point-min))
     (let (xml-data)
-      (loop 
+      (cl-loop 
        do
        ;; Skip whitespace
        (unless (zerop (skip-chars-forward " \t\r\n"))
@@ -864,7 +857,7 @@ DATA is any sexp."
 
        ;; Stream end?
        (when (looking-at "</stream:stream>")
-	 (return (fsm-send fsm :stream-end)))
+	 (cl-return (fsm-send fsm :stream-end)))
 
        ;; Stream header?
        (when (looking-at "<stream:stream[^>]*\\(>\\)")

@@ -1,4 +1,4 @@
-;; jabber-ratpoison.el - emacs-jabber interface to ratpoison
+;;; jabber-ratpoison.el --- emacs-jabber interface to ratpoison  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2005, 2008 - Magnus Henoch - mange@freemail.hu
 
@@ -23,7 +23,7 @@
 (defun jabber-ratpoison-message (text &optional title)
   "Show MSG in Ratpoison"
   ;; Possible errors include not finding the ratpoison binary.
-  (condition-case e
+  (condition-case nil
       (let ((process-connection-type))
 	(call-process "ratpoison" nil 0 nil "-c" (concat "echo " (or title text))))
     (error nil)))

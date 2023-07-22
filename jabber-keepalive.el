@@ -1,4 +1,4 @@
-;; jabber-keepalive.el - try to detect lost connection
+;;; jabber-keepalive.el --- try to detect lost connection  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2004, 2008 - Magnus Henoch - mange@freemail.hu
 ;; Copyright (C) 2007 - Detlev Zundel - dzu@gnu.org
@@ -35,13 +35,11 @@
 
 (defcustom jabber-keepalive-interval 600
   "Interval in seconds between connection checks."
-  :type 'integer
-  :group 'jabber-keepalive)
+  :type 'integer)
 
 (defcustom jabber-keepalive-timeout 20
   "Seconds to wait for response from server."
-  :type 'integer
-  :group 'jabber-keepalive)
+  :type 'integer)
 
 (defvar jabber-keepalive-timer nil
   "Timer object for keepalive function")
@@ -56,7 +54,7 @@
   "Log keepalive traffic when non-nil")
 
 ;;;###autoload
-(defun jabber-keepalive-start (&optional jc)
+(defun jabber-keepalive-start (&optional _jc)
   "Activate keepalive.
 That is, regularly send a ping request to the server, and
 disconnect if it doesn't answer.  See `jabber-keepalive-interval'
@@ -73,8 +71,8 @@ for all accounts regardless of the argument."
   (setq jabber-keepalive-timer
 	(run-with-timer 5
 			jabber-keepalive-interval
-			'jabber-keepalive-do))
-  (add-hook 'jabber-post-disconnect-hook 'jabber-keepalive-stop))
+			#'jabber-keepalive-do))
+  (add-hook 'jabber-post-disconnect-hook #'jabber-keepalive-stop))
 
 (defun jabber-keepalive-stop ()
   "Deactivate keepalive"
@@ -90,14 +88,14 @@ for all accounts regardless of the argument."
   (setq jabber-keepalive-timeout-timer
 	(run-with-timer jabber-keepalive-timeout
 			nil
-			'jabber-keepalive-timeout))
+			#'jabber-keepalive-timeout))
   (setq jabber-keepalive-pending jabber-connections)
   (dolist (c jabber-connections)
     ;; Whether we get an error or not is not interesting.
     ;; Getting a response at all is.
     (jabber-ping-send c nil 'jabber-keepalive-got-response nil nil)))
 
-(defun jabber-keepalive-got-response (jc &rest args)
+(defun jabber-keepalive-got-response (jc &rest _args)
   (when jabber-keepalive-debug
     (message "%s: got keepalive response from %s"
 	     (current-time-string)
@@ -142,7 +140,7 @@ If you want to verify that the server is able to answer, see
   "Timer object for whitespace pings")
 
 ;;;###autoload
-(defun jabber-whitespace-ping-start (&optional jc)
+(defun jabber-whitespace-ping-start (&optional _jc)
   "Start sending whitespace pings at regular intervals.
 See `jabber-whitespace-ping-interval'.
 
@@ -156,8 +154,8 @@ accounts."
   (setq jabber-whitespace-ping-timer
 	(run-with-timer 5
 			jabber-whitespace-ping-interval
-			'jabber-whitespace-ping-do))
-  (add-hook 'jabber-post-disconnect-hook 'jabber-whitespace-ping-stop))
+			#'jabber-whitespace-ping-do))
+  (add-hook 'jabber-post-disconnect-hook #'jabber-whitespace-ping-stop))
 
 (defun jabber-whitespace-ping-stop ()
   "Deactivate whitespace pings"

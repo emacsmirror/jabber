@@ -1,4 +1,4 @@
-;; jabber-modeline.el - display jabber status in modeline
+;;; jabber-modeline.el --- display jabber status in modeline  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2004 - Magnus Henoch - mange@freemail.hu
 
@@ -18,9 +18,11 @@
 ;; along with this program; if not, write to the Free Software
 ;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+;;; Code:
+
 (require 'jabber-presence)
 (require 'jabber-alert)
-(eval-when-compile (require 'cl))
+(eval-when-compile (require 'cl-lib))
 
 (defgroup jabber-mode-line nil
   "Display Jabber status in mode line"
@@ -28,23 +30,20 @@
 
 (defcustom jabber-mode-line-compact t
   "Count contacts in fewer categories for compact view"
-  :group 'jabber-mode-line
   :type 'boolean)
 
 (defvar jabber-mode-line-string nil)
 (defvar jabber-mode-line-presence nil)
 (defvar jabber-mode-line-contacts nil)
 
-(defadvice jabber-send-presence (after jsp-update-mode-line
-				       (show status priority))
-  (jabber-mode-line-presence-update))
+(advice-add 'jabber-send-presence :after #'jabber-mode-line-presence-update)
 
-(defun jabber-mode-line-presence-update ()
+(defun jabber-mode-line-presence-update (&rest _)
   (setq jabber-mode-line-presence (if (and jabber-connections (not *jabber-disconnecting*))
 				      (cdr (assoc *jabber-current-show* jabber-presence-strings))
 				    "Offline")))
 
-(defun jabber-mode-line-count-contacts (&rest ignore)
+(defun jabber-mode-line-count-contacts (&rest _ignore)
   (let ((count (list (cons "chat" 0)
 		     (cons "" 0)
 		     (cons "away" 0)
@@ -54,7 +53,7 @@
     (dolist (jc jabber-connections)
       (dolist (buddy (plist-get (fsm-get-state-data jc) :roster))
 	(when (assoc (get buddy 'show) count)
-	  (incf (cdr (assoc (get buddy 'show) count))))))
+	  (cl-incf (cdr (assoc (get buddy 'show) count))))))
     (setq jabber-mode-line-contacts
 	  (if jabber-mode-line-compact
 	      (format "(%d/%d/%d)"
@@ -64,15 +63,15 @@
 			 (cdr (assoc "xa" count))
 			 (cdr (assoc "dnd" count)))
 		      (cdr (assoc nil count)))
-	    (apply 'format "(%d/%d/%d/%d/%d/%d)"
-		   (mapcar 'cdr count))))))
+	    (apply #'format "(%d/%d/%d/%d/%d/%d)"
+		   (mapcar #'cdr count))))))
 
 (define-minor-mode jabber-mode-line-mode
   "Toggle display of Jabber status in mode lines.
 Display consists of your own status, and six numbers
 meaning the number of chatty, online, away, xa, dnd
 and offline contacts, respectively."
-  :global t :group 'jabber-mode-line
+  :global t
   (setq jabber-mode-line-string "")
   (or global-mode-string (setq global-mode-string '("")))
   (if jabber-mode-line-mode
@@ -89,9 +88,9 @@ and offline contacts, respectively."
 	(jabber-mode-line-count-contacts)
 	(ad-activate 'jabber-send-presence)
 	(add-hook 'jabber-post-disconnect-hook
-		  'jabber-mode-line-presence-update)
+		  #'jabber-mode-line-presence-update)
 	(add-hook 'jabber-presence-hooks
-		  'jabber-mode-line-count-contacts))))
+		  #'jabber-mode-line-count-contacts))))
 
 (provide 'jabber-modeline)
 

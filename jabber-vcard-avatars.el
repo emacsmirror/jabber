@@ -1,4 +1,4 @@
-;;; jabber-vcard-avatars.el --- Avatars by JEP-0153
+;;; jabber-vcard-avatars.el --- Avatars by JEP-0153  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2006, 2007, 2008  Magnus Henoch
 
@@ -75,7 +75,7 @@ Keys are full JIDs.")
 		  #'jabber-vcard-avatars-vcard (cons who sha1-hash)
 		  #'ignore nil))
 
-(defun jabber-vcard-avatars-vcard (jc iq closure)
+(defun jabber-vcard-avatars-vcard (_jc iq closure)
   "Get the photo from the vCard, and set the avatar."
   (let ((from (car closure))
 	(sha1-hash (cdr closure))

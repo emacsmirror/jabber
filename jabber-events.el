@@ -1,4 +1,4 @@
-;;; jabber-events.el --- Message events (JEP-0022) implementation
+;;; jabber-events.el --- Message events (JEP-0022) implementation  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2005, 2008  Magnus Henoch
 
@@ -19,15 +19,17 @@
 ;; the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 ;; Boston, MA 02111-1307, USA.
 
-(require 'cl)
+;;; Code:
+
+(require 'cl-lib)
 
 (defgroup jabber-events nil 
   "Message events and notifications."
   :group 'jabber)
 
 ;;; INCOMING
-;;; Code for requesting event notifications from others and handling
-;;; them.
+;; Code for requesting event notifications from others and handling
+;; them.
 
 (defcustom jabber-events-request-these '(offline
 					 delivered
@@ -37,8 +39,7 @@
   :type '(set (const :tag "Delivered to offline storage" offline)
 	      (const :tag "Delivered to user's client" delivered)
 	      (const :tag "Displayed to user" displayed)
-	      (const :tag "User is typing a reply" composing))
-  :group 'jabber-events)
+	      (const :tag "User is typing a reply" composing)))
 
 (defvar jabber-events-composing-p nil
   "Is the other person composing a message?")
@@ -65,30 +66,27 @@ probably reading the message).")
 		(when jabber-events-composing-p
 		  " (typing a message)"))))
 
-(add-hook 'jabber-chat-send-hooks 'jabber-events-when-sending)
-(defun jabber-events-when-sending (text id)
+(add-hook 'jabber-chat-send-hooks #'jabber-events-when-sending)
+(defun jabber-events-when-sending (_text _id)
   (setq jabber-events-arrived nil)
   (jabber-events-update-message)
   `((x ((xmlns . "jabber:x:event"))
        ,@(mapcar #'list jabber-events-request-these))))
 
 ;;; OUTGOING
-;;; Code for handling requests for event notifications and providing
-;;; them, modulo user preferences.
+;; Code for handling requests for event notifications and providing
+;; them, modulo user preferences.
 
 (defcustom jabber-events-confirm-delivered t
   "Send delivery confirmation if requested?"
-  :group 'jabber-events
   :type 'boolean)
 
 (defcustom jabber-events-confirm-displayed t
   "Send display confirmation if requested?"
-  :group 'jabber-events
   :type 'boolean)
 
 (defcustom jabber-events-confirm-composing t
   "Send notifications about typing a reply?"
-  :group 'jabber-events
   :type 'boolean)
 
 (defvar jabber-events-requested ()
@@ -112,7 +110,8 @@ probably reading the message).")
 It can be sent and cancelled several times.")
 
 (add-hook 'window-configuration-change-hook
-	  'jabber-events-confirm-display)
+	  ;; FIXME: Make it buffer-local?
+	  #'jabber-events-confirm-display)
 (defun jabber-events-confirm-display ()
   "Send display confirmation if appropriate.
 That is, if user allows it, if the other user requested it,
@@ -156,21 +155,21 @@ and it hasn't been sent before."
 ;;; COMMON
 
 ;; Add function last in chain, so a chat buffer is already created.
-(add-to-list 'jabber-message-chain 'jabber-handle-incoming-message-events t)
+(add-to-list 'jabber-message-chain #'jabber-handle-incoming-message-events t)
 
 (defun jabber-handle-incoming-message-events (jc xml-data)
   (when (and (not (jabber-muc-message-p xml-data))
 	     (get-buffer (jabber-chat-get-buffer (jabber-xml-get-attribute xml-data 'from))))
     (with-current-buffer (jabber-chat-get-buffer (jabber-xml-get-attribute xml-data 'from))
-      (let ((x (find "jabber:x:event"
-		     (jabber-xml-get-children xml-data 'x)
-		     :key #'(lambda (x) (jabber-xml-get-attribute x 'xmlns))
-		     :test #'string=)))
+      (let ((x (cl-find "jabber:x:event"
+		        (jabber-xml-get-children xml-data 'x)
+		        :key #'(lambda (x) (jabber-xml-get-attribute x 'xmlns))
+		        :test #'string=)))
 	(cond
 	 ;; If we get an error message, we shouldn't report any
 	 ;; events, as the requests are mirrored from us.
 	 ((string= (jabber-xml-get-attribute xml-data 'type) "error")
-	  (remove-hook 'post-command-hook 'jabber-events-after-change t)
+	  (remove-hook 'post-command-hook #'jabber-events-after-change t)
 	  (setq jabber-events-requested nil))
 	  
 	 ;; If there's a body, it's not an incoming message event.
@@ -194,15 +193,15 @@ and it hasn't been sent before."
 				       xml-data 'id))
 
 	  ;; Send notifications we already know about
-	  (flet ((send-notification 
-		  (type)
-		  (jabber-send-sexp 
-		   jc
-		   `(message 
-		     ((to . ,(jabber-xml-get-attribute xml-data 'from)))
-		     (x ((xmlns . "jabber:x:event"))
-			(,type)
-			(id () ,jabber-events-last-id))))))
+	  (cl-flet ((send-notification 
+		      (type)
+		      (jabber-send-sexp 
+		       jc
+		       `(message 
+		         ((to . ,(jabber-xml-get-attribute xml-data 'from)))
+		         (x ((xmlns . "jabber:x:event"))
+			    (,type)
+			    (id () ,jabber-events-last-id))))))
 	    ;; Send delivery confirmation if appropriate
 	    (when (and jabber-events-confirm-delivered
 		       (memq 'delivered jabber-events-requested))
@@ -219,7 +218,7 @@ and it hasn't been sent before."
 	    ;; Set up hooks for composition notification
 	    (when (and jabber-events-confirm-composing
 		       (memq 'composing jabber-events-requested))
-	      (add-hook 'post-command-hook 'jabber-events-after-change
+	      (add-hook 'post-command-hook #'jabber-events-after-change
 			nil t))))
 	 (t
 	  ;; So it has no body.  If it's a message event,
@@ -231,11 +230,11 @@ and it hasn't been sent before."
 	
 	    ;; There's only one node except for the id.
 	    (unless
-		(dolist (possible-node '(offline delivered displayed))
+		(cl-dolist (possible-node '(offline delivered displayed))
 		  (when (jabber-xml-get-children x possible-node)
 		    (setq jabber-events-arrived possible-node)
 		    (jabber-events-update-message)
-		    (return t)))
+		    (cl-return t)))
 	      ;; Or maybe even zero, which is a negative composing node.
 	      (setq jabber-events-composing-p
 		    (not (null (jabber-xml-get-children x 'composing))))

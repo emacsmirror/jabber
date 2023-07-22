@@ -1,4 +1,4 @@
-;;; jabber-compose.el --- compose a Jabber message in a buffer
+;;; jabber-compose.el --- compose a Jabber message in a buffer  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2006, 2007  Magnus Henoch
 
@@ -65,7 +65,7 @@
     (switch-to-buffer (current-buffer))
     (goto-char (point-min))))
 
-(defun jabber-compose-send (&rest ignore)
+(defun jabber-compose-send (&rest _ignore)
   (let ((recipients (widget-value (cdr (assq :recipients jabber-widget-alist))))
 	(subject (widget-value (cdr (assq :subject jabber-widget-alist))))
 	(text (widget-value (cdr (assq :text jabber-widget-alist)))))

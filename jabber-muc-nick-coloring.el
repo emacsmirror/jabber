@@ -1,4 +1,4 @@
-;;; jabber-muc-nick-coloring.el --- Add nick coloring abilyty to emacs-jabber
+;;; jabber-muc-nick-coloring.el --- Add nick coloring abilyty to emacs-jabber  -*- lexical-binding: t; -*-
 
 ;; Copyright 2009, 2010, 2012, 2013 Terechkov Evgenii - evg@altlinux.org
 
@@ -20,7 +20,7 @@
 
 ;;; Code:
 
-(eval-when-compile (require 'cl))	;for ignore-errors
+(eval-when-compile (require 'cl-lib))	;for ignore-errors
 ;; we need hexrgb-hsv-to-hex:
 (eval-and-compile
   (or (ignore-errors (require 'hexrgb))

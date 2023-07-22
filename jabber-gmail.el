@@ -1,4 +1,4 @@
-;;; jabber-gmail.el --- Gmail notifications via emacs-jabber
+;;; jabber-gmail.el --- Gmail notifications via emacs-jabber  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2008  Magnus Henoch <mange@freemail.hu>
 ;; Copyright (C) 2007  Valery V. Vorotyntsev <valery.vv@gmail.com>
@@ -81,7 +81,7 @@ See http://code.google.com/apis/talk/jep_extensions/gmail.html#requestmail"
 		  #'jabber-gmail-process-mailbox nil
 		  #'jabber-process-data "Gmail query" "gmail-query"))
 
-(defun jabber-gmail-process-mailbox (jc xml-sexp &rest ignore)
+(defun jabber-gmail-process-mailbox (_jc xml-sexp &rest _ignore)
   "Process gmail query response.
 See http://code.google.com/apis/talk/jep_extensions/gmail.html#response"
   (let ((ts (jabber-xml-node-children

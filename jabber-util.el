@@ -1,4 +1,4 @@
-;; jabber-util.el - various utility functions    -*- coding: utf-8; -*-
+;;; jabber-util.el --- various utility functions    -*- coding: utf-8; lexical-binding: t; -*-
 
 ;; Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
 ;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
@@ -21,7 +21,7 @@
 ;; along with this program; if not, write to the Free Software
 ;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-(require 'cl)
+(require 'cl-lib)
 (require 'password-cache)
 (condition-case nil
     (require 'auth-source)
@@ -52,7 +52,7 @@
 
 ;;; XEmacs compatibility.  Stolen from ibuffer.el
 (if (fboundp 'propertize)
-    (defalias 'jabber-propertize 'propertize)
+    (defalias 'jabber-propertize #'propertize)
   (defun jabber-propertize (string &rest properties)
     "Return a copy of STRING with text properties added.
 
@@ -93,7 +93,7 @@ properties to add to the result."
       (error error-message))))
 
 (if (fboundp 'float-time)
-    (defalias 'jabber-float-time 'float-time)
+    (defalias 'jabber-float-time #'float-time)
   (defun jabber-float-time (&optional specified-time)
     (unless specified-time
       (setq specified-time (current-time)))
@@ -103,9 +103,9 @@ properties to add to the result."
 
 (cond
  ((fboundp 'cancel-timer)
-  (defalias 'jabber-cancel-timer 'cancel-timer))
+  (defalias 'jabber-cancel-timer #'cancel-timer))
  ((fboundp 'delete-itimer)
-  (defalias 'jabber-cancel-timer 'delete-itimer))
+  (defalias 'jabber-cancel-timer #'delete-itimer))
  (t
   (error "No `cancel-timer' function found")))
 
@@ -153,9 +153,9 @@ binding."
 (defun jabber-find-connection (bare-jid)
   "Find the connection to the account named by BARE-JID.
 Return nil if none found."
-  (dolist (jc jabber-connections)
+  (cl-dolist (jc jabber-connections)
     (when (string= bare-jid (jabber-connection-bare-jid jc))
-      (return jc))))
+      (cl-return jc))))
 
 (defun jabber-find-active-connection (dead-jc)
   "Given a dead connection, find an active connection to the same account.
@@ -196,11 +196,12 @@ Return nil if none found."
 (defun jabber-jid-bookmarkname (string)
   "Return the conference name from boomarks or displayname from roster, or JID if none set"
   (require 'jabber-bookmarks)
-  (or (loop for conference in (first (loop for value being the hash-values of jabber-bookmarks
-                                           collect value))
+  (or (cl-loop for conference
+               in (car (cl-loop for value being the hash-values of jabber-bookmarks
+                                collect value))
             do (let ((ls (cadr conference)))
                  (if (string= (cdr (assoc 'jid ls)) string)
-                     (return (cdr (assoc 'name ls))))))
+                     (cl-return (cdr (assoc 'name ls))))))
       (jabber-jid-displayname string)))
 
 (defun jabber-jid-resource (string)
@@ -278,8 +279,8 @@ If FULLJIDS is non-nil, complete jids with resources."
 		   input))))
 
     (when chosen
-      (case resource
-	(full
+      (pcase resource
+	('full
 	 ;; If JID is bare, add the highest-priority resource.
 	 (if (jabber-jid-resource chosen)
 	     chosen
@@ -287,7 +288,7 @@ If FULLJIDS is non-nil, complete jids with resources."
 	     (if highest-resource
 		 (concat chosen "/" highest-resource)
 	       chosen))))
-	(bare-or-muc
+	('bare-or-muc
 	 ;; If JID is full and non-MUC, remove resource.
 	 (if (null (jabber-jid-resource chosen))
 	     chosen
@@ -295,7 +296,7 @@ If FULLJIDS is non-nil, complete jids with resources."
 	     (if (assoc bare *jabber-active-groupchats*)
 		 chosen
 	       bare))))
-	(t
+	(_
 	 chosen)))))
 
 (defun jabber-read-node (prompt)
@@ -367,13 +368,14 @@ that has that contact in its roster."
        (cdr (assoc (let ((at-point (get-text-property (point) 'jabber-account)))
                      (when (and at-point
                                 (memq at-point jabber-connections))
-                       (jabber-connection-bare-jid at-point))) completions))
+                       (jabber-connection-bare-jid at-point)))
+                   completions))
        (let* ((default 
                 (or
 		 (and contact-hint
 		      (setq contact-hint (jabber-jid-symbol contact-hint))
 		      (let ((matching
-			     (find-if
+			     (cl-find-if
 			      (lambda (jc)
 				(memq contact-hint (plist-get (fsm-get-state-data jc) :roster)))
 			      jabber-connections)))
@@ -499,7 +501,7 @@ TIME is in a format accepted by `format-time-string'."
 			 (string-to-number (substring timezone 4 6))))))))
       (encode-time second minute hour day month year timezone-seconds))))
 
-(defun jabber-report-success (jc xml-data context)
+(defun jabber-report-success (_jc xml-data context)
   "IQ callback reporting success or failure of the operation.
 CONTEXT is a string describing the action.
 \"CONTEXT succeeded\" or \"CONTEXT failed: REASON\" is displayed in
@@ -626,12 +628,12 @@ See secton 9.3, Stanza Errors, of XMPP Core, and JEP-0086, Legacy Errors."
   "Return the condition of a <stream:error/> tag."
   ;; as we don't know the node name of the condition, we have to
   ;; search for it.
-  (dolist (node (jabber-xml-node-children error-xml))
+  (cl-dolist (node (jabber-xml-node-children error-xml))
     (when (and (string= (jabber-xml-get-attribute node 'xmlns) 
 			"urn:ietf:params:xml:ns:xmpp-streams")
 	       (assq (jabber-xml-node-name node)
 		     jabber-stream-error-messages))
-      (return (jabber-xml-node-name node)))))
+      (cl-return (jabber-xml-node-name node)))))
 
 (defun jabber-parse-stream-error (error-xml)
   "Parse the given <stream:error/> tag and return a sting fit for human consumption."
@@ -667,7 +669,7 @@ For example, \"ji%C5%99i@%C4%8Dechy.example/v%20Praze\" becomes
 \"jiři@čechy.example/v Praze\"."
   (decode-coding-string (url-unhex-string string) 'utf-8))
 
-(defun jabber-handle-uri (uri &rest ignored-args)
+(defun jabber-handle-uri (uri &rest _ignored-args)
   "Handle XMPP links according to draft-saintandre-xmpp-iri-04.
 See Info node `(jabber)XMPP URIs'."
   (interactive "sEnter XMPP URI: ")
@@ -694,8 +696,8 @@ See Info node `(jabber)XMPP URIs'."
 		  (let ((pairs (split-string text ";")))
 		    (mapcar (lambda (pair)
 			      ;; ...and split keys from values by '='.
-			      (destructuring-bind (key value) 
-				  (split-string pair "=")
+			      (pcase-let ((`(,key ,value)
+				           (split-string pair "=")))
 				;; Values can be hex-coded.
 				(cons key (jabber-unhex value))))
 			    pairs))))))
@@ -748,14 +750,14 @@ temporaly buffer _before_ inserting STRING."
   "Apply FN to all nodes in the TREE starting with root. FN is
 applied to the node and not to the data itself."
   (let ((result (cons nil nil)))
-    (do ((tail tree (cdr tail))
-	 (prev result end)
-	 (end result (let* ((x (car tail))
-			    (val (if (atom x)
-				     (funcall fn x)
-                                   (jabber-tree-map fn x))))
-		       (setf (car end) val (cdr end) (cons nil
-                                                           nil)))))
+    (cl-do ((tail tree (cdr tail))
+	    (prev result end)
+	    (end result (let* ((x (car tail))
+			       (val (if (atom x)
+				        (funcall fn x)
+                                      (jabber-tree-map fn x))))
+		          (setf (car end) val (cdr end) (cons nil
+                                                              nil)))))
 	((atom tail)
 	 (progn
 	   (setf (cdr prev) (if tail (funcall fn tail) nil))

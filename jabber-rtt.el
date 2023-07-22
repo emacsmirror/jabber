@@ -1,4 +1,4 @@
-;;; jabber-rtt.el --- XEP-0301: In-Band Real Time Text
+;;; jabber-rtt.el --- XEP-0301: In-Band Real Time Text  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2013  Magnus Henoch
 
@@ -23,7 +23,8 @@
 
 ;;; Code:
 
-(eval-when-compile (require 'cl))
+(eval-when-compile (require 'cl-lib))
+(require 'ewoc)
 
 ;;;; Handling incoming events
 
@@ -52,7 +53,7 @@
   '(add-to-list 'jabber-message-chain #'jabber-rtt-handle-message t))
 
 ;;;###autoload
-(defun jabber-rtt-handle-message (jc xml-data)
+(defun jabber-rtt-handle-message (_jc xml-data)
   ;; We could support this for MUC as well, if useful.
   (when (and (not (jabber-muc-message-p xml-data))
 	     (get-buffer (jabber-chat-get-buffer (jabber-xml-get-attribute xml-data 'from))))
@@ -117,8 +118,8 @@
     (catch 'wait
       (while jabber-rtt-pending-events
 	(let ((action (pop jabber-rtt-pending-events)))
-	  (case (jabber-xml-node-name action)
-	    ((t)
+	  (pcase (jabber-xml-node-name action)
+	    ('t
 	     ;; insert text
 	     (let* ((p (jabber-xml-get-attribute action 'p))
 		    (position (if p (string-to-number p) (length jabber-rtt-message))))
@@ -130,7 +131,7 @@
 	       (ewoc-set-data jabber-rtt-ewoc-node (list :notice (concat "[typing...] " jabber-rtt-message)))
 	       (let ((inhibit-read-only t))
 		 (ewoc-invalidate jabber-chat-ewoc jabber-rtt-ewoc-node))))
-	    ((e)
+	    ('e
 	     ;; erase text
 	     (let* ((p (jabber-xml-get-attribute action 'p))
 		    (position (if p (string-to-number p) (length jabber-rtt-message)))
@@ -147,7 +148,7 @@
 	       (ewoc-set-data jabber-rtt-ewoc-node (list :notice (concat "[typing...] " jabber-rtt-message)))
 	       (let ((inhibit-read-only t))
 		 (ewoc-invalidate jabber-chat-ewoc jabber-rtt-ewoc-node))))
-	    ((w)
+	    ('w
 	     (setq jabber-rtt-timer
 		   (run-with-timer
 		    (/ (string-to-number (jabber-xml-get-attribute action 'n)) 1000.0)
@@ -199,7 +200,7 @@
 This lets the recipient see every change made to the message up
 until it's sent.  The recipient's client needs to implement
 XEP-0301, In-Band Real Time Text."
-  nil " Real-Time" nil
+  :lighter " Real-Time"
   (if (null jabber-rtt-send-mode)
       (progn
 	(remove-hook 'after-change-functions #'jabber-rtt--queue-update t)

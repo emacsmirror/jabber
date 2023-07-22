@@ -1,4 +1,4 @@
-;; jabber-tmux.el - emacs-jabber interface to tmux
+;;; jabber-tmux.el --- emacs-jabber interface to tmux  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2012 - Michael Cardell Widerkrantz <mc@hack.org>
 

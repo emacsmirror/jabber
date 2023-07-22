@@ -1,9 +1,11 @@
-;;; Test the client by capturing its input and output into a virtual
-;;; jabber server.  This is not a test in itself, but a framework for
-;;; actual tests.
+;;; tests/jabberd.el ---  -*- lexical-binding: t; -*- 
+
+;; Test the client by capturing its input and output into a virtual
+;; jabber server.  This is not a test in itself, but a framework for
+;; actual tests.
 
 (require 'jabber)
-(require 'cl)
+(require 'cl-lib)
 
 (defvar jabberd-stanza-handlers '(jabberd-sasl jabberd-iq)
   "List of stanza handler hooks.
@@ -100,7 +102,7 @@ arguments, the client FSM and the stanza.")
 (defun jabberd-iq (fsm stanza)
   "Handle IQs from the client."
   (when (eq (jabber-xml-node-name stanza) 'iq)
-    (jabber-xml-let-attributes (type id) stanza
+    (jabber-xml-let-attributes (type _id) stanza
       (cond
        ((member type '("get" "set"))
 	(let* ((table (if (string= type "get")

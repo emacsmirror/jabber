@@ -1,4 +1,4 @@
-;; jabber-search.el - searching by JEP-0055, with x:data support
+;;; jabber-search.el --- searching by JEP-0055, with x:data support  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
 ;; Copyright (C) 2003, 2004 - Magnus Henoch - mange@freemail.hu
@@ -18,6 +18,8 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program; if not, write to the Free Software
 ;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+;;; Code:
 
 (require 'jabber-register)
 
@@ -40,7 +42,7 @@
 
 ;; jabber-submit-search is called when the "submit" button of the
 ;; search form is activated.
-(defun jabber-submit-search (&rest ignore)
+(defun jabber-submit-search (&rest _ignore)
   "Submit search.  See `jabber-process-register-or-search'."
 
   (let ((text (concat "Search at " jabber-submit-to)))
@@ -61,14 +63,14 @@
 
   (message "Search sent"))
 
-(defun jabber-process-search-result (jc xml-data)
+(defun jabber-process-search-result (_jc xml-data)
   "Receive and display search results."
 
   ;; This function assumes that all search results come in one packet,
   ;; which is not necessarily the case.
   (let ((query (jabber-iq-query xml-data))
 	(have-xdata nil)
-	xdata fields (jid-fields 0))
+	xdata fields) ;; (jid-fields 0)
 
     ;; First, check for results in jabber:x:data form.
     (dolist (x (jabber-xml-get-children query 'x))

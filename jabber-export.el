@@ -1,4 +1,4 @@
-;;; jabber-export.el --- export Jabber roster to file
+;;; jabber-export.el --- export Jabber roster to file  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2005, 2007  Magnus Henoch
 
@@ -19,7 +19,9 @@
 ;; the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 ;; Boston, MA 02111-1307, USA.
 
-(require 'cl)
+;;; Code:
+
+(require 'cl-lib)
 
 (defvar jabber-export-roster-widget nil)
 
@@ -99,11 +101,11 @@ not affect your actual roster.
       (goto-char (point-min))
       (switch-to-buffer (current-buffer)))))
 
-(defun jabber-export-remove-regexp (&rest ignore)
+(defun jabber-export-remove-regexp (&rest _ignore)
   (let* ((value (widget-value jabber-export-roster-widget))
 	 (length-before (length value))
 	 (regexp (read-string "Remove JIDs matching regexp: ")))
-    (setq value (delete-if
+    (setq value (cl-delete-if
 		 #'(lambda (a)
 		     (string-match regexp (nth 0 a)))
 		 value))
@@ -111,7 +113,7 @@ not affect your actual roster.
     (widget-setup)
     (message "%d items removed" (- length-before (length value)))))
 
-(defun jabber-export-save (&rest ignore)
+(defun jabber-export-save (&rest _ignore)
   "Export roster to file."
   (let ((items (mapcar #'jabber-roster-sexp-to-xml (widget-value jabber-export-roster-widget)))
 	(coding-system-for-write 'utf-8))
@@ -122,7 +124,7 @@ not affect your actual roster.
       (insert "</query></iq>\n"))
     (message "Roster saved")))
 
-(defun jabber-import-doit (&rest ignore)
+(defun jabber-import-doit (&rest _ignore)
   "Import roster being edited in widget."
   (let* ((state-data (fsm-get-state-data jabber-buffer-connection))
 	 (jabber-roster (plist-get state-data :roster))
@@ -148,9 +150,9 @@ not affect your actual roster.
 	       ;; or changes a name,
 	       (and name jid-name (not (string= name jid-name)))
 	       ;; or introduces new groups.
-	       (set-difference groups jid-groups :test #'string=))
+	       (cl-set-difference groups jid-groups :test #'string=))
 	  (push (jabber-roster-sexp-to-xml
-		 (list jid (or name jid-name) nil (union groups jid-groups :test #'string=))
+		 (list jid (or name jid-name) nil (cl-union groups jid-groups :test #'string=))
 		 t)
 		roster-delta))
 	;; And adujst subscription.
@@ -159,11 +161,11 @@ not affect your actual roster.
 		(want-from (member subscription '("from" "both")))
 		(have-to (member jid-subscription '("to" "both")))
 		(have-from (member jid-subscription '("from" "both"))))
-	    (flet ((request-subscription 
-		    (type)
-		    (jabber-send-sexp jabber-buffer-connection
-				      `(presence ((to . ,jid)
-						  (type . ,type))))))
+	    (cl-flet ((request-subscription 
+		        (type)
+		        (jabber-send-sexp jabber-buffer-connection
+					  `(presence ((to . ,jid)
+						      (type . ,type))))))
 	      (cond
 	       ((and want-to (not have-to))
 		(request-subscription "subscribe"))
@@ -214,9 +216,9 @@ Return an XML node."
   "Convert XML-DATA to simpler sexp format.
 XML-DATA is an <iq> node with a <query xmlns='jabber:iq:roster'> child.
 See `jabber-roster-to-sexp' for description of output format."
-  (assert (eq (jabber-xml-node-name xml-data) 'iq))
+  (cl-assert (eq (jabber-xml-node-name xml-data) 'iq))
   (let ((query (car (jabber-xml-get-children xml-data 'query))))
-    (assert query)
+    (cl-assert query)
     (mapcar
      #'(lambda (n)
 	 (list

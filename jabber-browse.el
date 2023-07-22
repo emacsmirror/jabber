@@ -1,4 +1,4 @@
-;; jabber-browse.el - jabber browsing by JEP-0011
+;;; jabber-browse.el --- jabber browsing by JEP-0011  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
 ;; Copyright (C) 2003, 2004 - Magnus Henoch - mange@freemail.hu
