@@ -76,7 +76,7 @@ stanza.")
 	     (cons "jabber:iq:roster" (function (lambda (jc x) (jabber-process-roster jc x nil)))))
 (defun jabber-process-roster (jc xml-data closure-data)
   "Process an incoming roster infoquery result.
-CLOSURE-DATA should be \='initial if initial roster push, nil otherwise.
+CLOSURE-DATA should be `initial' if initial roster push, nil otherwise.
 JC is the Jabber connection.
 XML-DATA is the parsed tree data from the stream (stanzas)
 obtained from `xml-parse-region'."
@@ -399,9 +399,9 @@ JC is the Jabber connection."
 	 `(show () ,*jabber-current-show*))
     ,(when *jabber-current-priority*
        `(priority () ,(number-to-string *jabber-current-priority*)))
-    ,@(apply 'append (mapcar (lambda (f)
-			       (funcall f jc))
-			     jabber-presence-element-functions))))
+    ,@(apply #'append (mapcar (lambda (f)
+			        (funcall f jc))
+			      jabber-presence-element-functions))))
 
 (defun jabber-send-directed-presence (jc jid type)
   "Send a directed presence stanza to JID.
@@ -597,7 +597,7 @@ JC is the Jabber connection."
     (jabber-roster-change
      jc jid (get jid 'name)
      (cl-remove-if-not (lambda (g) (not (string= g group)))
-		    (get jid 'groups)))))
+		       (get jid 'groups)))))
 
 (defun jabber-roster-edit-group-from-jids (jc jids group)
   "Edit group `group' from all JIDs.
@@ -615,7 +615,7 @@ JC is the Jabber connection."
 			 new-group
 		       g))
 	 (get jid 'groups))
-	:test 'string=)))))
+	:test #'string=)))))
 
 
 (provide 'jabber-presence)

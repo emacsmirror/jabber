@@ -19,6 +19,8 @@
 ;; the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 ;; Boston, MA 02111-1307, USA.
 
+;;; Code:
+
 (require 'cl-lib)
 (require 'jabber-core)
 (require 'jabber-util)
@@ -172,10 +174,10 @@ not affect your actual roster.
 		(have-to (member jid-subscription '("to" "both")))
 		(have-from (member jid-subscription '("from" "both"))))
 	    (cl-flet ((request-subscription
-		    (type)
-		    (jabber-send-sexp jabber-buffer-connection
-				      `(presence ((to . ,jid)
-						  (type . ,type))))))
+		        (type)
+		        (jabber-send-sexp jabber-buffer-connection
+					  `(presence ((to . ,jid)
+						      (type . ,type))))))
 	      (cond
 	       ((and want-to (not have-to))
 		(request-subscription "subscribe"))

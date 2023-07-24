@@ -1,4 +1,4 @@
-;; jabber-sasl.el - SASL authentication  -*- lexical-binding: t; -*-
+;;; jabber-sasl.el --- SASL authentication  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
 
@@ -18,21 +18,23 @@
 ;; along with this program; if not, write to the Free Software
 ;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+;;; Code:
+
 (require 'cl-lib)
 (require 'fsm)
 (require 'jabber-util)
 
-;;; This file uses sasl.el from FLIM or Gnus.  If it can't be found,
-;;; jabber-core.el won't use the SASL functions.
+;; This file uses sasl.el from FLIM or Gnus.  If it can't be found,
+;; jabber-core.el won't use the SASL functions.
 (eval-and-compile
   (condition-case nil
       (require 'sasl)
     (error nil)))
 
-;;; Alternatives to FLIM would be the command line utility of GNU SASL,
-;;; or anything the Gnus people decide to use.
+;; Alternatives to FLIM would be the command line utility of GNU SASL,
+;; or anything the Gnus people decide to use.
 
-;;; See XMPP-CORE and XMPP-IM for details about the protocol.
+;; See XMPP-CORE and XMPP-IM for details about the protocol.
 
 (require 'jabber-xml)
 
@@ -64,14 +66,14 @@ with `jabber-xml-get-chidlren')."
     (if (null mechanism)
 	;; Maybe we can use legacy authentication
 	(let ((iq-auth (cl-find "http://jabber.org/features/iq-auth"
-			  (jabber-xml-get-children stream-features 'auth)
-			  :key #'jabber-xml-get-xmlns
-			  :test #'string=))
+			        (jabber-xml-get-children stream-features 'auth)
+			        :key #'jabber-xml-get-xmlns
+			        :test #'string=))
 	      ;; Or maybe we have to use STARTTLS, but can't
 	      (starttls (cl-find "urn:ietf:params:xml:ns:xmpp-tls"
-			      (jabber-xml-get-children stream-features 'starttls)
-			      :key #'jabber-xml-get-xmlns
-			      :test #'string=)))
+			         (jabber-xml-get-children stream-features 'starttls)
+			         :key #'jabber-xml-get-xmlns
+			         :test #'string=)))
 	  (cond
 	   (iq-auth
 	    (fsm-send jc :use-legacy-auth-instead))
@@ -111,8 +113,7 @@ with `jabber-xml-get-chidlren')."
   "Return a lambda function suitable for `sasl-read-passphrase' for JC.
 Call REMEMBER with the password.  REMEMBER is expected to return it as well."
   (let ((password (plist-get (fsm-get-state-data jc) :password))
-		(bare-jid (jabber-connection-bare-jid jc))
-		(remember remember))
+	(bare-jid (jabber-connection-bare-jid jc)))
     (if password
 	(lambda (_prompt) (funcall remember (copy-sequence password)))
       (lambda (_prompt) (funcall remember (jabber-read-password bare-jid))))))
@@ -123,9 +124,9 @@ Call REMEMBER with the password.  REMEMBER is expected to return it as well."
 JC is the Jabber connection.
 XML-DATA is the parsed tree data from the stream (stanzas)
 obtained from `xml-parse-region'."
-  (let* ((client (cl-first sasl-data))
-	 (step (cl-second sasl-data))
-	 (passphrase (cl-third sasl-data))
+  (let* ((client (car sasl-data))
+	 (step (nth 1 sasl-data))
+	 (passphrase (nth 2 sasl-data))
 	 (sasl-read-passphrase (jabber-sasl-read-passphrase-closure
 				jc
 				(lambda (p) (setq passphrase (copy-sequence p)) p))))

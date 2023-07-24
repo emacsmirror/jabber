@@ -1,4 +1,4 @@
-;; jabber-util.el - various utility functions    -*- coding: utf-8; -*-
+;;; jabber-util.el --- various utility functions    -*- coding: utf-8; lexical-binding: t; -*-
 
 ;; Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
 ;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
@@ -20,6 +20,8 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program; if not, write to the Free Software
 ;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+;;; Code:
 
 (require 'cl-lib)
 (require 'jabber-xml)
@@ -160,8 +162,10 @@ JID must be a string."
 (defun jabber-jid-bookmarkname (string)
   "Return from STRING the conference name from boomarks or displayname.
 Use the name according to roster or else the JID if none set."
-  (or (cl-loop for conference in (cl-first (cl-loop for value being the hash-values of jabber-bookmarks
-                                           collect value))
+  (require 'jabber-bookmarks)
+  (or (cl-loop for conference
+               in (car (cl-loop for value being the hash-values of jabber-bookmarks
+                                collect value))
             do (let ((ls (cadr conference)))
                  (if (string= (cdr (assoc 'jid ls)) string)
                      (cl-return (cdr (assoc 'name ls))))))
@@ -247,8 +251,8 @@ If FULLJIDS is non-nil, complete jids with resources."
 		   input))))
 
     (when chosen
-      (cl-case resource
-	(full
+      (pcase resource
+	('full
 	 ;; If JID is bare, add the highest-priority resource.
 	 (if (jabber-jid-resource chosen)
 	     chosen
@@ -256,7 +260,7 @@ If FULLJIDS is non-nil, complete jids with resources."
 	     (if highest-resource
 		 (concat chosen "/" highest-resource)
 	       chosen))))
-	(bare-or-muc
+	('bare-or-muc
 	 ;; If JID is full and non-MUC, remove resource.
 	 (if (null (jabber-jid-resource chosen))
 	     chosen
@@ -264,7 +268,7 @@ If FULLJIDS is non-nil, complete jids with resources."
 	     (if (assoc bare *jabber-active-groupchats*)
 		 chosen
 	       bare))))
-	(t
+	(_
 	 chosen)))))
 
 (defun jabber-read-node (prompt)
@@ -337,7 +341,8 @@ that has that contact in its roster."
        (cdr (assoc (let ((at-point (get-text-property (point) 'jabber-account)))
                      (when (and at-point
                                 (memq at-point jabber-connections))
-                       (jabber-connection-bare-jid at-point))) completions))
+                       (jabber-connection-bare-jid at-point)))
+                   completions))
        (let* ((default
                 (or
 		 (and contact-hint
@@ -701,8 +706,8 @@ IGNORED-ARGS are ignored arguments the handler may pass. "
 		  (let ((pairs (split-string text ";")))
 		    (mapcar (lambda (pair)
 			      ;; ...and split keys from values by '='.
-			      (cl-destructuring-bind (key value)
-				  (split-string pair "=")
+			      (pcase-let ((`(,key ,value)
+				           (split-string pair "=")))
 				;; Values can be hex-coded.
 				(cons key (jabber-unhex value))))
 			    pairs))))))
@@ -756,13 +761,13 @@ temporaly buffer _before_ inserting STRING."
 FN is applied to the node and not to the data itself."
   (let ((result (cons nil nil)))
     (cl-do ((tail tree (cdr tail))
-	 (prev result end)
-	 (end result (let* ((x (car tail))
-			    (val (if (atom x)
-				     (funcall fn x)
-                                   (jabber-tree-map fn x))))
-		       (setf (car end) val (cdr end) (cons nil
-                                                           nil)))))
+	    (prev result end)
+	    (end result (let* ((x (car tail))
+			       (val (if (atom x)
+				        (funcall fn x)
+                                      (jabber-tree-map fn x))))
+		          (setf (car end) val (cdr end) (cons nil
+                                                              nil)))))
 	((atom tail)
 	 (progn
 	   (setf (cdr prev) (if tail (funcall fn tail) nil))

@@ -1,4 +1,4 @@
-;; jabber-time.el - time reporting by XEP-0012, XEP-0090, XEP-0202  -*- lexical-binding: t; -*-
+;;; jabber-time.el --- time reporting by XEP-0012, XEP-0090, XEP-0202  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2006, 2010 - Kirill A. Kroinskiy - catap@catap.ru
 ;; Copyright (C) 2006 - Magnus Henoch - mange@freemail.hu
@@ -19,6 +19,8 @@
 ;; along with GNU Emacs; see the file COPYING.  If not, write to
 ;; the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 ;; Boston, MA 02110-1301, USA.
+
+;;; Code:
 
 (require 'jabber-disco)
 (require 'jabber-iq)

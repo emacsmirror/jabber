@@ -1,4 +1,4 @@
-;; jabber-register.el - registration according to JEP-0077  -*- lexical-binding: t; -*-
+;;; jabber-register.el --- registration according to JEP-0077  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2003, 2004, 2007 - Magnus Henoch - mange@freemail.hu
 ;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
@@ -18,6 +18,8 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program; if not, write to the Free Software
 ;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+;;; Code:
 
 (require 'jabber-iq)
 (require 'jabber-widget)
@@ -134,7 +136,7 @@ obtained from `xml-parse-region'."
 
 (defun jabber-process-register-secondtime (jc xml-data closure-data)
   "Receive registration success or failure.
-CLOSURE-DATA is either \='success or \='error.
+CLOSURE-DATA is either `success' or `error'.
 
 JC is the Jabber connection.
 XML-DATA is the parsed tree data from the stream (stanzas)

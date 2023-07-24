@@ -1,4 +1,4 @@
-;; jabber-chatbuffer.el - functions common to all chat buffers  -*- lexical-binding: t; -*-
+;;; jabber-chatbuffer.el --- functions common to all chat buffers  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2005, 2007, 2008 - Magnus Henoch - mange@freemail.hu
 
@@ -52,7 +52,7 @@ window or at `fill-column', whichever is shorter."
 (defvar jabber-chat-mode-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map jabber-common-keymap)
-    (define-key map "\r" 'jabber-chat-buffer-send)
+    (define-key map "\r" #'jabber-chat-buffer-send)
     map))
 
 (defun jabber-chat-mode (jc ewoc-pp)
@@ -98,7 +98,7 @@ JC is the Jabber connection."
 (defun jabber-chat-mode-flyspell-verify ()
   (>= (point) jabber-point-insert))
 (put 'jabber-chat-mode 'flyspell-mode-predicate
-  'jabber-chat-mode-flyspell-verify)
+  #'jabber-chat-mode-flyspell-verify)
 
 (defun jabber-chat-buffer-send ()
   (interactive)

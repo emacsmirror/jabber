@@ -1,4 +1,4 @@
-;; jabber-console.el - XML Console mode  -*- lexical-binding: t; -*-
+;;; jabber-console.el --- XML Console mode  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2009, 2010 - Demyan Rogozhin <demyan.rogozhin@gmail.com>
 
@@ -65,7 +65,7 @@ what kind of chat buffer is being created.")
 (defvar jabber-console-mode-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map jabber-common-keymap)
-    (define-key map "\r" 'jabber-chat-buffer-send)
+    (define-key map "\r" #'jabber-chat-buffer-send)
     map))
 
 ;; Global reference declarations
@@ -125,7 +125,7 @@ what kind of chat buffer is being created.")
   (make-local-variable 'jabber-point-insert)
   (make-local-variable 'jabber-console-ewoc)
 
-  (setq jabber-send-function 'jabber-console-send)
+  (setq jabber-send-function #'jabber-console-send)
 
   (unless jabber-console-ewoc
     (setq jabber-console-ewoc

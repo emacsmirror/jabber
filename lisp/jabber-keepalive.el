@@ -35,13 +35,11 @@
 
 (defcustom jabber-keepalive-interval 600
   "Interval in seconds between connection checks."
-  :type 'integer
-  :group 'jabber-keepalive)
+  :type 'integer)
 
 (defcustom jabber-keepalive-timeout 20
   "Seconds to wait for response from server."
-  :type 'integer
-  :group 'jabber-keepalive)
+  :type 'integer)
 
 (defvar jabber-keepalive-timer nil
   "Timer object for keepalive function.")
@@ -82,8 +80,8 @@ for all accounts regardless of the argument."
   (setq jabber-keepalive-timer
 	(run-with-timer 5
 			jabber-keepalive-interval
-			'jabber-keepalive-do))
-  (add-hook 'jabber-post-disconnect-hook 'jabber-keepalive-stop))
+			#'jabber-keepalive-do))
+  (add-hook 'jabber-post-disconnect-hook #'jabber-keepalive-stop))
 
 (defun jabber-keepalive-stop ()
   "Deactivate keepalive."
@@ -99,7 +97,7 @@ for all accounts regardless of the argument."
   (setq jabber-keepalive-timeout-timer
 	(run-with-timer jabber-keepalive-timeout
 			nil
-			'jabber-keepalive-timeout))
+			#'jabber-keepalive-timeout))
   (setq jabber-keepalive-pending jabber-connections)
   (dolist (c jabber-connections)
     ;; Whether we get an error or not is not interesting.
@@ -165,8 +163,8 @@ accounts."
   (setq jabber-whitespace-ping-timer
 	(run-with-timer 5
 			jabber-whitespace-ping-interval
-			'jabber-whitespace-ping-do))
-  (add-hook 'jabber-post-disconnect-hook 'jabber-whitespace-ping-stop))
+			#'jabber-whitespace-ping-do))
+  (add-hook 'jabber-post-disconnect-hook #'jabber-whitespace-ping-stop))
 
 (defun jabber-whitespace-ping-stop ()
   "Deactivate whitespace pings."

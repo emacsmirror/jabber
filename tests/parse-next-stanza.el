@@ -1,4 +1,4 @@
-;; Tests for jabber-xml-parse-next-stanza
+;; Tests for jabber-xml-parse-next-stanza  -*- lexical-binding: t; -*-
 
 (require 'jabber-xml)
 

@@ -53,28 +53,24 @@
 (defcustom jabber-avatar-cache-directory
   (locate-user-emacs-file "jabber-avatar-cache" ".jabber-avatars")
   "Directory to use for cached avatars."
-  :group 'jabber-avatar
   :type 'directory)
 
 (defcustom jabber-avatar-verbose nil
   "Display messages about irregularities with other people's avatars."
-  :group 'jabber-avatar
   :type 'boolean)
 
 (defcustom jabber-avatar-max-width 96
   "Maximum width of avatars."
-  :group 'jabber-avatar
   :type 'integer)
 
 (defcustom jabber-avatar-max-height 96
   "Maximum height of avatars."
-  :group 'jabber-avatar
   :type 'integer)
 
 ;;;; Avatar data handling
 
-(cl-defstruct
-    avatar sha1-sum mime-type url base64-data height width bytes)
+(cl-defstruct avatar
+  sha1-sum mime-type url base64-data height width bytes)
 
 (defun jabber-avatar-from-url (url)
   "Construct an avatar structure from the given URL.
@@ -116,12 +112,12 @@ If MIME-TYPE is not specified, try to find it from the image data."
 	 (sha1-sum (sha1 data))
 	 (base64-data (or base64-string (base64-encode-string raw-data)))
 	 (type (or mime-type
-		   (cdr (assq (get :type (cdr (condition-case nil
-						  (jabber-create-image data nil t)
-						(error nil))))
-			      '((png "image/png")
-				(jpeg "image/jpeg")
-				(gif "image/gif")))))))
+	           (cdr (assq (get :type (cdr (condition-case nil
+	        				  (jabber-create-image data nil t)
+	        				(error nil))))
+	        	      '((png "image/png")
+	        		(jpeg "image/jpeg")
+	        		(gif "image/gif")))))))
     (jabber-avatar-compute-size
      (make-avatar :mime-type type :sha1-sum sha1-sum :base64-data base64-data :bytes bytes))))
 

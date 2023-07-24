@@ -1,4 +1,4 @@
-;; jabber-bookmarks.el - bookmarks according to XEP-0048  -*- lexical-binding: t; -*-
+;;; jabber-bookmarks.el --- bookmarks according to XEP-0048  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2007, 2008 - Magnus Henoch - mange@freemail.hu
 
@@ -18,11 +18,10 @@
 ;; along with this program; if not, write to the Free Software
 ;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+;;; Code:
+
 (require 'cl-lib)
 
-(require 'jabber-disco)
-(require 'jabber-muc-nick-completion)
-(require 'jabber-chatbuffer)
 (require 'jabber-private)
 (require 'jabber-widget)
 
@@ -54,12 +53,9 @@ immediately, and return nil if it is not in the cache."
          cache conference-jid key)))
     (jabber-get-bookmarks
      jc
-     (let ((conference-jid conference-jid)
-		   (key key)
-		   (cont cont))
-       (lambda (jc result)
-	 (let ((entry (jabber-get-conference-data-internal result conference-jid key)))
-	   (funcall cont jc entry)))))))
+     (lambda (jc result)
+       (let ((entry (jabber-get-conference-data-internal result conference-jid key)))
+	 (funcall cont jc entry))))))
 
 (defun jabber-get-conference-data-internal (result conference-jid key)
   (let ((entry (cl-dolist (node result)
@@ -94,8 +90,7 @@ If REFRESH is non-nil, always fetch bookmarks."
   (let ((bookmarks (gethash (jabber-connection-bare-jid jc) jabber-bookmarks)))
     (if (and (not refresh) bookmarks)
 	(run-with-timer 0 nil cont jc (when (listp bookmarks) bookmarks))
-      (let* ((cont cont)
-		     (callback (lambda (jc result) (jabber-get-bookmarks-1 jc result cont))))
+      (let* ((callback (lambda (jc result) (jabber-get-bookmarks-1 jc result cont))))
 	(jabber-private-get jc 'storage "storage:bookmarks"
 			    callback callback)))))
 
@@ -140,11 +135,11 @@ JC is the Jabber connection."
   (setq bookmarks
 	(mapcar
 	 (lambda (e)
-	   (cl-case (jabber-xml-node-name e)
-	     (url
+	   (pcase (jabber-xml-node-name e)
+	     ('url
 	      (list 'url (or (jabber-xml-get-attribute e 'url) "")
 		    (or (jabber-xml-get-attribute e 'name) "")))
-	     (conference
+	     ('conference
 	      (list 'conference
 		    (or (jabber-xml-get-attribute e 'jid) "")
 		    (or (jabber-xml-get-attribute e 'name) "")
@@ -205,14 +200,14 @@ JC is the Jabber connection."
     (setq bookmarks
 	  (mapcar
 	   (lambda (entry)
-	     (cl-case (car entry)
-	       (url
-		(cl-destructuring-bind (_symbol url name) entry
+	     (pcase (car entry)
+	       ('url
+		(pcase-let ((`(,_symbol ,url ,name) entry))
 		  `(url ((url . ,url)
 			 (name . ,name)))))
-	       (conference
-		(cl-destructuring-bind (_symbol jid name autojoin nick password)
-		    entry
+	       ('conference
+		(pcase-let ((`(,_symbol ,jid ,name ,autojoin ,nick ,password)
+		             entry))
 		  `(conference ((jid . ,jid)
 				(name . ,name)
 				(autojoin . ,(if autojoin
@@ -234,23 +229,23 @@ JC is the Jabber connection."
 (defun jabber-bookmarks-import (&rest _ignore)
   (let* ((value (widget-value (cdr (assq 'bookmarks jabber-widget-alist))))
 	 (conferences (mapcar
-		       'cdr
+		       #'cdr
 		       (cl-remove-if-not
 			(lambda (entry)
 			  (eq (car entry) 'conference))
 			value))))
     (dolist (default-nickname jabber-muc-default-nicknames)
-      (cl-destructuring-bind (muc-jid . nick) default-nickname
-	(let ((entry (assoc muc-jid conferences)))
-	  (if entry
-	      (setf (cl-fourth entry) nick)
-	    (setq entry (list muc-jid "" nil nick ""))
-	    (push entry conferences)
-	    (push (cons 'conference entry) value)))))
+      (pcase-let* ((`(,muc-jid . ,nick) default-nickname)
+	           (entry (assoc muc-jid conferences)))
+	(if entry
+	    (setf (nth 3 entry) nick)
+	  (setq entry (list muc-jid "" nil nick ""))
+	  (push entry conferences)
+	  (push (cons 'conference entry) value))))
     (dolist (autojoin jabber-muc-autojoin)
       (let ((entry (assoc autojoin conferences)))
 	(if entry
-	    (setf (cl-third entry) t)
+	    (setf (nth 2 entry) t)
 	  (setq entry (list autojoin "" t "" ""))
 	  (push (cons 'conference entry) value))))
     (widget-value-set (cdr (assq 'bookmarks jabber-widget-alist)) value)

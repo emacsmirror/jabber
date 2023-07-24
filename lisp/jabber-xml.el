@@ -1,4 +1,4 @@
-;; jabber-xml.el - XML functions  -*- lexical-binding: t; -*-
+;;; jabber-xml.el --- XML functions  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
 ;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
@@ -105,7 +105,7 @@ SEXP should be in the form:
 
 (defun jabber-xml-skip-tag-forward (&optional dont-recurse-into-stream)
   "Skip to end of tag or matching closing tag if present.
-Return t iff after a closing tag, otherwise throws an \='unfinished
+Return t iff after a closing tag, otherwise throws an `unfinished'
 tag with value nil.
 If DONT-RECURSE-INTO-STREAM is non-nil, stop after an opening
 <stream:stream> tag.
@@ -203,35 +203,35 @@ Return nil if the attribute was not found."
   (let ((node xml-data))
     (while (and path node)
       (let ((step (car path)))
-        (cond
-         ((symbolp step)
-          (setq node (car (jabber-xml-get-children node step))))
-         ((consp step)
-          ;; This will be easier with namespace-aware use
-          ;; of xml.el.  It will also be more correct.
-          ;; Now, it only matches explicit namespace declarations.
-          (setq node
-                (cl-dolist (x (jabber-xml-get-children node (intern (cdr step))))
-                  (when (string= (jabber-xml-get-attribute x 'xmlns)
-                                 (car step))
-                    (cl-return x)))))
-         ((stringp step)
-          (setq node (car (jabber-xml-node-children node)))
-          (unless (stringp node)
-            (setq node nil)))
-         (t
-          (error "Unknown path step: %s" step))))
+	(cond
+	 ((symbolp step)
+	  (setq node (car (jabber-xml-get-children node step))))
+	 ((consp step)
+	  ;; This will be easier with namespace-aware use
+	  ;; of xml.el.  It will also be more correct.
+	  ;; Now, it only matches explicit namespace declarations.
+	  (setq node
+		(cl-dolist (x (jabber-xml-get-children node (intern (cdr step))))
+		  (when (string= (jabber-xml-get-attribute x 'xmlns)
+				 (car step))
+		    (cl-return x)))))
+	 ((stringp step)
+	  (setq node (car (jabber-xml-node-children node)))
+	  (unless (stringp node)
+	    (setq node nil)))
+	 (t
+	  (error "Unknown path step: %s" step))))
       (setq path (cdr path)))
     node))
 
 (defmacro jabber-xml-let-attributes (attributes xml-data &rest body)
   "Evaluate BODY with ATTRIBUTES bound to their values in XML-DATA.
 ATTRIBUTES must be a list of symbols, as present in XML-DATA."
+  (declare (indent 2) (debug (sexp form body)))
   `(let ,(mapcar #'(lambda (attr)
 		     (list attr `(jabber-xml-get-attribute ,xml-data ',attr)))
 		 attributes)
      ,@body))
-(put 'jabber-xml-let-attributes 'lisp-indent-function 2)
 
 (defun jabber-xml-resolve-namespace-prefixes (xml-data &optional default-ns prefixes)
   (let ((node-name (jabber-xml-node-name xml-data))

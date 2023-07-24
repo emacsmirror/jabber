@@ -1,4 +1,4 @@
-;; jabber-alert.el - alert hooks  -*- lexical-binding: t; -*-
+;;; jabber-alert.el --- alert hooks  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2003, 2004, 2005, 2007, 2008 - Magnus Henoch - mange@freemail.hu
 ;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
@@ -44,8 +44,7 @@ other uses, see `jabber-message-hooks'."
 	     jabber-message-echo
 	     jabber-message-switch
 	     jabber-message-display
-	     jabber-message-scroll)
-  :group 'jabber-alerts)
+	     jabber-message-scroll))
 
 (defvar jabber-message-hooks nil
   "Internal hooks run when a new message arrives.
@@ -64,8 +63,7 @@ should be displayed.
 The provided hooks displaying a text message get it from this function,
 and show no message if it returns nil.  Other hooks do what they do
 every time."
-  :type 'function
-  :group 'jabber-alerts)
+  :type 'function)
 
 (defcustom jabber-alert-muc-hooks '(jabber-muc-echo jabber-muc-scroll)
   "Hooks run when a new MUC message arrives.
@@ -82,8 +80,7 @@ not have to call it themselves."
 	     jabber-muc-echo
 	     jabber-muc-switch
 	     jabber-muc-display
-	     jabber-muc-scroll)
-  :group 'jabber-alerts)
+	     jabber-muc-scroll))
 
 (defvar jabber-muc-hooks '()
   "Internal hooks run when a new MUC message arrives.
@@ -102,8 +99,7 @@ nil if no message should be displayed.
 The provided hooks displaying a text message get it from this function,
 and show no message if it returns nil.  Other hooks do what they do
 every time."
-  :type 'function
-  :group 'jabber-alerts)
+  :type 'function)
 
 (defcustom jabber-alert-presence-hooks
   '(jabber-presence-echo)
@@ -121,8 +117,7 @@ one of \"subscribe\", \"unsubscribe\", \"subscribed\" and
 	     jabber-presence-wave
 	     jabber-presence-switch
 	     jabber-presence-display
-	     jabber-presence-echo)
-  :group 'jabber-alerts)
+	     jabber-presence-echo))
 
 (defvar jabber-presence-hooks '(jabber-presence-watch)
   "Internal hooks run when a user's presence changes.
@@ -141,8 +136,7 @@ if no message should be displayed.
 
 The provided hooks displaying a text message get it from this function.
 All hooks refrain from action if this function returns nil."
-  :type 'function
-  :group 'jabber-alerts)
+  :type 'function)
 
 (defcustom jabber-alert-info-message-hooks '(jabber-info-display jabber-info-echo)
   "Hooks run when an info request is completed.
@@ -157,8 +151,7 @@ Third argument is PROPOSED-ALERT, containing the string returned by
 	     jabber-info-wave
 	     jabber-info-echo
 	     jabber-info-switch
-	     jabber-info-display)
-  :group 'jabber-alerts)
+	     jabber-info-display))
 
 (defvar jabber-info-message-hooks '()
   "Internal hooks run when an info request is completed.
@@ -172,57 +165,48 @@ except that it's not meant to be customized by the user.")
 
 Arguments are WHAT, a symbol telling the kind of info request completed,
 and BUFFER, a buffer containing the result."
-  :type 'function
-  :group 'jabber-alerts)
+  :type 'function)
 
 (defcustom jabber-info-message-alist
   '((roster . "Roster display updated")
     (browse . "Browse request completed"))
   "Alist for info alert messages, used by `jabber-info-default-message'."
   :type '(alist :key-type symbol :value-type string
-		:options (roster browse))
-  :group 'jabber-alerts)
+		:options (roster browse)))
 
 (defcustom jabber-alert-message-wave ""
   "A sound file to play when a message arrived.
 See `jabber-alert-message-wave-alist' if you want other sounds
 for specific contacts."
-  :type 'file
-  :group 'jabber-alerts)
+  :type 'file)
 
 (defcustom jabber-alert-message-wave-alist nil
   "Specific sound files for messages from specific contacts.
 The keys are regexps matching the JID, and the values are sound
 files."
-  :type '(alist :key-type regexp :value-type file)
-  :group 'jabber-alerts)
+  :type '(alist :key-type regexp :value-type file))
 
 (defcustom jabber-alert-muc-wave ""
   "A sound file to play when a MUC message arrived."
-  :type 'file
-  :group 'jabber-alerts)
+  :type 'file)
 
 (defcustom jabber-alert-presence-wave ""
   "A sound file to play when a presence arrived."
-  :type 'file
-  :group 'jabber-alerts)
+  :type 'file)
 
 (defcustom jabber-alert-presence-wave-alist nil
   "Specific sound files for presence from specific contacts.
 The keys are regexps matching the JID, and the values are sound
 files."
-  :type '(alist :key-type regexp :value-type file)
-  :group 'jabber-alerts)
+  :type '(alist :key-type regexp :value-type file))
 
 (defcustom jabber-alert-info-wave ""
   "A sound file to play when an info query result arrived."
-  :type 'file
-  :group 'jabber-alerts)
+  :type 'file)
 
 (defcustom jabber-play-sound-file 'play-sound-file
   "A function to call to play alert sound files."
-  :type 'function
-  :group 'jabber-alerts)
+  :type 'function)
 
 ;; Global reference declarations
 
@@ -252,7 +236,7 @@ lambda form or a quoted function name.
 The created functions are inserted as options in Customize.
 
 Examples:
-\(define-jabber-alert foo \"Send foo alert\" \='foo-message)
+\(define-jabber-alert foo \"Send foo alert\" \\='foo-message)
 \(define-jabber-alert bar \"Send bar alert\"
   (lambda (msg) (bar msg 42)))"
   (let ((sn (symbol-name name)))
@@ -291,13 +275,11 @@ Examples:
 ;; Message alert hooks
 (defcustom jabber-message-alert-same-buffer t
   "If nil, don't display message alerts for the current buffer."
-  :type 'boolean
-  :group 'jabber-alerts)
+  :type 'boolean)
 
 (defcustom jabber-muc-alert-self nil
   "If nil, don't display MUC alerts for your own messages."
-  :type 'boolean
-  :group 'jabber-alerts)
+  :type 'boolean)
 
 (defun jabber-message-default-message (from buffer _text)
   (when (or jabber-message-alert-same-buffer
@@ -386,7 +368,7 @@ Examples:
   "Return a string with the status change if OLDSTATUS and NEWSTATUS differs.
 
 Return nil if OLDSTATUS and NEWSTATUS are equal, and in other
-cases a string of the form \"\='name\=' (jid) is now NEWSTATUS (STATUSTEXT)\".
+cases a string of the form \"\\='name\\=' (jid) is now NEWSTATUS (STATUSTEXT)\".
 
 This function is not called directly, but is the default for
 `jabber-alert-presence-message-function'."
@@ -502,8 +484,7 @@ NAME: the name of the sender."
   "Specific phrases to autoanswer on specific message.
 The keys are regexps matching the incoming message text, and the values are
 autoanswer phrase."
-  :type '(alist :key-type regexp :value-type string)
-  :group 'jabber-alerts)
+  :type '(alist :key-type regexp :value-type string))
 
 (defun jabber-autoanswer-answer (from buffer text proposed-alert)
   "Answer automaticaly when incoming text is in `jabber-autoanswer-alist'.

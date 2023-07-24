@@ -1,4 +1,4 @@
-;; jabber-screen.el - emacs-jabber interface to screen  -*- lexical-binding: t; -*-
+;;; jabber-screen.el --- emacs-jabber interface to screen  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2005 - Magnus Henoch - mange@freemail.hu
 
