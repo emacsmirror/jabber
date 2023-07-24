@@ -10,7 +10,7 @@ autoload:
 
 compile:
 	emacs -q -Q -L . -L lisp -L lisp/jabber-fallback-lib --batch \
-	--eval="(setq print-length nil)" \
+	--eval="(setq print-length nil load-prefer-newer t)" \
 	-f batch-byte-compile lisp/*.el
 
 lint-check-declare:
