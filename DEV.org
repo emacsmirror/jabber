@@ -125,7 +125,7 @@ The following is a brief summary about the stanza processing.
 2. Optionally, evaluate the following to install additional development tools (requires MELPA to be set up as package source) -
       #+BEGIN_SRC emacs-lisp :tangle no
         (mapcar #'package-install
-                '(indent-lint package-lint relint nameless))
+                '(package-lint relint nameless))
       #+END_SRC
 
 3. Make your edits, then run =make dev= to run the byte compiler and linters. Try to address any warnings they emit.
