@@ -418,9 +418,7 @@ With a numeric arg, enable this display if arg is positive."
 					    icon-title-format)))))
     (progn
       (if (featurep 'xemacs)
-	  (ad-disable-advice 'switch-to-buffer 'after 'jabber-activity-update)
-	(remove-hook 'window-configuration-change-hook
-		     #'jabber-activity-remove-visible))
+	  (ad-disable-advice 'switch-to-buffer 'after 'jabber-activity-update))
       (remove-hook 'jabber-message-hooks
 		   #'jabber-activity-add)
       (remove-hook 'jabber-muc-hooks
