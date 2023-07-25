@@ -203,6 +203,8 @@ added to the outgoing message.")
 (declare-function jabber-muc-sender-p "jabber-muc.el" (jid))
 (declare-function jabber-muc-private-message-p "jabber-muc.el" (message))
 (defvar jabber-group)                   ; jabber-muc.el
+(defvar jabber-muc-printers)            ; jabber-muc.el
+
 ;;
 
 (defvar jabber-chat-earliest-backlog nil

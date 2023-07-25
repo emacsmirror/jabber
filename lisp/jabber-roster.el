@@ -230,6 +230,8 @@ Trailing newlines are always removed, regardless of this variable."
                   (jc jid &optional other-window))
 (declare-function jabber-disco-get-info "jabber-disco.el"
                   (jc jid node callback closure-data &optional force))
+(declare-function jabber-get-version "jabber-version.el"  (jc to))
+(declare-function jabber-get-browse "jabber-browse.el"  (jc to))
 (defvar *jabber-current-show*)          ; jabber.el
 (defvar jabber-presence-strings)        ; jabber.el
 (defvar *jabber-current-status*)        ; jabber.el

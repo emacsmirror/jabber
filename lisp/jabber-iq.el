@@ -22,6 +22,7 @@
 (require 'jabber-util)
 (require 'jabber-alert)
 (require 'jabber-keymap)
+(require 'jabber-menu)
 
 (defvar *jabber-open-info-queries* nil
   "Alist of open query id and their callback functions.")

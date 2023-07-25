@@ -42,7 +42,6 @@
 (require 'cl-lib)
 (require 'jabber-core)
 (require 'jabber-util)
-(require 'jabber-muc-nick-completion)   ;we need jabber-muc-looks-like-personal-p
 
 (defgroup jabber-activity nil
   "Activity tracking options."
@@ -160,6 +159,8 @@ It is called after `jabber-activity-mode-string' and
 (declare-function jabber-muc-private-get-buffer "jabber-muc.el"
                   (group nickname))
 (declare-function jabber-muc-sender-p "jabber-muc.el" (jid))
+(declare-function jabber-muc-looks-like-personal-p
+                  "jabber-muc-nick-completion.el" (message &optional group))
 (defvar jabber-silent-mode)             ; jabber.el
 
 ;;

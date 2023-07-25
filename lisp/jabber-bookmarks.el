@@ -29,6 +29,7 @@
 
 (defvar jabber-muc-default-nicknames)   ; jabber-muc.el
 (defvar jabber-muc-autojoin)            ; jabber-muc.el
+(defvar jabber-buffer-connection)       ; jabber-chatbuffer.el
 
 ;;
 

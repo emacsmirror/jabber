@@ -29,7 +29,6 @@
 ;;; Code:
 
 (require 'cl-lib)
-(require 'jabber-muc)
 (require 'hippie-exp)
 
 (require 'jabber-chatbuffer)
@@ -200,6 +199,7 @@ OLD is last tried nickname."
       t)))
 
 (add-hook 'jabber-muc-hooks #'jabber-muc-track-message-time)
+(defun jabber-muc-completion (_old)) ; ensure function defined for define-key below
 (fset 'jabber-muc-completion (make-hippie-expand-function '(try-expand-jabber-muc)))
 (with-eval-after-load 'jabber-chatbuffer
   (define-key jabber-chat-mode-map [?\t] #'jabber-muc-completion))

@@ -20,7 +20,22 @@
 ;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
+(require 'jabber-menu)
 (require 'button t nil)
+
+;; Global reference declarations
+
+(declare-function jabber-send-presence "jabber-presence.el" (show status priority))
+(declare-function jabber-send-xa-presence "jabber-presence.el" (&optional status))
+(declare-function jabber-send-default-presence "jabber-presence.el" (&optional _ignore))
+(declare-function jabber-send-away-presence "jabber-presence.el" (&optional status))
+(declare-function jabber-activity-switch-to "lisp/jabber-activity.el" (&optional jid-param))
+(declare-function jabber-chat-with "jabber-chat.el" (jc jid &optional other-window))
+(declare-function jabber-switch-to-roster-buffer "jabber-roster.el" (&optional _jc))
+(declare-function jabber-disconnect "jabber-core.el" (&optional arg interactivep))
+(declare-function jabber-connect-all "jabber-core.el" (&optional arg))
+
+;;
 
 (defvar jabber-common-keymap
   (let ((map (make-sparse-keymap)))

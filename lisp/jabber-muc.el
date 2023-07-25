@@ -172,16 +172,15 @@ The format is that of `mode-line-format' and `header-line-format'."
 (declare-function jabber-vcard-get "jabber-vcard.el" (jc jid))
 (declare-function jabber-parse-conference-bookmark "jabber-bookmarks.el"
                   (node))
-;; (declare-function jabber-get-bookmarks "jabber-bookmarks.el"
-;;                   (jc cont &optional refresh))
-;; (declare-function jabber-get-conference-data "jabber-bookmarks.el"
-;;                   (jc conference-jid cont &optional key))
+(declare-function jabber-send-sexp "jabber-core.el"  (jc sexp))
+(declare-function jabber-chat-send "jabber-chat.el"  (jc sexp))
 (declare-function jabber-send-message "jabber-chat.el"
                   (jc to subject body type))
 (declare-function jabber-maybe-print-rare-time "jabber-chat.el" (node))
 (declare-function jabber-chat-pp "jabber-chat.el" (data))
 (declare-function jabber-chat-mode "jabber-chatbuffer.el" (jc ewoc-pp))
 (defvar jabber-silent-mode)             ; jabber.el
+(defvar jabber-message-chain)           ; jabber-core.el
 (defvar jabber-alert-muc-function)      ; jabber-alert.el
 (defvar jabber-body-printers)           ; jabber-chat.el
 (defvar jabber-buffer-connection)       ; jabber-chatbuffer.el
