@@ -4,7 +4,7 @@
 ;; Maintainer: wgreenhouse <wgreenhouse@tilde.club>
 ;; Keywords: comm
 ;; Homepage: https://codeberg.org/emacs-jabber/emacs-jabber
-;; Package-Requires: ((emacs "27.1") (fsm "0.1.0") (srv "0.1.0"))
+;; Package-Requires: ((emacs "27.1") (fsm "0.2.0") (srv "0.2.0"))
 ;; Version: 0.8.92
 
 ;; Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
