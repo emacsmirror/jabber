@@ -5,7 +5,6 @@
 ;; actual tests.
 
 (require 'jabber)
-(require 'cl-lib)
 
 (defvar jabberd-stanza-handlers '(jabberd-sasl jabberd-iq)
   "List of stanza handler hooks.
