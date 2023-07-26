@@ -26,7 +26,6 @@
 
 (require 'cl-lib)
 (require 'jabber-core)
-(require 'jabber-util)
 (require 'jabber-chat)
 (require 'jabber-chatbuffer)
 (require 'jabber-disco)
@@ -59,11 +58,10 @@ nil - don't send states")
   "Human-readable presentation of chat state information.")
 (make-variable-buffer-local 'jabber-chatstates-message)
 
-;; Global reference declarations
-
-(defvar jabber-chatstates-composing-sent) ; jabber-chatstates.el
-
-;;
+(defvar jabber-chatstates-composing-sent nil
+  "Has composing notification been sent?
+It can be sent and cancelled several times.")
+(make-variable-buffer-local 'jabber-chatstates-composing-sent)
 
 ;;; INCOMING
 ;; Code for requesting chat state notifications from others and handling
@@ -91,11 +89,6 @@ nil - don't send states")
 ;;; OUTGOING
 ;; Code for handling requests for chat state notifications and providing
 ;; them, modulo user preferences.
-
-(defvar jabber-chatstates-composing-sent nil
-  "Has composing notification been sent?
-It can be sent and cancelled several times.")
-(make-variable-buffer-local 'jabber-chatstates-composing-sent)
 
 (defvar jabber-chatstates-paused-timer nil
   "Timer that counts down from `composing' state to `paused'.")

@@ -23,7 +23,6 @@
 
 (require 'cl-lib)
 (require 'jabber-core)
-(require 'jabber-util)
 (require 'jabber-chat)
 (require 'jabber-chatbuffer)
 (require 'jabber-xml)

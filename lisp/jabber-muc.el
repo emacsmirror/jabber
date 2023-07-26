@@ -818,7 +818,10 @@ JC is the Jabber connection."
 (add-to-list 'jabber-body-printers 'jabber-muc-print-invite)
 
 (defun jabber-muc-print-invite (xml-data _who mode)
-  "Print MUC invitation."
+  "Print MUC invitation.
+
+XML-DATA is the parsed tree data from the stream (stanzas)
+obtained from `xml-parse-region'."
   (cl-dolist (x (jabber-xml-get-children xml-data 'x))
     (when (string= (jabber-xml-get-attribute x 'xmlns) "http://jabber.org/protocol/muc#user")
       (let ((invitation (car (jabber-xml-get-children x 'invite))))

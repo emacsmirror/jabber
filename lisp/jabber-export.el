@@ -23,7 +23,6 @@
 
 (require 'cl-lib)
 (require 'jabber-core)
-(require 'jabber-util)
 (require 'jabber-xml)
 (require 'jabber-widget)
 (require 'fsm)
