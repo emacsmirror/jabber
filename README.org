@@ -196,7 +196,7 @@ Documentation for developers is present in [[file:DEV.org][DEV.org]].
 :PROPERTIES:
 :CUSTOM_ID: how-to-guides
 :END:
-See also - [[file:DEV.org#how-to-guides][how-to guides in the developer documentation]].
+See also - [[file:DEV.org::#how-to-guides][how-to guides in the developer documentation]].
 
 ** How to install jabber.el
 :PROPERTIES:
