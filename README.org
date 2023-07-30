@@ -150,17 +150,43 @@ Connecting to <server-name>:5222...
 This is likely a DNS lookup failure.  Check the XMPP server name in ~jabber-account-list~.
 
 *** STARTTLS negotiation failed
+
 :PROPERTIES:
 :CUSTOM_ID: starttls-negotiation failed
 :END:
 
-When attempting to connect to, for instance, example.com, the following message:
+When attempting to connect to, for instance, example.com, one of the following messages:
 
 #+begin_example
 user@example.com: connection lost: ‘STARTTLS negotiation failed: GnuTLS error: #<process jabber>, nil’
 #+end_example
 
-indicates the server example.com's SSL certificate has expired.
+ = or =
+
+#+begin_example
+gnutls.el: (err=[nil] Symbol has no numeric gnutls-code property) boot:  ...
+#+end_example
+
+likely indicates the server example.com's SSL certificate has expired.  To confirm this, =M-x set-variable RET gnutls-log-level RET 1 RET=, then try to connect again.  Check the =*Messages*= buffer for messages of the form:
+
+#+begin_example
+gnutls.c: [1] (Emacs) verification: certificate has expired
+#+end_example
+
+or other verification failed messages.
+
+*** Connection lost
+:PROPERTIES:
+:CUSTOM_ID: connection-lost
+:END:
+
+A message of the form:
+
+#+begin_example
+user@example.com: connection lost: ‘connection broken by remote peer’
+#+end_example
+
+may arise from connecting to the wrong port, for example attempting a =STARTTLS= connection to a direct =TLS= port (often 5223).
 
 *** Authentication failure
 :PROPERTIES:
