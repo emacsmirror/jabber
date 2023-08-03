@@ -1,4 +1,4 @@
-;; jabber-chat.el - one-to-one chats  -*- lexical-binding: t; -*-
+;;; jabber-chat.el --- one-to-one chats  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2005, 2007, 2008 - Magnus Henoch - mange@freemail.hu
 
@@ -18,6 +18,8 @@
 ;; along with this program; if not, write to the Free Software
 ;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+;;; Code:
+
 (require 'jabber-core)
 (require 'jabber-alert)
 (require 'jabber-chatbuffer)
@@ -25,6 +27,7 @@
 (require 'jabber-menu)                  ;we need jabber-jid-chat-menu
 (require 'ewoc)
 (require 'goto-addr)
+
 (eval-when-compile (require 'cl-lib))
 
 (defgroup jabber-chat nil "chat display options"
@@ -39,8 +42,7 @@ with):
 %n   Nickname, or JID if no nickname set
 %j   Bare JID (without resource)
 %r   Resource"
-  :type 'string
-  :group 'jabber-chat)
+  :type 'string)
 
 (defcustom jabber-chat-header-line-format
   '("" (jabber-chat-buffer-show-avatar
@@ -63,50 +65,43 @@ with):
   "The specification for the header line of chat buffers.
 
 The format is that of `mode-line-format' and `header-line-format'."
-  :type 'sexp
-  :group 'jabber-chat)
+  :type 'sexp)
 
 (defcustom jabber-chat-buffer-show-avatar t
   "Show avatars in header line of chat buffer?
 This variable might not take effect if you have changed
 `jabber-chat-header-line-format'."
-  :type 'boolean
-  :group 'jabber-chat)
+  :type 'boolean)
 
 (defcustom jabber-chat-time-format "%H:%M"
   "The format specification for instant messages in the chat buffer.
 See also `jabber-chat-delayed-time-format'.
 
 See `format-time-string' for valid values."
-  :type 'string
-  :group 'jabber-chat)
+  :type 'string)
 
 (defcustom jabber-chat-delayed-time-format "%Y-%m-%d %H:%M"
   "The format specification for delayed messages in the chat buffer.
 See also `jabber-chat-time-format'.
 
 See `format-time-string' for valid values."
-  :type 'string
-  :group 'jabber-chat)
+  :type 'string)
 
 (defcustom jabber-print-rare-time t
   "Non-nil means to print \"rare time\" indications in chat buffers.
 The default settings tell every new hour."
-  :type 'boolean
-  :group 'jabber-chat)
+  :type 'boolean)
 
 (defcustom jabber-rare-time-format "%a %e %b %Y %H:00"
   "The format specification for the rare time information.
 Rare time information will be printed whenever the current time,
 formatted according to this string, is different to the last
 rare time printed."
-  :type 'string
-  :group 'jabber-chat)
+  :type 'string)
 
 (defface jabber-rare-time-face
   '((t (:foreground "darkgreen" :underline t)))
-  "face for displaying the rare time info"
-  :group 'jabber-chat)
+  "face for displaying the rare time info")
 
 (defcustom jabber-chat-local-prompt-format "[%t] %n> "
   "The format specification for lines you type in the chat buffer.
@@ -119,8 +114,7 @@ These fields are available:
 %n   Nickname (obsolete, same as username)
 %r   Resource
 %j   Bare JID (without resource)"
-  :type 'string
-  :group 'jabber-chat)
+  :type 'string)
 
 (defcustom jabber-chat-foreign-prompt-format "[%t] %n> "
   "The format specification for lines others type in the chat buffer.
@@ -133,43 +127,29 @@ These fields are available:
 %u   Username
 %r   Resource
 %j   Bare JID (without resource)"
-  :type 'string
-  :group 'jabber-chat)
-
-(defcustom jabber-chat-system-prompt-format "[%t] *** "
-  "The format specification for lines from the system or special chat.
-The format specification for lines from the system or that are special in the
-chat buffer."
-  :type 'string
-  :group 'jabber-chat)
+  :type 'string)
 
 (defface jabber-chat-prompt-local
   '((t (:foreground "blue" :weight bold)))
-  "face for displaying the chat prompt for what you type in"
-  :group 'jabber-chat)
+  "face for displaying the chat prompt for what you type in")
 
 (defface jabber-chat-prompt-foreign
   '((t (:foreground "red" :weight bold)))
-  "face for displaying the chat prompt for what they send"
-  :group 'jabber-chat)
+  "face for displaying the chat prompt for what they send")
 
 (defface jabber-chat-prompt-system
   '((t (:foreground "green" :weight bold)))
-  "face used for system and special messages"
-  :group 'jabber-chat)
+  "face used for system and special messages")
 
 (defface jabber-chat-text-local '((t ()))
-  "Face used for text you write"
-  :group 'jabber-chat)
+  "Face used for text you write")
 
 (defface jabber-chat-text-foreign '((t ()))
-  "Face used for text others write"
-  :group 'jabber-chat)
+  "Face used for text others write")
 
 (defface jabber-chat-error
   '((t (:foreground "red" :weight bold)))
-  "Face used for error messages"
-  :group 'jabber-chat)
+  "Face used for error messages")
 
 ;;;###autoload
 (defvar jabber-chatting-with nil
@@ -223,6 +203,8 @@ added to the outgoing message.")
 (declare-function jabber-muc-sender-p "jabber-muc.el" (jid))
 (declare-function jabber-muc-private-message-p "jabber-muc.el" (message))
 (defvar jabber-group)                   ; jabber-muc.el
+(defvar jabber-muc-printers)            ; jabber-muc.el
+
 ;;
 
 (defvar jabber-chat-earliest-backlog nil
@@ -250,7 +232,7 @@ JC is the Jabber connection."
 
       (make-local-variable 'jabber-chatting-with)
       (setq jabber-chatting-with chat-with)
-      (setq jabber-send-function 'jabber-chat-send)
+      (setq jabber-send-function #'jabber-chat-send)
       (setq header-line-format jabber-chat-header-line-format)
 
       (make-local-variable 'jabber-chat-earliest-backlog)
@@ -263,7 +245,8 @@ JC is the Jabber connection."
 	    (setq jabber-chat-earliest-backlog
 		  (jabber-float-time (jabber-parse-time
 				      (aref (car backlog-entries) 0))))
-	    (mapc 'jabber-chat-insert-backlog-entry (nreverse backlog-entries))))))
+	    (mapc #'jabber-chat-insert-backlog-entry
+	          (nreverse backlog-entries))))))
 
     ;; Make sure the connection variable is up to date.
     (setq jabber-buffer-connection jc)
@@ -313,9 +296,9 @@ Specify 0 to display all messages."
 				(aref (car backlog-entries) 0))))
       (save-excursion
 	(goto-char (point-min))
-	(mapc 'jabber-chat-insert-backlog-entry (nreverse backlog-entries))))))
+	(mapc #'jabber-chat-insert-backlog-entry (nreverse backlog-entries))))))
 
-(add-to-list 'jabber-message-chain 'jabber-process-chat)
+(add-to-list 'jabber-message-chain #'jabber-process-chat)
 
 (defun jabber-get-forwarded-message (xml-data)
   (let* ((sent (car (jabber-xml-get-children xml-data 'sent)))
@@ -375,7 +358,7 @@ JC is the Jabber connection."
   "Send BODY through connection JC, and display it in chat buffer.
 JC is the Jabber connection."
   ;; Build the stanza...
-  (let* ((id (apply 'format "emacs-msg-%d.%d.%d" (current-time)))
+  (let* ((id (apply #'format "emacs-msg-%d.%d.%d" (current-time)))
 	 (stanza-to-send `(message
 			   ((to . ,jabber-chatting-with)
 			    (type . "chat")
@@ -419,43 +402,44 @@ This function is used as an ewoc prettyprinter."
 
     ;; Print prompt...
     (let ((delayed (or original-timestamp (plist-get (cddr data) :delayed)))
-          (prompt-start (point)))
-      (cl-case (car data)
-        (:local
-         (jabber-chat-self-prompt (or original-timestamp internal-time)
-                                  delayed
-                                  /me-p))
-        (:foreign
-         (if (and (listp (cadr data))
-                  (jabber-muc-private-message-p (cadr data)))
-             (jabber-muc-private-print-prompt (cadr data))
-           ;; For :error and :notice, this might be a string... beware
-           (jabber-chat-print-prompt (when (listp (cadr data)) (cadr data))
-                                     (or original-timestamp internal-time)
-                                     delayed
-                                     /me-p)))
-        ((:error :notice :subscription-request)
-         (jabber-chat-system-prompt (or original-timestamp internal-time)))
-        (:muc-local
-         (jabber-muc-print-prompt (cadr data) t /me-p))
+	  (prompt-start (point)))
+      (pcase (car data)
+	(:local
+	 (jabber-chat-self-prompt (or original-timestamp internal-time)
+				  delayed
+				  /me-p))
+	(:foreign
+	 (if (and (listp (cadr data))
+		  (jabber-muc-private-message-p (cadr data)))
+	     (jabber-muc-private-print-prompt (cadr data))
+	   ;; For :error and :notice, this might be a string... beware
+	   (jabber-chat-print-prompt (when (listp (cadr data)) (cadr data))
+				     (or original-timestamp internal-time)
+				     delayed
+				     /me-p)))
+	((or :error :notice :subscription-request)
+	 (jabber-chat-system-prompt (or original-timestamp internal-time)))
+	(:muc-local
+	 (jabber-muc-print-prompt (cadr data) t /me-p))
         (:muc-foreign
          (jabber-muc-print-prompt (cadr data) nil /me-p))
-        ((:muc-notice :muc-error)
-         (jabber-muc-system-prompt)))
+	((or :muc-notice :muc-error)
+	 (jabber-muc-system-prompt)))
       (put-text-property prompt-start (point) 'field 'jabber-prompt))
 
     ;; ...and body
-    (cl-case (car data)
-      ((:local :foreign)
+    (pcase (car data)
+      ((or :local :foreign)
        (run-hook-with-args 'jabber-chat-printers (cadr data) (car data) :insert))
-      ((:muc-local :muc-foreign)
-       (dolist (hook '(jabber-muc-printers jabber-chat-printers))
-         (run-hook-with-args hook (cadr data) (car data) :insert)))
-      ((:error :muc-error)
+      ((or :muc-local :muc-foreign)
+       (let ((args (list (cadr data) (car data) :insert)))
+	 (mapc (lambda (f) (apply f args))
+	       (append jabber-muc-printers jabber-chat-printers))))
+      ((or :error :muc-error)
        (if (stringp (cadr data))
-            (insert (jabber-propertize (cadr data) 'face 'jabber-chat-error))
-         (jabber-chat-print-error (cadr data))))
-      ((:notice :muc-notice)
+	    (insert (jabber-propertize (cadr data) 'face 'jabber-chat-error))
+	 (jabber-chat-print-error (cadr data))))
+      ((or :notice :muc-notice)
        (insert (cadr data)))
       (:rare-time
        (insert (jabber-propertize (format-time-string jabber-rare-time-format (cadr data))
@@ -466,17 +450,17 @@ This function is used as an ewoc prettyprinter."
          (insert "Message: " (cadr data) "\n"))
        (insert "Accept?\n\n")
        (cl-flet ((button
-               (text action)
-               (if (fboundp 'insert-button)
-                   (insert-button text 'action action)
-                 ;; simple button replacement
-                 (let ((keymap (make-keymap)))
-                   (define-key keymap "\r" action)
-                   (insert (jabber-propertize text 'keymap keymap 'face 'highlight))))
-               (insert "\t")))
-         (button "Mutual" 'jabber-subscription-accept-mutual)
-         (button "One-way" 'jabber-subscription-accept-one-way)
-         (button "Decline" 'jabber-subscription-decline))))
+	           (text action)
+	           (if (fboundp 'insert-button)
+		       (insert-button text 'action action)
+		     ;; simple button replacement
+		     (let ((keymap (make-keymap)))
+		       (define-key keymap "\r" action)
+		       (insert (jabber-propertize text 'keymap keymap 'face 'highlight))))
+		   (insert "\t")))
+	 (button "Mutual" 'jabber-subscription-accept-mutual)
+	 (button "One-way" 'jabber-subscription-accept-one-way)
+	 (button "Decline" 'jabber-subscription-decline))))
 
     (when jabber-chat-fill-long-lines
       (save-restriction
@@ -498,9 +482,9 @@ This function is used as an ewoc prettyprinter."
 	 (data (ewoc-data node))
 	 (prev-data (when prev (ewoc-data prev))))
     (cl-flet ((entry-time (entry)
-		       (or (when (listp (cadr entry))
-			     (jabber-message-timestamp (cadr entry)))
-			   (plist-get (cddr entry) :time))))
+		(or (when (listp (cadr entry))
+		      (jabber-message-timestamp (cadr entry)))
+		    (plist-get (cddr entry) :time))))
       (when (and jabber-print-rare-time
 		 (or (null prev)
 		     (jabber-rare-time-needed (entry-time prev-data)
@@ -597,7 +581,7 @@ obtained from `xml-parse-region'."
 		   (car
 		    (jabber-xml-get-children xml-data 'subject))))))
     (when (not (zerop (length subject)))
-      (cl-case mode
+      (pcase mode
 	(:printp
 	 t)
 	(:insert
@@ -638,9 +622,9 @@ obtained from `xml-parse-region'."
 		       'face 'jabber-chat-prompt-system)))
 	  (insert (jabber-propertize
 		   body
-		   'face (cl-case who
-			   ((:foreign :muc-foreign) 'jabber-chat-text-foreign)
-			   ((:local :muc-local) 'jabber-chat-text-local))))))
+		   'face (pcase who
+			   ((or :foreign :muc-foreign) 'jabber-chat-text-foreign)
+			   ((or :local :muc-local) 'jabber-chat-text-local))))))
       t)))
 
 (defun jabber-chat-print-url (xml-data _who mode)

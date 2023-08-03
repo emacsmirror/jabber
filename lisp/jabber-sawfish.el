@@ -1,4 +1,4 @@
-;; jabber-sawfish.el - emacs-jabber interface to sawfish  -*- lexical-binding: t; -*-
+;;; jabber-sawfish.el --- emacs-jabber interface to sawfish  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2005 - Mario Domenech Goulart
 
@@ -31,8 +31,7 @@ Sawfish window manager."
   (let ((process-connection-type nil))
     (start-process-shell-command
      "jabber-sawfish" nil
-     (concat "echo "
-             "'(progn (require (quote timers)) (display-message \""
+     (concat "echo '(progn (require (quote timers)) (display-message \""
 	     (or title text)
 	     "\")(make-timer (lambda () (display-message nil)) "
 	     (number-to-string jabber-sawfish-display-time)

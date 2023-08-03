@@ -234,7 +234,7 @@ The top node should be the `vCard' node."
 	  ,@(mapcar
 	     (lambda (address)
 	       (append '(ADR) '(())
-		       (mapcar 'list (nth 0 address))
+		       (mapcar #'list (nth 0 address))
 		       (mapcar (lambda (field)
 				 (list (car field) nil (cdr field)))
 			       (cdr address))))
@@ -243,14 +243,14 @@ The top node should be the `vCard' node."
 	  ,@(mapcar
 	     (lambda (phone)
 	       (append '(TEL) '(())
-		       (mapcar 'list (car phone))
+		       (mapcar #'list (car phone))
 		       (list (list 'NUMBER nil (cdr phone)))))
 	     (cdr (assq 'TEL parsed)))
 	  ;; Put in e-mail addresses
 	  ,@(mapcar
 	     (lambda (email)
 	       (append '(EMAIL) '(())
-		       (mapcar 'list (car email))
+		       (mapcar #'list (car email))
 		       (list (list 'USERID nil (cdr email)))))
 	     (cdr (assq 'EMAIL parsed)))
 	  ;; Put in photo

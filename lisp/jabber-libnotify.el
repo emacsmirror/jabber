@@ -1,4 +1,4 @@
-;; jabber-libnotify.el - emacs-jabber interface to libnotify  -*- lexical-binding: t; -*-
+;;; jabber-libnotify.el --- emacs-jabber interface to libnotify  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2010 - Kirill A. Korinskiy - catap@catap.ru
 ;; Copyright (C) 2007 - Rodrigo Lazo - rlazo.paz@gmail.com
@@ -77,7 +77,7 @@ Dbus is faster but require emacs23+, use shell as a fallback."
                   (or jabber-libnotify-message-header " ")
                   text))))
     ;; Possible errors include not finding the notify-send binary.
-    (condition-case _e
+    (condition-case nil
         (cond
          ((eq jabber-libnotify-method 'shell)
           (let ((process-connection-type nil))

@@ -1,4 +1,4 @@
-;; jabber-wmii.el - emacs-jabber interface to wmii  -*- lexical-binding: t; -*-
+;;; jabber-wmii.el --- emacs-jabber interface to wmii  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2007 - Detlev Zundel - dzu@gnu.org
 
@@ -34,7 +34,7 @@ If nil the message has to be cleared by other means, i.e. from wmiirc.")
 
 (defun jabber-wmii-clear ()
   "Clear any previous message output through wmii window manager."
-  (condition-case _e
+  (condition-case nil
       (call-process "wmiir" nil nil nil "remove" "/rbar/jabber")
     (error nil)))
 
@@ -47,13 +47,13 @@ If nil the message has to be cleared by other means, i.e. from wmiirc.")
       (insert  jabber-wmii-color " " (or title text)))
     ;; Possible errors include not finding the wmiir binary, and
     ;; too many pipes open because of message flood.
-    (condition-case _e
+    (condition-case nil
 	(call-process "wmiir" tmp nil nil "create" "/rbar/jabber")
       (error nil))
     (delete-file tmp))
   (when jabber-wmii-reset-time
     (setq jabber-wmii-timer
-	  (run-at-time jabber-wmii-reset-time nil 'jabber-wmii-clear))))
+	  (run-at-time jabber-wmii-reset-time nil #'jabber-wmii-clear))))
 
 (define-jabber-alert wmii "Show a message through the wmii window manager."
   'jabber-wmii-message)

@@ -13,6 +13,11 @@
 ;; SSL - Support, mostly inspired by Gnus
 ;; Copyright (C) 2005 - Georg Lehner - jorge@magma.com.ni
 
+;; Version: 0
+;; Package-Requires: ()
+
+;; This file is a part of jabber.el.
+
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
 ;; the Free Software Foundation; either version 2 of the License, or
@@ -258,5 +263,4 @@ configure a Google Talk account like this:
 
 (provide 'jabber)
 
-;;; arch-tag: 5145153e-4d19-4dc2-800c-b1282feb155d
-;;; jabber.el ends here
+;;; jabber.el ends here.

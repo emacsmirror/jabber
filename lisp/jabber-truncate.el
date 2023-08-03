@@ -1,4 +1,4 @@
-;; jabber-truncate.el - cleanup top lines in chatbuffers  -*- lexical-binding: t; -*-
+;;; jabber-truncate.el --- cleanup top lines in chatbuffers  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2007 - Kirill A. Korinskiy - catap@catap.ru
 
@@ -18,10 +18,12 @@
 ;; along with this program; if not, write to the Free Software
 ;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-(require 'jabber-alert)
-(require 'ewoc)
+;;; Code:
 
 (require 'cl-lib)
+
+(require 'jabber-alert)
+(require 'ewoc)
 
 (defvar jabber-log-lines-to-keep 1000
   "Maximum number of lines in chat buffer.")

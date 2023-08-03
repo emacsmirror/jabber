@@ -1,4 +1,4 @@
-;; jabber-notifications.el - emacs-jabber interface to notifications.el  -*- lexical-binding: t; -*-
+;;; jabber-notifications.el --- emacs-jabber interface to notifications.el  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2014 - Adam Sjøgren - asjo@koldfront.dk
 ;; Copyright (C) 2010 - Kirill A. Korinskiy - catap@catap.ru

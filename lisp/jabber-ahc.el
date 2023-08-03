@@ -217,7 +217,10 @@ JC is the Jabber connection."
 			   children
 			 (cons (intern default-action) children)))))))
 	      (dolist (button-title button-titles)
-		(widget-create 'push-button :notify `(lambda (&rest ignore) (jabber-ahc-submit (quote ,button-title))) (symbol-name button-title))
+		(widget-create 'push-button
+		               :notify (lambda (&rest _ignore)
+		                         (jabber-ahc-submit button-title))
+		               (symbol-name button-title))
 		(widget-insert "\t")))
 	    (widget-insert "\n"))))
 

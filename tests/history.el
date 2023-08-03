@@ -1,4 +1,4 @@
-;; Tests for history
+;; Tests for history  -*- lexical-binding: t; -*-
 
 (require 'jabber-history)
 

@@ -130,8 +130,8 @@
     (catch 'wait
       (while jabber-rtt-pending-events
 	(let ((action (pop jabber-rtt-pending-events)))
-	  (cl-case (jabber-xml-node-name action)
-	    ((t)
+	  (pcase (jabber-xml-node-name action)
+	    ('t
 	     ;; insert text
 	     (let* ((p (jabber-xml-get-attribute action 'p))
 		    (position (if p (string-to-number p) (length jabber-rtt-message))))
@@ -143,7 +143,7 @@
 	       (ewoc-set-data jabber-rtt-ewoc-node (list :notice (concat "[typing...] " jabber-rtt-message)))
 	       (let ((inhibit-read-only t))
 		 (ewoc-invalidate jabber-chat-ewoc jabber-rtt-ewoc-node))))
-	    ((e)
+	    ('e
 	     ;; erase text
 	     (let* ((p (jabber-xml-get-attribute action 'p))
 		    (position (if p (string-to-number p) (length jabber-rtt-message)))
@@ -160,7 +160,7 @@
 	       (ewoc-set-data jabber-rtt-ewoc-node (list :notice (concat "[typing...] " jabber-rtt-message)))
 	       (let ((inhibit-read-only t))
 		 (ewoc-invalidate jabber-chat-ewoc jabber-rtt-ewoc-node))))
-	    ((w)
+	    ('w
 	     (setq jabber-rtt-timer
 		   (run-with-timer
 		    (/ (string-to-number (jabber-xml-get-attribute action 'n)) 1000.0)
@@ -212,9 +212,7 @@
 This lets the recipient see every change made to the message up
 until it's sent.  The recipient's client needs to implement
 XEP-0301, In-Band Real Time Text."
-  :init-value nil
   :lighter " Real-Time"
-  :keymap nil
   (if (null jabber-rtt-send-mode)
       (progn
 	(remove-hook 'after-change-functions #'jabber-rtt--queue-update t)

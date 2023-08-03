@@ -1,4 +1,4 @@
-;; jabber-search.el - searching by JEP-0055, with x:data support  -*- lexical-binding: t; -*-
+;;; jabber-search.el --- searching by JEP-0055, with x:data support  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
 ;; Copyright (C) 2003, 2004 - Magnus Henoch - mange@freemail.hu
@@ -18,6 +18,8 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program; if not, write to the Free Software
 ;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+;;; Code:
 
 (require 'jabber-register)
 
@@ -46,8 +48,8 @@ JC is the Jabber connection."
 ;; two functions would be serious code duplication. See
 ;; `jabber-register.el'.
 
-;; `jabber-submit-search' is called when the "submit" button of the search
-;; form is activated.
+;; jabber-submit-search is called when the "submit" button of the
+;; search form is activated.
 (defun jabber-submit-search (&rest _ignore)
   "Submit search.  See `jabber-process-register-or-search'."
 

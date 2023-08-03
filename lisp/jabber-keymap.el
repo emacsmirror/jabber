@@ -1,4 +1,4 @@
-;; jabber-keymap.el - common keymap for many modes  -*- lexical-binding: t; -*-
+;;; jabber-keymap.el --- common keymap for many modes  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
 ;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
@@ -20,34 +20,49 @@
 ;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
-(require 'button)
+(require 'jabber-menu)
+(require 'button t nil)
+
+;; Global reference declarations
+
+(declare-function jabber-send-presence "jabber-presence.el" (show status priority))
+(declare-function jabber-send-xa-presence "jabber-presence.el" (&optional status))
+(declare-function jabber-send-default-presence "jabber-presence.el" (&optional _ignore))
+(declare-function jabber-send-away-presence "jabber-presence.el" (&optional status))
+(declare-function jabber-activity-switch-to "lisp/jabber-activity.el" (&optional jid-param))
+(declare-function jabber-chat-with "jabber-chat.el" (jc jid &optional other-window))
+(declare-function jabber-switch-to-roster-buffer "jabber-roster.el" (&optional _jc))
+(declare-function jabber-disconnect "jabber-core.el" (&optional arg interactivep))
+(declare-function jabber-connect-all "jabber-core.el" (&optional arg))
+
+;;
 
 (defvar jabber-common-keymap
   (let ((map (make-sparse-keymap)))
-    (define-key map "\C-c\C-c" 'jabber-popup-chat-menu)
-    (define-key map "\C-c\C-r" 'jabber-popup-roster-menu)
-    (define-key map "\C-c\C-i" 'jabber-popup-info-menu)
-    (define-key map "\C-c\C-m" 'jabber-popup-muc-menu)
-    (define-key map "\C-c\C-s" 'jabber-popup-service-menu)
+    (define-key map "\C-c\C-c" #'jabber-popup-chat-menu)
+    (define-key map "\C-c\C-r" #'jabber-popup-roster-menu)
+    (define-key map "\C-c\C-i" #'jabber-popup-info-menu)
+    (define-key map "\C-c\C-m" #'jabber-popup-muc-menu)
+    (define-key map "\C-c\C-s" #'jabber-popup-service-menu)
     ;; note that {forward,backward}-button are not autoloaded.
     ;; thus the `require' above.
     (when (fboundp 'forward-button)
-      (define-key map [?\t] 'forward-button)
-      (define-key map [backtab] 'backward-button))
+      (define-key map [?\t] #'forward-button)
+      (define-key map [backtab] #'backward-button))
     map))
 
 ;;;###autoload
 (defvar jabber-global-keymap
   (let ((map (make-sparse-keymap)))
-    (define-key map "\C-c" 'jabber-connect-all)
-    (define-key map "\C-d" 'jabber-disconnect)
-    (define-key map "\C-r" 'jabber-switch-to-roster-buffer)
-    (define-key map "\C-j" 'jabber-chat-with)
-    (define-key map "\C-l" 'jabber-activity-switch-to)
-    (define-key map "\C-a" 'jabber-send-away-presence)
-    (define-key map "\C-o" 'jabber-send-default-presence)
-    (define-key map "\C-x" 'jabber-send-xa-presence)
-    (define-key map "\C-p" 'jabber-send-presence)
+    (define-key map "\C-c" #'jabber-connect-all)
+    (define-key map "\C-d" #'jabber-disconnect)
+    (define-key map "\C-r" #'jabber-switch-to-roster-buffer)
+    (define-key map "\C-j" #'jabber-chat-with)
+    (define-key map "\C-l" #'jabber-activity-switch-to)
+    (define-key map "\C-a" #'jabber-send-away-presence)
+    (define-key map "\C-o" #'jabber-send-default-presence)
+    (define-key map "\C-x" #'jabber-send-xa-presence)
+    (define-key map "\C-p" #'jabber-send-presence)
     map)
   "Global Jabber keymap (usually under C-x C-j).")
 

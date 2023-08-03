@@ -1,4 +1,4 @@
-;; jabber-menu.el - menu definitions  -*- lexical-binding: t; -*-
+;;; jabber-menu.el --- menu definitions  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2003, 2004, 2008 - Magnus Henoch - mange@freemail.hu
 ;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
@@ -19,9 +19,9 @@
 ;; along with this program; if not, write to the Free Software
 ;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+(eval-when-compile (require 'cl-lib))
 (require 'jabber-util)
 (require 'wid-edit)
-(eval-when-compile (require 'cl-lib))
 
 ;;;###autoload
 (defvar jabber-menu
@@ -127,13 +127,14 @@ if any of `jabber-account-list' or `jabber-connections' is non-nil."
 		 (const :tag "Always" t)
 		 (const :tag "When installed by user, or when any accounts have been configured or connected" maybe)))
 
-  (defun jabber-menu (&optional remove)
-    "Put \"Jabber\" menu on menubar.
-  With prefix argument, remove it."
-    (interactive "P")
-    (setq jabber-display-menu (if remove nil t))
-    (force-mode-line-update))
-  (make-obsolete 'jabber-menu "set the variable `jabber-display-menu' instead." "27.2")
+(defun jabber-menu (&optional remove)
+  "Put \"Jabber\" menu on menubar.
+With prefix argument, remove it."
+  (interactive "P")
+  (setq jabber-display-menu (if remove nil t))
+  (force-mode-line-update))
+(make-obsolete 'jabber-menu "set the variable `jabber-display-menu' instead."
+               "2008")
 
 ;;;###autoload
 (define-key-after (lookup-key global-map [menu-bar])

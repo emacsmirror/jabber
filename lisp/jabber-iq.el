@@ -1,4 +1,4 @@
-;; jabber-iq.el - infoquery functions  -*- lexical-binding: t; -*-
+;;; jabber-iq.el --- infoquery functions  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
 ;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
@@ -22,6 +22,7 @@
 (require 'jabber-util)
 (require 'jabber-alert)
 (require 'jabber-keymap)
+(require 'jabber-menu)
 
 (defvar *jabber-open-info-queries* nil
   "Alist of open query id and their callback functions.")
@@ -35,7 +36,7 @@
 (defvar jabber-browse-mode-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map jabber-common-keymap)
-    (define-key map [mouse-2] 'jabber-popup-combined-menu)
+    (define-key map [mouse-2] #'jabber-popup-combined-menu)
     map))
 
 (defcustom jabber-browse-mode-hook nil
@@ -52,8 +53,7 @@
 These fields are available at this moment:
 
 %n   JID to browse"
-  :type 'string
-  :group 'jabber-browse)
+  :type 'string)
 
 ;; Global reference declarations
 
@@ -62,19 +62,9 @@ These fields are available at this moment:
 
 ;;
 
-(defun jabber-browse-mode ()
-"Jabber browse mode.
-\\{jabber-browse-mode-map}"
-  (kill-all-local-variables)
-  (setq major-mode 'jabber-browse-mode
-        mode-name "jabber-browse")
-  (use-local-map jabber-browse-mode-map)
-  (setq buffer-read-only t)
-  (if (fboundp 'run-mode-hooks)
-      (run-mode-hooks 'jabber-browse-mode-hook)
-    (run-hooks 'jabber-browse-mode-hook)))
-
-(put 'jabber-browse-mode 'mode-class 'special)
+(define-derived-mode jabber-browse-mode special-mode "jabber-browse"
+  "Special mode."  ;; FIXME: Improve!
+  (setq buffer-read-only t))
 
 (eval-after-load "jabber-core"
   '(add-to-list 'jabber-iq-chain 'jabber-process-iq))
@@ -112,7 +102,7 @@ obtained from `xml-parse-region'."
 	    (condition-case error-var
 		(funcall handler jc xml-data)
 	      (jabber-error
-	       (apply 'jabber-send-iq-error jc from id query (cdr error-var)))
+	       (apply #'jabber-send-iq-error jc from id query (cdr error-var)))
 	      (error (jabber-send-iq-error jc from id query "wait" 'internal-server-error (error-message-string error-var))))
 	  (jabber-send-iq-error jc from id query "cancel" 'feature-not-implemented)))))))
 
@@ -133,8 +123,8 @@ RESULT-ID is the id to be used for a response to a received iq message.
 
 The callback functions are called like this:
 \(funcall CALLBACK JC XML-DATA CLOSURE-DATA)
-with XML-DATA being the IQ stanza received in response."
-  (let ((id (or result-id (apply 'format "emacs-iq-%d.%d.%d" (current-time)))))
+with XML-DATA being the IQ stanza received in response. "
+  (let ((id (or result-id (apply #'format "emacs-iq-%d.%d.%d" (current-time)))))
     (if (or success-callback error-callback)
 	(setq *jabber-open-info-queries* (cons (list id
 						     (cons success-callback success-closure-data)
@@ -193,8 +183,8 @@ obtained from `xml-parse-region'."
       (setq buffer-read-only nil)
       (goto-char (point-max))
 
-      (insert (jabber-propertize from
-			  'face 'jabber-title-large) "\n\n")
+      (insert (jabber-propertize from 'face 'jabber-title-large)
+	      "\n\n")
 
       ;; Put point at beginning of data
       (save-excursion

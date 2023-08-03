@@ -1,4 +1,4 @@
-;; jabber-widget.el - display various kinds of forms  -*- lexical-binding: t; -*-
+;;; jabber-widget.el --- display various kinds of forms  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2003, 2004, 2007 - Magnus Henoch - mange@freemail.hu
 ;; Copyright (C) 2002, 2003, 2004 - tom berger - object@intelectronica.net
@@ -28,10 +28,9 @@
   "Alist of widgets currently used.")
 
 (defvar jabber-form-type nil
-  "Type of form.
-One of:
-\='x-data, jabber:x:data
-\='register, as used in jabber:iq:register and jabber:iq:search.")
+  "Type of form.  One of:
+`x-data', jabber:x:data
+`register', as used in jabber:iq:register and jabber:iq:search.")
 
 (defvar jabber-submit-to nil
   "JID of the entity to which form data is to be sent.")
@@ -55,7 +54,7 @@ One of:
 		       (if (string-match "<\\([^>]+\\)>[ \t]*$" value)
 			   (match-string 1 value)
 			 value))
-  :complete 'jid-complete)
+  :complete #'jid-complete)
 
 (defun jid-complete (widget)
   "Perform completion on JID preceding point."
@@ -203,7 +202,7 @@ DEFAULTS takes precedence over values specified in the form."
 	(if (or label var)
 	    (widget-insert (or label var) ":\n"))
 	(push (cons (cons var type)
-		    (apply 'widget-create
+		    (apply #'widget-create
 			   'radio-button-choice
 			   :value (or (cdr default-value)
 				      (car (xml-node-children (car values))))

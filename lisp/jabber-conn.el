@@ -1,4 +1,4 @@
-;; jabber-conn.el - Network transport functions  -*- lexical-binding: t; -*-
+;;; jabber-conn.el --- Network transport functions  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2005 - Georg Lehner - jorge@magma.com.ni
 ;; mostly inspired by Gnus.
@@ -25,9 +25,9 @@
 ;; A collection of functions, that hide the details of transmitting to
 ;; and from a Jabber Server. Mostly inspired by Gnus.
 
+(eval-when-compile (require 'cl-lib))
 (require 'jabber-core)
 (require 'fsm)
-(eval-when-compile (require 'cl-lib))
 
 ;; Emacs 24 can be linked with GnuTLS
 (require 'gnutls nil t)
@@ -67,8 +67,7 @@ nil means prefer gnutls but fall back to openssl.
 \='openssl means use openssl (through `open-ssl-stream')."
   :type '(choice (const :tag "Prefer gnutls, fall back to openssl" nil)
 		 (const :tag "Use gnutls" gnutls)
-		 (const :tag "Use openssl" openssl))
-  :group 'jabber-conn)
+		 (const :tag "Use openssl" openssl)))
 
 (defcustom jabber-invalid-certificate-servers ()
   "Jabber servers for which we accept invalid TLS certificates.
@@ -77,8 +76,7 @@ of your JID.
 
 This option has effect only when using native GnuTLS in Emacs 24
 or later."
-  :type '(repeat string)
-  :group 'jabber-conn)
+  :type '(repeat string))
 
 (defvar jabber-connect-methods
   `((network jabber-network-connect jabber-network-send)
@@ -154,67 +152,64 @@ connection fails."
 (defun jabber-network-connect-async (fsm server network-server port)
   ;; Get all potential targets...
   (let ((targets (jabber-srv-targets server network-server port))
-		errors
-		(fsm fsm))
+	errors)
     ;; ...and connect to them one after another, asynchronously, until
     ;; connection succeeds.
     (cl-labels
-	((connect
-	  (target remaining-targets)
-	  (let ((target target) (remaining-targets remaining-targets))
-	    (cl-labels ((connection-successful
-		      (c)
-		      ;; This mustn't be `fsm-send-sync', because the FSM
-		      ;; needs to change the sentinel, which cannot be done
-		      ;; from inside the sentinel.
-		      (fsm-send fsm (list :connected c)))
-		     (connection-failed
-		      (c status)
-		      (when (and (> (length status) 0)
-				 (eq (aref status (1- (length status))) ?\n))
-			(setq status (substring status 0 -1)))
-		      (let ((err
-			     (format "Couldn't connect to %s:%s: %s"
-				     (car target) (cdr target) status)))
-			(message "%s" err)
-			(push err errors))
-		      (when c (delete-process c))
-		      (if remaining-targets
-			  (progn
-			    (message
-			     "Connecting to %s:%s..."
-			     (caar remaining-targets) (cdar remaining-targets))
-			    (connect (car remaining-targets) (cdr remaining-targets)))
-			(fsm-send fsm (list :connection-failed (nreverse errors))))))
-	      (condition-case e
-		  (make-network-process
-		   :name "jabber"
-		   :buffer (generate-new-buffer jabber-process-buffer)
-		   :host (car target) :service (cdr target)
-		   :coding 'utf-8
-		   :nowait t
-		   :sentinel
-		   (let ((_target target) (_remaining-targets remaining-targets))
-		     (lambda (connection status)
-		       (cond
-			((string-match "^open" status)
-			 (connection-successful connection))
-			((string-match "^failed" status)
-			 (connection-failed connection status))
-			((string-match "^deleted" status)
-			 ;; This happens when we delete a process in the
-			 ;; "failed" case above.
-			 nil)
-			(t
-			 (message "Unknown sentinel status `%s'" status))))))
-		(file-error
-		 ;; A file-error has the error message in the third list
-		 ;; element.
-		 (connection-failed nil (car (cddr e))))
-		(error
-		 ;; Not sure if we ever get anything but file-errors,
-		 ;; but let's make sure we report them:
-		 (connection-failed nil (error-message-string e))))))))
+        ((connect
+           (target remaining-targets)
+	   (cl-labels ((connection-successful
+		         (c)
+		         ;; This mustn't be `fsm-send-sync', because the FSM
+		         ;; needs to change the sentinel, which cannot be done
+		         ;; from inside the sentinel.
+		         (fsm-send fsm (list :connected c)))
+		       (connection-failed
+		         (c status)
+		         (when (and (> (length status) 0)
+				    (eq (aref status (1- (length status))) ?\n))
+			   (setq status (substring status 0 -1)))
+			 (let ((err
+				(format "Couldn't connect to %s:%s: %s"
+				        (car target) (cdr target) status)))
+			   (message "%s" err)
+			   (push err errors))
+			 (when c (delete-process c))
+			 (if remaining-targets
+			     (progn
+			       (message
+			        "Connecting to %s:%s..."
+			        (caar remaining-targets) (cdar remaining-targets))
+			       (connect (car remaining-targets) (cdr remaining-targets)))
+			   (fsm-send fsm (list :connection-failed (nreverse errors))))))
+	     (condition-case e
+		 (make-network-process
+		  :name "jabber"
+		  :buffer (generate-new-buffer jabber-process-buffer)
+		  :host (car target) :service (cdr target)
+		  :coding 'utf-8
+		  :nowait t
+		  :sentinel
+		  (lambda (connection status)
+		    (cond
+		     ((string-match "^open" status)
+		      (connection-successful connection))
+		     ((string-match "^failed" status)
+		      (connection-failed connection status))
+		     ((string-match "^deleted" status)
+		      ;; This happens when we delete a process in the
+		      ;; "failed" case above.
+		      nil)
+		     (t
+		      (message "Unknown sentinel status `%s'" status)))))
+	       (file-error
+		;; A file-error has the error message in the third list
+		;; element.
+		(connection-failed nil (car (cddr e))))
+	       (error
+		;; Not sure if we ever get anything but file-errors,
+		;; but let's make sure we report them:
+		(connection-failed nil (error-message-string e)))))))
       (message "Connecting to %s:%s..." (caar targets) (cdar targets))
       (connect (car targets) (cdr targets)))))
 
@@ -373,8 +368,8 @@ obtained from `xml-parse-region'."
 	   (connection (plist-get state-data :connection)))
       ;; Did we use open-network-stream or starttls-open-stream?  We
       ;; can tell by process-type.
-      (cl-case (process-type connection)
-	(network
+      (pcase (process-type connection)
+	('network
 	 (let* ((hostname (plist-get state-data :server))
 		(verifyp (not (member hostname jabber-invalid-certificate-servers))))
 	   ;; gnutls-negotiate might signal an error, which is caught
@@ -385,7 +380,7 @@ obtained from `xml-parse-region'."
 	    :hostname hostname
 	    :verify-hostname-error verifyp
 	    :verify-error verifyp)))
-	(real
+	('real
 	 (or
 	  (starttls-negotiate connection)
 	  (error "Negotiation failure"))))))

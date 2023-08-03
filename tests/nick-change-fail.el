@@ -1,6 +1,8 @@
-;;; When the user tries to change nickname in an MUC room, and the
-;;; server denies this, we should detect this instead of believing
-;;; that the user was thrown out of the room.
+;; -*- lexical-binding: t; -*-
+
+;; When the user tries to change nickname in an MUC room, and the
+;; server denies this, we should detect this instead of believing
+;; that the user was thrown out of the room.
 
 (require 'jabberd)
 
@@ -29,8 +31,8 @@ to enter the room named by `ncf-room-name' with the nick \"Romeo\"."
 				   (error ((code . "409") (type . "cancel"))
 					  (conflict ((xmlns . "urn:ietf:params:xml:ns:xmpp-stanzas")))))))))))
 
-(add-hook 'jabberd-stanza-handlers 'ncf-presence)
-(add-hook 'jabber-post-connect-hooks 'ncf-do)
+(add-hook 'jabberd-stanza-handlers #'ncf-presence)
+(add-hook 'jabber-post-connect-hooks #'ncf-do)
 (setq jabber-muc-disable-disco-check t)
 (setq jabber-debug-log-xml t)
 

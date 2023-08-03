@@ -1,4 +1,4 @@
-;;; jabber-muc-nick-completion.el --- MUC nick completion  -*- lexical-binding: t; -*-
+;;; jabber-muc-nick-completion.el --- Add nick completion abilyty to emacs-jabber  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2008 - Terechkov Evgenii - evg@altlinux.org
 ;; Copyright (C) 2007, 2008, 2010 - Kirill A. Korinskiy - catap@catap.ru
@@ -19,6 +19,17 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program; if not, write to the Free Software
 ;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+;;; Commentary:
+;;
+
+;;; History:
+;;
+
+;;; Code:
+
+(require 'cl-lib)
+(require 'hippie-exp)
 
 (require 'jabber-chatbuffer)
 
@@ -44,16 +55,6 @@ Note that \":\" or alike not needed (it appended in other string)"
   :type 'string
   :group 'jabber-chat)
 
-
-;;; Commentary:
-;;
-
-;;; History:
-;;
-
-;;; Code:
-
-(require 'hippie-exp)
 
 (defvar *jabber-muc-participant-last-speaking* nil
   "Global alist in form (group . ((member . time-of-last-speaking) ...) ...).")
@@ -87,9 +88,10 @@ Optional argument GROUP to look."
 
 (defun jabber-muc-nicknames ()
   "List of conference participants, excluding self, or nil if we not in conference."
-  (cl-delete-if '(lambda (nick)
-		 (string= nick (jabber-my-nick)))
-	     (append (mapcar 'car (cdr (assoc jabber-group jabber-muc-participants))) (list jabber-muc-all-string))))
+  (cl-delete-if (lambda (nick)
+		  (string= nick (jabber-my-nick)))
+		(append (mapcar #'car (cdr (assoc jabber-group jabber-muc-participants)))
+		        (list jabber-muc-all-string))))
 
 (defun jabber-muc-participant-update-activity (group nick time)
   "Update NICK's time of last speaking in GROUP to TIME."
@@ -123,14 +125,16 @@ Optional argument GROUP to look."
   "Return list of NICKS in GROUP, sorted."
   (let ((times (cdr (assoc group *jabber-muc-participant-last-speaking*))))
     (cl-flet ((fetch-time (nick) (or (assoc nick times) (cons nick 0)))
-              (cmp (nt1 nt2)
-                (let ((t1 (cdr nt1))
-                      (t2 (cdr nt2)))
-                  (if (and (zerop t1) (zerop t2))
-                      (string< (car nt1)
-                               (car nt2))
-                    (> t1 t2)))))
-      (mapcar #'car (sort (mapcar #'fetch-time nicks) #'cmp)))))
+	      (cmp (nt1 nt2)
+		(let ((t1 (cdr nt1))
+		      (t2 (cdr nt2)))
+		  (if (and (zerop t1) (zerop t2))
+		      (string<
+                       (car nt1)
+                       (car nt2))
+		    (> t1 t2)))))
+      (mapcar #'car (sort (mapcar #'fetch-time nicks)
+			  #'cmp)))))
 
 (defun jabber-muc-beginning-of-line ()
   "Return position of line begining."
@@ -158,13 +162,13 @@ OLD is last tried nickname."
         (he-init-string (jabber-muc-beginning-of-line) (point))
         (setq he-expand-list
               (jabber-sort-nicks (all-completions he-search-string
-                                            (mapcar 'list nicknames))
-                           jabber-group))))
+                                                  (mapcar #'list nicknames))
+                                 jabber-group))))
 
     (setq he-expand-list
-	  (cl-delete-if '(lambda (x)
-		           (he-string-member x he-tried-table))
-		        he-expand-list))
+          (cl-delete-if (lambda (x)
+                          (he-string-member x he-tried-table))
+                        he-expand-list))
     (if (null he-expand-list)
         (progn
           (when old
@@ -183,18 +187,22 @@ OLD is last tried nickname."
           (jabber-muc-completion-delete-last-tried)
           (progn
             (insert subst)
-            (if (looking-back (concat "^" (regexp-quote (car he-expand-list))) nil)
+            (if (looking-back (concat "^" (regexp-quote (car he-expand-list)))
+                              (line-beginning-position))
                 (unless (looking-back (concat "^" (regexp-quote (car he-expand-list)) jabber-muc-completion-delimiter)
-                                      nil)
-                  (insert jabber-muc-completion-delimiter))))))
+                                      (line-beginning-position))
+                  (insert jabber-muc-completion-delimiter)))
+            )
+          ))
       (setq he-tried-table (cons (car he-expand-list) (cdr he-tried-table)))
       (setq he-expand-list (cdr he-expand-list))
       t)))
 
-(add-hook 'jabber-muc-hooks 'jabber-muc-track-message-time)
+(add-hook 'jabber-muc-hooks #'jabber-muc-track-message-time)
+(defun jabber-muc-completion (_old)) ; ensure function defined for define-key below
 (fset 'jabber-muc-completion (make-hippie-expand-function '(try-expand-jabber-muc)))
 (with-eval-after-load 'jabber-chatbuffer
-  (define-key jabber-chat-mode-map [?\t] 'jabber-muc-completion))
+  (define-key jabber-chat-mode-map [?\t] #'jabber-muc-completion))
 
 (provide 'jabber-muc-nick-completion)
 

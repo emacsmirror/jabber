@@ -1,4 +1,4 @@
-;; jabber-muc.el - advanced MUC functions  -*- lexical-binding: t; -*-
+;;; jabber-muc.el --- advanced MUC functions  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2010 - Kirill A. Korinskiy - catap@catap.ru
 ;; Copyright (C) 2003, 2004, 2007, 2008, 2009, 2010 - Magnus Henoch - mange@freemail.hu
@@ -19,6 +19,8 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program; if not, write to the Free Software
 ;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+;;; Code:
 
 (require 'cl-lib)
 
@@ -63,8 +65,6 @@ Values are lists of nickname strings.")
 
 (defvar jabber-muc-nickname-history ()
   "Keeps track of previously referred-to nicknames.")
-
-(defvar jabber-muc-print-hook nil "List of MUC alert hooks.")
 
 (defcustom jabber-muc-default-nicknames nil
   "Default nickname for specific MUC rooms."
@@ -172,16 +172,15 @@ The format is that of `mode-line-format' and `header-line-format'."
 (declare-function jabber-vcard-get "jabber-vcard.el" (jc jid))
 (declare-function jabber-parse-conference-bookmark "jabber-bookmarks.el"
                   (node))
-;; (declare-function jabber-get-bookmarks "jabber-bookmarks.el"
-;;                   (jc cont &optional refresh))
-;; (declare-function jabber-get-conference-data "jabber-bookmarks.el"
-;;                   (jc conference-jid cont &optional key))
+(declare-function jabber-send-sexp "jabber-core.el"  (jc sexp))
+(declare-function jabber-chat-send "jabber-chat.el"  (jc sexp))
 (declare-function jabber-send-message "jabber-chat.el"
                   (jc to subject body type))
 (declare-function jabber-maybe-print-rare-time "jabber-chat.el" (node))
 (declare-function jabber-chat-pp "jabber-chat.el" (data))
 (declare-function jabber-chat-mode "jabber-chatbuffer.el" (jc ewoc-pp))
 (defvar jabber-silent-mode)             ; jabber.el
+(defvar jabber-message-chain)           ; jabber-core.el
 (defvar jabber-alert-muc-function)      ; jabber-alert.el
 (defvar jabber-body-printers)           ; jabber-chat.el
 (defvar jabber-buffer-connection)       ; jabber-chatbuffer.el
@@ -223,7 +222,7 @@ JC is the Jabber connection."
 
     (set (make-local-variable 'jabber-group) group)
     (make-local-variable 'jabber-muc-topic)
-    (setq jabber-send-function 'jabber-muc-send)
+    (setq jabber-send-function #'jabber-muc-send)
     (setq header-line-format jabber-muc-header-line-format)
     (current-buffer)))
 
@@ -247,7 +246,7 @@ JC is the Jabber connection."
       (jabber-chat-mode jc #'jabber-chat-pp))
 
     (set (make-local-variable 'jabber-chatting-with) (concat group "/" nickname))
-    (setq jabber-send-function 'jabber-chat-send)
+    (setq jabber-send-function #'jabber-chat-send)
     (setq header-line-format jabber-muc-private-header-line-format)
 
     (current-buffer)))
@@ -293,7 +292,7 @@ this JID.  Suitable to call when the connection is closed."
 			 (jabber-connection-bare-jid jabber-buffer-connection))
 	    (setq *jabber-active-groupchats*
 		  (cl-delete room *jabber-active-groupchats*
-			   :key #'car :test #'string=))
+			     :key #'car :test #'string=))
 	    (setq jabber-muc-participants
 		  (delq room-entry jabber-muc-participants))))))))
 
@@ -474,8 +473,8 @@ JC is the Jabber connection."
 		  #'jabber-process-data #'jabber-muc-render-config
 		  #'jabber-process-data "MUC configuration request failed"))
 
-(defalias 'jabber-groupchat-get-config 'jabber-muc-get-config
-  "Deprecated.  See `jabber-muc-get-config' instead.")
+(defalias 'jabber-groupchat-get-config #'jabber-muc-get-config
+  "Deprecated. See `jabber-muc-get-config' instead.")
 
 (defun jabber-muc-render-config (jc xml-data)
   "Render MUC configuration form.
@@ -505,8 +504,8 @@ obtained from `xml-parse-region'."
     (widget-setup)
     (widget-minor-mode 1))))
 
-(defalias 'jabber-groupchat-render-config 'jabber-muc-render-config
-  "Deprecated.  See `jabber-muc-render-config' instead.")
+(defalias 'jabber-groupchat-render-config #'jabber-muc-render-config
+  "Deprecated. See `jabber-muc-render-config' instead.")
 
 (defun jabber-muc-submit-config (&rest _ignore)
   "Submit MUC configuration form."
@@ -518,8 +517,8 @@ obtained from `xml-parse-region'."
 		  #'jabber-report-success "MUC configuration"
 		  #'jabber-report-success "MUC configuration"))
 
-(defalias 'jabber-groupchat-submit-config 'jabber-muc-submit-config
-  "Deprecated.  See `jabber-muc-submit-config' instead.")
+(defalias 'jabber-groupchat-submit-config #'jabber-muc-submit-config
+  "Deprecated. See `jabber-muc-submit-config' instead.")
 
 (defun jabber-muc-cancel-config (&rest _ignore)
   "Cancel MUC configuration form."
@@ -530,8 +529,8 @@ obtained from `xml-parse-region'."
 			  (x ((xmlns . "jabber:x:data") (type . "cancel"))))
 		  nil nil nil nil))
 
-(defalias 'jabber-groupchat-cancel-config 'jabber-muc-cancel-config
-  "Deprecated.  See `jabber-muc-cancel-config' instead.")
+(defalias 'jabber-groupchat-cancel-config #'jabber-muc-cancel-config
+  "Deprecated. See `jabber-muc-cancel-config' instead.")
 
 (add-to-list 'jabber-jid-muc-menu
 	     (cons "Join groupchat" 'jabber-muc-join))
@@ -557,11 +556,11 @@ JC is the Jabber connection."
     (jabber-disco-get-info jc group nil #'jabber-muc-join-2
 			   (list group nickname popup))))
 
-(defalias 'jabber-groupchat-join 'jabber-muc-join
-  "Deprecated.  Use `jabber-muc-join' instead.")
+(defalias 'jabber-groupchat-join #'jabber-muc-join
+  "Deprecated. Use `jabber-muc-join' instead.")
 
 (defun jabber-muc-join-2 (jc closure result)
-  (cl-destructuring-bind (group nickname popup) closure
+  (pcase-let ((`(,group ,nickname ,popup) closure))
     (let* ( ;; Either success...
 	  (identities (car result))
 	  (features (cadr result))
@@ -592,8 +591,8 @@ JC is the Jabber connection."
       ;; for ejabberd's mod_irc, for example)
       (when (or condition
                 (cl-find "conference" (if (sequencep identities) identities nil)
-                      :key (lambda (i) (aref i 1))
-                      :test #'string=))
+                         :key (lambda (i) (aref i 1))
+                         :test #'string=))
         (let ((password
 	     ;; Is the room password-protected?
 	     (when (member "muc_passwordprotected" features)
@@ -603,8 +602,8 @@ JC is the Jabber connection."
 
 	(jabber-muc-join-3 jc group nickname password popup))))))
 
-(defalias 'jabber-groupchat-join-2 'jabber-muc-join-2
-  "Deprecated.  See `jabber-muc-join-2' instead.")
+(defalias 'jabber-groupchat-join-2 #'jabber-muc-join-2
+  "Deprecated. See `jabber-muc-join-2' instead.")
 
 (defun jabber-muc-join-3 (jc group nickname password popup)
 
@@ -631,8 +630,8 @@ JC is the Jabber connection."
     (let ((buffer (jabber-muc-create-buffer jc group)))
       (switch-to-buffer buffer))))
 
-(defalias 'jabber-groupchat-join-3 'jabber-muc-join-3
-  "Deprecated.  See `jabber-muc-join-3' instead.")
+(defalias 'jabber-groupchat-join-3 #'jabber-muc-join-3
+  "Deprecated. See `jabber-muc-join-3' instead.")
 
 (defun jabber-muc-read-my-nickname (jc group &optional default)
   "Read nickname for joining GROUP.
@@ -652,7 +651,7 @@ JC is the Jabber connection."
 (add-to-list 'jabber-jid-muc-menu
 	     (cons "Change nickname" 'jabber-muc-nick))
 
-(defalias 'jabber-muc-nick 'jabber-muc-join)
+(defalias 'jabber-muc-nick #'jabber-muc-join)
 
 (add-to-list 'jabber-jid-muc-menu
 	     (cons "Leave groupchat" 'jabber-muc-leave))
@@ -668,8 +667,8 @@ JC is the Jabber connection."
 		      `(presence ((to . ,(format "%s/%s" group (cdr whichgroup)))
 				  (type . "unavailable"))))))
 
-(defalias 'jabber-groupchat-leave 'jabber-muc-leave
-  "Deprecated.  Use `jabber-muc-leave' instead.")
+(defalias 'jabber-groupchat-leave #'jabber-muc-leave
+  "Deprecated. Use `jabber-muc-leave' instead.")
 
 (add-to-list 'jabber-jid-muc-menu
 	     (cons "List participants" 'jabber-muc-names))
@@ -692,22 +691,22 @@ JC is the Jabber connection."
 
 (defun jabber-muc-print-names (participants)
   "Format and return data in PARTICIPANTS."
-  (let ((mlist) (plist) (vlist) (nlist))
-    (dolist (participant  participants)
-      (let ((role (plist-get (cdr participant) 'role)))
-        (cond ((string= role "moderator")
-               (push participant mlist))
-              ((string= role "participant")
-               (push participant plist))
-              ((string= role "visitor")
-               (push participant vlist))
-              ((string= role "none")
-               (push participant nlist)))))
+  (let ((mlist) (plist) (vlist) (nlist) dummy)
+    (mapc (lambda (x)
+            (let ((role (plist-get (cdr x) 'role)))
+              (cl-pushnew x (pcase role
+                              ("moderator"   mlist)
+                              ("participant" plist)
+                              ("visitor"     vlist)
+                              ("none"        nlist)
+                              (_ dummy))
+                          :test #'equal)))
+          participants)
     (concat
-     (apply 'concat "\nModerators:\n" (mapcar 'jabber-muc-format-names mlist))
-     (apply 'concat "\nParticipants:\n" (mapcar 'jabber-muc-format-names plist))
-     (apply 'concat "\nVisitors:\n" (mapcar 'jabber-muc-format-names vlist))
-     (apply 'concat "\nNones:\n" (mapcar 'jabber-muc-format-names nlist)))))
+     (apply #'concat "\nModerators:\n" (mapcar #'jabber-muc-format-names mlist))
+     (apply #'concat "\nParticipants:\n" (mapcar #'jabber-muc-format-names plist))
+     (apply #'concat "\nVisitors:\n" (mapcar #'jabber-muc-format-names vlist))
+     (apply #'concat "\nNones:\n" (mapcar #'jabber-muc-format-names nlist)))))
 
 (add-to-list 'jabber-jid-muc-menu
 	     (cons "Set topic" 'jabber-muc-set-topic))
@@ -841,9 +840,10 @@ obtained from `xml-parse-region'."
 	      (insert "\n\n")
 
 	      (let ((action
-		     `(lambda (&rest ignore) (interactive)
-			(jabber-muc-join jabber-buffer-connection ,group
-					       (jabber-muc-read-my-nickname jabber-buffer-connection ,group)))))
+		     (lambda (&rest _ignore) (interactive)
+		       (jabber-muc-join jabber-buffer-connection group
+					(jabber-muc-read-my-nickname
+					 jabber-buffer-connection group)))))
 		(if (fboundp 'insert-button)
 		    (insert-button "Accept"
 				   'action action)
@@ -857,20 +857,20 @@ obtained from `xml-parse-region'."
 		(insert "\t")
 
 		(let ((action
-		       `(lambda (&rest ignore) (interactive)
-			  (let ((reason
-				 (jabber-read-with-input-method
-				  "Reason: ")))
-			    (jabber-send-sexp
-			     jabber-buffer-connection
-			     (list 'message
-				   (list (cons 'to ,group))
-				   (list 'x
-					 (list (cons 'xmlns "http://jabber.org/protocol/muc#user"))
-					 (list 'decline
-					       (list (cons 'to ,inviter))
-					       (unless (zerop (length reason))
-						 (list 'reason nil reason))))))))))
+		       (lambda (&rest _ignore) (interactive)
+			 (let ((reason
+				(jabber-read-with-input-method
+				 "Reason: ")))
+			   (jabber-send-sexp
+			    jabber-buffer-connection
+			    `(message
+			      ((to . ,group))
+			      (x
+			       ((xmlns . "http://jabber.org/protocol/muc#user"))
+			       (decline
+				((to . ,inviter))
+				,(unless (zerop (length reason))
+				   `(reason nil ,reason))))))))))
 		  (if (fboundp 'insert-button)
 		      (insert-button "Decline"
 				     'action action)
@@ -963,9 +963,9 @@ JC is the Jabber connection."
   "Parse X-MUC in the muc#user namespace and return a plist.
 Return nil if X-MUC is nil."
   ;; XXX: parse <actor/> and <reason/> tags?  or maybe elsewhere?
-  (apply 'nconc (mapcar (lambda (prop) (list (car prop) (cdr prop)))
-			(jabber-xml-node-attributes
-			 (car (jabber-xml-get-children x-muc 'item))))))
+  (apply #'nconc (mapcar (lambda (prop) (list (car prop) (cdr prop)))
+			 (jabber-xml-node-attributes
+			  (car (jabber-xml-get-children x-muc 'item))))))
 
 (defun jabber-muc-print-prompt (xml-data &optional local dont-print-nick-p)
   "Print MUC prompt for message in XML-DATA."
@@ -1031,7 +1031,7 @@ Return nil if X-MUC is nil."
 	   'face 'jabber-chat-prompt-system
 	   'help-echo (format-time-string "System message on %Y-%m-%d %H:%M:%S"))))
 
-(add-to-list 'jabber-message-chain 'jabber-muc-process-message)
+(add-to-list 'jabber-message-chain #'jabber-muc-process-message)
 
 (defun jabber-muc-process-message (jc xml-data)
   "If XML-DATA is a groupchat message, handle it as such.
@@ -1051,13 +1051,16 @@ JC is the Jabber connection."
 			    (car (jabber-xml-get-children
 				  xml-data 'body)))))
 
-	   (jabber-muc-print-hook (append jabber-muc-printers jabber-chat-printers)))
+	   (printers (append jabber-muc-printers jabber-chat-printers)))
 
       (with-current-buffer (jabber-muc-create-buffer jc group)
 	(jabber-muc-snarf-topic xml-data)
 	;; Call alert hooks only when something is output
 	(when (or error-p
-		  (run-hook-with-args-until-success 'jabber-muc-print-hook xml-data type :printp))
+		  (let ((res nil))
+		    (while (and printers (not res))
+		      (setq res (funcall (pop printers) xml-data type :printp)))
+		    res))
 	  (jabber-maybe-print-rare-time
 	   (ewoc-enter-last jabber-chat-ewoc (list type xml-data :time (current-time))))
 

@@ -1,4 +1,4 @@
-;; jabber-ping.el - XMPP "Ping" by XEP-0199  -*- lexical-binding: t; -*-
+;;; jabber-ping.el --- XMPP "Ping" by XEP-0199  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2009 - Evgenii Terechkov - evg@altlinux.org
 
