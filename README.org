@@ -238,9 +238,8 @@ If all goes well, =jabber.el= commands like =jabber-connect= should now be avail
 
 2. Clone the repository by typing the following into a terminal -
    #+BEGIN_SRC shell
-   mkdir ~/emacs-jabber/
-   cd ~/emacs-jabber/
    git clone https://codeberg.org/emacs-jabber/emacs-jabber
+   cd ~/emacs-jabber/
    make
    #+END_SRC
 
