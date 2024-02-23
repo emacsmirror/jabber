@@ -45,8 +45,6 @@
 
 ;;
 
-(advice-add 'jabber-send-presence :after #'jabber-mode-line-presence-update)
-
 (defun jabber-mode-line-presence-update (&rest _)
   (setq jabber-mode-line-presence (if (and jabber-connections (not *jabber-disconnecting*))
 				      (cdr (assoc *jabber-current-show* jabber-presence-strings))
@@ -95,7 +93,8 @@ and offline contacts, respectively."
         (put 'jabber-mode-line-presence 'risky-local-variable t)
 	(jabber-mode-line-presence-update)
 	(jabber-mode-line-count-contacts)
-	(ad-activate 'jabber-send-presence)
+        (advice-add 'jabber-send-presence
+                    :after #'jabber-mode-line-presence-update)
 	(add-hook 'jabber-post-disconnect-hook
 		  #'jabber-mode-line-presence-update)
 	(add-hook 'jabber-presence-hooks
