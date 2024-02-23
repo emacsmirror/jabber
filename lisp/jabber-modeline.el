@@ -93,8 +93,8 @@ and offline contacts, respectively."
         (put 'jabber-mode-line-presence 'risky-local-variable t)
 	(jabber-mode-line-presence-update)
 	(jabber-mode-line-count-contacts)
-        (advice-add 'jabber-send-presence
-                    :after #'jabber-mode-line-presence-update)
+        (add-hook 'jabber-send-presence
+                  #'jabber-mode-line-presence-update)
 	(add-hook 'jabber-post-disconnect-hook
 		  #'jabber-mode-line-presence-update)
 	(add-hook 'jabber-presence-hooks
@@ -103,8 +103,8 @@ and offline contacts, respectively."
                  #'jabber-mode-line-presence-update)
     (remove-hook 'jabber-send-presence
                  #'jabber-mode-line-presence-update)
-    (advice-remove 'jabber-presence-hooks
-	           #'jabber-mode-line-count-contacts)))
+    (remove-hook 'jabber-presence-hooks
+	         #'jabber-mode-line-count-contacts)))
 
 (provide 'jabber-modeline)
 

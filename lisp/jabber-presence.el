@@ -35,6 +35,9 @@ stanza.")
 (defvar jabber-presence-history ()
   "Keeps track of previously used presence status types.")
 
+(defvar jabber-presence-sent-hooks nil
+  "List of functions called after presence messages are sent.")
+
 ;; Global reference declarations
 
 (declare-function jabber-display-roster "jabber-roster.el" ())
@@ -388,7 +391,8 @@ Show status properties from highest-priority resource."
 	   jc `(presence ((to . ,(concat (car gc) "/" (cdr gc))))
 			 ,@subelements))))))
 
-  (jabber-display-roster))
+  (jabber-display-roster)
+  (run-hooks 'jabber-presence-sent-hooks))
 
 (defun jabber-presence-children (jc)
   "Return the children for a <presence/> stanza.
