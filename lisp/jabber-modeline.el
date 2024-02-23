@@ -98,7 +98,13 @@ and offline contacts, respectively."
 	(add-hook 'jabber-post-disconnect-hook
 		  #'jabber-mode-line-presence-update)
 	(add-hook 'jabber-presence-hooks
-		  #'jabber-mode-line-count-contacts))))
+		  #'jabber-mode-line-count-contacts))
+    (remove-hook 'jabber-post-disconnect-hook
+                 #'jabber-mode-line-presence-update)
+    (remove-hook 'jabber-send-presence
+                 #'jabber-mode-line-presence-update)
+    (advice-remove 'jabber-presence-hooks
+	           #'jabber-mode-line-count-contacts)))
 
 (provide 'jabber-modeline)
 
