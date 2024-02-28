@@ -125,5 +125,3 @@ obtained from `xml-parse-region'."
 	    (insert "\n"))))))
 
 (provide 'jabber-search)
-
-;;; arch-tag: c39e9241-ab6f-4ac5-b1ba-7908bbae009c

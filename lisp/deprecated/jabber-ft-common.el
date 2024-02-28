@@ -43,4 +43,3 @@ Return nil if no MD5 summing program is available."
       (buffer-substring (point-min) (point)))))
 
 (provide 'jabber-ft-common)
-;; arch-tag: 1ce4cce0-8360-11da-a5ba-000a95c2fcd0

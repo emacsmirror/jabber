@@ -201,5 +201,3 @@ With prefix argument, remove it."
   (jabber-popup-menu (append jabber-jid-chat-menu jabber-jid-info-menu jabber-jid-roster-menu jabber-jid-muc-menu)))
 
 (provide 'jabber-menu)
-
-;;; arch-tag: 5147f52f-de47-4348-86ff-b799d7a75e3f

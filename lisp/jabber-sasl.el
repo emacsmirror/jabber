@@ -173,4 +173,3 @@ obtained from `xml-parse-region'."
     (list client step passphrase)))
 
 (provide 'jabber-sasl)
-;;; arch-tag: 2a4a234d-34d3-49dd-950d-518c899c0fd0

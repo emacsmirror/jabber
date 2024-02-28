@@ -64,4 +64,3 @@
        (error "Unsupported festival.el implementation."))))))
 
 (provide 'jabber-festival)
-;; arch-tag: 8922D096-5D07-11D9-B4C2-000A95C2FCD0

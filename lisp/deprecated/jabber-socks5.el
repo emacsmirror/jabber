@@ -671,5 +671,3 @@ This function simply starts a state machine."
 ;; 	       (process-send-string proxy-connection data))))
 
 (provide 'jabber-socks5)
-
-;;; arch-tag: 9e70dfea-2522-40c6-a79f-302c8fb82ac5

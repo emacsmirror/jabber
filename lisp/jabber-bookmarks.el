@@ -253,4 +253,3 @@ JC is the Jabber connection."
     (widget-setup)))
 
 (provide 'jabber-bookmarks)
-;; arch-tag: a7d6f862-bac0-11db-831f-000a95c2fcd0

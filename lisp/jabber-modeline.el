@@ -107,5 +107,3 @@ and offline contacts, respectively."
 	         #'jabber-mode-line-count-contacts)))
 
 (provide 'jabber-modeline)
-
-;;; arch-tag: c03a7d3b-8811-49d4-b0e0-7ffd661d7925

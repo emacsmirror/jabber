@@ -111,5 +111,3 @@ obtained from `xml-parse-region'."
 		(note ((type . "info")) "Presence has been changed."))))))
 
 (provide 'jabber-ahc-presence)
-
-;;; arch-tag: 4b8cbbe7-00a9-4d42-a4ac-b824ab914fba

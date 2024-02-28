@@ -139,4 +139,3 @@ JC is the Jabber connection."
 	  (forward-line 1))))))
 
 (provide 'jabber-chatbuffer)
-;; arch-tag: 917e5b60-5894-4c49-b3bc-12e1f97ffdc6

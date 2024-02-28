@@ -1273,5 +1273,3 @@ associated face.  Ignore notification if face is ‘nil’."
 		       :time (current-time))))))))))))
 
 (provide 'jabber-muc)
-
-;;; arch-tag: 1ff7ab35-1717-46ae-b803-6f5b3fb2cd7d

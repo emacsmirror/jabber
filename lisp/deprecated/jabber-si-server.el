@@ -88,5 +88,3 @@ Each entry is a list, containing:
 	))))
 
 (provide 'jabber-si-server)
-
-;;; arch-tag: d3c75c66-4052-4cf5-8f04-8765adfc8b96

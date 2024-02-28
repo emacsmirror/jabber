@@ -57,5 +57,5 @@ the stream.  It takes these arguments:
 If it returns nil, the stream should be closed.")
 
 (provide 'jabber-si-common)
-;; arch-tag: 9e7a5c8a-bdde-11da-8030-000a95c2fcd0
+
 ;;; jabber-si-common.el ends here

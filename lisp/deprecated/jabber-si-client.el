@@ -68,5 +68,3 @@ Returns the SID."
       (funcall stream-negotiate jc from sid profile-function))))
 
 (provide 'jabber-si-client)
-
-;;; arch-tag: e14ec451-3f18-4f36-b92a-e8a8aa1f5acd

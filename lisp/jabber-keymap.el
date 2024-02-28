@@ -70,5 +70,3 @@
 (define-key ctl-x-map "\C-j" jabber-global-keymap)
 
 (provide 'jabber-keymap)
-
-;;; arch-tag: 22a9993d-a4a7-40ef-a025-7cff6c3f5587

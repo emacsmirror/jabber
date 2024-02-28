@@ -719,5 +719,3 @@ With a prefix argument, open buffer in other window."
       (error "No contact at point"))))
 
 (provide 'jabber-chat)
-
-;; arch-tag: f423eb92-aa87-475b-b590-48c93ccba9be

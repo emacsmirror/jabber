@@ -147,4 +147,3 @@ JC is the Jabber connection."
 	      `(photo () ,hash)))))))
 
 (provide 'jabber-vcard-avatars)
-;; arch-tag: 3e50d460-8eae-11da-826c-000a95c2fcd0

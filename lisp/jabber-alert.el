@@ -511,6 +511,5 @@ of `jabber-autoanswer-alist'."
       (if message
           (jabber-chat-send jabber-buffer-connection message)))))
 (cl-pushnew 'jabber-autoanswer-answer-muc (get 'jabber-alert-muc-hooks 'custom-options))
-(provide 'jabber-alert)
 
-;;; arch-tag: 725bd73e-c613-4fdc-a11d-3392a7598d4f
+(provide 'jabber-alert)

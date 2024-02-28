@@ -40,4 +40,3 @@ Set this to nil to have no timeout."
   'jabber-xmessage-display-message)
 
 (provide 'jabber-xmessage)
-;; arch-tag: 10A74D00-5D2C-11D9-A294-000A95C2FCD0

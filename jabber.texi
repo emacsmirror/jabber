@@ -3047,7 +3047,3 @@ XEP-0245 is partially supported (except XHTML-IM).
 @printindex vr
 
 @bye
-
-@ignore
-   arch-tag: 995bf3da-0e87-4b15-895a-1e85fac139a2
-@end ignore

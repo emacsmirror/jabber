@@ -244,5 +244,3 @@ JC is the Jabber connection."
 		  #'jabber-process-data "Command execution failed"))
 
 (provide 'jabber-ahc)
-
-;;; arch-tag: c0d5ed8c-50cb-44e1-8e0f-4058b79ee353

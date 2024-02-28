@@ -126,5 +126,3 @@
 	nil))))
 
 (provide 'jabber-ft-server)
-
-;;; arch-tag: 334adcff-6210-496e-8382-8f49ae0248a1

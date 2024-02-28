@@ -623,5 +623,3 @@ JC is the Jabber connection."
 
 
 (provide 'jabber-presence)
-
-;;; arch-tag: b8616d4c-dde8-423e-86c7-da7b4928afc3

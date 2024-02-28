@@ -215,4 +215,3 @@ The method for finding the terminal only works on GNU/Linux."
           (float-time idle-time)))))
 
 (provide 'jabber-autoaway)
-;; arch-tag: 5bcea14c-842d-11da-a120-000a95c2fcd0

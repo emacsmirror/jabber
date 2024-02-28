@@ -92,4 +92,3 @@ JC is the Jabber connection."
     (message "Message sent")))
 
 (provide 'jabber-compose)
-;; arch-tag: 59032c00-994d-11da-8d97-000a95c2fcd0

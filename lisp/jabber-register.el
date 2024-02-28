@@ -161,5 +161,3 @@ obtained from `xml-parse-region'."
 		      #'jabber-report-success "Unregistration")))
 
 (provide 'jabber-register)
-
-;;; arch-tag: e6b349d6-b1ad-4d19-a412-74459dfae239

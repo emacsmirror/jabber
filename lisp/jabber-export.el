@@ -260,5 +260,3 @@ See `jabber-roster-to-sexp' for description of output format."
 	 :value roster)))
 
 (provide 'jabber-export)
-
-;;; arch-tag: 9c6b94a9-290a-4c0f-9286-72bd9c1fb8a3

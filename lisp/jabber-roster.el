@@ -869,5 +869,3 @@ obtained from `xml-parse-region'."
                           'jabber-report-success "Failed to save roster groups"))))
 
 (provide 'jabber-roster)
-
-;;; arch-tag: 096af063-0526-4dd2-90fd-bc6b5ba07d32

@@ -676,5 +676,3 @@ JC is the Jabber connection."
 		  'jabber-report-success "Disco removal"))
 
 (provide 'jabber-disco)
-
-;;; arch-tag: 71f5c76f-2956-4ed2-b871-9f5fe198092d

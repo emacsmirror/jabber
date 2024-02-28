@@ -364,5 +364,3 @@ Return nil if no form type is specified."
 				     (car (jabber-xml-get-children field 'value)))))))))
 
 (provide 'jabber-widget)
-
-;;; arch-tag: da3312f3-1970-41d5-a974-14b8d76156b8

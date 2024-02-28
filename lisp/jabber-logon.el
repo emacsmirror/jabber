@@ -95,5 +95,3 @@ obtained from `xml-parse-region'."
     (fsm-send jc :authentication-failure)))
 
 (provide 'jabber-logon)
-
-;;; arch-tag: f24ebe5e-3420-44bb-af81-d4de21f378b0

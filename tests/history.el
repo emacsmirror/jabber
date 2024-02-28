@@ -35,5 +35,3 @@
 	;; No error signalled - we're done.
 	)
     (delete-file jabber-global-history-filename)))
-
-;; arch-tag: 43dd7ffe-22d7-11dd-9a7c-000a95c2fcd0
