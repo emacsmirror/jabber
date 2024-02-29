@@ -29,6 +29,9 @@
 
     <programming-langauge>Emacs Lisp</programming-langauge>
     <os>Linux</os>
+    <os>Windows</os>
+    <os>Android</os>
+    <os>macOS</os>
     <category rdf:resource="https://linkmauve.fr/ns/xmpp-doap#category-library"/>
 
     <repository>
