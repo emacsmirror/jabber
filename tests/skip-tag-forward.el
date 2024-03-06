@@ -19,5 +19,3 @@
   ;; 2. XML with CDATA
   (unless (parses-p "<message><body><![CDATA[<foo & bar>]]></body></message>")
     (error "Testcase 2 failed")))
-
-;; arch-tag: a99d8666-0e6b-11dd-bd33-000a95c2fcd0

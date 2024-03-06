@@ -41,4 +41,3 @@ Sawfish window manager."
   'jabber-sawfish-display-message)
 
 (provide 'jabber-sawfish)
-;; arch-tag: 4F0154ED-5D05-11D9-9E6B-000A95C2FCD0

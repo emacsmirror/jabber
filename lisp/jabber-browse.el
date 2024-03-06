@@ -103,5 +103,3 @@ obtained from `xml-parse-region'."
 	    (jabber-process-browse jc item))))))
 
 (provide 'jabber-browse)
-
-;;; arch-tag: be01ab34-96eb-4fcb-aa35-a0d3e6c446c3

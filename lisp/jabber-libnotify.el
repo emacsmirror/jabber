@@ -107,5 +107,3 @@ Dbus is faster but require emacs23+, use shell as a fallback."
 (define-personal-jabber-alert jabber-muc-libnotify)
 
 (provide 'jabber-libnotify)
-
-;; arch-tag: e9c4c210-8245-11dd-bddf-000a95c2fcd0

@@ -774,5 +774,3 @@ FN is applied to the node and not to the data itself."
 	   result)))))
 
 (provide 'jabber-util)
-
-;;; arch-tag: cfbb73ac-e2d7-4652-a08d-dc789bcded8a

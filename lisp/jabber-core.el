@@ -1039,5 +1039,4 @@ Return an fsm result list if it is."
 
 (provide 'jabber-core)
 
-;;; arch-tag: 9d273ce6-c45a-447b-abf3-21d3ce73a51a
 ;;; jabber-core.el ends here

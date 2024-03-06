@@ -233,5 +233,3 @@ obtained from `xml-parse-region'."
 
 
 (provide 'jabber-time)
-
-;; arch-tag: 5396bfda-323a-11db-ac8d-000a95c2fcd0

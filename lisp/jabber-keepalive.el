@@ -179,5 +179,3 @@ accounts."
     (ignore-errors (jabber-send-string c " "))))
 
 (provide 'jabber-keepalive)
-
-;;; arch-tag: d19ca743-75a1-475f-9217-83bd18012146

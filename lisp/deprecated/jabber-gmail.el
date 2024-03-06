@@ -100,4 +100,3 @@ See http://code.google.com/apis/talk/jep_extensions/gmail.html#response"
   (message "%d new messages in gmail inbox" (length threads)))
 
 (provide 'jabber-gmail)
-;; arch-tag: 102bc8e4-e08f-11dc-ab66-000a95c2fcd0

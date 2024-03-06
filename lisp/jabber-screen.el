@@ -28,4 +28,3 @@
   'jabber-screen-message)
 
 (provide 'jabber-screen)
-;; arch-tag: B576ADDA-5D04-11D9-AA52-000A95C2FCD0

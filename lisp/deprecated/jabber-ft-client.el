@@ -67,4 +67,3 @@
   #'ignore)
 
 (provide 'jabber-ft-client)
-;;; arch-tag: fba686d5-37b5-4165-86c5-49b76fa0ea6e

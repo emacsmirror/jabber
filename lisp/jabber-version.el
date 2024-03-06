@@ -95,5 +95,3 @@ JC is the Jabber connection."
 		    id)))
 
 (provide 'jabber-version)
-
-;;; arch-tag: 2051dbe7-01b5-401e-bd8a-fe24afb88e1e

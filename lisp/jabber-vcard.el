@@ -564,4 +564,3 @@ obtained from `xml-parse-region'."
        (and jabber-vcard-photo (avatar-sha1-sum jabber-vcard-photo))))))
 
 (provide 'jabber-vcard)
-;; arch-tag: 65B95E9C-63BD-11D9-94A9-000A95C2FCD0

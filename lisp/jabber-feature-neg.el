@@ -122,5 +122,3 @@ protocols."
 	alist)))
 
 (provide 'jabber-feature-neg)
-
-;;; arch-tag: 65b2cdcc-7a5f-476b-a613-84ec8e590186

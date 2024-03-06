@@ -32,4 +32,3 @@
   'jabber-ratpoison-message)
 
 (provide 'jabber-ratpoison)
-;; arch-tag: 19650075-5D05-11D9-B80F-000A95C2FCD0

@@ -486,6 +486,3 @@ Set jabber-message-alert-same-buffer to nil to do that.
 :CUSTOM_ID: muc-alerts-are-separated-from-ordinary-message-alerts
 :END:
 Customize jabber-alert-muc-hooks to get your desired behaviour.
-
-
-arch-tag: 1CE20E4E-3BD9-11D9-8D64-000A95C2FCD0

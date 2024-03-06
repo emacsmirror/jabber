@@ -65,5 +65,3 @@ JC is the Jabber connection."
 		  error-callback error-closure-data))
 
 (provide 'jabber-private)
-
-;; arch-tag: 065bd03e-40fa-11da-ab48-000a95c2fcd0

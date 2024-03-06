@@ -72,5 +72,3 @@ calling `jabber-watch-add' and `jabber-watch-remove'."
 	      jabber-watch-alist)))
 
 (provide 'jabber-watch)
-
-;; arch-tag: c27299d8-019e-44b5-9529-d67b8682be23

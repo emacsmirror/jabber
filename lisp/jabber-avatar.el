@@ -235,4 +235,3 @@ is scaled down."
     image))
 
 (provide 'jabber-avatar)
-;; arch-tag: 2405c3f8-8eaa-11da-826c-000a95c2fcd0

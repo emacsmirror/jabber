@@ -283,5 +283,3 @@ ATTRIBUTES must be a list of symbols, as present in XML-DATA."
   prefixes)
 
 (provide 'jabber-xml)
-
-;;; arch-tag: ca206e65-7026-4ee8-9af2-ff6a9c5af98a

@@ -220,5 +220,3 @@ obtained from `xml-parse-region'."
                           text))))
 
 (provide 'jabber-iq)
-
-;;; arch-tag: 5585dfa3-b59a-42ee-9292-803652c85e26

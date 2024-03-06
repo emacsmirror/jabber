@@ -251,4 +251,3 @@ and it hasn't been sent before."
 	      (jabber-events-update-message)))))))))
 
 (provide 'jabber-events)
-;; arch-tag: 7b6e61fe-a9b3-11d9-afca-000a95c2fcd0

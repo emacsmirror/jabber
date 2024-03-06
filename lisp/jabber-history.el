@@ -339,5 +339,3 @@ applies, though."
   (message "Done.  Please change `jabber-use-global-history' now."))
 
 (provide 'jabber-history)
-
-;; arch-tag: 0AA0C235-3FC0-11D9-9FE7-000A95C2FCD0

@@ -78,5 +78,3 @@ get it, and then it just gets deleted."
   (jabber-truncate-top buffer))
 
 (provide 'jabber-truncate)
-
-;; arch-tag: 3d1e3428-f598-11db-a314-000a95c2fcd0

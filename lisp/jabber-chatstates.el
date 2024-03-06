@@ -180,4 +180,3 @@ It can be sent and cancelled several times.")
 (jabber-disco-advertise-feature "http://jabber.org/protocol/chatstates")
 
 (provide 'jabber-chatstates)
-;; arch-tag: d879de90-51e1-11dc-909d-000a95c2fcd0
