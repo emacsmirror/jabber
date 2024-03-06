@@ -1,6 +1,9 @@
-(define-package "jabber" "@PACKAGE_VERSION@"
+(define-package "jabber" "0.8.92"
   "A Jabber client for Emacs."
-  '((fsm "0.2")
+  '((emacs "27.1")
+    (fsm "0.2")
     (srv "0.2")))
 
-;; arch-tag: fa652136-12f7-11dd-b4c4-000a95c2fcd0
+;; Local Variables:
+;; no-byte-compile: t
+;; End:
