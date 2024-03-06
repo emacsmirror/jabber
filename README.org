@@ -247,7 +247,7 @@ If all goes well, =jabber.el= commands like =jabber-connect= should now be avail
                            :url "https://codeberg.org/emacs-jabber/emacs-jabber"
                            :branch "production"
                            :lisp-dir "lisp"
-                           :docs "/README.org")))
+                           :doc "README.org")))
 #+end_src
 
 Alternatively, if you have already cloned the =jabber.el= repository,
