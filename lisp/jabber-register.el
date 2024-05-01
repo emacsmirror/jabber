@@ -161,3 +161,5 @@ obtained from `xml-parse-region'."
 		      #'jabber-report-success "Unregistration")))
 
 (provide 'jabber-register)
+
+;;; jabber-register.el ends here

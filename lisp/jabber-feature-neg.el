@@ -122,3 +122,5 @@ protocols."
 	alist)))
 
 (provide 'jabber-feature-neg)
+
+;;; jabber-feature-neg.el ends here

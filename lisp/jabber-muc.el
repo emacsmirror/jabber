@@ -1273,3 +1273,4 @@ associated face.  Ignore notification if face is ‘nil’."
 		       :time (current-time))))))))))))
 
 (provide 'jabber-muc)
+;;; jabber-muc.el ends here.

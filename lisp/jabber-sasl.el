@@ -173,3 +173,5 @@ obtained from `xml-parse-region'."
     (list client step passphrase)))
 
 (provide 'jabber-sasl)
+
+;;; jabber-sasl.el ends here

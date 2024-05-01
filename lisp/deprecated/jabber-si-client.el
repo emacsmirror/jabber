@@ -68,3 +68,5 @@ Returns the SID."
       (funcall stream-negotiate jc from sid profile-function))))
 
 (provide 'jabber-si-client)
+
+;;; jabber-si-client.el ends here

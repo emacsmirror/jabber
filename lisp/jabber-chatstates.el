@@ -180,3 +180,5 @@ It can be sent and cancelled several times.")
 (jabber-disco-advertise-feature "http://jabber.org/protocol/chatstates")
 
 (provide 'jabber-chatstates)
+
+;;; jabber-chatstates.el ends here

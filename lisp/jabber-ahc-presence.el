@@ -111,3 +111,5 @@ obtained from `xml-parse-region'."
 		(note ((type . "info")) "Presence has been changed."))))))
 
 (provide 'jabber-ahc-presence)
+
+;;; jabber-ahc-presence.el ends here

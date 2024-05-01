@@ -153,3 +153,4 @@ JC is the Jabber connection."
       (error "No jabber buffer found"))))
 
 (provide 'jabber-chatbuffer)
+;;; jabber-chatbuffer.el ends here

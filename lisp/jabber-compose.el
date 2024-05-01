@@ -92,3 +92,5 @@ JC is the Jabber connection."
     (message "Message sent")))
 
 (provide 'jabber-compose)
+
+;;; jabber-compose.el ends here

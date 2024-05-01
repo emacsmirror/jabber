@@ -28,3 +28,4 @@
   'jabber-screen-message)
 
 (provide 'jabber-screen)
+;;; jabber-screen.el ends here.

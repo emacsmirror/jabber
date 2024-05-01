@@ -103,3 +103,4 @@ obtained from `xml-parse-region'."
 	    (jabber-process-browse jc item))))))
 
 (provide 'jabber-browse)
+;;; jabber-browse.el ends here.

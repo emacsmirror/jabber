@@ -72,3 +72,4 @@
 (define-key ctl-x-map "\C-j" jabber-global-keymap)
 
 (provide 'jabber-keymap)
+;;; jabber-keymap.el ends here

@@ -74,3 +74,4 @@ obtained from `xml-parse-region'."
     (jabber-send-iq jc to "result" nil nil nil nil nil id)))
 
 (provide 'jabber-ping)
+;;; jabber-ping.el ends here

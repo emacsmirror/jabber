@@ -126,3 +126,5 @@
 	nil))))
 
 (provide 'jabber-ft-server)
+
+;;; jabber-ft-server.el ends here

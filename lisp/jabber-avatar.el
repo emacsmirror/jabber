@@ -235,3 +235,5 @@ is scaled down."
     image))
 
 (provide 'jabber-avatar)
+
+;;; jabber-avatar.el ends here

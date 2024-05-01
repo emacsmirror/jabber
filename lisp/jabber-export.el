@@ -260,3 +260,5 @@ See `jabber-roster-to-sexp' for description of output format."
 	 :value roster)))
 
 (provide 'jabber-export)
+
+;;; jabber-export.el ends here

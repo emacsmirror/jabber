@@ -215,3 +215,5 @@ The method for finding the terminal only works on GNU/Linux."
           (float-time idle-time)))))
 
 (provide 'jabber-autoaway)
+
+;;; jabber-autoaway.el ends here

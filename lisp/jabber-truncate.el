@@ -78,3 +78,5 @@ get it, and then it just gets deleted."
   (jabber-truncate-top buffer))
 
 (provide 'jabber-truncate)
+
+;;; jabber-truncate.el ends here

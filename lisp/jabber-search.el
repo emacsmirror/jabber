@@ -125,3 +125,5 @@ obtained from `xml-parse-region'."
 	    (insert "\n"))))))
 
 (provide 'jabber-search)
+
+;;; jabber-search.el ends here

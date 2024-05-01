@@ -30,3 +30,5 @@
   'jabber-tmux-message)
 
 (provide 'jabber-tmux)
+
+;;; jabber-tmux.el ends here

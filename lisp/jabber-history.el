@@ -339,3 +339,5 @@ applies, though."
   (message "Done.  Please change `jabber-use-global-history' now."))
 
 (provide 'jabber-history)
+
+;;; jabber-history.el ends here

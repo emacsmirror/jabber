@@ -201,3 +201,4 @@ With prefix argument, remove it."
   (jabber-popup-menu (append jabber-jid-chat-menu jabber-jid-info-menu jabber-jid-roster-menu jabber-jid-muc-menu)))
 
 (provide 'jabber-menu)
+;;; jabber-menu.el ends here

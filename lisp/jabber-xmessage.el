@@ -40,3 +40,5 @@ Set this to nil to have no timeout."
   'jabber-xmessage-display-message)
 
 (provide 'jabber-xmessage)
+
+;;; jabber-xmessage.el ends here

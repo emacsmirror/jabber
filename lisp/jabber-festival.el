@@ -64,3 +64,5 @@
        (error "Unsupported festival.el implementation."))))))
 
 (provide 'jabber-festival)
+
+;;; jabber-festival.el ends here

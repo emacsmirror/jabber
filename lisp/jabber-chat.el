@@ -719,3 +719,4 @@ With a prefix argument, open buffer in other window."
       (error "No contact at point"))))
 
 (provide 'jabber-chat)
+;;; jabber-chat.el ends here

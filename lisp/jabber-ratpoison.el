@@ -32,3 +32,5 @@
   'jabber-ratpoison-message)
 
 (provide 'jabber-ratpoison)
+
+;;; jabber-ratpoison.el ends here

@@ -67,3 +67,5 @@
   #'ignore)
 
 (provide 'jabber-ft-client)
+
+;;; jabber-ft-client.el ends here

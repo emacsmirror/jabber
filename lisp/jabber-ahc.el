@@ -244,3 +244,4 @@ JC is the Jabber connection."
 		  #'jabber-process-data "Command execution failed"))
 
 (provide 'jabber-ahc)
+;;; jabber-ahc.el ends here.

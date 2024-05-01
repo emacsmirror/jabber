@@ -147,3 +147,5 @@ JC is the Jabber connection."
 	      `(photo () ,hash)))))))
 
 (provide 'jabber-vcard-avatars)
+
+;;; jabber-vcard-avatars.el ends here

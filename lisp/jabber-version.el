@@ -95,3 +95,5 @@ JC is the Jabber connection."
 		    id)))
 
 (provide 'jabber-version)
+
+;;; jabber-version.el ends here

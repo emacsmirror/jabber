@@ -623,3 +623,5 @@ JC is the Jabber connection."
 
 
 (provide 'jabber-presence)
+
+;;; jabber-presence.el ends here

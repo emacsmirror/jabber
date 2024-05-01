@@ -100,3 +100,5 @@ See http://code.google.com/apis/talk/jep_extensions/gmail.html#response"
   (message "%d new messages in gmail inbox" (length threads)))
 
 (provide 'jabber-gmail)
+
+;;; jabber-gmail.el ends here

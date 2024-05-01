@@ -88,3 +88,5 @@ Each entry is a list, containing:
 	))))
 
 (provide 'jabber-si-server)
+
+;;; jabber-si-server.el ends here
