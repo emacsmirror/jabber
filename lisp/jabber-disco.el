@@ -305,7 +305,7 @@ obtained from `xml-parse-region'."
 		;; For each <value/> element, append the XML character
 		;; data, followed by the '<' character.
 		(dolist (value values)
-		  (insert value "<"))))))))
+		  (insert (or value "") "<"))))))))
 
     ;; 8. Ensure that S is encoded according to the UTF-8 encoding
     ;; (RFC 3269 [18]).
