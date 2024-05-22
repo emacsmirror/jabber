@@ -183,6 +183,8 @@ Optional argument GROUP to look."
                   (cycle-sort-function . identity))
               (complete-with-action action table str pred))))))
 
+(add-hook 'jabber-muc-hooks #'jabber-muc-track-message-time)
+
 (provide 'jabber-muc-nick-completion)
 
 ;;; jabber-muc-nick-completion.el ends here
