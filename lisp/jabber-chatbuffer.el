@@ -43,6 +43,12 @@ window or at `fill-column', whichever is shorter."
 (defvar jabber-chat-ewoc nil
   "The ewoc showing the messages of this chat buffer.")
 
+;; Global reference declarations
+
+(declare-function jabber-muc-nick-completion-at-point "jabber-nick-completion.el" ())
+
+;;
+
 ;;;###autoload
 (defvar jabber-buffer-connection nil
   "The connection used by this buffer.")
