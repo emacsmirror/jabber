@@ -155,6 +155,13 @@ Optional argument GROUP to look."
     (skip-syntax-backward "^-")
     (point)))
 
+(defun jabber-muc-active-participants (group)
+  "Return nicks for speaking participants."
+  (let ((times (cdr (assoc group *jabber-muc-participant-last-speaking*))))
+    (cl-remove-if-not
+     (lambda (nick) (assoc nick times))
+     (jabber-muc-nicknames))))
+
 (defun jabber-muc-nick-completion-at-point ()
   "Nick completion function for `completion-at-point'."
   ;; largely cribbed from rcirc.el
@@ -172,7 +179,7 @@ Optional argument GROUP to look."
                      (if (= beg line-begin)
 			 (concat str jabber-muc-completion-delimiter)
 		       str))
-                   (jabber-muc-nicknames))))
+                   (jabber-muc-active-participants group))))
       (list beg (point)
             (lambda (str pred action)
               (if (eq action 'metadata)
