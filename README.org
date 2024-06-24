@@ -41,8 +41,8 @@ XMPP is the only instant messaging protocol which simultaneously -
 :END:
 New resources
 + [[https://codeberg.org/emacs-jabber/emacs-jabber/][project page]]
-+ chat: xmpp:emacs@salas.suchat.org?join (general Emacs and jabber.el talk)
-+ chat: xmpp:jabber-el@conference.hmm.st?join (jabber.el developement)
++ chat: https://xmpp.link/#emacs@conference.conversations.im?join (general Emacs and jabber.el talk)
++ chat: https://xmpp.link/#jabber-el@conference.hmm.st?join (jabber.el developement)
 
 Old resources
 + [[http://sourceforge.net/projects/emacs-jabber][project page]]
