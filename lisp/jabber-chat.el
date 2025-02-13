@@ -319,7 +319,9 @@ JC is the Jabber connection."
             (let* ((fwd-msg (jabber-get-forwarded-message xml-data))
                    (to (jabber-xml-get-attribute fwd-msg 'to)))
               (list fwd-msg
-                    (jabber-chat-create-buffer jc to)))
+                    (and
+                     to
+                     (jabber-chat-create-buffer jc to))))
           (list xml-data nil))
       (let ((from (jabber-xml-get-attribute xml-data 'from))
 	    (error-p (jabber-xml-get-children xml-data 'error))
