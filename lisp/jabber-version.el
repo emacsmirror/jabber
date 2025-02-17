@@ -21,9 +21,10 @@
 
 (require 'jabber-iq)
 (require 'jabber-util)
-(require 'jabber-ourversion)
 (require 'jabber-disco)
 (require 'jabber-menu)
+(require 'find-func)
+(require 'lisp-mnt)
 
 (defcustom jabber-version-show t
   "Show our client version to others.  Acts on loading."
@@ -35,6 +36,11 @@
 ;; (defvar jabber-jid-info-menu)           ; jabber-menu.el
 
 ;;
+(defconst jabber-version (lm-version (find-library-name "jabber"))
+  "Version string extracted from jabber.el.
+This value provides the version field of the XEP-0092 Service Discovery
+jabber:iq:verion query response, when `jabber-version-show` is non
+`nil`.")
 
 (add-to-list 'jabber-jid-info-menu
 	     (cons "Request software version" 'jabber-get-version))
