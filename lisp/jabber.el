@@ -13,9 +13,6 @@
 ;; SSL - Support, mostly inspired by Gnus
 ;; Copyright (C) 2005 - Georg Lehner - jorge@magma.com.ni
 
-;; Version: 0
-;; Package-Requires: ()
-
 ;; This file is a part of jabber.el.
 
 ;; This program is free software; you can redistribute it and/or modify
