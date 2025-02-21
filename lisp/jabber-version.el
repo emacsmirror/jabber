@@ -31,15 +31,10 @@
   :type 'boolean
   :group 'jabber)
 
-;; Global reference declarations
-
-;; (defvar jabber-jid-info-menu)           ; jabber-menu.el
-
-;;
 (defconst jabber-version (lm-version (find-library-name "jabber"))
   "Version string extracted from jabber.el.
 This value provides the version field of the XEP-0092 Service Discovery
-jabber:iq:verion query response, when `jabber-version-show` is non
+jabber:iq:version query response, when `jabber-version-show` is non
 `nil`.")
 
 (add-to-list 'jabber-jid-info-menu
