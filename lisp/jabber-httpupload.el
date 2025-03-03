@@ -482,17 +482,31 @@ The message requiers the GET-URL of the slot file, the receiver's JID
 and the JC Jabber Connection."
   ;; This could be a possibliity, but... cannot send the x tag.
   ;; (jabber-send-message jc jid nil get-url nil)
-  (let ((fromjid (jabber-connection-original-jid jc))
-        (type (if (assoc jid *jabber-active-groupchats*)
-                  "groupchat"
-                "chat")))
-    (jabber-send-sexp jc
-                      `(message ((to . ,jid)
-                                 (from . ,fromjid)
-                                 (type . ,type))
-                                (body () ,get-url)
-                                (x ((xmlns . "jabber:x:oob"))
-                                   (url () ,get-url))))))
+  (let* ((id (apply #'format "emacs-msg-%d.%d.%d" (current-time)))
+	 (fromjid (jabber-connection-original-jid jc))
+         (type (if (assoc jid *jabber-active-groupchats*)
+                   "groupchat"
+                 "chat"))
+	 (body get-url)
+	 (stanza-to-send `(message ((to . ,jid)
+                                    (from . ,fromjid)
+                                    (type . ,type)
+				    (id . ,id))
+                                   (body () ,body)
+                                   (x ((xmlns . "jabber:x:oob"))
+                                      (url () ,body)))))
+    (unless (equal type "groupchat")
+          (dolist (hook jabber-chat-send-hooks)
+      (if (eq hook t)
+	  ;; Local hook referring to global...
+	  (when (local-variable-p 'jabber-chat-send-hooks)
+	    (dolist (global-hook (default-value 'jabber-chat-send-hooks))
+	      (nconc stanza-to-send (funcall global-hook body id))))
+	(nconc stanza-to-send (funcall hook body id))))
+	  (jabber-maybe-print-rare-time
+	   (ewoc-enter-last jabber-chat-ewoc (list :local stanza-to-send :time (current-time)))))
+    ;; ...and send it...
+    (jabber-send-sexp jc stanza-to-send)))
 
 ;; * Chat buffer *
 
