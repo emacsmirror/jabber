@@ -147,4 +147,19 @@ JC is the Jabber connection."
 		(goto-char (marker-position goback)))))
 	  (forward-line 1))))))
 
+(defun jabber-chat-buffer-switch ()
+  "Switch to a specified jabber chat buffer."
+  (interactive)
+  (let* ((jabber-buffers (cl-loop for buffer in (buffer-list)
+                                  when (with-current-buffer buffer
+                                         (eq major-mode 'jabber-chat-mode))
+                                  collect (buffer-name buffer)))
+         (jabber-buffer (and jabber-buffers
+                             (completing-read "Switch to jabber buffer: "
+                                              jabber-buffers))))
+    (if jabber-buffer
+        (switch-to-buffer jabber-buffer)
+      (error "No jabber buffer found"))))
+
 (provide 'jabber-chatbuffer)
+;;; jabber-chatbuffer.el ends here

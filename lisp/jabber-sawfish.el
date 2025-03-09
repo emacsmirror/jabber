@@ -41,3 +41,5 @@ Sawfish window manager."
   'jabber-sawfish-display-message)
 
 (provide 'jabber-sawfish)
+
+;;; jabber-sawfish.el ends here

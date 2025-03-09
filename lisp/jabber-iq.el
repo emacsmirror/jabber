@@ -220,3 +220,4 @@ obtained from `xml-parse-region'."
                           text))))
 
 (provide 'jabber-iq)
+;;; jabber-iq.el ends here.

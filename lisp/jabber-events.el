@@ -251,3 +251,5 @@ and it hasn't been sent before."
 	      (jabber-events-update-message)))))))))
 
 (provide 'jabber-events)
+
+;;; jabber-events.el ends here

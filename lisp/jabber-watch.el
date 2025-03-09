@@ -72,3 +72,5 @@ calling `jabber-watch-add' and `jabber-watch-remove'."
 	      jabber-watch-alist)))
 
 (provide 'jabber-watch)
+
+;;; jabber-watch.el ends here

@@ -107,3 +107,5 @@ and offline contacts, respectively."
 	         #'jabber-mode-line-count-contacts)))
 
 (provide 'jabber-modeline)
+
+;;; jabber-modeline.el ends here

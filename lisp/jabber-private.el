@@ -65,3 +65,4 @@ JC is the Jabber connection."
 		  error-callback error-closure-data))
 
 (provide 'jabber-private)
+;;; jabber-private.el ends here

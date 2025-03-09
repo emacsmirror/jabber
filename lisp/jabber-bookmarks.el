@@ -253,3 +253,5 @@ JC is the Jabber connection."
     (widget-setup)))
 
 (provide 'jabber-bookmarks)
+
+;;; jabber-bookmarks.el ends here

@@ -671,3 +671,5 @@ This function simply starts a state machine."
 ;; 	       (process-send-string proxy-connection data))))
 
 (provide 'jabber-socks5)
+
+;;; jabber-socks5.el ends here

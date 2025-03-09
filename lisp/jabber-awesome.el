@@ -39,3 +39,5 @@
 (define-personal-jabber-alert jabber-muc-awesome)
 
 (provide 'jabber-awesome)
+
+;;; jabber-awesome.el ends here

@@ -95,3 +95,5 @@ obtained from `xml-parse-region'."
     (fsm-send jc :authentication-failure)))
 
 (provide 'jabber-logon)
+
+;;; jabber-logon.el ends here

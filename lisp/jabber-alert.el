@@ -513,3 +513,5 @@ of `jabber-autoanswer-alist'."
 (cl-pushnew 'jabber-autoanswer-answer-muc (get 'jabber-alert-muc-hooks 'custom-options))
 
 (provide 'jabber-alert)
+
+;;; jabber-alert.el ends here

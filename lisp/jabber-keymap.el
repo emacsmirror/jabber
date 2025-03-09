@@ -19,6 +19,7 @@
 ;; along with this program; if not, write to the Free Software
 ;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+;;; Code:
 
 (require 'jabber-menu)
 (require 'button t nil)
@@ -34,7 +35,7 @@
 (declare-function jabber-switch-to-roster-buffer "jabber-roster.el" (&optional _jc))
 (declare-function jabber-disconnect "jabber-core.el" (&optional arg interactivep))
 (declare-function jabber-connect-all "jabber-core.el" (&optional arg))
-
+(declare-function jabber-chat-buffer-switch "jabber-chat.el")
 ;;
 
 (defvar jabber-common-keymap
@@ -63,6 +64,7 @@
     (define-key map "\C-o" #'jabber-send-default-presence)
     (define-key map "\C-x" #'jabber-send-xa-presence)
     (define-key map "\C-p" #'jabber-send-presence)
+    (define-key map "\C-b" #'jabber-chat-buffer-switch)
     map)
   "Global Jabber keymap (usually under C-x C-j).")
 
@@ -70,3 +72,4 @@
 (define-key ctl-x-map "\C-j" jabber-global-keymap)
 
 (provide 'jabber-keymap)
+;;; jabber-keymap.el ends here

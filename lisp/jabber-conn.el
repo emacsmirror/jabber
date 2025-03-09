@@ -406,3 +406,4 @@ FSM is the finite state machine created in jabber.el library."
   (funcall *jabber-virtual-server-function* connection string))
 
 (provide 'jabber-conn)
+;;; jabber-conn.el ends here

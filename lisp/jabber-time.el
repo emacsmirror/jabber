@@ -233,3 +233,5 @@ obtained from `xml-parse-region'."
 
 
 (provide 'jabber-time)
+
+;;; jabber-time.el ends here

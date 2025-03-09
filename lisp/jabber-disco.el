@@ -19,6 +19,12 @@
 ;; along with this program; if not, write to the Free Software
 ;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+;;; Commentary:
+
+;; Jabber discovery module, handles service discovery functions.
+
+;;; Code:
+
 (require 'jabber-iq)
 (require 'jabber-xml)
 (require 'jabber-menu)
@@ -161,6 +167,13 @@ obtained from `xml-parse-region'."
 	  ))))))
 
 (defun jabber-process-caps-modern (jc jid hash node ver)
+  "Processes the capabilities of a contact which supports XEP-0115 v1.5 or later.
+
+JC is the jabber connection of the sender,
+JID is the Jabber ID of the entity sending the capabilities information.
+HASH is the generated hash representing the sender's capabilities.
+NODE is the namespace of the format.
+and VER is the entity's version number."
   (when (assoc hash jabber-caps-hash-names)
     ;; We support the hash function used.
     (let* ((key (cons hash ver))
@@ -208,6 +221,17 @@ obtained from `xml-parse-region'."
 	  (puthash (cons jid nil) cache-entry jabber-disco-info-cache)))))))
 
 (defun jabber-process-caps-info-result (jc xml-data closure-data)
+  "Process the result of a jabber server's caps info request.
+
+JC is the jabber connection.
+XML-DATA is the XML data received from the server.
+CLOSURE-DATA is in the format of (HASH NODE VER), where HASH is the
+verification hash received from the server.
+NODE represents the software identification, and VER is the software version.
+
+If the verification string matches with VER, the software's discovery
+/disco/ information will be stored in the jabber-caps-cache,
+otherwise, it will try the next available option."
   (pcase-let* ((`(,hash ,node ,ver) closure-data)
 	       (key (cons hash ver))
 	       (query (jabber-iq-query xml-data))
@@ -219,10 +243,24 @@ obtained from `xml-parse-region'."
       (jabber-caps-try-next jc hash node ver))))
 
 (defun jabber-process-caps-info-error (jc _xml-data closure-data)
+  "Process error in caps info for Jabber.
+
+JC is the Jabber connection.
+
+CLOSURE-DATA is a list of three parameters: hash, node, and version.
+
+This function makes another attempt to process the caps info when an
+error occurs."
   (pcase-let ((`(,hash ,node ,ver) closure-data))
     (jabber-caps-try-next jc hash node ver)))
 
 (defun jabber-caps-try-next (jc hash node ver)
+  "Try the next JID for a cached entry in Jabber CAPS Cache.
+
+JC is the Jabber connection.
+HASH is the hash value of the CAPS.
+NODE is the node identifier in the XEP-0115 specification.
+VER is the version string of the CAPS."
   (let* ((key (cons hash ver))
 	 (cache-entry (gethash key jabber-caps-cache)))
     (when (floatp (car-safe cache-entry))
@@ -242,6 +280,7 @@ obtained from `xml-parse-region'."
 	  (remhash key jabber-caps-cache))))))
 
 (defun jabber-caps-ver-string (query hash)
+  "Create an XEP-0115 version string for a QUERY node with a specified HASH."
   ;; XEP-0115, section 5.1
   ;; 1. Initialize an empty string S.
   (with-temp-buffer
@@ -320,6 +359,7 @@ obtained from `xml-parse-region'."
       (base64-encode-string (jabber-caps--secure-hash algorithm s) t))))
 
 (defun jabber-caps--secure-hash (algorithm string)
+  "Compute and return a secure hash from STRING using ALGORITHM."
   (cond
    ;; `secure-hash' was introduced in Emacs 24
    ((fboundp 'secure-hash)
@@ -331,6 +371,7 @@ obtained from `xml-parse-region'."
     (error "Cannot use hash algorithm %s!" algorithm))))
 
 (defun jabber-caps-identity-< (a b)
+  "Compare two Jabber identity XML elements A and B, return t if A < B."
   (let ((a-category (jabber-xml-get-attribute a 'category))
 	(b-category (jabber-xml-get-attribute b 'category)))
     (or (string< a-category b-category)
@@ -354,6 +395,7 @@ The value should be a key in `jabber-caps-hash-names'.")
 
 ;;;###autoload
 (defun jabber-disco-advertise-feature (feature)
+  "Add a new FEATURE to `jabber-advertised-features', if not already present."
   (unless (member feature jabber-advertised-features)
     (push feature jabber-advertised-features)
     (when jabber-caps-current-hash
@@ -382,9 +424,9 @@ the right node."
 
 ;;;###autoload
 (defun jabber-caps-presence-element (_jc)
+  "Generate XML presence element using `jabber-caps-current-hash' and _JC param."
   (unless jabber-caps-current-hash
     (jabber-caps-recalculate-hash))
-
   (list
    `(c ((xmlns . "http://jabber.org/protocol/caps")
 	(hash . ,jabber-caps-default-hash-function)
@@ -434,6 +476,15 @@ obtained from `xml-parse-region'."
       (jabber-signal-error "Cancel" 'item-not-found))))
 
 (defun jabber-disco-return-client-info (&optional _jc _xml-data)
+  "Return a Jabber Disco information according to the client env.
+
+Generate a list which represents the identity and
+features supported by the Emacs Jabber client.
+
+The type of the client is decided based on the window system.
+
+If Emacs is running under a window system (x, w32, mac, ns), the type
+is classified as pc, otherwise console."
   `(
     ;; If running under a window system, this is
     ;; a GUI client.  If not, it is a console client.
@@ -450,10 +501,13 @@ obtained from `xml-parse-region'."
 
 (add-to-list 'jabber-jid-info-menu
 	     (cons "Send items disco query" 'jabber-get-disco-items))
+
 (defun jabber-get-disco-items (jc to &optional node)
   "Send a service discovery request for items.
 
-JC is the Jabber connection."
+JC, the Jabber connection, is typically required to be active.
+TO is the JID (Jabber ID) of the entity to request items from.
+NODE is an optional parameter specifying a particular node to request items for."
   (interactive (list (jabber-read-account)
 		     (jabber-read-jid-completing "Send items disco request to: " nil nil nil 'full t)
 		     (jabber-read-node "Node (or leave empty): ")))
@@ -470,7 +524,10 @@ JC is the Jabber connection."
 (defun jabber-get-disco-info (jc to &optional node)
   "Send a service discovery request for info.
 
-JC is the Jabber connection."
+JC is the Jabber connection.
+TO is the JID (Jabber ID) of the entity to request items from.
+NODE is an optional parameter specifying a particular node to request
+items for."
   (interactive (list (jabber-read-account)
 		     (jabber-read-jid-completing "Send info disco request to: " nil nil nil 'full t)
 		     (jabber-read-node "Node (or leave empty): ")))
@@ -539,6 +596,7 @@ obtained from `xml-parse-region'."
 
 (defun jabber-disco-get-info (jc jid node callback closure-data &optional force)
   "Get disco info for JID and NODE, using connection JC.
+
 Call CALLBACK with JC and CLOSURE-DATA as first and second
 arguments and result as third argument when result is available.
 On success, result is (IDENTITIES FEATURES), where each identity is [\"name\"
@@ -563,6 +621,16 @@ invalidate cache and get fresh data."
 		      (cons callback closure-data)))))
 
 (defun jabber-disco-got-info (jc xml-data callback-data)
+  "Process the received jabber-disco info query response.
+
+Parse received disco-info from XML-DATA and caches
+it.  If a CALLBACK-DATA function is provided, it's called with the
+JC, CALLBACK-DATA and RESULT.
+
+JC: The jabber connection.
+XML-DATA: The XML data containing the info query response.
+CALLBACK-DATA: Optional function to be triggered after processing info
+query response."
   (let ((jid (jabber-xml-get-attribute xml-data 'from))
 	(node (jabber-xml-get-attribute (jabber-iq-query xml-data)
 					'node))
@@ -602,6 +670,7 @@ Fill the cache with `jabber-disco-get-info'."
 
 (defun jabber-disco-get-items (jc jid node callback closure-data &optional force)
   "Get disco items for JID and NODE, using connection JC.
+
 Call CALLBACK with JC and CLOSURE-DATA as first and second
 arguments and items result as third argument when result is
 available.
@@ -627,6 +696,13 @@ invalidate cache and get fresh data."
 		      (cons callback closure-data)))))
 
 (defun jabber-disco-got-items (jc xml-data callback-data)
+  "Process received Jabber disco items.
+
+Processes the received disco items XML-DATA from the
+Jabber connection JC & updates the disco items cache.
+
+If a callback function is provided in CALLBACK-DATA, it will then be
+called with JC, the remaining CALLBACK-DATA, and the obtained RESULT."
   (let ((jid (jabber-xml-get-attribute xml-data 'from))
 	(node (jabber-xml-get-attribute (jabber-iq-query xml-data)
 					'node))
@@ -643,10 +719,13 @@ invalidate cache and get fresh data."
       (funcall (car callback-data) jc (cdr callback-data) result))))
 
 (defun jabber-disco-get-items-immediately (jid node)
+  "Retrieve items from `jabber-disco-items-cache' using JID & NODE as key."
   (gethash (cons jid node) jabber-disco-items-cache))
 
 (defun jabber-disco-publish (jc node item-name item-jid item-node)
-  "Publish the given item under disco node NODE."
+  "Publish the given item under disco node NODE.
+
+JC is the Jabber connection."
   (jabber-send-iq jc nil
 		  "set"
 		  `(query ((xmlns . "http://jabber.org/protocol/disco#items")
@@ -663,7 +742,10 @@ invalidate cache and get fresh data."
 (defun jabber-disco-publish-remove (jc node item-jid item-node)
   "Remove the given item from published disco items.
 
-JC is the Jabber connection."
+JC: Jabber Client connection.
+NODE: Disco node to remove item from.  Can be nil.
+ITEM-JID: JID (Jabber ID) of the disco item to be removed.
+ITEM-NODE: Specific node of the disco item to be removed.  Can be nil."
   (jabber-send-iq jc nil
 		  "set"
 		  `(query ((xmlns . "http://jabber.org/protocol/disco#items")
@@ -676,3 +758,4 @@ JC is the Jabber connection."
 		  'jabber-report-success "Disco removal"))
 
 (provide 'jabber-disco)
+;;; jabber-disco.el ends here.

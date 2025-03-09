@@ -283,3 +283,4 @@ ATTRIBUTES must be a list of symbols, as present in XML-DATA."
   prefixes)
 
 (provide 'jabber-xml)
+;;; jabber-xml.el ends here.

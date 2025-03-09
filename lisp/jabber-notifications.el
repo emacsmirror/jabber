@@ -95,3 +95,5 @@
 (cl-pushnew 'jabber-muc-notifications-personal (get 'jabber-alert-muc-hooks 'custom-options))
 
 (provide 'jabber-notifications)
+
+;;; jabber-notifications.el ends here

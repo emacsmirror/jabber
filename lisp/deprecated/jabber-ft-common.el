@@ -43,3 +43,5 @@ Return nil if no MD5 summing program is available."
       (buffer-substring (point-min) (point)))))
 
 (provide 'jabber-ft-common)
+
+;;; jabber-ft-common.el ends here

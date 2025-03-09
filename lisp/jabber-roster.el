@@ -869,3 +869,5 @@ obtained from `xml-parse-region'."
                           'jabber-report-success "Failed to save roster groups"))))
 
 (provide 'jabber-roster)
+
+;;; jabber-roster.el ends here

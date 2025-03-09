@@ -59,3 +59,5 @@ If nil the message has to be cleared by other means, i.e. from wmiirc.")
   'jabber-wmii-message)
 
 (provide 'jabber-wmii)
+
+;;; jabber-wmii.el ends here

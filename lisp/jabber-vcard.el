@@ -564,3 +564,5 @@ obtained from `xml-parse-region'."
        (and jabber-vcard-photo (avatar-sha1-sum jabber-vcard-photo))))))
 
 (provide 'jabber-vcard)
+
+;;; jabber-vcard.el ends here

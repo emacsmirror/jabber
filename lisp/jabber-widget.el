@@ -364,3 +364,5 @@ Return nil if no form type is specified."
 				     (car (jabber-xml-get-children field 'value)))))))))
 
 (provide 'jabber-widget)
+
+;;; jabber-widget.el ends here

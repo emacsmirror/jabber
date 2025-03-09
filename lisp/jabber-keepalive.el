@@ -179,3 +179,5 @@ accounts."
     (ignore-errors (jabber-send-string c " "))))
 
 (provide 'jabber-keepalive)
+
+;;; jabber-keepalive.el ends here

@@ -774,3 +774,5 @@ FN is applied to the node and not to the data itself."
 	   result)))))
 
 (provide 'jabber-util)
+
+;;; jabber-util.el ends here
