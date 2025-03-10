@@ -5,7 +5,7 @@
 ;; Keywords: comm
 ;; Homepage: https://codeberg.org/emacs-jabber/emacs-jabber
 ;; Package-Requires: ((emacs "27.1") (fsm "0.2.0") (srv "0.2"))
-;; Version: 0.8.92
+;; Version: 0.9.0
 
 ;; Copyright (C) 2003, 2004, 2007, 2008 - Magnus Henoch - mange@freemail.hu
 ;; Copyright (C) 2002, 2003, 2004 - Tom Berger - object@intelectronica.net
