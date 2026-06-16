@@ -14,6 +14,7 @@ endif
 endif
 
 EMACS_CMD ?= emacs
+EMACS_OPTS ?= -Q --batch
 
 JOBS         ?= $(shell nproc 2>/dev/null || echo 4)
 TEST_RESULTS := .test-results
@@ -67,7 +68,7 @@ dev:
 do-dev: autoload compile do-module do-lint do-test
 
 autoload:
-	$(EMACS_CMD) -q -Q --batch -L lisp \
+	$(EMACS_CMD) $(EMACS_OPTS) -L lisp \
 	--eval="(loaddefs-generate \"lisp\" \"lisp/jabber-autoloads.el\")"
 
 module:
@@ -77,7 +78,7 @@ do-module:
 	$(MAKE) -C src
 
 compile: autoload
-	$(EMACS_CMD) -q -Q -L . -L lisp --batch \
+	$(EMACS_CMD) $(EMACS_OPTS) -L . -L lisp \
 	--eval="(setq print-length nil load-prefer-newer t)" \
 	-f batch-byte-compile lisp/*.el
 
@@ -86,7 +87,7 @@ lint-check-declare:
 
 do-lint-check-declare:
 	for file in lisp/*.el ; do \
-	$(EMACS_CMD) -q -Q --batch --eval="(check-declare-file \"$$file\")" ; \
+	$(EMACS_CMD) $(EMACS_OPTS) --eval="(check-declare-file \"$$file\")" ; \
 	done
 
 lint-checkdoc:
@@ -95,22 +96,22 @@ lint-checkdoc:
 do-lint-checkdoc:
 	for file in lisp/*.el ; do \
 	case "$$file" in lisp/jabber-autoloads.el) continue;; esac; \
-	$(EMACS_CMD) -q -Q --batch --eval="(checkdoc-file \"$$file\")" ; \
+	$(EMACS_CMD) $(EMACS_OPTS) --eval="(checkdoc-file \"$$file\")" ; \
 	done
 
 lint-package-lint:
-	$(EMACS_CMD) -Q --batch \
+	$(EMACS_CMD) $(EMACS_OPTS) \
 	--eval='(package-initialize)' --eval="(require 'package-lint)" \
 	--eval="(setq package-lint-main-file \"lisp/jabber.el\")" \
         -f 'package-lint-batch-and-exit' $(wildcard lisp/*.el)
 
 lint-relint:
-	$(EMACS_CMD) -Q --batch \
+	$(EMACS_CMD) $(EMACS_OPTS) \
 	--eval='(package-initialize)' --eval="(require 'relint)" \
 	-f 'relint-batch' "lisp"
 
 lint-test-compile:
-	$(EMACS_CMD) -q -Q --batch -L lisp -L tests \
+	$(EMACS_CMD) $(EMACS_OPTS) -L lisp -L tests \
 	-f batch-byte-compile tests/*.el
 
 lint-native-comp: autoload
@@ -120,7 +121,7 @@ do-lint-native-comp:
 	@fails=0; \
 	for file in lisp/*.el ; do \
 	  case "$$file" in *autoloads*) continue;; esac; \
-	  output=$$($(EMACS_CMD) -q -Q --batch -L lisp \
+	  output=$$($(EMACS_CMD) $(EMACS_OPTS) -L lisp \
 	    --eval="(native-compile \"$$file\")" 2>&1); \
 	  matched=$$(echo "$$output" | grep "is not known to be defined" || true); \
 	  if [ -n "$$matched" ]; then \
@@ -144,7 +145,7 @@ do-test: do-module
 	@$(MAKE) --no-print-directory -j$(JOBS) -Otarget do-test-summary
 
 $(TEST_RESULTS)/%.stamp: tests/%.el
-	@output=$$($(EMACS_CMD) -Q --batch -L lisp -L tests \
+	@output=$$($(EMACS_CMD) $(EMACS_OPTS) -L lisp -L tests \
 	  -l ert -l $< -f ert-run-tests-batch-and-exit 2>&1); \
 	rc=$$?; \
 	n=$$(echo "$$output" | grep -o 'Ran [0-9]*' | grep -o '[0-9]*'); \
