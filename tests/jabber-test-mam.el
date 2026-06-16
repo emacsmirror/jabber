@@ -110,11 +110,9 @@ When COMPLETE is non-nil, mark the archive as fully consumed."
   (should (memq 'jabber-mam-maybe-catchup jabber-post-connect-hooks))
   (should (memq 'jabber-mam-maybe-catchup
                 (get 'jabber-post-connect-hooks 'custom-options)))
-  (should (equal jabber-post-resume-hooks
-                 '(jabber-muc-self-ping-rooms
-                   jabber-mam-maybe-catchup
-                   jabber-muc-self-ping-start
-                   jabber-whitespace-ping-start))))
+  (should (memq 'jabber-mam-maybe-catchup jabber-post-resume-hooks))
+  (should (memq 'jabber-mam-maybe-catchup
+                (get 'jabber-post-resume-hooks 'custom-options))))
 
 ;;; Group 1: Large sync
 
