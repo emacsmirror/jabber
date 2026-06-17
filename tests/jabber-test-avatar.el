@@ -2,9 +2,8 @@
 
 (require 'ert)
 (require 'cl-lib)
-
-(load (expand-file-name "../lisp/jabber-avatar.el"
-                        (file-name-directory (or load-file-name buffer-file-name))))
+(require 'jabber-avatar)
+(require 'jabber-util)
 
 ;;; Avatar display bounds
 
@@ -20,7 +19,11 @@
                      '("data" "image/png" 32 48))))))
 
 (ert-deftest jabber-test-avatar-set-cached-uses-configured-bounds ()
-  (let ((jabber-avatar-cache-directory temporary-file-directory)
+  ;; Fresh obarray so the interned JID symbol carries no `avatar-hash'
+  ;; from a prior run; otherwise the same-avatar optimization in
+  ;; `jabber-avatar-set' skips the reload on a second in-process run.
+  (let ((jabber-jid-obarray (make-vector 127 0))
+        (jabber-avatar-cache-directory temporary-file-directory)
         (jabber-avatar-max-width 40)
         (jabber-avatar-max-height 44)
         (calls nil))
