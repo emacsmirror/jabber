@@ -37,6 +37,8 @@
 (require 'url-parse)
 (require 'url-queue)
 (require 'hex-util)
+;; For the `image-property' setf-expander (not preloaded on emacs-nox).
+(require 'image)
 
 (eval-when-compile (require 'cl-lib))
 

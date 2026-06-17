@@ -32,6 +32,8 @@
 (require 'mm-decode)
 (require 'url-queue)
 (require 'url-parse)
+;; For the `image-property' setf-expander (not preloaded on emacs-nox).
+(require 'image)
 
 (defgroup jabber-image nil
   "Image display settings."
