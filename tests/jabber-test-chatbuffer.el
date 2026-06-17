@@ -79,7 +79,10 @@
                  (cons 6 9)
                  (cons "abc" 7)
                  (cons "def" -8)
-                 '(nil face bold 10 . 12)
+                 ;; Freshly consed: `jabber-chat-buffer--shift-undo-list'
+                 ;; shifts this entry in place, so a quoted literal would
+                 ;; be mutated and corrupt a second run in the same process.
+                 (copy-tree '(nil face bold 10 . 12))
                  nil
                  (cons t 0))))
       (push (cons marker 3) buffer-undo-list)
