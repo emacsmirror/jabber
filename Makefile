@@ -1,7 +1,7 @@
 .PHONY: all build dev autoload module compile lint lint-check-declare lint-checkdoc \
         lint-package-lint lint-relint lint-test-compile lint-native-comp \
-        clean clean-elc clean-module install uninstall check test load \
-        do-build do-dev do-lint do-module do-test do-test-summary \
+        clean clean-elc clean-module install uninstall check test test-oneshot load \
+        do-build do-dev do-lint do-module do-test do-test-oneshot do-test-summary \
         do-lint-check-declare do-lint-checkdoc do-lint-native-comp
 
 NIX := $(shell command -v nix 2>/dev/null)
@@ -20,14 +20,17 @@ JOBS         ?= $(shell nproc 2>/dev/null || echo 4)
 TEST_RESULTS := .test-results
 
 TESTS ?= tests/jabber-test-activity.el \
+         tests/jabber-test-avatar.el \
          tests/jabber-test-bookmarks.el \
          tests/jabber-test-carbons.el \
          tests/jabber-test-chat.el \
          tests/jabber-test-chatbuffer.el \
          tests/jabber-test-chatstates.el \
+         tests/jabber-test-conn.el \
          tests/jabber-test-csi.el \
          tests/jabber-test-db.el \
          tests/jabber-test-disco.el \
+         tests/jabber-test-httpupload.el \
          tests/jabber-test-mam.el \
          tests/jabber-test-menu.el \
          tests/jabber-test-message-correct.el \
@@ -50,6 +53,7 @@ TESTS ?= tests/jabber-test-activity.el \
          tests/jabber-test-sm.el \
          tests/jabber-test-srv.el \
          tests/jabber-test-styling.el \
+         tests/jabber-test-time.el \
          tests/jabber-test-util.el \
          tests/jabber-test-xml.el
 
@@ -139,7 +143,7 @@ do-lint: do-lint-check-declare do-lint-checkdoc lint-package-lint lint-relint li
 test:
 	@$(ENV_MAKE) -j$(JOBS) -Otarget do-test
 
-do-test: do-module
+do-test: autoload do-module
 	@rm -rf $(TEST_RESULTS)
 	@mkdir -p $(TEST_RESULTS)
 	@$(MAKE) --no-print-directory -j$(JOBS) -Otarget do-test-summary
@@ -150,13 +154,30 @@ $(TEST_RESULTS)/%.stamp: tests/%.el
 	rc=$$?; \
 	n=$$(echo "$$output" | grep -o 'Ran [0-9]*' | grep -o '[0-9]*'); \
 	if [ $$rc -ne 0 ]; then \
-	  printf "\033[31mFAIL\033[0m $< ($$n tests)\n"; \
+	  printf "\033[31mFAIL\033[0m $< ($${n:-0} tests)\n"; \
 	  echo "$$output" | grep '  FAILED'; \
-	  printf "FAIL %s\n" "$$n" > $@; \
+	  printf "FAIL %s\n" "$${n:-1}" > $@; \
 	else \
 	  printf "\033[32m  OK\033[0m $< ($$n tests)\n"; \
 	  printf "OK %s\n" "$$n" > $@; \
 	fi
+
+test-oneshot:
+	@$(ENV_MAKE) do-test-oneshot
+
+# Mirror Debian's dh_elpa_test: load every test file into one Emacs
+# process and run the whole suite twice.  Surfaces cross-test state
+# pollution and in-place mutation of shared literals that the per-file
+# `do-test' runs (one Emacs per file) cannot see.
+do-test-oneshot: autoload do-module
+	$(EMACS_CMD) $(EMACS_OPTS) -L lisp -L tests -l ert \
+	  --eval="(require 'jabber)" \
+	  $(addprefix -l ,$(TESTS)) \
+	  --eval="(let ((bad 0)) \
+	            (dotimes (_ 2) \
+	              (setq bad (+ bad (ert-stats-completed-unexpected \
+	                                (ert-run-tests-batch t))))) \
+	            (kill-emacs (if (zerop bad) 0 1)))"
 
 do-test-summary: $(TEST_STAMPS)
 	@total=0; passed=0; failed=0; failed_files=""; \
