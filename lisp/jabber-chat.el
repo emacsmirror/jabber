@@ -964,13 +964,16 @@ or X for undelivered."
   (jabber-reactions--local-sender))
 
 (defun jabber-chat--reaction-entry-string (entry)
-  "Return propertized reaction summary text for ENTRY."
+  "Return propertized reaction summary text for ENTRY.
+The text carries a `help-echo' naming who reacted, shown as a tooltip on
+mouse hover and reachable from the keyboard with \\[display-local-help]."
   (propertize (format "%d%s"
                       (plist-get entry :count)
                       (plist-get entry :reaction))
               'face (if (plist-get entry :chosen)
                         'jabber-reaction-chosen
-                      'jabber-reaction)))
+                      'jabber-reaction)
+              'help-echo (jabber-reactions--entry-help-echo entry)))
 
 (defun jabber-chat--insert-reactions (msg)
   "Insert compact reaction summaries for MSG."

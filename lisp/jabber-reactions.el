@@ -148,6 +148,24 @@ reaction order."
                chosen-sender))
             (nreverse order))))
 
+(defun jabber-reactions--sender-name (sender)
+  "Return a human-readable name for reaction SENDER key.
+SENDER is a MUC occupant JID (\"room@host/nick\") or a 1:1 bare JID.
+Prefer the MUC nick, then the roster display name, then SENDER itself."
+  (or (jabber-jid-resource sender)
+      (jabber-jid-displayname sender)
+      sender))
+
+(defun jabber-reactions--entry-help-echo (entry)
+  "Return help-echo text naming who sent reaction ENTRY, or nil.
+ENTRY is a display plist from `jabber-reactions--display-entries'.  The
+text reads \"REACTION: name1, name2\" so it stays self-explanatory in a
+tooltip or in the echo area via `display-local-help'."
+  (when-let* ((senders (plist-get entry :senders)))
+    (format "%s: %s"
+            (plist-get entry :reaction)
+            (string-join (mapcar #'jabber-reactions--sender-name senders) ", "))))
+
 (defun jabber-reactions--sender-reactions (sender msg)
   "Return SENDER's current reactions from MSG."
   (copy-sequence (alist-get sender (plist-get msg :reactions) nil nil #'equal)))

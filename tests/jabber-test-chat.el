@@ -580,6 +580,17 @@
         (when (buffer-live-p buf)
           (kill-buffer buf))))))
 
+;;; Group: reaction rendering
+
+(ert-deftest jabber-test-chat-reaction-entry-string-carries-help-echo ()
+  "Rendered reaction text exposes who reacted via `help-echo'."
+  (let* ((entry (jabber-reactions--display-entry
+                 "👍" '("alice@example.com" "bob@example.com") nil))
+         (text (jabber-chat--reaction-entry-string entry)))
+    (should (string= text "2👍"))
+    (should (equal (get-text-property 0 'help-echo text)
+                   "👍: alice@example.com, bob@example.com"))))
+
 (provide 'jabber-test-chat)
 
 ;;; jabber-test-chat.el ends here

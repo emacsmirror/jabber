@@ -79,6 +79,30 @@
       (should (= (plist-get heart :count) 1))
       (should-not (plist-get heart :chosen)))))
 
+(ert-deftest jabber-test-reactions-sender-name-prefers-muc-nick ()
+  "A MUC occupant JID resolves to its nick for display."
+  (should (equal (jabber-reactions--sender-name "room@conf.example.com/alice")
+                 "alice")))
+
+(ert-deftest jabber-test-reactions-sender-name-falls-back-to-bare-jid ()
+  "A 1:1 bare JID with no roster name resolves to user@server."
+  (should (equal (jabber-reactions--sender-name "alice@example.com")
+                 "alice@example.com")))
+
+(ert-deftest jabber-test-reactions-entry-help-echo-lists-senders ()
+  "Help-echo text names the reaction and each sender."
+  (let ((entry (jabber-reactions--display-entry
+                "👍"
+                '("room@conf.example.com/alice" "room@conf.example.com/bob")
+                nil)))
+    (should (equal (jabber-reactions--entry-help-echo entry)
+                   "👍: alice, bob"))))
+
+(ert-deftest jabber-test-reactions-entry-help-echo-nil-without-senders ()
+  "Help-echo is nil when the entry has no senders."
+  (should-not (jabber-reactions--entry-help-echo
+               (jabber-reactions--display-entry "👍" nil nil))))
+
 (ert-deftest jabber-test-reactions-toggle-reaction-adds-and-removes-from-full-list ()
   "Toggling updates the complete local reaction list."
   (should (equal (jabber-reactions--toggle-reaction "❤️" '("👍" "👍" "🎉"))
