@@ -604,51 +604,6 @@ EWOC-PP is the pretty-printer function for the message EWOC."
                   (buffer entries callback &optional generation))
 (declare-function jabber-chat-display-buffer-images "jabber-chat" ())
 
-(defun jabber-chat-buffer--refresh-complete ()
-  "Finish a chat buffer refresh after backlog insertion completes."
-  (jabber-chat-display-buffer-images)
-  (jabber-chat-buffer-recenter-input))
-
-(defun jabber-chat-buffer-refresh ()
-  "Refresh the current chat buffer from the database without killing it.
-Clears the ewoc and reloads backlog entries in place.  Cancels any
-in-progress chunked insert by bumping the generation counter.
-Uses `jabber-chat-buffer-msg-count' for the number of messages."
-  (interactive)
-  (cl-incf jabber-chat--backlog-generation)
-  (let ((generation jabber-chat--backlog-generation)
-        (count (jabber-chat-buffer-msg-count))
-        (buffer-undo-list t)
-        (inhibit-read-only t)
-        (node (ewoc-nth jabber-chat-ewoc 0)))
-    ;; Delete all ewoc nodes
-    (while node
-      (let ((next (ewoc-next jabber-chat-ewoc node)))
-        (ewoc-delete jabber-chat-ewoc node)
-        (setq node next)))
-    ;; Clear message ID tracking
-    (clrhash jabber-chat--msg-nodes)
-    ;; Reload from DB
-    (let* ((peer (jabber-chat--peer-jid))
-           (account (jabber-connection-bare-jid jabber-buffer-connection))
-           (resource (when (and (bound-and-true-p jabber-chatting-with)
-                                (not (bound-and-true-p jabber-group))
-                                (jabber-muc-sender-p jabber-chatting-with))
-                       (jabber-jid-resource jabber-chatting-with)))
-           (msg-type (when (and (bound-and-true-p jabber-group)
-                                (not resource))
-                       "groupchat"))
-           (entries (jabber-db-backlog account peer count nil resource
-                                       msg-type)))
-      (if (null entries)
-          (setq jabber-chat-earliest-backlog (float-time))
-        (setq jabber-chat-earliest-backlog
-              (float-time (plist-get (car (last entries)) :timestamp)))
-        (jabber-chat--insert-backlog-chunked
-         (current-buffer) entries
-         #'jabber-chat-buffer--refresh-complete
-         generation)))))
-
 (defun jabber-chat-buffer-send ()
   "Send the message composed below the prompt in the current chat buffer."
   (interactive)
@@ -814,6 +769,149 @@ or nil if the message was a duplicate."
   (let ((buffer-undo-list t)
         (inhibit-read-only t))
     (ewoc-delete jabber-chat-ewoc node)))
+
+;;; View preservation across refresh
+;;
+;; This mirrors ERC's `erc--scrolltobottom-all' (erc-goodies.el): for each
+;; visible window, a window at the prompt is recentered to keep the prompt
+;; at the bottom, and a window reading history is left where it was.
+;;
+;; ERC appends, so a history reader's `window-start' and point are never
+;; disturbed and its save/restore is only insurance.  A refresh rebuilds
+;; the whole ewoc, destroying every `window-start' marker and collapsing
+;; point, so we must restore actively.  Two adaptations follow:
+;;
+;; - Raw positions don't survive the rebuild, so we anchor on a stable
+;;   stanza id -- the topmost visible message -- and put that message back
+;;   at `window-start' once the ewoc is rebuilt.
+;; - We restore every visible window, not just the selected one.  ERC's
+;;   selected-window-only mode is safe only because append leaves the rest
+;;   untouched; for us, skipping a window means the rebuild clobbers it.
+;;
+;; The one place we cannot match ERC: it keeps a history reader's exact
+;; point, but our rebuild collapses it (and a message's rendered length
+;; can change across reload), so we settle point on the anchored message.
+
+(defun jabber-chat-buffer--node-stanza-id (node)
+  "Return the stanza id of message ewoc NODE, or nil.
+Prefer :id, fall back to :server-id."
+  (and node
+       (let ((msg (cadr (ewoc-data node))))
+         (and (listp msg)
+              (or (plist-get msg :id)
+                  (plist-get msg :server-id))))))
+
+(defun jabber-chat-buffer--window-anchor (window)
+  "Return a view anchor for WINDOW.
+The anchor is the symbol `bottom' when the window follows the input
+area, or a (`msg' . STANZA-ID) cons naming the topmost visible message
+so the view can be restored after the ewoc is rebuilt."
+  (if (jabber-chat-buffer--recenter-input-p window)
+      'bottom
+    ;; window-start may sit on a rare-time or typing node that won't
+    ;; survive the rebuild; step forward to the first message node.
+    (let ((node (and jabber-chat-ewoc
+                     (ewoc-locate jabber-chat-ewoc (window-start window)))))
+      (while (and node (not (jabber-chat-buffer--node-stanza-id node)))
+        (setq node (ewoc-next jabber-chat-ewoc node)))
+      (if-let* ((id (jabber-chat-buffer--node-stanza-id node)))
+          (cons 'msg id)
+        'bottom))))
+
+(defun jabber-chat-buffer--capture-view ()
+  "Capture per-window view anchors for the current buffer.
+Returns an alist mapping each window showing the buffer to the anchor
+from `jabber-chat-buffer--window-anchor'.  Call before a refresh clears
+the ewoc."
+  (mapcar (lambda (window)
+            (cons window (jabber-chat-buffer--window-anchor window)))
+          (get-buffer-window-list (current-buffer) nil 'visible)))
+
+(defun jabber-chat-buffer--restore-bottom (window)
+  "Force WINDOW to the input area, moving point there, then recenter.
+For use when point may have collapsed to the top during the rebuild,
+i.e. the anchored message is no longer loaded.  Unlike the `bottom'
+anchor path, this overwrites point, so do not call it for a window that
+was composing a message."
+  (when (markerp jabber-point-insert)
+    (set-window-point window jabber-point-insert)
+    (jabber-chat-buffer--recenter-input-window window)))
+
+(defun jabber-chat-buffer--restore-view (anchors)
+  "Restore per-window view from ANCHORS captured before a refresh.
+Windows that followed the input area return to the bottom; windows that
+were reading history are scrolled back to their anchored message, or to
+the bottom when that message is no longer loaded."
+  (dolist (entry anchors)
+    (let ((window (car entry))
+          (anchor (cdr entry)))
+      (when (window-live-p window)
+        (pcase anchor
+          ('bottom
+           ;; Point sits in the input area (after the footer) and so
+           ;; survived the clear; recenter without moving it to preserve
+           ;; a half-typed message's cursor.
+           (jabber-chat-buffer--recenter-input-window window))
+          (`(msg . ,id)
+           (if-let* ((node (jabber-chat-ewoc-find-by-id id)))
+               (let ((pos (ewoc-location node)))
+                 (set-window-start window pos)
+                 (set-window-point window pos))
+             (jabber-chat-buffer--restore-bottom window))))))))
+
+;;; Buffer refresh
+
+(defun jabber-chat-buffer--refresh-complete (anchors)
+  "Finish a chat buffer refresh after backlog insertion completes.
+ANCHORS is the per-window view captured by
+`jabber-chat-buffer--capture-view' before the ewoc was cleared."
+  (jabber-chat-display-buffer-images)
+  (jabber-chat-buffer--restore-view anchors))
+
+(defun jabber-chat-buffer-refresh ()
+  "Refresh the current chat buffer from the database without killing it.
+Clears the ewoc and reloads backlog entries in place.  Cancels any
+in-progress chunked insert by bumping the generation counter.
+Uses `jabber-chat-buffer-msg-count' for the number of messages.
+Each window's view is captured before the clear and restored after the
+reload, so a reader scrolled up in history is not yanked to the top."
+  (interactive)
+  (cl-incf jabber-chat--backlog-generation)
+  (let ((generation jabber-chat--backlog-generation)
+        (count (jabber-chat-buffer-msg-count))
+        (anchors (jabber-chat-buffer--capture-view))
+        (buffer-undo-list t)
+        (inhibit-read-only t)
+        (node (ewoc-nth jabber-chat-ewoc 0)))
+    ;; Delete all ewoc nodes
+    (while node
+      (let ((next (ewoc-next jabber-chat-ewoc node)))
+        (ewoc-delete jabber-chat-ewoc node)
+        (setq node next)))
+    ;; Clear message ID tracking
+    (clrhash jabber-chat--msg-nodes)
+    ;; Reload from DB
+    (let* ((peer (jabber-chat--peer-jid))
+           (account (jabber-connection-bare-jid jabber-buffer-connection))
+           (resource (when (and (bound-and-true-p jabber-chatting-with)
+                                (not (bound-and-true-p jabber-group))
+                                (jabber-muc-sender-p jabber-chatting-with))
+                       (jabber-jid-resource jabber-chatting-with)))
+           (msg-type (when (and (bound-and-true-p jabber-group)
+                                (not resource))
+                       "groupchat"))
+           (entries (jabber-db-backlog account peer count nil resource
+                                       msg-type)))
+      (if (null entries)
+          (progn
+            (setq jabber-chat-earliest-backlog (float-time))
+            (jabber-chat-buffer--restore-view anchors))
+        (setq jabber-chat-earliest-backlog
+              (float-time (plist-get (car (last entries)) :timestamp)))
+        (jabber-chat--insert-backlog-chunked
+         (current-buffer) entries
+         (lambda () (jabber-chat-buffer--refresh-complete anchors))
+         generation)))))
 
 ;;; Cleanup on disconnect
 

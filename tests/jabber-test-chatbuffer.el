@@ -724,15 +724,15 @@ again, and the ewoc created on the first call must survive."
                 ((symbol-function 'jabber-chat-display-buffer-images)
                  (lambda ()
                    (setq events (append events '(images)))))
-                ((symbol-function 'jabber-chat-buffer-recenter-input)
-                 (lambda ()
-                   (setq events (append events '(recenter))))))
+                ((symbol-function 'jabber-chat-buffer--restore-view)
+                 (lambda (_anchors)
+                   (setq events (append events '(restore))))))
         (jabber-chat-buffer-refresh)
         (should (equal '(insert-start) events))
         (should callback)
         (should (= insert-generation jabber-chat--backlog-generation))
         (funcall callback)
-        (should (equal '(insert-start images recenter) events))))))
+        (should (equal '(insert-start images restore) events))))))
 
 (ert-deftest jabber-test-chatbuffer-refresh-empty-skips-completion-callbacks ()
   "Empty refresh preserves behavior by skipping insert completion callbacks."
@@ -761,6 +761,85 @@ again, and the ewoc created on the first call must survive."
                    (setq events (append events '(recenter))))))
         (jabber-chat-buffer-refresh)
         (should-not events)))))
+
+;;; Group 11b: view preservation across refresh
+
+(ert-deftest jabber-test-chatbuffer-node-stanza-id-prefers-id ()
+  "A message node's anchor id is :id when present."
+  (jabber-test-chatbuffer-with-ewoc
+    (let ((node (jabber-chat-ewoc-enter
+                 (list :foreign (list :id "a" :server-id "b" :body "x")))))
+      (should (equal "a" (jabber-chat-buffer--node-stanza-id node))))))
+
+(ert-deftest jabber-test-chatbuffer-node-stanza-id-falls-back-to-server-id ()
+  "A message node with only :server-id anchors on the server id."
+  (jabber-test-chatbuffer-with-ewoc
+    (let ((node (jabber-chat-ewoc-enter
+                 (list :foreign (list :server-id "only-server" :body "x")))))
+      (should (equal "only-server"
+                     (jabber-chat-buffer--node-stanza-id node))))))
+
+(ert-deftest jabber-test-chatbuffer-node-stanza-id-nil-for-notice ()
+  "Notice nodes carry no anchor id."
+  (jabber-test-chatbuffer-with-ewoc
+    (let ((node (jabber-chat-ewoc-enter (list :notice "joined"))))
+      (should-not (jabber-chat-buffer--node-stanza-id node)))))
+
+(ert-deftest jabber-test-chatbuffer-anchor-id-survives-refresh-rebuild ()
+  "A captured anchor id still resolves after a full clear and rebuild.
+This is the invariant the refresh view-restore depends on: a reader
+scrolled up to a server-id-only message must be findable again once the
+ewoc is rebuilt from the database."
+  (jabber-test-chatbuffer-with-ewoc
+    (let ((entries (list (list :foreign (list :id "m1" :body "one"))
+                         (list :foreign (list :server-id "s2" :body "two"))
+                         (list :local (list :id "m3" :body "three")))))
+      (dolist (e entries) (jabber-chat-ewoc-enter e))
+      (let ((anchor-id (jabber-chat-buffer--node-stanza-id
+                        (jabber-chat-ewoc-find-by-id "s2"))))
+        (should (equal "s2" anchor-id))
+        ;; Mimic jabber-chat-buffer-refresh: drop every node, then rebuild.
+        (let ((n (ewoc-nth jabber-chat-ewoc 0)))
+          (while n
+            (let ((next (ewoc-next jabber-chat-ewoc n)))
+              (ewoc-delete jabber-chat-ewoc n)
+              (setq n next))))
+        (clrhash jabber-chat--msg-nodes)
+        (dolist (e entries) (jabber-chat-ewoc-enter e))
+        (let ((restored (jabber-chat-ewoc-find-by-id anchor-id)))
+          (should restored)
+          (should (equal "two"
+                         (plist-get (cadr (ewoc-data restored)) :body))))))))
+
+(ert-deftest jabber-test-chatbuffer-restore-view-dispatch ()
+  "A following window is recentered without moving point; a history
+window is scrolled back to its anchored message; a vanished anchor is
+forced to the bottom (the only path that overwrites point)."
+  (jabber-test-chatbuffer-with-ewoc
+    (let ((recentered nil)
+          (forced nil)
+          (started nil))
+      (cl-letf (((symbol-function 'window-live-p) (lambda (_w) t))
+                ((symbol-function 'jabber-chat-buffer--recenter-input-window)
+                 (lambda (w) (push w recentered)))
+                ((symbol-function 'jabber-chat-buffer--restore-bottom)
+                 (lambda (w) (push w forced)))
+                ((symbol-function 'jabber-chat-ewoc-find-by-id)
+                 (lambda (id) (when (equal id "present") 'fake-node)))
+                ((symbol-function 'ewoc-location) (lambda (_n) 42))
+                ((symbol-function 'set-window-start)
+                 (lambda (w pos) (push (list w pos) started)))
+                ((symbol-function 'set-window-point) (lambda (_w _pos) nil)))
+        (jabber-chat-buffer--restore-view
+         '((win-bottom . bottom)
+           (win-present msg . "present")
+           (win-missing msg . "gone")))
+        ;; Following window recentered, point preserved (not forced).
+        (should (equal '(win-bottom) recentered))
+        ;; Only the vanished-anchor window is forced to the bottom.
+        (should (equal '(win-missing) forced))
+        ;; The live-anchor window is scrolled to its message.
+        (should (equal '((win-present 42)) started))))))
 
 ;;; Group 12: scroll-to-bottom window policy
 
