@@ -30,6 +30,7 @@
 (require 'jabber-core)
 (require 'jabber-db)
 (require 'keymap-popup)
+(require 'help-at-pt)
 
 (defvar jabber-point-insert nil
   "Position where the message being composed starts.")
@@ -473,12 +474,34 @@ MAM sync in this buffer.  Set via the operations menu.")
   "0" #'jabber-chat-image-reset-size-or-self-insert
   "!" #'jabber-reactions-react-at-point-or-insert)
 
+(defcustom jabber-chat-display-help-at-point t
+  "When non-nil, show local help at point in chat buffers automatically.
+After Emacs has been idle for `help-at-pt-timer-delay' seconds, the
+`help-echo' text at point -- such as who reacted to a message -- is
+printed in the echo area.  The same information is always available on
+demand with \\[display-local-help] and, in a graphical frame, as a mouse
+tooltip, regardless of this setting.
+
+Changing this takes effect in newly created chat buffers."
+  :type 'boolean
+  :group 'jabber-chat)
+
+(defun jabber-chat--enable-help-at-point ()
+  "Display `help-echo' at point automatically in the current chat buffer.
+Reuse the shared `help-at-pt' idle timer and scope it to this buffer with
+a buffer-local `help-at-pt-display-when-idle', leaving other buffers
+unaffected."
+  (setq-local help-at-pt-display-when-idle '(help-echo))
+  (help-at-pt-set-timer))
+
 (define-derived-mode jabber-chat-mode fundamental-mode "jabber-chat"
   "Major mode for Jabber chat buffers.
 \\{jabber-chat-mode-map}"
   (visual-line-mode 1)
   (setq-local word-wrap t)
   (display-line-numbers-mode 0)
+  (when jabber-chat-display-help-at-point
+    (jabber-chat--enable-help-at-point))
   (put 'jabber-chat-mode 'flyspell-mode-predicate #'jabber-chat-mode-flyspell-verify))
 
 ;;; bug-reference integration

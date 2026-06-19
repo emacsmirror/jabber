@@ -899,6 +899,25 @@ again, and the ewoc created on the first call must survive."
     (should-not (buffer-live-p buffer))
     (should-not (funcall callback "https://upload.example.net/file.txt"))))
 
+;;; Group: help-at-point display
+
+(ert-deftest jabber-test-chatbuffer-help-at-point-enabled ()
+  "Enabling the option scopes help-at-pt to the chat buffer."
+  (let ((jabber-chat-display-help-at-point t))
+    (unwind-protect
+        (with-temp-buffer
+          (jabber-chat-mode)
+          (should (local-variable-p 'help-at-pt-display-when-idle))
+          (should (equal help-at-pt-display-when-idle '(help-echo))))
+      (help-at-pt-cancel-timer))))
+
+(ert-deftest jabber-test-chatbuffer-help-at-point-disabled ()
+  "Disabling the option leaves help-at-pt untouched in the buffer."
+  (let ((jabber-chat-display-help-at-point nil))
+    (with-temp-buffer
+      (jabber-chat-mode)
+      (should-not (local-variable-p 'help-at-pt-display-when-idle)))))
+
 (provide 'jabber-test-chatbuffer)
 
 ;;; jabber-test-chatbuffer.el ends here
