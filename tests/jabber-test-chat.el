@@ -591,6 +591,69 @@
     (should (equal (get-text-property 0 'help-echo text)
                    "👍: alice@example.com, bob@example.com"))))
 
+;;; Group 12: error stanza collapse
+
+(defun jabber-test-chat--error-buffer (jc peer)
+  "Create a real chat buffer for PEER with DB and MAM stubbed out.
+JC is a fake connection from `jabber-test-chat--make-fake-jc'."
+  (cl-letf (((symbol-function 'jabber-db-backlog) (lambda (&rest _) nil))
+            ((symbol-function 'jabber-db-get-chat-encryption)
+             (lambda (&rest _) nil))
+            ((symbol-function 'jabber-mam-chat-opened) #'ignore))
+    (jabber-chat-create-buffer jc peer)))
+
+(defun jabber-test-chat--error-nodes (buffer)
+  "Return the list of :error ewoc data entries in BUFFER."
+  (with-current-buffer buffer
+    (ewoc-collect jabber-chat-ewoc (lambda (data) (eq (car data) :error)))))
+
+(defun jabber-test-chat--make-error (peer text id)
+  "Build an error message plist from PEER, TEXT and ID."
+  (list :from peer :error-text text :id id :timestamp (current-time)))
+
+(ert-deftest jabber-test-chat-error-collapse-counts-repeats ()
+  "Repeated identical errors collapse into one counted node."
+  (let* ((jc (jabber-test-chat--make-fake-jc "me@example.com"))
+         (peer "bridge@example.com/x")
+         (jabber-chat-buffer-format " *jabber-test-chat-%j-%a*")
+         buf)
+    (unwind-protect
+        (progn
+          (setq buf (jabber-test-chat--error-buffer jc peer))
+          (with-current-buffer buf
+            (dolist (id '("e1" "e2" "e3"))
+              (jabber-chat--enter-error-collapsed
+               (jabber-test-chat--make-error peer "Recipient unavailable" id))))
+          (let ((nodes (jabber-test-chat--error-nodes buf)))
+            (should (= 1 (length nodes)))
+            (should (= 3 (plist-get (cadr (car nodes)) :count))))
+          (should (string-search
+                   "Error: Recipient unavailable (×3)"
+                   (with-current-buffer buf (buffer-string)))))
+      (when (buffer-live-p buf) (kill-buffer buf)))))
+
+(ert-deftest jabber-test-chat-error-collapse-distinct-text-new-node ()
+  "A different error text after the first produces a second node."
+  (let* ((jc (jabber-test-chat--make-fake-jc "me@example.com"))
+         (peer "bridge@example.com/x")
+         (jabber-chat-buffer-format " *jabber-test-chat-%j-%a*")
+         buf)
+    (unwind-protect
+        (progn
+          (setq buf (jabber-test-chat--error-buffer jc peer))
+          (with-current-buffer buf
+            (jabber-chat--enter-error-collapsed
+             (jabber-test-chat--make-error peer "Recipient unavailable" "e1"))
+            (jabber-chat--enter-error-collapsed
+             (jabber-test-chat--make-error peer "Service unavailable" "e2")))
+          (should (= 2 (length (jabber-test-chat--error-nodes buf)))))
+      (when (buffer-live-p buf) (kill-buffer buf)))))
+
+(ert-deftest jabber-test-chat-find-buffer-nil-when-absent ()
+  "`jabber-chat--find-buffer' returns nil when no buffer exists."
+  (cl-letf (((symbol-function 'jabber-muc-sender-p) #'ignore))
+    (should-not (jabber-chat--find-buffer "nobody@example.com/x"))))
+
 (provide 'jabber-test-chat)
 
 ;;; jabber-test-chat.el ends here

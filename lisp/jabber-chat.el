@@ -227,6 +227,8 @@ BODY and ID are passed to each hook function."
 (declare-function jabber-openpgp-legacy--send-chat "jabber-openpgp-legacy" (jc body &optional extra-elements))
 (declare-function jabber-muc-private-create-buffer "jabber-muc.el"
                   (jc group nickname))
+(declare-function jabber-muc-private-find-buffer "jabber-muc.el"
+                  (group nickname))
 (declare-function jabber-muc-print-prompt "jabber-muc.el"
                   (msg &optional local dont-print-nick-p))
 (declare-function jabber-muc-private-print-prompt "jabber-muc.el" (msg))
@@ -682,10 +684,10 @@ _XML-DATA is reserved for future use by OMEMO."
                          (jabber-connection-bare-jid jc))))
     (with-current-buffer chat-buffer
       (jabber-chat-buffer-with-scrolltobottom
-        (jabber-chatstates--clear-typing)
-        (jabber-maybe-print-rare-time
-         (jabber-chat-ewoc-enter
-          (list (if error-p :error :foreign) msg-plist))))
+       (jabber-chatstates--clear-typing)
+       (jabber-maybe-print-rare-time
+        (jabber-chat-ewoc-enter
+         (list (if error-p :error :foreign) msg-plist))))
       (when (and (not error-p) (not self-p))
         (let ((inhibit-message jabber-chat-mam-syncing))
           (dolist (hook '(jabber-message-hooks jabber-alert-message-hooks))
@@ -693,6 +695,53 @@ _XML-DATA is reserved for future use by OMEMO."
                                 from (current-buffer) body-text
                                 (funcall jabber-alert-message-function
                                          from (current-buffer) body-text))))))))
+
+(defun jabber-chat--find-buffer (from)
+  "Return an existing chat buffer for FROM, or nil; never create one."
+  (if (jabber-muc-sender-p from)
+      (jabber-muc-private-find-buffer
+       (jabber-jid-user from) (jabber-jid-resource from))
+    (jabber-chat-find-buffer from)))
+
+(defun jabber-chat--log-error (from msg-plist)
+  "Log the error in MSG-PLIST from FROM to the echo area when no buffer is open."
+  (message "jabber: error from %s: %s"
+           (jabber-jid-displayname from)
+           (or (plist-get msg-plist :error-text) "Unknown error")))
+
+(defun jabber-chat--error-node-matches-p (node from text)
+  "Return non-nil when ewoc NODE is an :error from FROM with TEXT."
+  (and node
+       (let ((data (ewoc-data node)))
+         (and (eq (car data) :error)
+              (listp (cadr data))
+              (equal (plist-get (cadr data) :from) from)
+              (equal (plist-get (cadr data) :error-text) text)))))
+
+(defun jabber-chat--enter-error-collapsed (msg-plist)
+  "Insert MSG-PLIST as an :error node, collapsing a repeat of the last error.
+When the most recent ewoc node is an identical error, bump its repeat
+count and redraw it instead of adding a new line."
+  (let ((last (ewoc-nth jabber-chat-ewoc -1))
+        (from (plist-get msg-plist :from))
+        (text (plist-get msg-plist :error-text)))
+    (if (jabber-chat--error-node-matches-p last from text)
+        (let* ((data (ewoc-data last))
+               (count (1+ (or (plist-get (cadr data) :count) 1))))
+          (setcar (cdr data) (plist-put (cadr data) :count count))
+          (jabber-chat-ewoc-invalidate last))
+      (jabber-maybe-print-rare-time
+       (jabber-chat-ewoc-enter (list :error msg-plist))))))
+
+(defun jabber-chat--display-error (from msg-plist)
+  "Show the error in MSG-PLIST for FROM without resurrecting a killed buffer.
+If a chat buffer for FROM exists, insert the error there, collapsing a
+repeat of the previous identical error.  Otherwise log to the echo area."
+  (if-let* ((buffer (jabber-chat--find-buffer from)))
+      (with-current-buffer buffer
+        (jabber-chat-buffer-with-scrolltobottom
+         (jabber-chat--enter-error-collapsed msg-plist)))
+    (jabber-chat--log-error from msg-plist)))
 
 (defun jabber-process-chat (jc xml-data)
   "If XML-DATA is a one-to-one chat message, handle it as such.
@@ -710,21 +759,23 @@ JC is the Jabber connection."
         (when is-carbon
           (jabber-chat--store-carbon jc xml-data))
         (let ((replace-id (jabber-message-correct--replace-id xml-data)))
-          (if (and replace-id (not jabber-chat-mam-syncing))
-              (jabber-message-correct--apply
-               replace-id
-               (plist-get msg-plist :body)
-               from
-               nil
-               (jabber-chat-find-buffer from)
-               (jabber-db--extract-occupant-id xml-data))
-            (when (or error-p
-                      (run-hook-with-args-until-success 'jabber-chat-printers
-                                                        msg-plist :foreign :printp))
-              (jabber-chat--display-message
-               jc xml-data
-               (jabber-chat--select-buffer jc from carbon-buffer)
-               error-p from msg-plist))))))))
+          (cond
+           ((and replace-id (not jabber-chat-mam-syncing))
+            (jabber-message-correct--apply
+             replace-id
+             (plist-get msg-plist :body)
+             from
+             nil
+             (jabber-chat-find-buffer from)
+             (jabber-db--extract-occupant-id xml-data)))
+           (error-p
+            (jabber-chat--display-error from msg-plist))
+           ((run-hook-with-args-until-success 'jabber-chat-printers
+                                              msg-plist :foreign :printp)
+            (jabber-chat--display-message
+             jc xml-data
+             (jabber-chat--select-buffer jc from carbon-buffer)
+             nil from msg-plist))))))))
 
 (defun jabber-chat-send (jc body &optional extra-elements)
   "Send BODY through connection JC, and display it in chat buffer.
@@ -1209,19 +1260,19 @@ string entries like :notice/:muc-notice (with :time in cddr)."
                         #'ewoc-next
                       #'ewoc-prev)))
     (cl-macrolet ((search ()))
-      (while (and
-              node
-              (not (equal data (ewoc-data node))))
-        (setq node (funcall node-iter jabber-chat-ewoc node)))
-      (search)
-      ;; In the off chance we searched the wrong direction, switch
-      ;; directions and re-search.
-      (unless node
-        (setq node (ewoc-locate jabber-chat-ewoc (point))
-              node-iter (if (equal node-iter #'ewoc-prev)
-                            #'ewoc-next
-                          #'ewoc-prev))
-        (search)))
+		 (while (and
+			 node
+			 (not (equal data (ewoc-data node))))
+		   (setq node (funcall node-iter jabber-chat-ewoc node)))
+		 (search)
+		 ;; In the off chance we searched the wrong direction, switch
+		 ;; directions and re-search.
+		 (unless node
+		   (setq node (ewoc-locate jabber-chat-ewoc (point))
+			 node-iter (if (equal node-iter #'ewoc-prev)
+				       #'ewoc-next
+				     #'ewoc-prev))
+		   (search)))
     node))
 
 (defun jabber-maybe-print-rare-time (node)
@@ -1235,19 +1286,19 @@ NODE may be nil (e.g. when a duplicate was suppressed)."
 		  (pcase (car entry)
 		    (:rare-time (cadr entry))
 		    (_ (plist-get (cadr entry) :timestamp)))))
-        (when (and jabber-print-rare-time
-		   (or (null prev)
-		       (jabber-rare-time-needed (entry-time prev-data)
-						(entry-time data))))
-          ;; When jabber-parse-time supports fraction seconds (optional
-          ;; with XEP-0082), jabber-chat-pp chokes on :rate-time ewoc
-          ;; elements.  Ensure that the timestamp is in lisp form,
-          ;; rather than (cons bignum . bignum).
-	  (let ((buffer-undo-list t))
-            (ewoc-enter-before jabber-chat-ewoc node
-                               (list :rare-time (time-convert
-                                                 (entry-time data)
-                                                 'list)))))))))
+               (when (and jabber-print-rare-time
+			  (or (null prev)
+			      (jabber-rare-time-needed (entry-time prev-data)
+						       (entry-time data))))
+		 ;; When jabber-parse-time supports fraction seconds (optional
+		 ;; with XEP-0082), jabber-chat-pp chokes on :rate-time ewoc
+		 ;; elements.  Ensure that the timestamp is in lisp form,
+		 ;; rather than (cons bignum . bignum).
+		 (let ((buffer-undo-list t))
+		   (ewoc-enter-before jabber-chat-ewoc node
+				      (list :rare-time (time-convert
+							(entry-time data)
+							'list)))))))))
 
 (defun jabber-chat--format-time (timestamp delayed)
   "Format TIMESTAMP for prompt display.
@@ -1310,10 +1361,12 @@ When DONT-PRINT-NICK-P is non-nil, omit the nickname."
 
 (defun jabber-chat-print-error (msg)
   "Print error from message plist MSG in a readable way."
-  (let ((error-text (plist-get msg :error-text)))
+  (let ((error-text (plist-get msg :error-text))
+        (count (plist-get msg :count)))
     (insert
      (propertize
-      (concat "Error: " (or error-text "Unknown error"))
+      (concat "Error: " (or error-text "Unknown error")
+              (and count (> count 1) (format " (×%d)" count)))
       'face 'jabber-chat-error)
      "\n")))
 
