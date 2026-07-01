@@ -19,7 +19,11 @@
 #ifdef __linux__
 #include <sys/random.h>
 #endif
-
+#if defined(__ANDROID__)
+#include <unistd.h>
+#include <sys/syscall.h>
+#define getrandom(buf,buflen,flags) syscall(SYS_getrandom,buf,buflen,flags)
+#endif
 #include <assert.h>
 #include <stdbool.h>
 #include <stdint.h>
