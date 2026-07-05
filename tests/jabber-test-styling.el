@@ -195,11 +195,11 @@
                     (if (listp face) face (list face)))))))
 
 (ert-deftest jabber-test-styling-apply-pre-block-face ()
-  "Pre block gets jabber-styling-pre-block face."
+  "The code body carries the block background face."
   (with-temp-buffer
-    (insert "```\ncode\n```\n")
+    (insert "```emacs-lisp\ncode\n```\n")
     (jabber-styling--apply-region (point-min) (point-max))
-    (goto-char 5) ;; inside code
+    (goto-char 16) ;; inside the code body
     (let ((face (get-text-property (point) 'face)))
       (should (memq 'jabber-styling-pre-block
                     (if (listp face) face (list face)))))))
@@ -307,6 +307,209 @@
     (should (equal 2 (length spans)))
     (should (eq 'jabber-styling-bold (nth 2 (nth 0 spans))))
     (should (eq 'jabber-styling-italic (nth 2 (nth 1 spans))))))
+
+;;; Group 8: jabber-styling--fence-lang
+
+(ert-deftest jabber-test-styling-fence-lang-simple ()
+  (should (equal "python" (jabber-styling--fence-lang "```python"))))
+
+(ert-deftest jabber-test-styling-fence-lang-none ()
+  (should-not (jabber-styling--fence-lang "```")))
+
+(ert-deftest jabber-test-styling-fence-lang-first-token ()
+  (should (equal "python" (jabber-styling--fence-lang "```python extra"))))
+
+(ert-deftest jabber-test-styling-fence-lang-downcase ()
+  (should (equal "elisp" (jabber-styling--fence-lang "```Elisp"))))
+
+;;; Group 9: jabber-styling--pre-block-parts
+
+(ert-deftest jabber-test-styling-pre-block-parts-basic ()
+  (should (equal '("elisp" 9 15)
+                 (jabber-styling--pre-block-parts "```elisp\n(foo)\n```"))))
+
+(ert-deftest jabber-test-styling-pre-block-parts-unterminated ()
+  "Unterminated blocks extend the code region to end of text."
+  (should (equal '("elisp" 9 14)
+                 (jabber-styling--pre-block-parts "```elisp\n(foo)"))))
+
+(ert-deftest jabber-test-styling-pre-block-parts-no-lang ()
+  (should (equal '(nil 4 6)
+                 (jabber-styling--pre-block-parts "```\nx\n```"))))
+
+(ert-deftest jabber-test-styling-pre-block-parts-empty-code ()
+  (should (equal '("elisp" 9 9)
+                 (jabber-styling--pre-block-parts "```elisp\n```"))))
+
+(ert-deftest jabber-test-styling-pre-block-parts-trailing-newline ()
+  "Closing fence line is excluded even with a trailing newline."
+  (should (equal '(nil 4 6)
+                 (jabber-styling--pre-block-parts "```\nx\n```\n"))))
+
+;;; Group 10: jabber-styling--lang-mode
+
+(ert-deftest jabber-test-styling-lang-mode-direct ()
+  (should (eq 'emacs-lisp-mode (jabber-styling--lang-mode "emacs-lisp"))))
+
+(ert-deftest jabber-test-styling-lang-mode-alias ()
+  "Aliases in jabber-styling-code-lang-modes resolve first."
+  (should (eq 'emacs-lisp-mode (jabber-styling--lang-mode "elisp"))))
+
+(ert-deftest jabber-test-styling-lang-mode-missing ()
+  (should-not (jabber-styling--lang-mode "nosuchlang")))
+
+(ert-deftest jabber-test-styling-lang-mode-nil ()
+  (should-not (jabber-styling--lang-mode nil)))
+
+(ert-deftest jabber-test-styling-lang-mode-remap ()
+  (let ((major-mode-remap-alist '((emacs-lisp-mode . lisp-interaction-mode))))
+    (should (eq 'lisp-interaction-mode
+                (jabber-styling--lang-mode "emacs-lisp")))))
+
+;;; Group 11: jabber-styling--fontify-code
+
+(defun jabber-test-styling--stretch-faces-at (offset stretches)
+  "Return faces from STRETCHES covering OFFSET, flattened to a list."
+  (cl-loop for (s e face) in stretches
+           when (and (<= s offset) (< offset e))
+           append (if (listp face) face (list face))))
+
+(ert-deftest jabber-test-styling-fontify-code-keyword ()
+  "The defun keyword gets font-lock-keyword-face."
+  (let ((stretches (jabber-styling--fontify-code "(defun f ())"
+                                                 'emacs-lisp-mode)))
+    (should (memq 'font-lock-keyword-face
+                  (jabber-test-styling--stretch-faces-at 1 stretches)))))
+
+(ert-deftest jabber-test-styling-fontify-code-string-face ()
+  (let ((stretches (jabber-styling--fontify-code "\"hi\"" 'emacs-lisp-mode)))
+    (should (memq 'font-lock-string-face
+                  (jabber-test-styling--stretch-faces-at 1 stretches)))))
+
+(ert-deftest jabber-test-styling-fontify-code-bounded ()
+  "All stretch offsets fall inside the code string."
+  (let* ((code "(defun f () \"doc\" nil)")
+         (stretches (jabber-styling--fontify-code code 'emacs-lisp-mode)))
+    (should stretches)
+    (dolist (stretch stretches)
+      (should (<= 0 (nth 0 stretch)))
+      (should (< (nth 0 stretch) (nth 1 stretch)))
+      (should (<= (nth 1 stretch) (length code))))))
+
+(ert-deftest jabber-test-styling-fontify-code-buffer-reused ()
+  "The per-mode work buffer persists and results are stable."
+  (let ((first (jabber-styling--fontify-code "(defun f ())" 'emacs-lisp-mode))
+        (second (jabber-styling--fontify-code "(defun f ())"
+                                              'emacs-lisp-mode)))
+    (should (buffer-live-p
+             (get-buffer " *jabber-styling-fontify:emacs-lisp-mode*")))
+    (should (equal first second))))
+
+;;; Group 12: code block fontification (integration)
+
+(defun jabber-test-styling--faces-at (pos)
+  "Return the face property at POS as a list."
+  (let ((face (get-text-property pos 'face)))
+    (if (listp face) face (list face))))
+
+(ert-deftest jabber-test-styling-apply-code-block ()
+  "Lang blocks fontify the body and tint it with the block bg.
+The mode's face wins (it precedes the bg), and the body is marked."
+  (with-temp-buffer
+    (insert "```emacs-lisp\n(defun f ())\n```")
+    (jabber-styling--apply-region (point-min) (point-max))
+    (let ((faces (jabber-test-styling--faces-at 16))) ; d of defun
+      (should (memq 'font-lock-keyword-face faces))
+      (should (memq 'jabber-styling-pre-block faces))
+      (should (< (seq-position faces 'font-lock-keyword-face)
+                 (seq-position faces 'jabber-styling-pre-block))))
+    (should (get-text-property 16 'jabber-styling-fontified))))
+
+(ert-deftest jabber-test-styling-pre-block-regions ()
+  "Fence lines get the fence face; the body gets the block bg.
+Neither face carries the other's, mirroring Org's src blocks."
+  (with-temp-buffer
+    (insert "```emacs-lisp\n(defun f ())\n```")
+    (jabber-styling--apply-region (point-min) (point-max))
+    ;; Fence lines: fence face, no block bg.
+    (dolist (pos '(2 5 29))
+      (should (memq 'jabber-styling-pre-block-fence
+                    (jabber-test-styling--faces-at pos)))
+      (should-not (memq 'jabber-styling-pre-block
+                        (jabber-test-styling--faces-at pos))))
+    ;; Body: block bg, no fence face.
+    (dolist (pos '(15 16 22 26))
+      (should (memq 'jabber-styling-pre-block
+                    (jabber-test-styling--faces-at pos)))
+      (should-not (memq 'jabber-styling-pre-block-fence
+                        (jabber-test-styling--faces-at pos))))))
+
+(ert-deftest jabber-test-styling-apply-code-block-unknown-lang ()
+  "Unknown languages: no native fontification, but the body still
+gets the block background and the fences the fence face."
+  (with-temp-buffer
+    (insert "```nosuchlang\nx\n```")
+    (jabber-styling--apply-region (point-min) (point-max))
+    (should (memq 'jabber-styling-pre-block-fence
+                  (jabber-test-styling--faces-at 2)))
+    (should (memq 'jabber-styling-pre-block (jabber-test-styling--faces-at 15)))
+    (should-not (text-property-any (point-min) (point-max)
+                                   'jabber-styling-fontified t))))
+
+(ert-deftest jabber-test-styling-apply-code-block-disabled ()
+  (with-temp-buffer
+    (insert "```emacs-lisp\n(defun f ())\n```")
+    (let ((jabber-styling-fontify-code-blocks nil))
+      (jabber-styling--apply-region (point-min) (point-max)))
+    (should-not (text-property-any (point-min) (point-max)
+                                   'jabber-styling-fontified t))))
+
+(ert-deftest jabber-test-styling-apply-code-block-max-size ()
+  "Oversized blocks get the background but no native fontification."
+  (with-temp-buffer
+    (insert "```emacs-lisp\n(defun f ())\n```")
+    (let ((jabber-styling-fontify-max-size 1))
+      (jabber-styling--apply-region (point-min) (point-max)))
+    (should-not (text-property-any (point-min) (point-max)
+                                   'jabber-styling-fontified t))))
+
+(ert-deftest jabber-test-styling-remove-code-fontification ()
+  "Removal clears native faces and the marker property."
+  (with-temp-buffer
+    (insert "```emacs-lisp\n(defun f ())\n```")
+    (jabber-styling--apply-region (point-min) (point-max))
+    (jabber-styling--remove-code-fontification (point-min) (point-max))
+    (should-not (memq 'font-lock-keyword-face
+                      (jabber-test-styling--faces-at 16)))
+    (should-not (text-property-any (point-min) (point-max)
+                                   'jabber-styling-fontified t))))
+
+(ert-deftest jabber-test-styling-code-block-clears-chat-face ()
+  "The body drops any preexisting chat face uniformly.
+Both a recognized and an unrecognized language lose the
+surrounding face, replaced by the block background."
+  (dolist (lang '("emacs-lisp" "nosuchlang"))
+    (with-temp-buffer
+      (insert "```" lang "\n")
+      (let ((code-start (point)))
+        (insert (propertize "xy" 'face 'jabber-chat-text-local) "\n```")
+        (jabber-styling--apply-region (point-min) (point-max))
+        (let ((faces (jabber-test-styling--faces-at code-start)))
+          (should-not (memq 'jabber-chat-text-local faces))
+          (should (memq 'jabber-styling-pre-block faces)))))))
+
+(ert-deftest jabber-test-styling-code-block-disabled-keeps-chat-face ()
+  "With fontification disabled the body keeps its chat face,
+still tinted by the block background."
+  (with-temp-buffer
+    (insert "```emacs-lisp\n")
+    (let ((code-start (point)))
+      (insert (propertize "xy" 'face 'jabber-chat-text-local) "\n```")
+      (let ((jabber-styling-fontify-code-blocks nil))
+        (jabber-styling--apply-region (point-min) (point-max)))
+      (let ((faces (jabber-test-styling--faces-at code-start)))
+        (should (memq 'jabber-chat-text-local faces))
+        (should (memq 'jabber-styling-pre-block faces))))))
 
 (provide 'jabber-test-styling)
 ;;; jabber-test-styling.el ends here

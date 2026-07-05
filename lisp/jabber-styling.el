@@ -27,6 +27,10 @@
 ;; _italic_, ~strikethrough~, `preformatted`, ```code blocks```, and
 ;; > block quotes.
 ;;
+;; Code blocks whose opening fence carries a language token
+;; (```lang) are fontified with that language's major mode, so the
+;; user's theme applies.  The token has no meaning per XEP-0393.
+;;
 ;; Message display area: a post-body printer in `jabber-chat-printers'
 ;; applies styling after `jabber-chat-print-body' inserts text.
 ;;
@@ -49,6 +53,29 @@
   "Whether to render XEP-0393 Message Styling in chat buffers."
   :type 'boolean)
 
+(defcustom jabber-styling-fontify-code-blocks t
+  "Whether to fontify ```lang code blocks with the language's major mode.
+When nil, or when no major mode matches the language token, the
+code between the fences still gets the block background but no
+native syntax highlighting."
+  :type 'boolean)
+
+(defcustom jabber-styling-code-lang-modes
+  '(("elisp" . emacs-lisp-mode) ("el" . emacs-lisp-mode)
+    ("shell" . sh-mode) ("bash" . sh-mode) ("sh" . sh-mode)
+    ("cpp" . c++-mode) ("c++" . c++-mode)
+    ("js" . js-mode))
+  "Alist mapping fence language tokens to major modes.
+Languages not listed here resolve as LANG-mode via `intern-soft'."
+  :type '(alist :key-type (string :tag "Language")
+                :value-type (function :tag "Major mode")))
+
+(defcustom jabber-styling-fontify-max-size 10000
+  "Maximum code block size in characters to fontify natively.
+Larger blocks still get the block background but no native syntax
+highlighting."
+  :type 'natnum)
+
 (defconst jabber-styling-xmlns "urn:xmpp:styling:0"
   "XEP-0393 Message Styling namespace.")
 
@@ -66,8 +93,18 @@
 (defface jabber-styling-pre '((t :inherit font-lock-constant-face))
   "Face for `preformatted` inline spans.")
 
-(defface jabber-styling-pre-block '((t :inherit font-lock-constant-face))
-  "Face for ```preformatted code blocks```.")
+(defface jabber-styling-pre-block '((t :inherit org-block :extend t))
+  "Background face for the body of a ```code block```.
+Appended beneath the language mode's own font-lock faces, exactly
+as `org-src-font-lock-fontify-block' applies `org-block': being a
+background face, it tints the block without overriding the code's
+foreground colors.  Inherits `org-block' so blocks match the
+user's Org theme; the inheritance is ignored when Org is not
+loaded.")
+
+(defface jabber-styling-pre-block-fence '((t :inherit org-block-begin-line :extend t))
+  "Face for the ``` fence lines delimiting a code block.
+Inherits `org-block-begin-line', mirroring Org's block delimiters.")
 
 (defface jabber-styling-quote '((t :inherit shadow))
   "Face for > block quotes.")
@@ -197,6 +234,98 @@ Return a list of (TYPE START END) triples where TYPE is one of
       (push (list 'pre pre-start len) blocks))
     (nreverse blocks)))
 
+(defun jabber-styling--fence-lang (line)
+  "Extract the language token from opening fence LINE.
+Return the downcased first whitespace-delimited token after ```,
+or nil if absent."
+  (and (string-match "\\````\\([^ \t\n]+\\)" line)
+       (downcase (match-string 1 line))))
+
+(defun jabber-styling--pre-block-parts (text)
+  "Decompose pre block TEXT into (LANG CODE-START CODE-END).
+TEXT is one block as delimited by `jabber-styling--parse-blocks'.
+LANG is the fence language token or nil.  CODE-START and CODE-END
+are offsets into TEXT delimiting the code lines, excluding both
+fence lines.  Unterminated blocks yield CODE-END = length of TEXT."
+  (let* ((len (length text))
+         (first-nl (cl-position ?\n text))
+         (code-start (if first-nl (1+ first-nl) len))
+         (body (if (and (> len 0) (eq (aref text (1- len)) ?\n))
+                   (substring text 0 (1- len))
+                 text))
+         (last-start (let ((nl (cl-position ?\n body :from-end t)))
+                       (if nl (1+ nl) 0)))
+         (code-end (if (eq (jabber-styling--classify-block
+                            (substring body last-start))
+                           'pre-close)
+                       (max code-start last-start)
+                     len)))
+    (list (jabber-styling--fence-lang (substring text 0 (or first-nl len)))
+          code-start code-end)))
+
+(defun jabber-styling--lang-mode (lang)
+  "Resolve LANG to a major mode function, or nil.
+Consults `jabber-styling-code-lang-modes', then LANG-mode via
+`intern-soft', remaps through `major-mode-remap-alist', and
+requires the result to be `fboundp'."
+  (and-let* ((lang)
+             (mode (or (cdr (assoc lang jabber-styling-code-lang-modes))
+                       (intern-soft (concat lang "-mode"))))
+             (mode (alist-get mode major-mode-remap-alist mode))
+             ((fboundp mode)))
+    mode))
+
+;;; Code block fontification
+
+(defun jabber-styling--fontification-buffer (mode)
+  "Return the persistent hidden fontification buffer for MODE.
+Created on first use."
+  (get-buffer-create (format " *jabber-styling-fontify:%s*" mode)))
+
+(defun jabber-styling--face-stretches (limit)
+  "Collect (START END FACE) triples from the current buffer.
+START and END are 0-based offsets clamped to LIMIT.  FACE is the
+non-nil face covering that stretch."
+  (let ((pos (point-min))
+        (stretches nil))
+    (while (< (1- pos) limit)
+      (let ((next (or (next-property-change pos) (point-max)))
+            ;; Some modes apply font-lock-face instead of face in
+            ;; buffers where font-lock-mode is off (the org-src gotcha).
+            (face (or (get-text-property pos 'face)
+                      (get-text-property pos 'font-lock-face))))
+        (when face
+          (push (list (1- pos) (min (1- next) limit) face) stretches))
+        (setq pos next)))
+    (nreverse stretches)))
+
+(defun jabber-styling--fontify-code (code mode)
+  "Fontify CODE string with major mode MODE.
+Return a list of (START END FACE) triples with 0-based offsets
+into CODE, computed in a hidden work buffer.  Return nil if MODE
+fails to initialize.
+
+Like `org-src-font-lock-fontify-block', MODE is run with its full
+hooks, so minor modes the user enables for that language --
+`rainbow-delimiters-mode' and the like -- also fontify the block.
+The buffer is reused per MODE, so the hooks run once."
+  (with-current-buffer (jabber-styling--fontification-buffer mode)
+    (erase-buffer)
+    ;; Trailing space guarantees a final property change boundary.
+    (insert code " ")
+    ;; Guard the whole path: running a mode's full hooks and its
+    ;; font-lock keywords can signal, and this feeds the chat printer.
+    (condition-case err
+        (progn
+          (unless (eq major-mode mode)
+            (funcall mode))
+          (font-lock-ensure)
+          (jabber-styling--face-stretches (length code)))
+      (error
+       (message "jabber-styling: %s fontification failed: %s"
+                mode (error-message-string err))
+       nil))))
+
 ;;; Application
 
 (defun jabber-styling--apply-spans (start line)
@@ -218,6 +347,25 @@ Per XEP-0393, the first leading whitespace after > MUST be trimmed."
         ""
       line)))
 
+(defun jabber-styling--apply-code-block (cbeg cend lang)
+  "Natively fontify the code region between CBEG and CEND for LANG.
+Resolves LANG to a major mode; when found and the region fits
+`jabber-styling-fontify-max-size', sets the mode's font-lock faces
+exactly, as `org-src-font-lock-fontify-block' does, and marks the
+region with the `jabber-styling-fontified' text property.  Return
+non-nil when faces were applied.  The caller clears the region
+first and supplies the block backdrop; this only sets mode faces."
+  (let ((mode (jabber-styling--lang-mode lang)))
+    (when (and mode
+               (<= (- cend cbeg) jabber-styling-fontify-max-size))
+      (let* ((code (buffer-substring-no-properties cbeg cend))
+             (stretches (jabber-styling--fontify-code code mode)))
+        (when stretches
+          (pcase-dolist (`(,s ,e ,face) stretches)
+            (put-text-property (+ cbeg s) (+ cbeg e) 'face face))
+          (put-text-property cbeg cend 'jabber-styling-fontified t)
+          t)))))
+
 (defun jabber-styling--apply-region (start end)
   "Apply XEP-0393 styling to text between START and END in current buffer."
   (let ((text (buffer-substring-no-properties start end)))
@@ -227,8 +375,32 @@ Per XEP-0393, the first leading whitespace after > MUST be trimmed."
             (bend (min (+ start (nth 2 block)) end)))
         (pcase type
           ('pre
-           (font-lock-prepend-text-property
-            bstart bend 'face 'jabber-styling-pre-block))
+           ;; org-src model: the ``` fence lines get the delimiter
+           ;; face; the body is fontified by its language mode with
+           ;; the block background appended beneath, so the tint never
+           ;; overrides the mode's foreground colors.
+           (pcase-let* ((`(,lang ,code-start ,code-end)
+                         (jabber-styling--pre-block-parts
+                          (buffer-substring-no-properties bstart bend)))
+                        (cbeg (+ bstart code-start))
+                        (cend (min (+ bstart code-end) bend)))
+             (when (< bstart cbeg)
+               (font-lock-prepend-text-property
+                bstart cbeg 'face 'jabber-styling-pre-block-fence))
+             (when (< cend bend)
+               (font-lock-prepend-text-property
+                cend bend 'face 'jabber-styling-pre-block-fence))
+             (when (< cbeg cend)
+               ;; When fontifying, clear the body to a clean slate
+               ;; first (org-src style) so every enabled block renders
+               ;; uniformly, whether or not the language resolves to a
+               ;; mode -- rather than only recognized languages losing
+               ;; the surrounding chat face.
+               (when jabber-styling-fontify-code-blocks
+                 (remove-text-properties cbeg cend '(face nil))
+                 (jabber-styling--apply-code-block cbeg cend lang))
+               (font-lock-append-text-property
+                cbeg cend 'face 'jabber-styling-pre-block))))
           ('quote
            (font-lock-prepend-text-property
             bstart bend 'face 'jabber-styling-quote)
@@ -244,7 +416,8 @@ Per XEP-0393, the first leading whitespace after > MUST be trimmed."
 
 (defconst jabber-styling--all-faces
   '(jabber-styling-bold jabber-styling-italic jabber-styling-strike
-			jabber-styling-pre jabber-styling-pre-block jabber-styling-quote)
+			jabber-styling-pre jabber-styling-pre-block
+			jabber-styling-pre-block-fence jabber-styling-quote)
   "All faces applied by XEP-0393 styling.")
 
 (defvar jabber-point-insert)            ; jabber-chatbuffer.el
@@ -272,6 +445,19 @@ Preserves all other face properties in the region."
               (put-text-property pos next 'face new-face))))
         (setq pos next)))))
 
+(defun jabber-styling--remove-code-fontification (beg end)
+  "Remove natively applied code faces between BEG and END.
+Clears the face property, plus the marker property, on stretches
+carrying `jabber-styling-fontified'."
+  (let ((pos beg))
+    (while (setq pos (text-property-any pos end 'jabber-styling-fontified t))
+      (let ((next (or (next-single-property-change
+                       pos 'jabber-styling-fontified nil end)
+                      end)))
+        (remove-text-properties
+         pos next '(face nil jabber-styling-fontified nil))
+        (setq pos next)))))
+
 (defun jabber-styling--fontify-compose (_beg end)
   "Apply XEP-0393 styling to the composition area.
 Called by jit-lock for the region _BEG to END.  Only operates on
@@ -286,6 +472,7 @@ multi-line constructs like pre blocks correctly."
       (when (and (< compose-beg compose-end)
                  (>= end compose-beg))
         (with-silent-modifications
+          (jabber-styling--remove-code-fontification compose-beg compose-end)
           (jabber-styling--remove-faces compose-beg compose-end)
           (jabber-styling--apply-region compose-beg compose-end))))))
 
