@@ -912,24 +912,28 @@ Returns a list of (URL . DESC) cons cells, or nil."
 
 (defun jabber-chat--fallback-offset (value)
   "Return VALUE as a non-negative integer, or nil."
-  (when (and (stringp value)
-             (string-match-p "\\`[0-9]+\\'" value))
-    (string-to-number value)))
+  (and (stringp value)
+       (string-match-p "\\`[0-9]+\\'" value)
+       (string-to-number value)))
 
 (defun jabber-chat--reply-fallback-range (xml-data)
   "Return the XEP-0461 fallback body range in XML-DATA.
-Return `all' when the fallback applies to the whole body."
+Return `all' when the fallback applies to the whole body: no <body/>
+child, or one without offsets (XEP-0428: missing start/end attributes
+mean the entire element; Dino emits bare <body/> for full quotes)."
   (when-let* ((fallback (jabber-xml-child-with-xmlns
                          xml-data jabber-chat--fallback-xmlns))
               ((eq (jabber-xml-node-name fallback) 'fallback))
               ((string= (jabber-xml-get-attribute fallback 'for)
                         jabber-chat--reply-xmlns)))
     (if-let* ((body (car (jabber-xml-get-children fallback 'body))))
-        (when-let* ((start (jabber-xml-get-attribute body 'start))
-                    (end (jabber-xml-get-attribute body 'end))
-                    (from (jabber-chat--fallback-offset start))
-                    (to (jabber-chat--fallback-offset end)))
-          (list from to))
+        (let ((start (jabber-xml-get-attribute body 'start))
+              (end (jabber-xml-get-attribute body 'end)))
+          (if (or start end)
+              (when-let* ((from (jabber-chat--fallback-offset start))
+                          (to (jabber-chat--fallback-offset end)))
+                (list from to))
+            'all))
       'all)))
 
 (defun jabber-chat--stanza-id-element (xml-data &optional expected-by)

@@ -232,6 +232,20 @@
          (plist (jabber-chat--msg-plist-from-stanza stanza)))
     (should (eq 'all (plist-get plist :fallback-range)))))
 
+(ert-deftest jabber-test-chat-plist-reply-fallback-range-bare-body-all ()
+  "A fallback <body/> without offsets covers the whole body."
+  (let* ((stanza '(message ((from . "alice@example.com/phone")
+                            (type . "chat"))
+                           (body () "> Alice:\n> Hello")
+                           (reply ((xmlns . "urn:xmpp:reply:0")
+                                   (to . "alice@example.com/phone")
+                                   (id . "orig-1")))
+                           (fallback ((xmlns . "urn:xmpp:fallback:0")
+                                      (for . "urn:xmpp:reply:0"))
+                                     (body ()))))
+         (plist (jabber-chat--msg-plist-from-stanza stanza)))
+    (should (eq 'all (plist-get plist :fallback-range)))))
+
 (ert-deftest jabber-test-chat-plist-reply-fallback-range-malformed-nil ()
   "Malformed fallback offsets yield a nil :fallback-range."
   (let* ((stanza '(message ((from . "alice@example.com/phone")
