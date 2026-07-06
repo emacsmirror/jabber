@@ -56,8 +56,8 @@
 (defvar-local jabber-message-reply--jid nil
   "JID of the original message author.")
 
-(defvar-local jabber-message-reply--fallback-length nil
-  "Character count of the fallback prefix in the composition area.")
+(defvar-local jabber-message-reply--fallback-text nil
+  "Fallback quote string inserted into the composition area.")
 
 ;;; Pure functions
 
@@ -85,14 +85,17 @@ In 1:1 chat, use :id.  Returns nil if unavailable."
 
 (defun jabber-message-reply--send-hook (body _id)
   "Add <reply> and <fallback> elements when replying to a message.
-BODY is the message text.  Clears reply state after producing elements."
+BODY is the message text.  Clears reply state after producing elements.
+The <fallback> range is emitted only when BODY still starts with the
+inserted quote: after an edit the advertised range would cover the
+user's own text, which receivers strip from display."
   (when jabber-message-reply--id
     (let ((reply-id jabber-message-reply--id)
           (reply-jid jabber-message-reply--jid)
-          (fb-len jabber-message-reply--fallback-length))
+          (fb-text jabber-message-reply--fallback-text))
       (setq jabber-message-reply--id nil
             jabber-message-reply--jid nil
-            jabber-message-reply--fallback-length nil)
+            jabber-message-reply--fallback-text nil)
       (let ((elements
              (list
               `(reply ((xmlns . ,jabber-message-reply-xmlns)
@@ -103,11 +106,12 @@ BODY is the message text.  Clears reply state after producing elements."
                        ,@(and reply-jid (not (string-empty-p reply-jid))
                               (list (cons 'to reply-jid)))
                        (id . ,reply-id))))))
-        (when (and fb-len (> fb-len 0) (<= fb-len (length body)))
+        (when (and fb-text (not (string-empty-p fb-text))
+                   (string-prefix-p fb-text body))
           (push `(fallback ((xmlns . ,jabber-message-reply-fallback-xmlns)
                             (for . ,jabber-message-reply-xmlns))
                            (body ((start . "0")
-                                  (end . ,(number-to-string fb-len)))))
+                                  (end . ,(number-to-string (length fb-text))))))
                 elements))
         elements))))
 
@@ -152,24 +156,29 @@ even when a draft is already present."
            (fallback (jabber-message-reply--build-fallback-text author body)))
       (setq jabber-message-reply--id id
             jabber-message-reply--jid (if (stringp jid) jid (format "%s" jid))
-            jabber-message-reply--fallback-length (length fallback))
+            jabber-message-reply--fallback-text fallback)
       (goto-char jabber-point-insert)
       (insert fallback)
       (message "Replying to %s (C-c C-k to cancel)" author))))
 
 ;;;###autoload
 (defun jabber-chat-cancel-reply ()
-  "Cancel the pending reply and remove fallback text."
+  "Cancel the pending reply and remove the inserted quote.
+The quote is deleted only while still intact at the start of the
+input area; edited input is left alone."
   (interactive)
   (when jabber-message-reply--id
-    (let ((fb-len jabber-message-reply--fallback-length))
+    (let ((fb-text jabber-message-reply--fallback-text))
       (setq jabber-message-reply--id nil
             jabber-message-reply--jid nil
-            jabber-message-reply--fallback-length nil)
-      (when (and fb-len (> fb-len 0))
-        (save-excursion
-          (goto-char jabber-point-insert)
-          (delete-char (min fb-len (- (point-max) (point)))))))
+            jabber-message-reply--fallback-text nil)
+      (when (and fb-text (not (string-empty-p fb-text)))
+        (let ((end (+ jabber-point-insert (length fb-text))))
+          (when (and (<= end (point-max))
+                     (string= fb-text
+                              (buffer-substring-no-properties
+                               jabber-point-insert end)))
+            (delete-region jabber-point-insert end)))))
     (message "Reply cancelled")))
 
 ;;; Disco

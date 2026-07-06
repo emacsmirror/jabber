@@ -68,7 +68,7 @@
   (with-temp-buffer
     (setq-local jabber-message-reply--id "orig-id-1")
     (setq-local jabber-message-reply--jid "alice@example.com")
-    (setq-local jabber-message-reply--fallback-length 20)
+    (setq-local jabber-message-reply--fallback-text "> Alice:\n> Hello\n")
     (let* ((body "> Alice:\n> Hello\nReply text here")
            (elements (jabber-message-reply--send-hook body "new-id")))
       ;; Should produce elements
@@ -80,7 +80,7 @@
       ;; State should be cleared
       (should-not jabber-message-reply--id)
       (should-not jabber-message-reply--jid)
-      (should-not jabber-message-reply--fallback-length))))
+      (should-not jabber-message-reply--fallback-text))))
 
 (ert-deftest jabber-test-message-reply-send-hook-nil-when-no-reply ()
   "Send hook returns nil when no reply state is set."
@@ -92,7 +92,7 @@
   (with-temp-buffer
     (setq-local jabber-message-reply--id "target-msg")
     (setq-local jabber-message-reply--jid "bob@example.com/phone")
-    (setq-local jabber-message-reply--fallback-length 15)
+    (setq-local jabber-message-reply--fallback-text "> Bob:\n> Hey\n")
     (let* ((elements (jabber-message-reply--send-hook
                       "> Bob:\n> Hey\nYes!" "new-msg"))
            (reply-el (cl-find 'reply elements :key #'car)))
@@ -102,16 +102,43 @@
         (should (equal "bob@example.com/phone" (cdr (assq 'to attrs))))
         (should (equal "target-msg" (cdr (assq 'id attrs))))))))
 
-(ert-deftest jabber-test-message-reply-send-hook-no-fallback-when-zero-length ()
-  "No fallback element when fallback-length is 0."
+(ert-deftest jabber-test-message-reply-send-hook-no-fallback-when-no-quote ()
+  "No fallback element when no quote text was inserted."
   (with-temp-buffer
     (setq-local jabber-message-reply--id "target-msg")
     (setq-local jabber-message-reply--jid "carol@example.com")
-    (setq-local jabber-message-reply--fallback-length 0)
+    (setq-local jabber-message-reply--fallback-text nil)
     (let ((elements (jabber-message-reply--send-hook "Just a reply" "new-msg")))
       (should elements)
       (should (cl-some (lambda (el) (eq (car el) 'reply)) elements))
       (should-not (cl-some (lambda (el) (eq (car el) 'fallback)) elements)))))
+
+(ert-deftest jabber-test-message-reply-send-hook-skips-fallback-when-edited ()
+  "An edited quote suppresses the fallback range but keeps the reply."
+  (with-temp-buffer
+    (setq-local jabber-message-reply--id "target-msg")
+    (setq-local jabber-message-reply--jid "alice@example.com")
+    (setq-local jabber-message-reply--fallback-text "> Alice:\n> Hello\n")
+    (let ((elements (jabber-message-reply--send-hook
+                     "> Alice: Hello (edited)\nmy reply" "new-msg")))
+      (should (cl-some (lambda (el) (eq (car el) 'reply)) elements))
+      (should-not (cl-some (lambda (el) (eq (car el) 'fallback)) elements)))))
+
+(ert-deftest jabber-test-message-reply-send-hook-fallback-range-matches-text ()
+  "Fallback end offset equals the quote's code point count."
+  (with-temp-buffer
+    (let ((fb "> Alice:\n> Hëllo\n"))
+      (setq-local jabber-message-reply--id "target-msg")
+      (setq-local jabber-message-reply--jid "alice@example.com")
+      (setq-local jabber-message-reply--fallback-text fb)
+      (let* ((elements (jabber-message-reply--send-hook
+                        (concat fb "my reply") "new-msg"))
+             (fb-el (cl-find 'fallback elements :key #'car))
+             (body-el (car (jabber-xml-get-children fb-el 'body))))
+        (should body-el)
+        (should (equal "0" (jabber-xml-get-attribute body-el 'start)))
+        (should (equal (number-to-string (length fb))
+                       (jabber-xml-get-attribute body-el 'end)))))))
 
 (ert-deftest jabber-test-message-reply-send-hook-omits-empty-to ()
   "Replying to our own message (no author JID) omits the `to' attribute.
@@ -119,7 +146,7 @@ A `to=\"\"' is an invalid JID and makes strict parsers drop the reply."
   (with-temp-buffer
     (setq-local jabber-message-reply--id "orig-id")
     (setq-local jabber-message-reply--jid "")
-    (setq-local jabber-message-reply--fallback-length 0)
+    (setq-local jabber-message-reply--fallback-text nil)
     (let* ((elements (jabber-message-reply--send-hook "Just a reply" "new-msg"))
            (reply-el (cl-find 'reply elements :key #'car))
            (attrs (cadr reply-el)))
@@ -137,7 +164,7 @@ the quoted prefix from the body that is actually sent."
            (jabber-chat-send-hooks (list #'jabber-message-reply--send-hook)))
       (setq-local jabber-message-reply--id "orig-1")
       (setq-local jabber-message-reply--jid "alice@example.com")
-      (setq-local jabber-message-reply--fallback-length (length fallback))
+      (setq-local jabber-message-reply--fallback-text fallback)
       (let ((stanza `(message ((to . "room@conf.example.com")
                                (type . "groupchat")
                                (id . "m1"))
@@ -252,8 +279,48 @@ The <fallback> range is start=0, so the quote must land at
               (quote (jabber-message-reply--build-fallback-text "alice" "Hello")))
           (should (string-prefix-p quote input))
           (should (string-suffix-p "my draft" input))
-          (should (= (length quote) jabber-message-reply--fallback-length))
+          (should (equal quote jabber-message-reply--fallback-text))
           (should (equal "orig-1" jabber-message-reply--id)))))))
+
+;;; Group 6: jabber-chat-cancel-reply
+
+(ert-deftest jabber-test-message-reply-cancel-removes-intact-quote ()
+  "Cancelling a reply deletes the still-intact quote from the input area."
+  (with-temp-buffer
+    (setq-local jabber-point-insert (point-marker))
+    (insert "> Alice:\n> Hello\nmy text")
+    (setq-local jabber-message-reply--id "orig-1")
+    (setq-local jabber-message-reply--jid "alice@example.com")
+    (setq-local jabber-message-reply--fallback-text "> Alice:\n> Hello\n")
+    (jabber-chat-cancel-reply)
+    (should (equal "my text" (buffer-string)))
+    (should-not jabber-message-reply--id)
+    (should-not jabber-message-reply--fallback-text)))
+
+(ert-deftest jabber-test-message-reply-cancel-keeps-edited-input ()
+  "Cancelling a reply leaves edited input untouched but clears state."
+  (with-temp-buffer
+    (setq-local jabber-point-insert (point-marker))
+    (insert "> Alice: edited quote\nmy text")
+    (setq-local jabber-message-reply--id "orig-1")
+    (setq-local jabber-message-reply--jid "alice@example.com")
+    (setq-local jabber-message-reply--fallback-text "> Alice:\n> Hello\n")
+    (jabber-chat-cancel-reply)
+    (should (equal "> Alice: edited quote\nmy text" (buffer-string)))
+    (should-not jabber-message-reply--id)
+    (should-not jabber-message-reply--fallback-text)))
+
+(ert-deftest jabber-test-message-reply-cancel-short-buffer-no-error ()
+  "Cancelling with input shorter than the quote does not error."
+  (with-temp-buffer
+    (setq-local jabber-point-insert (point-marker))
+    (insert "> A")
+    (setq-local jabber-message-reply--id "orig-1")
+    (setq-local jabber-message-reply--jid "alice@example.com")
+    (setq-local jabber-message-reply--fallback-text "> Alice:\n> Hello\n")
+    (jabber-chat-cancel-reply)
+    (should (equal "> A" (buffer-string)))
+    (should-not jabber-message-reply--id)))
 
 (provide 'jabber-test-message-reply)
 
