@@ -203,6 +203,42 @@ the quoted prefix from the body that is actually sent."
         (should (jabber-xml-child-with-xmlns stanza "urn:xmpp:reply:0"))
         (should (jabber-xml-child-with-xmlns stanza "urn:xmpp:fallback:0"))))))
 
+(ert-deftest jabber-test-message-reply-send-hook-inert-during-correction ()
+  "The send hook adds nothing and keeps its state during a correction."
+  (with-temp-buffer
+    (setq-local jabber-message-reply--id "orig-1")
+    (setq-local jabber-message-reply--jid "alice@example.com")
+    (setq-local jabber-message-reply--fallback-text "> Alice:\n> Hello\n")
+    (let ((jabber-chat--sending-correction t))
+      (should-not (jabber-message-reply--send-hook "corrected text" "c-1")))
+    (should (equal "orig-1" jabber-message-reply--id))
+    (should (equal "alice@example.com" jabber-message-reply--jid))))
+
+(ert-deftest jabber-test-message-reply-state-survives-correction-stanza ()
+  "A correction through the hook runner leaves the pending reply intact."
+  (with-temp-buffer
+    (let ((jabber-chat-send-hooks (list #'jabber-message-reply--send-hook)))
+      (setq-local jabber-message-reply--id "orig-1")
+      (setq-local jabber-message-reply--jid "alice@example.com")
+      (setq-local jabber-message-reply--fallback-text nil)
+      (let ((correction `(message ((to . "bob@example.com")
+                                   (type . "chat")
+                                   (id . "c-1"))
+                                  (body () "fixed")
+                                  (replace ((id . "old-1")
+                                            (xmlns . "urn:xmpp:message-correct:0"))))))
+        (jabber-chat--run-send-hooks correction "fixed" "c-1")
+        (should-not (jabber-xml-child-with-xmlns correction "urn:xmpp:reply:0"))
+        (should (equal "orig-1" jabber-message-reply--id)))
+      ;; The next plain message still becomes the reply.
+      (let ((stanza `(message ((to . "bob@example.com")
+                               (type . "chat")
+                               (id . "m-2"))
+                              (body () "the actual reply"))))
+        (jabber-chat--run-send-hooks stanza "the actual reply" "m-2")
+        (should (jabber-xml-child-with-xmlns stanza "urn:xmpp:reply:0"))
+        (should-not jabber-message-reply--id)))))
+
 ;;; Group 4: incoming fallback parsing
 
 (ert-deftest jabber-test-message-reply-keeps-incoming-fallback ()

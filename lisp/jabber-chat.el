@@ -208,15 +208,24 @@ message.
 The functions should return a list of XML nodes they want to be
 added to the outgoing message.")
 
+(defvar jabber-chat--sending-correction nil
+  "Non-nil while send hooks run for an XEP-0308 correction stanza.
+Hooks holding state for the next composed message (e.g. pending
+reply data) should stay inert instead of consuming it.")
+
 (defun jabber-chat--run-send-hooks (stanza body id)
   "Run `jabber-chat-send-hooks' and nconc results onto STANZA.
 BODY and ID are passed to each hook function."
-  (dolist (hook jabber-chat-send-hooks)
-    (if (eq hook t)
-        (when (local-variable-p 'jabber-chat-send-hooks)
-          (dolist (global-hook (default-value 'jabber-chat-send-hooks))
-            (nconc stanza (funcall global-hook body id))))
-      (nconc stanza (funcall hook body id)))))
+  (let ((jabber-chat--sending-correction
+         (and (jabber-xml-child-with-xmlns
+               stanza "urn:xmpp:message-correct:0")
+              t)))
+    (dolist (hook jabber-chat-send-hooks)
+      (if (eq hook t)
+          (when (local-variable-p 'jabber-chat-send-hooks)
+            (dolist (global-hook (default-value 'jabber-chat-send-hooks))
+              (nconc stanza (funcall global-hook body id))))
+        (nconc stanza (funcall hook body id))))))
 
 ;; Global reference declarations
 

@@ -107,8 +107,11 @@ In 1:1 chat, use :id.  Returns nil if unavailable."
 BODY is the message text.  Clears reply state after producing elements.
 The <fallback> range is emitted only when BODY still starts with the
 inserted quote: after an edit the advertised range would cover the
-user's own text, which receivers strip from display."
-  (when jabber-message-reply--id
+user's own text, which receivers strip from display.
+Stays inert during corrections: the pending reply belongs to the
+message being composed, not to a re-sent old one."
+  (when (and jabber-message-reply--id
+             (not (bound-and-true-p jabber-chat--sending-correction)))
     (let ((reply-id jabber-message-reply--id)
           (reply-jid jabber-message-reply--jid)
           (fb-text jabber-message-reply--fallback-text))
