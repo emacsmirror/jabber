@@ -41,6 +41,7 @@
 (require 'jabber-muc)
 (require 'jabber-db)
 (require 'jabber-disco)
+(require 'jabber-message-reply)
 
 (defconst jabber-message-correct-xmlns "urn:xmpp:message-correct:0"
   "XML namespace for XEP-0308 Last Message Correction.")
@@ -123,7 +124,7 @@ dropped.  Returns non-nil when the correction was accepted."
 ;;; Find last sent message (pure)
 
 (defun jabber-message-correct--find-last-sent (ewoc)
-  "Return (NODE ID BODY) for the last sent message in EWOC, or nil."
+  "Return (NODE ID BODY MSG) for the last sent message in EWOC, or nil."
   (let (result (node (ewoc-nth ewoc -1)))
     (while (and node (not result))
       (pcase-let ((`(,type ,msg) (ewoc-data node)))
@@ -132,7 +133,8 @@ dropped.  Returns non-nil when the correction was accepted."
                    (plist-get msg :id))
           (setq result (list node
                              (plist-get msg :id)
-                             (or (plist-get msg :body) "")))))
+                             (or (plist-get msg :body) "")
+                             msg))))
       (setq node (ewoc-prev ewoc node)))
     result))
 
@@ -159,23 +161,29 @@ dropped.  Returns non-nil when the correction was accepted."
 
 (defun jabber-correct-last-message ()
   "Correct the last sent message in this chat buffer.
-Prompts with the existing body pre-filled."
+Prompts with the existing body pre-filled.  When the corrected
+message is a reply, re-attach its <reply> element: per XEP-0308 the
+correction replaces the whole message, XEP-0461 linkage included."
   (interactive)
   (pcase (jabber-message-correct--find-last-sent jabber-chat-ewoc)
     ('nil (user-error "No sent message found to correct"))
-    (`(,node ,id ,body)
+    (`(,node ,id ,body ,msg)
      (let ((new-body (read-string "Correction: " body)))
        (when (string= new-body body)
          (user-error "No change"))
-       (jabber-message-correct--update-ewoc jabber-chat-ewoc node new-body)
-       (jabber-db-correct-message id new-body)
-       (let ((replace-el (jabber-message-correct--replace-element id))
-             (muc-p (bound-and-true-p jabber-group)))
-         (if muc-p
-             (jabber-muc-send jabber-buffer-connection new-body
-                              (list replace-el))
-           (jabber-chat-send jabber-buffer-connection new-body
-                             (list replace-el))))))))
+       (let* ((fb-len (jabber-message-reply--correction-fallback-length
+                       msg new-body))
+              (reply-els (and-let* ((reply-id (plist-get msg :reply-to-id)))
+                           (jabber-message-reply--elements
+                            reply-id (plist-get msg :reply-to-jid) fb-len))))
+         (plist-put msg :fallback-range (and fb-len (list 0 fb-len)))
+         (jabber-message-correct--update-ewoc jabber-chat-ewoc node new-body)
+         (jabber-db-correct-message id new-body)
+         (let ((extra (cons (jabber-message-correct--replace-element id)
+                            reply-els)))
+           (if (bound-and-true-p jabber-group)
+               (jabber-muc-send jabber-buffer-connection new-body extra)
+             (jabber-chat-send jabber-buffer-connection new-body extra))))))))
 
 (provide 'jabber-message-correct)
 ;;; jabber-message-correct.el ends here

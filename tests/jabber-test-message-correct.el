@@ -667,6 +667,101 @@ XEP-0425 retraction takes precedence over XEP-0308 edit display."
         (should (string-match-p "retracted" text))
         (should-not (string-match-p "(edited)" text))))))
 
+;;; Group 10: reply re-attachment on correction
+
+(ert-deftest jabber-test-message-correct-find-last-sent-returns-msg ()
+  "find-last-sent returns the msg plist as fourth element."
+  (jabber-test-message-correct-with-ewoc
+    (let ((msg (list :id "m-1" :body "hello" :timestamp (current-time))))
+      (jabber-chat-ewoc-enter (list :local msg))
+      (pcase-let ((`(,_node ,id ,body ,found)
+                   (jabber-message-correct--find-last-sent jabber-chat-ewoc)))
+        (should (equal "m-1" id))
+        (should (equal "hello" body))
+        (should (eq msg found))))))
+
+(ert-deftest jabber-test-message-correct-reattaches-reply ()
+  "Correcting a reply re-attaches the reply and fallback elements."
+  (jabber-test-message-correct-with-ewoc
+    (setq-local jabber-group nil)
+    (setq-local jabber-chatting-with "alice@example.com")
+    (setq-local jabber-buffer-connection 'fake-jc)
+    (let ((msg (list :id "r-1"
+                     :from "me@example.com"
+                     :body "> alice:\n> hi\nanswer"
+                     :reply-to-id "orig-1"
+                     :reply-to-jid "alice@example.com/phone"
+                     :fallback-range '(0 14)
+                     :timestamp (current-time))))
+      (jabber-chat-ewoc-enter (list :local msg)))
+    (let (sent)
+      (cl-letf (((symbol-function 'jabber-send-sexp)
+                 (lambda (_jc stanza) (setq sent stanza)))
+                ((symbol-function 'read-string)
+                 (lambda (&rest _) "> alice:\n> hi\nbetter answer"))
+                ((symbol-function 'jabber-db-correct-message) #'ignore))
+        (jabber-correct-last-message))
+      (should (jabber-xml-child-with-xmlns sent "urn:xmpp:message-correct:0"))
+      (let ((reply-el (jabber-xml-child-with-xmlns sent "urn:xmpp:reply:0")))
+        (should reply-el)
+        (should (equal "orig-1" (jabber-xml-get-attribute reply-el 'id)))
+        (should (equal "alice@example.com/phone"
+                       (jabber-xml-get-attribute reply-el 'to))))
+      (let ((fb-el (jabber-xml-child-with-xmlns sent "urn:xmpp:fallback:0")))
+        (should fb-el)
+        (should (equal "14" (jabber-xml-get-attribute
+                             (car (jabber-xml-get-children fb-el 'body))
+                             'end)))))))
+
+(ert-deftest jabber-test-message-correct-drops-stale-fallback ()
+  "Editing the quote away keeps the reply element but drops the range."
+  (jabber-test-message-correct-with-ewoc
+    (setq-local jabber-group nil)
+    (setq-local jabber-chatting-with "alice@example.com")
+    (setq-local jabber-buffer-connection 'fake-jc)
+    (let ((msg (list :id "r-2"
+                     :from "me@example.com"
+                     :body "> alice:\n> hi\nanswer"
+                     :reply-to-id "orig-1"
+                     :reply-to-jid "alice@example.com/phone"
+                     :fallback-range '(0 14)
+                     :timestamp (current-time))))
+      (jabber-chat-ewoc-enter (list :local msg)))
+    (let (sent)
+      (cl-letf (((symbol-function 'jabber-send-sexp)
+                 (lambda (_jc stanza) (setq sent stanza)))
+                ((symbol-function 'read-string)
+                 (lambda (&rest _) "answer without quote"))
+                ((symbol-function 'jabber-db-correct-message) #'ignore))
+        (jabber-correct-last-message))
+      (should (jabber-xml-child-with-xmlns sent "urn:xmpp:reply:0"))
+      (should-not (jabber-xml-child-with-xmlns sent "urn:xmpp:fallback:0"))
+      (let* ((node (jabber-chat-ewoc-find-by-id "r-2"))
+             (msg (cadr (ewoc-data node))))
+        (should-not (plist-get msg :fallback-range))))))
+
+(ert-deftest jabber-test-message-correct-non-reply-adds-no-reply-element ()
+  "Correcting a plain message adds no reply or fallback elements."
+  (jabber-test-message-correct-with-ewoc
+    (setq-local jabber-group nil)
+    (setq-local jabber-chatting-with "alice@example.com")
+    (setq-local jabber-buffer-connection 'fake-jc)
+    (let ((msg (list :id "p-1"
+                     :from "me@example.com"
+                     :body "plain"
+                     :timestamp (current-time))))
+      (jabber-chat-ewoc-enter (list :local msg)))
+    (let (sent)
+      (cl-letf (((symbol-function 'jabber-send-sexp)
+                 (lambda (_jc stanza) (setq sent stanza)))
+                ((symbol-function 'read-string)
+                 (lambda (&rest _) "plain fixed"))
+                ((symbol-function 'jabber-db-correct-message) #'ignore))
+        (jabber-correct-last-message))
+      (should (jabber-xml-child-with-xmlns sent "urn:xmpp:message-correct:0"))
+      (should-not (jabber-xml-child-with-xmlns sent "urn:xmpp:reply:0"))
+      (should-not (jabber-xml-child-with-xmlns sent "urn:xmpp:fallback:0")))))
+
 (provide 'jabber-test-message-correct)
 
 ;;; jabber-test-message-correct.el ends here

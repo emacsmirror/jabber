@@ -203,6 +203,32 @@ the quoted prefix from the body that is actually sent."
         (should (jabber-xml-child-with-xmlns stanza "urn:xmpp:reply:0"))
         (should (jabber-xml-child-with-xmlns stanza "urn:xmpp:fallback:0"))))))
 
+(ert-deftest jabber-test-message-reply-elements-builder ()
+  "The elements builder emits reply with optional to and fallback."
+  (let* ((els (jabber-message-reply--elements "id-1" "alice@example.com" 10))
+         (reply-el (cl-find 'reply els :key #'car))
+         (fb-el (cl-find 'fallback els :key #'car)))
+    (should (equal "alice@example.com" (cdr (assq 'to (cadr reply-el)))))
+    (should (equal "id-1" (cdr (assq 'id (cadr reply-el)))))
+    (should fb-el)
+    (should (equal "10" (jabber-xml-get-attribute
+                         (car (jabber-xml-get-children fb-el 'body))
+                         'end))))
+  (let* ((els (jabber-message-reply--elements "id-2" nil nil))
+         (reply-el (cl-find 'reply els :key #'car)))
+    (should-not (assq 'to (cadr reply-el)))
+    (should-not (cl-find 'fallback els :key #'car))))
+
+(ert-deftest jabber-test-message-reply-correction-fallback-length ()
+  "Quote length is kept only while the corrected body starts with it."
+  (let ((msg (list :body "> a:\n> hi\nanswer"
+                   :fallback-range '(0 10)
+                   :reply-to-id "orig")))
+    (should (= 10 (jabber-message-reply--correction-fallback-length
+                   msg "> a:\n> hi\nbetter answer")))
+    (should-not (jabber-message-reply--correction-fallback-length
+                 msg "answer without quote"))))
+
 (ert-deftest jabber-test-message-reply-send-hook-inert-during-correction ()
   "The send hook adds nothing and keeps its state during a correction."
   (with-temp-buffer

@@ -92,6 +92,48 @@ Quoting a reply must not re-quote its own quote."
        body))
     (_ body)))
 
+(defun jabber-message-reply--elements (reply-id reply-jid fb-len)
+  "Return <reply> (and <fallback>) elements for an outgoing message.
+REPLY-ID is the referenced message id.  REPLY-JID is the author JID;
+nil or empty omits the `to' attribute (a SHOULD, not a MUST, and
+strict parsers reject to=\"\" and drop the whole reply element).
+FB-LEN, when non-nil, is the code point length of the leading
+fallback quote in the outgoing body."
+  (let ((elements
+         (list
+          `(reply ((xmlns . ,jabber-message-reply-xmlns)
+                   ,@(and reply-jid (not (string-empty-p reply-jid))
+                          (list (cons 'to reply-jid)))
+                   (id . ,reply-id))))))
+    (when fb-len
+      (push `(fallback ((xmlns . ,jabber-message-reply-fallback-xmlns)
+                        (for . ,jabber-message-reply-xmlns))
+                       (body ((start . "0")
+                              (end . ,(number-to-string fb-len)))))
+            elements))
+    elements))
+
+(defun jabber-message-reply--fallback-string (msg)
+  "Return MSG's own leading fallback quote text, or nil.
+Only ranges starting at offset 0 (as produced by `jabber-chat-reply')
+are useful for re-attaching on a correction."
+  (let ((body (plist-get msg :body)))
+    (and (stringp body)
+         (pcase (plist-get msg :fallback-range)
+           ('all body)
+           (`(0 ,end)
+            (and (integerp end) (<= end (length body))
+                 (substring body 0 end)))))))
+
+(defun jabber-message-reply--correction-fallback-length (msg new-body)
+  "Return the length of MSG's quote when NEW-BODY still starts with it.
+Nil when the quote was edited away, so a correction must not
+advertise a stale <fallback> range."
+  (and-let* ((old-fb (jabber-message-reply--fallback-string msg))
+             ((not (string-empty-p old-fb)))
+             ((string-prefix-p old-fb new-body)))
+    (length old-fb)))
+
 (defun jabber-message-reply--select-id (msg muc-p)
   "Select the appropriate message ID from MSG for a reply.
 In MUC (when MUC-P is non-nil), use :server-id only.
@@ -118,24 +160,11 @@ message being composed, not to a re-sent old one."
       (setq jabber-message-reply--id nil
             jabber-message-reply--jid nil
             jabber-message-reply--fallback-text nil)
-      (let ((elements
-             (list
-              `(reply ((xmlns . ,jabber-message-reply-xmlns)
-                       ;; `to' is SHOULD, not MUST (XEP-0461).  Omit it
-                       ;; rather than send to="" when replying to our own
-                       ;; message (no author JID): strict parsers reject an
-                       ;; empty JID and drop the whole reply element.
-                       ,@(and reply-jid (not (string-empty-p reply-jid))
-                              (list (cons 'to reply-jid)))
-                       (id . ,reply-id))))))
-        (when (and fb-text (not (string-empty-p fb-text))
-                   (string-prefix-p fb-text body))
-          (push `(fallback ((xmlns . ,jabber-message-reply-fallback-xmlns)
-                            (for . ,jabber-message-reply-xmlns))
-                           (body ((start . "0")
-                                  (end . ,(number-to-string (length fb-text))))))
-                elements))
-        elements))))
+      (jabber-message-reply--elements
+       reply-id reply-jid
+       (and fb-text (not (string-empty-p fb-text))
+            (string-prefix-p fb-text body)
+            (length fb-text))))))
 
 (add-hook 'jabber-chat-send-hooks #'jabber-message-reply--send-hook)
 
