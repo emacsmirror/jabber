@@ -552,6 +552,7 @@ Uses `jabber-chat-pp' so status indicators are actually rendered."
                       :from "alice@example.com/phone"
                       :reply-to-id "orig-1"
                       :reply-to-jid "alice@example.com/phone"
+                      :fallback-range '(0 20)
                       :timestamp (current-time)))
            (node (jabber-chat-ewoc-enter (list :foreign msg))))
       (should node)
@@ -567,11 +568,53 @@ Uses `jabber-chat-pp' so status indicators are actually rendered."
                       :from "room@conf.example.com/bob"
                       :reply-to-id "server-orig-1"
                       :reply-to-jid "room@conf.example.com/alice"
+                      :fallback-range '(0 20)
                       :timestamp (current-time)))
            (node (jabber-chat-ewoc-enter (list :muc-foreign msg))))
       (should node)
       (let ((text (buffer-string)))
         (should (string-match-p "> alice:\n> original\nanswer" text))
+        (should-not (string-match-p "reply to " text))))))
+
+(ert-deftest jabber-test-chatbuffer-reply-without-fallback-shows-label ()
+  "A reply carrying no fallback quote renders a compact context label."
+  (jabber-test-chatbuffer-with-rendering-ewoc
+    (let* ((msg (list :id "reply-3"
+                      :body "answer"
+                      :from "alice@example.com/phone"
+                      :reply-to-id "orig-1"
+                      :reply-to-jid "alice@example.com/phone"
+                      :timestamp (current-time)))
+           (node (jabber-chat-ewoc-enter (list :foreign msg))))
+      (should node)
+      (should (string-match-p "reply to alice@example.com" (buffer-string))))))
+
+(ert-deftest jabber-test-chatbuffer-reply-without-fallback-muc-label-uses-nick ()
+  "The MUC context label shows the occupant nick, not the room."
+  (jabber-test-chatbuffer-with-rendering-ewoc
+    (cl-letf (((symbol-function 'jabber-muc-sender-p) (lambda (_jid) t)))
+      (let* ((msg (list :id "reply-4"
+                        :body "answer"
+                        :from "room@conf.example.com/bob"
+                        :reply-to-id "server-orig-1"
+                        :reply-to-jid "room@conf.example.com/alice"
+                        :timestamp (current-time)))
+             (node (jabber-chat-ewoc-enter (list :muc-foreign msg))))
+        (should node)
+        (should (string-match-p "reply to alice\n" (buffer-string)))))))
+
+(ert-deftest jabber-test-chatbuffer-reply-without-jid-shows-bare-label ()
+  "A reply with no author JID still gets a bare context label."
+  (jabber-test-chatbuffer-with-rendering-ewoc
+    (let* ((msg (list :id "reply-5"
+                      :body "answer"
+                      :from "alice@example.com/phone"
+                      :reply-to-id "orig-1"
+                      :timestamp (current-time)))
+           (node (jabber-chat-ewoc-enter (list :foreign msg))))
+      (should node)
+      (let ((text (buffer-string)))
+        (should (string-match-p "reply\n" text))
         (should-not (string-match-p "reply to " text))))))
 
 (ert-deftest jabber-test-chatbuffer-status-sending-to-sent ()
