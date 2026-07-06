@@ -1909,6 +1909,38 @@ VALUES (1, 'friend@example.com', '👍', 1001)")
     (should (= 0 (caar (sqlite-select jabber-db--connection
                          "SELECT count(*) FROM message_reaction_actor"))))))
 
+;;; Group: stanza-id extraction for storage
+
+(ert-deftest jabber-test-db-stanza-id-element-validates-by ()
+  "Only a stanza-id (not origin-id) with the expected by is returned."
+  (let ((stanza '(message ((from . "room@conf.example.com/alice")
+                           (type . "groupchat"))
+                          (body () "hi")
+                          (origin-id ((xmlns . "urn:xmpp:sid:0")
+                                      (id . "origin-1")))
+                          (stanza-id ((xmlns . "urn:xmpp:sid:0")
+                                      (id . "spoofed-1")
+                                      (by . "attacker@evil.example")))
+                          (stanza-id ((xmlns . "urn:xmpp:sid:0")
+                                      (id . "server-1")
+                                      (by . "room@conf.example.com"))))))
+    (let ((el (jabber-db--stanza-id-element stanza "room@conf.example.com")))
+      (should (equal "server-1" (jabber-xml-get-attribute el 'id))))
+    (should-not (jabber-db--stanza-id-element stanza "me@example.com"))))
+
+(ert-deftest jabber-test-db-stanza-id-element-skips-origin-id ()
+  "An origin-id preceding the stanza-id does not mask it."
+  (let ((stanza '(message ((from . "alice@example.com/phone")
+                           (type . "chat"))
+                          (body () "hi")
+                          (origin-id ((xmlns . "urn:xmpp:sid:0")
+                                      (id . "origin-1")))
+                          (stanza-id ((xmlns . "urn:xmpp:sid:0")
+                                      (id . "archive-1")
+                                      (by . "me@example.com"))))))
+    (let ((el (jabber-db--stanza-id-element stanza "me@example.com")))
+      (should (equal "archive-1" (jabber-xml-get-attribute el 'id))))))
+
 (provide 'jabber-test-db)
 
 ;;; jabber-test-db.el ends here

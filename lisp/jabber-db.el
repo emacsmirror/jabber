@@ -1054,6 +1054,19 @@ Returns a list of (URL . DESC) cons cells, or nil."
             (push (cons url desc) entries)))))
     (nreverse entries)))
 
+(defun jabber-db--stanza-id-element (xml-data expected-by)
+  "Return the <stanza-id/> child of XML-DATA whose `by' is EXPECTED-BY.
+Matching on the node name matters: <origin-id/> shares the
+urn:xmpp:sid:0 namespace, and occupants can inject stanza-id
+elements with arbitrary `by' values."
+  (seq-find
+   (lambda (child)
+     (and (eq (jabber-xml-node-name child) 'stanza-id)
+          (string= (jabber-xml-get-xmlns child) "urn:xmpp:sid:0")
+          (jabber-xml-get-attribute child 'id)
+          (equal (jabber-xml-get-attribute child 'by) expected-by)))
+   (jabber-xml-node-children xml-data)))
+
 (defun jabber-db--message-handler (jc xml-data)
   "Store incoming message in the database.
 JC is the Jabber connection.
@@ -1069,15 +1082,15 @@ XML-DATA is the parsed stanza."
            (type (jabber-xml-get-attribute xml-data 'type))
            (stanza-id (jabber-xml-get-attribute xml-data 'id))
            (server-id
-            (when-let* ((sid-el (jabber-xml-child-with-xmlns
-                                 xml-data "urn:xmpp:sid:0"))
-                        (by (jabber-xml-get-attribute sid-el 'by))
-                        ;; Trust stanza-id from our bare JID (1:1)
-                        ;; or from a room we've joined (MUC).
-                        ((or (string= by (jabber-connection-bare-jid jc))
-                             (and (string= type "groupchat")
-                                  (jabber-muc-joined-p
-                                   (jabber-jid-user from))))))
+            ;; Trust only the stanza-id assigned by our own server
+            ;; (1:1) or by a joined room itself (MUC).
+            (when-let* ((expected-by
+                         (if (string= type "groupchat")
+                             (and (jabber-muc-joined-p (jabber-jid-user from))
+                                  (jabber-jid-user from))
+                           (jabber-connection-bare-jid jc)))
+                        (sid-el (jabber-db--stanza-id-element
+                                 xml-data expected-by)))
               (jabber-xml-get-attribute sid-el 'id)))
            (oob-entries (jabber-db--extract-oob-entries xml-data))
            (encrypted (jabber-xml-encrypted-p xml-data)))
