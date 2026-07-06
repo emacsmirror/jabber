@@ -598,5 +598,51 @@ Clears OMEMO in-memory caches and tears down on exit."
             (jabber-omemo--decrypt-stanza 'fake-jc xml-data parsed)
             (should-not publish-called)))))))
 
+;;; Group 14: MUC send hook buffer
+
+(defmacro jabber-test-omemo-message--with-muc-send-stubs (sent-var &rest body)
+  "Run BODY with the MUC encrypt/send path stubbed.
+SENT-VAR is bound to the stanza passed to `jabber-send-sexp'."
+  (declare (indent 1) (debug t))
+  `(let ((,sent-var nil))
+     (cl-letf (((symbol-function 'jabber-omemo-encrypt-message)
+                (lambda (_plaintext) '(:iv "iv" :key "key" :payload "payload")))
+               ((symbol-function 'jabber-omemo--build-encrypted-xml)
+                (lambda (_jc _sessions _enc)
+                  '(encrypted ((xmlns . "eu.siacs.conversations.axolotl")))))
+               ((symbol-function 'jabber-send-sexp)
+                (lambda (_jc stanza) (setq ,sent-var stanza))))
+       ,@body)))
+
+(ert-deftest jabber-test-omemo-message-muc-send-hooks-run-in-buffer ()
+  "MUC send hooks run in the originating buffer, not the IQ callback's."
+  (let* ((muc-buffer (generate-new-buffer "*test-omemo-muc*"))
+         (hook-buffer nil)
+         (jabber-chat-send-hooks
+          (list (lambda (_body _id)
+                  (setq hook-buffer (current-buffer))
+                  '((probe ((xmlns . "test:probe"))))))))
+    (unwind-protect
+        (jabber-test-omemo-message--with-muc-send-stubs sent
+          (with-temp-buffer
+            (jabber-omemo--send-encrypted-muc
+             'fake-jc "hello" "room@conf.example.com" nil muc-buffer))
+          (should (eq hook-buffer muc-buffer))
+          (should sent)
+          (should (jabber-xml-get-children sent 'probe)))
+      (kill-buffer muc-buffer))))
+
+(ert-deftest jabber-test-omemo-message-muc-send-dead-buffer-still-sends ()
+  "A dead originating buffer skips send hooks but the stanza still goes out."
+  (let* ((muc-buffer (generate-new-buffer "*test-omemo-muc*"))
+         (jabber-chat-send-hooks
+          (list (lambda (_body _id) '((probe ((xmlns . "test:probe"))))))))
+    (kill-buffer muc-buffer)
+    (jabber-test-omemo-message--with-muc-send-stubs sent
+      (jabber-omemo--send-encrypted-muc
+       'fake-jc "hello" "room@conf.example.com" nil muc-buffer)
+      (should sent)
+      (should-not (jabber-xml-get-children sent 'probe)))))
+
 (provide 'jabber-test-omemo-message)
 ;;; jabber-test-omemo-message.el ends here

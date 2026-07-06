@@ -1252,15 +1252,10 @@ stanza outside the encryption envelope."
                            ,@extra-elements)))
     (when (buffer-live-p buffer)
       (with-current-buffer buffer
-        ;; Inline hook loop instead of jabber-chat--run-send-hooks:
-        ;; this runs from an async IQ callback where current buffer
-        ;; is not the chat buffer, so we need with-current-buffer.
-        (dolist (hook jabber-chat-send-hooks)
-          (if (eq hook t)
-              (when (local-variable-p 'jabber-chat-send-hooks)
-                (dolist (global-hook (default-value 'jabber-chat-send-hooks))
-                  (nconc stanza (funcall global-hook body id))))
-            (nconc stanza (funcall hook body id))))
+        ;; This runs from an async IQ callback where current buffer
+        ;; is not the chat buffer; the send hooks read buffer-local
+        ;; state, so restore the chat buffer first.
+        (jabber-chat--run-send-hooks stanza body id)
         (if node
             (progn
               (plist-put (cadr (ewoc-data node)) :status :sent)
@@ -1302,15 +1297,16 @@ envelope."
               (jabber-omemo--send-encrypted-muc
                jc body group
                (append all-sessions own-sessions)
-               extra-elements)))))))))
+               buffer extra-elements)))))))))
 
 (defun jabber-omemo--send-encrypted-muc (jc body group all-sessions
-                                            &optional extra-elements)
+                                            &optional buffer extra-elements)
   "Build and send an OMEMO-encrypted MUC stanza.
 JC is the connection.  BODY is the plaintext.  GROUP is the room JID.
 ALL-SESSIONS is a list of (DEVICE-ID . SESSION-PTR) for all
-participants plus own other devices.  EXTRA-ELEMENTS are spliced
-into the stanza outside the encryption envelope.
+participants plus own other devices.  BUFFER is the MUC buffer whose
+buffer-local state the send hooks must see.  EXTRA-ELEMENTS are
+spliced into the stanza outside the encryption envelope.
 No local echo: the MUC server mirrors the message back."
   (let* ((plaintext (encode-coding-string body 'utf-8))
          (enc-result (jabber-omemo-encrypt-message plaintext))
@@ -1326,7 +1322,9 @@ No local echo: the MUC server mirrors the message back."
                            ,(jabber-hints-store)
                            ,(jabber-eme-encryption jabber-omemo-xmlns "OMEMO")
                            ,@extra-elements)))
-    (jabber-chat--run-send-hooks stanza body id)
+    (when (buffer-live-p buffer)
+      (with-current-buffer buffer
+        (jabber-chat--run-send-hooks stanza body id)))
     (jabber-send-sexp jc stanza)))
 
 (defun jabber-omemo--prefetch-sessions (jc jid)
