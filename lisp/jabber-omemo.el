@@ -1450,15 +1450,21 @@ Returns non-nil if handled, nil to fall through to plaintext."
   (when (string-prefix-p "aesgcm://" get-url)
     (if (bound-and-true-p jabber-group)
         (jabber-omemo--send-muc jc get-url)
-      (jabber-omemo--ensure-sessions
-       jc (jabber-jid-user jid)
-       (lambda (recipient-sessions)
-         (jabber-omemo--ensure-sessions
-          jc (jabber-connection-bare-jid jc)
-          (lambda (own-sessions)
-            (jabber-omemo--send-encrypted
-             jc get-url jid
-             (append recipient-sessions own-sessions)))))))
+      ;; Capture the chat buffer now: the session callbacks may fire
+      ;; from IQ handlers where current buffer is something else, and
+      ;; --send-encrypted falls back to (current-buffer) for display
+      ;; and send-hook state.
+      (let ((buffer (current-buffer)))
+        (jabber-omemo--ensure-sessions
+         jc (jabber-jid-user jid)
+         (lambda (recipient-sessions)
+           (jabber-omemo--ensure-sessions
+            jc (jabber-connection-bare-jid jc)
+            (lambda (own-sessions)
+              (jabber-omemo--send-encrypted
+               jc get-url jid
+               (append recipient-sessions own-sessions)
+               buffer)))))))
     t))
 
 ;;; Disco and PubSub registration
