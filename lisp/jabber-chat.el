@@ -215,7 +215,10 @@ reply data) should stay inert instead of consuming it.")
 
 (defun jabber-chat--run-send-hooks (stanza body id)
   "Run `jabber-chat-send-hooks' and nconc results onto STANZA.
-BODY and ID are passed to each hook function."
+BODY and ID are passed to each hook function.
+When STANZA is an XEP-0308 correction, the hooks run with
+`jabber-chat--sending-correction' bound non-nil so that hooks
+holding state for the next composed message stay inert."
   (let ((jabber-chat--sending-correction
          (and (jabber-xml-child-with-xmlns
                stanza "urn:xmpp:message-correct:0")
