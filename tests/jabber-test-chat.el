@@ -188,6 +188,22 @@
          (plist (jabber-chat--msg-plist-from-stanza stanza)))
     (should (equal (plist-get plist :server-id) "archive-1"))))
 
+(ert-deftest jabber-test-chat-plist-parses-origin-id ()
+  "Origin-id and stanza-id each land in their own plist key."
+  (let* ((stanza '(message ((from . "alice@example.com/phone")
+                            (id . "client-1")
+                            (type . "chat"))
+                           (body () "Hello")
+                           (origin-id ((xmlns . "urn:xmpp:sid:0")
+                                       (id . "origin-1")))
+                           (stanza-id ((xmlns . "urn:xmpp:sid:0")
+                                       (id . "archive-1")
+                                       (by . "me@example.com")))))
+         (plist (jabber-chat--msg-plist-from-stanza stanza)))
+    (should (equal "origin-1" (plist-get plist :origin-id)))
+    (should (equal "archive-1" (plist-get plist :server-id)))
+    (should (equal "client-1" (plist-get plist :id)))))
+
 (ert-deftest jabber-test-chat-plist-reply-fallback-range-parsed ()
   "Reply fallback body offsets land in :fallback-range."
   (let* ((stanza '(message ((from . "alice@example.com/phone")

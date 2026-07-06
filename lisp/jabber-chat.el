@@ -948,6 +948,16 @@ arbitrary `by' values, so groupchat callers must pass the room JID."
                      (string= by expected-by))))))
    (jabber-xml-node-children xml-data)))
 
+(defun jabber-chat--origin-id (xml-data)
+  "Return the XEP-0359 <origin-id/> id in XML-DATA, or nil.
+Shares its namespace with <stanza-id/>, so match on the node name."
+  (let ((el (seq-find
+             (lambda (child)
+               (and (eq (jabber-xml-node-name child) 'origin-id)
+                    (string= (jabber-xml-get-xmlns child) "urn:xmpp:sid:0")))
+             (jabber-xml-node-children xml-data))))
+    (and el (jabber-xml-get-attribute el 'id))))
+
 (defun jabber-chat--build-msg-plist (xml-data delayed)
   "Build a message plist from the fields in XML-DATA.
 DELAYED marks the message as delayed unconditionally."
@@ -971,6 +981,7 @@ DELAYED marks the message as delayed unconditionally."
     (list
      :id (jabber-xml-get-attribute xml-data 'id)
      :server-id (when sid-el (jabber-xml-get-attribute sid-el 'id))
+     :origin-id (jabber-chat--origin-id xml-data)
      :from from
      :body body
      :subject (car (jabber-xml-node-children

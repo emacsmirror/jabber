@@ -137,10 +137,12 @@ advertise a stale <fallback> range."
 (defun jabber-message-reply--select-id (msg muc-p)
   "Select the appropriate message ID from MSG for a reply.
 In MUC (when MUC-P is non-nil), use :server-id only.
-In 1:1 chat, use :id.  Returns nil if unavailable."
+In 1:1 chat, prefer the XEP-0359 origin-id over the stanza id, as
+XEP-0461 asks.  Returns nil if unavailable."
   (if muc-p
       (plist-get msg :server-id)
-    (plist-get msg :id)))
+    (or (plist-get msg :origin-id)
+        (plist-get msg :id))))
 
 ;;; Send hook
 

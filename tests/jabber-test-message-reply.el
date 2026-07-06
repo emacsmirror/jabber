@@ -71,6 +71,14 @@
     (should (equal "client-id-1"
                    (jabber-message-reply--select-id msg nil)))))
 
+(ert-deftest jabber-test-message-reply-select-id-prefers-origin-id ()
+  "In 1:1 chat, prefer :origin-id over :id."
+  (let ((msg (list :id "client-id-1" :origin-id "origin-id-1")))
+    (should (equal "origin-id-1"
+                   (jabber-message-reply--select-id msg nil)))
+    ;; MUC keeps requiring the server-assigned stanza-id.
+    (should-not (jabber-message-reply--select-id msg t))))
+
 (ert-deftest jabber-test-message-reply-select-id-muc-server ()
   "In MUC, prefer :server-id."
   (let ((msg (list :id "client-id-2" :server-id "server-id-2")))
