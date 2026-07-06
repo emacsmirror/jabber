@@ -77,6 +77,21 @@ Returns \"> Author:\\n> line1\\n> line2\\n\"."
                        "\n")
             "\n")))
 
+(defun jabber-message-reply--strip-fallback (body range)
+  "Return BODY with the reply fallback RANGE removed.
+RANGE is nil, `all', or a (START END) list of code point offsets as
+stored in :fallback-range.  Invalid ranges leave BODY unchanged.
+Quoting a reply must not re-quote its own quote."
+  (pcase range
+    ('nil body)
+    ('all "")
+    (`(,start ,end)
+     (if (and (integerp start) (integerp end)
+              (<= 0 start end (length body)))
+         (concat (substring body 0 start) (substring body end))
+       body))
+    (_ body)))
+
 (defun jabber-message-reply--select-id (msg muc-p)
   "Select the appropriate message ID from MSG for a reply.
 In MUC (when MUC-P is non-nil), use :server-id only.
@@ -165,7 +180,9 @@ even when a draft is already present."
            (author (if from
                        (jabber-message-reply--author-name from)
                      "me"))
-           (body (or (plist-get msg :body) ""))
+           (body (jabber-message-reply--strip-fallback
+                  (or (plist-get msg :body) "")
+                  (plist-get msg :fallback-range)))
            (jid (or from (jabber-message-reply--self-jid) ""))
            (fallback (jabber-message-reply--build-fallback-text author body)))
       (setq jabber-message-reply--id id

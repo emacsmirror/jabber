@@ -37,6 +37,32 @@
   (let ((result (jabber-message-reply--build-fallback-text "Dave" nil)))
     (should (equal "> Dave:\n\n" result))))
 
+;;; Group 1b: jabber-message-reply--strip-fallback
+
+(ert-deftest jabber-test-message-reply-strip-fallback-range ()
+  "A (START END) range is excised from the body."
+  (should (equal "answer"
+                 (jabber-message-reply--strip-fallback
+                  "> alice:\n> hi\nanswer" '(0 14)))))
+
+(ert-deftest jabber-test-message-reply-strip-fallback-all ()
+  "A whole-body fallback strips to the empty string."
+  (should (equal "" (jabber-message-reply--strip-fallback
+                     "> alice:\n> hi" 'all))))
+
+(ert-deftest jabber-test-message-reply-strip-fallback-nil ()
+  "A nil range leaves the body unchanged."
+  (should (equal "hello" (jabber-message-reply--strip-fallback "hello" nil))))
+
+(ert-deftest jabber-test-message-reply-strip-fallback-malformed ()
+  "Out-of-bounds or malformed ranges leave the body unchanged."
+  (should (equal "short" (jabber-message-reply--strip-fallback
+                          "short" '(0 99))))
+  (should (equal "short" (jabber-message-reply--strip-fallback
+                          "short" '(3 1))))
+  (should (equal "short" (jabber-message-reply--strip-fallback
+                          "short" "junk"))))
+
 ;;; Group 2: jabber-message-reply--select-id
 
 (ert-deftest jabber-test-message-reply-select-id-1to1 ()
@@ -281,6 +307,26 @@ The <fallback> range is start=0, so the quote must land at
           (should (string-suffix-p "my draft" input))
           (should (equal quote jabber-message-reply--fallback-text))
           (should (equal "orig-1" jabber-message-reply--id)))))))
+
+(ert-deftest jabber-test-message-reply-quote-not-nested ()
+  "Replying to a reply quotes only the answer, not the old quote."
+  (with-temp-buffer
+    (let ((ewoc (ewoc-create
+                 (lambda (d) (insert (format "%s\n" (plist-get (cadr d) :body)))))))
+      (setq-local jabber-chat-ewoc ewoc)
+      (let ((node (ewoc-enter-last
+                   ewoc (list :foreign
+                              (list :id "reply-1"
+                                    :from "alice@example.com/phone"
+                                    :body "> alice:\n> hi\nanswer"
+                                    :fallback-range '(0 14))))))
+        (goto-char (point-max))
+        (setq-local jabber-point-insert (point-marker))
+        (goto-char (ewoc-location node))
+        (jabber-chat-reply)
+        (let ((input (buffer-substring-no-properties
+                      jabber-point-insert (point-max))))
+          (should (equal "> alice:\n> answer\n" input)))))))
 
 (ert-deftest jabber-test-message-reply-self-reply-uses-own-bare-jid ()
   "Replying to our own 1:1 message sets to= to our bare JID."

@@ -84,6 +84,7 @@ Keys older than this are deleted on connect."
 (defvar jabber-httpupload-send-url-function)
 (defvar jabber-message-reply--id)       ; jabber-message-reply.el
 (defvar jabber-message-reply--jid)      ; jabber-message-reply.el
+(defvar jabber-message-reply--fallback-text) ; jabber-message-reply.el
 
 (defvar jabber-omemo--available nil
   "Non-nil when the jabber-omemo-core native module is loaded.")
@@ -1169,6 +1170,7 @@ Returns the ewoc node, or nil if BUFFER is dead."
     (with-current-buffer buffer
       (let* ((reply-id (bound-and-true-p jabber-message-reply--id))
              (reply-jid (bound-and-true-p jabber-message-reply--jid))
+             (fb-text (bound-and-true-p jabber-message-reply--fallback-text))
              (msg-plist (list :id id
                               :body body
                               :timestamp (current-time)
@@ -1176,7 +1178,12 @@ Returns the ewoc node, or nil if BUFFER is dead."
                               :encrypted t)))
         (when reply-id
           (plist-put msg-plist :reply-to-id reply-id)
-          (plist-put msg-plist :reply-to-jid reply-jid))
+          (plist-put msg-plist :reply-to-jid reply-jid)
+          ;; Record the quote range so replying to this pending echo
+          ;; does not re-quote its own quote.
+          (when (and fb-text (not (string-empty-p fb-text))
+                     (string-prefix-p fb-text body))
+            (plist-put msg-plist :fallback-range (list 0 (length fb-text)))))
         (jabber-db--outgoing-handler body id)
         (when (run-hook-with-args-until-success
                'jabber-chat-printers msg-plist :local :printp)
