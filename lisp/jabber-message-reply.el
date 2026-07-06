@@ -41,6 +41,10 @@
 (defvar jabber-chat-send-hooks)         ; jabber-chat.el
 (defvar jabber-point-insert)            ; jabber-chatbuffer.el
 (defvar jabber-group)                   ; jabber-muc.el
+(defvar jabber-chatting-with)           ; jabber-chatbuffer.el
+(defvar jabber-buffer-connection)       ; jabber-chatbuffer.el
+
+(declare-function jabber-muc-sender-p "jabber-muc" (jid))
 
 (defconst jabber-message-reply-xmlns "urn:xmpp:reply:0"
   "XEP-0461 Message Replies namespace.")
@@ -119,6 +123,16 @@ user's own text, which receivers strip from display."
 
 ;;; Helpers
 
+(defun jabber-message-reply--self-jid ()
+  "Return our own bare JID for a self-reply, or nil when unknown.
+In MUC private chats our address is the room occupant JID, not the
+account JID, so there is no useful value and the reply `to'
+attribute is omitted (it is a SHOULD, not a MUST)."
+  (and (bound-and-true-p jabber-buffer-connection)
+       (not (and (bound-and-true-p jabber-chatting-with)
+                 (jabber-muc-sender-p jabber-chatting-with)))
+       (jabber-connection-bare-jid jabber-buffer-connection)))
+
 (defun jabber-message-reply--author-name (jid)
   "Return a short display name for JID.
 In MUC buffers the resource is the nickname.
@@ -152,7 +166,7 @@ even when a draft is already present."
                        (jabber-message-reply--author-name from)
                      "me"))
            (body (or (plist-get msg :body) ""))
-           (jid (or from ""))
+           (jid (or from (jabber-message-reply--self-jid) ""))
            (fallback (jabber-message-reply--build-fallback-text author body)))
       (setq jabber-message-reply--id id
             jabber-message-reply--jid (if (stringp jid) jid (format "%s" jid))

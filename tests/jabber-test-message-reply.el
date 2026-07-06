@@ -282,6 +282,56 @@ The <fallback> range is start=0, so the quote must land at
           (should (equal quote jabber-message-reply--fallback-text))
           (should (equal "orig-1" jabber-message-reply--id)))))))
 
+(ert-deftest jabber-test-message-reply-self-reply-uses-own-bare-jid ()
+  "Replying to our own 1:1 message sets to= to our bare JID."
+  (with-temp-buffer
+    (let ((ewoc (ewoc-create
+                 (lambda (d) (insert (format "%s\n" (plist-get (cadr d) :body)))))))
+      (setq-local jabber-chat-ewoc ewoc)
+      (setq-local jabber-buffer-connection 'fake-jc)
+      (setq-local jabber-chatting-with "bob@example.com")
+      (let ((node (ewoc-enter-last
+                   ewoc (list :local (list :id "my-msg-1" :body "my message")))))
+        (goto-char (point-max))
+        (setq-local jabber-point-insert (point-marker))
+        (cl-letf (((symbol-function 'jabber-connection-bare-jid)
+                   (lambda (_jc) "me@example.com"))
+                  ((symbol-function 'jabber-muc-sender-p)
+                   (lambda (_jid) nil)))
+          (goto-char (ewoc-location node))
+          (jabber-chat-reply))
+        (let* ((body (buffer-substring-no-properties
+                      jabber-point-insert (point-max)))
+               (elements (jabber-message-reply--send-hook body "new-id"))
+               (reply-el (cl-find 'reply elements :key #'car)))
+          (should (equal "me@example.com"
+                         (cdr (assq 'to (cadr reply-el))))))))))
+
+(ert-deftest jabber-test-message-reply-self-reply-muc-pm-omits-to ()
+  "Replying to our own MUC-PM message omits the to attribute."
+  (with-temp-buffer
+    (let ((ewoc (ewoc-create
+                 (lambda (d) (insert (format "%s\n" (plist-get (cadr d) :body)))))))
+      (setq-local jabber-chat-ewoc ewoc)
+      (setq-local jabber-buffer-connection 'fake-jc)
+      (setq-local jabber-chatting-with "room@conf.example.com/me")
+      (let ((node (ewoc-enter-last
+                   ewoc (list :local (list :id "my-msg-1" :body "my message")))))
+        (goto-char (point-max))
+        (setq-local jabber-point-insert (point-marker))
+        (cl-letf (((symbol-function 'jabber-connection-bare-jid)
+                   (lambda (_jc) "me@example.com"))
+                  ((symbol-function 'jabber-muc-sender-p)
+                   (lambda (_jid) t)))
+          (goto-char (ewoc-location node))
+          (jabber-chat-reply))
+        (let* ((body (buffer-substring-no-properties
+                      jabber-point-insert (point-max)))
+               (elements (jabber-message-reply--send-hook body "new-id"))
+               (reply-el (cl-find 'reply elements :key #'car)))
+          (should reply-el)
+          (should-not (assq 'to (cadr reply-el))))))))
+
 ;;; Group 6: jabber-chat-cancel-reply
 
 (ert-deftest jabber-test-message-reply-cancel-removes-intact-quote ()
