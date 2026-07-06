@@ -95,6 +95,24 @@
   (let ((msg (list :id nil :server-id nil)))
     (should-not (jabber-message-reply--select-id msg nil))))
 
+;;; Group 2b: jabber-message-reply--author-name
+
+(ert-deftest jabber-test-message-reply-author-name-muc-pm-uses-nick ()
+  "MUC private messages quote the occupant nick, not the room name."
+  (with-temp-buffer
+    (cl-letf (((symbol-function 'jabber-muc-sender-p) (lambda (_jid) t)))
+      (should (equal "alice"
+                     (jabber-message-reply--author-name
+                      "room@conf.example.com/alice"))))))
+
+(ert-deftest jabber-test-message-reply-author-name-1to1-uses-username ()
+  "1:1 chats quote the username part of the JID."
+  (with-temp-buffer
+    (cl-letf (((symbol-function 'jabber-muc-sender-p) (lambda (_jid) nil)))
+      (should (equal "alice"
+                     (jabber-message-reply--author-name
+                      "alice@example.com/phone"))))))
+
 ;;; Group 3: jabber-message-reply--send-hook
 
 (ert-deftest jabber-test-message-reply-send-hook-produces-elements ()

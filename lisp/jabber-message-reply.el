@@ -184,13 +184,17 @@ attribute is omitted (it is a SHOULD, not a MUST)."
 
 (defun jabber-message-reply--author-name (jid)
   "Return a short display name for JID.
-In MUC buffers the resource is the nickname.
+In MUC buffers and MUC private chats the resource is the nickname.
 In 1:1 chat, use the username part of the JID."
-  (if (bound-and-true-p jabber-group)
-      (or (jabber-jid-resource jid)
-          (jabber-jid-displayname jid))
+  (cond
+   ((bound-and-true-p jabber-group)
+    (or (jabber-jid-resource jid)
+        (jabber-jid-displayname jid)))
+   ((jabber-muc-sender-p jid)
+    (jabber-jid-resource jid))
+   (t
     (or (jabber-jid-username jid)
-        (jabber-jid-user jid))))
+        (jabber-jid-user jid)))))
 
 ;;; Interactive commands
 
