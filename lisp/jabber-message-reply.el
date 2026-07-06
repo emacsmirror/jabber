@@ -96,7 +96,12 @@ BODY is the message text.  Clears reply state after producing elements."
       (let ((elements
              (list
               `(reply ((xmlns . ,jabber-message-reply-xmlns)
-                       (to . ,reply-jid)
+                       ;; `to' is SHOULD, not MUST (XEP-0461).  Omit it
+                       ;; rather than send to="" when replying to our own
+                       ;; message (no author JID): strict parsers reject an
+                       ;; empty JID and drop the whole reply element.
+                       ,@(and reply-jid (not (string-empty-p reply-jid))
+                              (list (cons 'to reply-jid)))
                        (id . ,reply-id))))))
         (when (and fb-len (> fb-len 0) (<= fb-len (length body)))
           (push `(fallback ((xmlns . ,jabber-message-reply-fallback-xmlns)
@@ -125,7 +130,9 @@ In 1:1 chat, use the username part of the JID."
 ;;;###autoload
 (defun jabber-chat-reply ()
   "Reply to the message at point in the ewoc.
-Stores reply state and inserts fallback quote text at point-max."
+Stores reply state and inserts fallback quote text at the start of
+the input area, so it lines up with the <fallback> range (offset 0)
+even when a draft is already present."
   (interactive)
   (unless (bound-and-true-p jabber-chat-ewoc)
     (user-error "Not in a chat buffer"))
@@ -146,7 +153,7 @@ Stores reply state and inserts fallback quote text at point-max."
       (setq jabber-message-reply--id id
             jabber-message-reply--jid (if (stringp jid) jid (format "%s" jid))
             jabber-message-reply--fallback-length (length fallback))
-      (goto-char (point-max))
+      (goto-char jabber-point-insert)
       (insert fallback)
       (message "Replying to %s (C-c C-k to cancel)" author))))
 

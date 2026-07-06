@@ -901,43 +901,6 @@ Returns a list of (URL . DESC) cons cells, or nil."
 (defconst jabber-chat--fallback-xmlns "urn:xmpp:fallback:0"
   "XEP-0428 fallback indication namespace.")
 
-(defun jabber-chat--fallback-offset (value)
-  "Return VALUE as a non-negative integer, or nil."
-  (when (and (stringp value)
-             (string-match-p "\\`[0-9]+\\'" value))
-    (string-to-number value)))
-
-(defun jabber-chat--reply-fallback-range (xml-data)
-  "Return the XEP-0461 fallback body range in XML-DATA.
-Return `all' when the fallback applies to the whole body."
-  (when-let* ((fallback (jabber-xml-child-with-xmlns
-                         xml-data jabber-chat--fallback-xmlns))
-              ((eq (jabber-xml-node-name fallback) 'fallback))
-              ((string= (jabber-xml-get-attribute fallback 'for)
-                        jabber-chat--reply-xmlns)))
-    (if-let* ((body (car (jabber-xml-get-children fallback 'body))))
-        (when-let* ((start (jabber-xml-get-attribute body 'start))
-                    (end (jabber-xml-get-attribute body 'end))
-                    (from (jabber-chat--fallback-offset start))
-                    (to (jabber-chat--fallback-offset end)))
-          (list from to))
-      'all)))
-
-(defun jabber-chat--strip-reply-fallback (body xml-data)
-  "Return BODY with a valid XEP-0461 fallback range from XML-DATA removed.
-Malformed fallback ranges leave BODY unchanged."
-  (if-let* (((stringp body))
-            (range (jabber-chat--reply-fallback-range xml-data)))
-      (if (eq range 'all)
-          ""
-        (let ((start (car range))
-              (end (cadr range)))
-          (if (<= 0 start end (length body))
-              (concat (substring body 0 start)
-                      (substring body end))
-            body)))
-    body))
-
 (defun jabber-chat--stanza-id-element (xml-data)
   "Return the first valid XEP-0359 <stanza-id/> child in XML-DATA."
   (seq-find
@@ -958,11 +921,8 @@ DELAYED marks the message as delayed unconditionally."
          (reply-el (jabber-xml-child-with-xmlns xml-data
                                                 jabber-chat--reply-xmlns))
          (unstyled-el (jabber-xml-child-with-xmlns xml-data "urn:xmpp:styling:0"))
-         (raw-body (car (jabber-xml-node-children
-                         (car (jabber-xml-get-children xml-data 'body)))))
-         (body (if reply-el
-                   (jabber-chat--strip-reply-fallback raw-body xml-data)
-                 raw-body)))
+         (body (car (jabber-xml-node-children
+                     (car (jabber-xml-get-children xml-data 'body))))))
     (list
      :id (jabber-xml-get-attribute xml-data 'id)
      :server-id (when sid-el (jabber-xml-get-attribute sid-el 'id))
@@ -1037,22 +997,6 @@ mouse hover and reachable from the keyboard with \\[display-local-help]."
                (mapcar #'jabber-chat--reaction-entry-string entries)
                "  ")))))
 
-(defun jabber-chat--reply-context-label (msg)
-  "Return a compact reply context label for MSG, or nil."
-  (when-let* ((reply-id (plist-get msg :reply-to-id)))
-    (let* ((jid (plist-get msg :reply-to-jid))
-           (who (and jid
-                     (or (jabber-jid-resource jid)
-                         (jabber-jid-displayname jid)))))
-      (if (and who (not (string-empty-p who)))
-          (format "reply to %s (%s)" who reply-id)
-        (format "reply to %s" reply-id)))))
-
-(defun jabber-chat--insert-reply-context (msg)
-  "Insert reply context line for MSG when reply metadata is present."
-  (when-let* ((label (jabber-chat--reply-context-label msg)))
-    (insert (propertize (concat label "\n") 'face 'shadow))))
-
 (defun jabber-chat-pp--local (data)
   "Render a locally sent message from DATA."
   (let* ((msg (cadr data))
@@ -1060,7 +1004,6 @@ mouse hover and reachable from the keyboard with \\[display-local-help]."
          (/me-p (and (stringp body) (string-prefix-p "/me " body))))
     (jabber-chat-self-prompt msg (plist-get msg :timestamp)
                              (plist-get msg :delayed) /me-p)
-    (jabber-chat--insert-reply-context msg)
     (let ((jabber-chat--body-start (point)))
       (run-hook-with-args 'jabber-chat-printers msg :local :insert))
     (when (plist-get msg :edited)
@@ -1076,7 +1019,6 @@ mouse hover and reachable from the keyboard with \\[display-local-help]."
          (/me-p (and (stringp body) (string-prefix-p "/me " body))))
     (jabber-chat-print-prompt msg (plist-get msg :timestamp)
                               (plist-get msg :delayed) /me-p)
-    (jabber-chat--insert-reply-context msg)
     (let ((jabber-chat--body-start (point)))
       (run-hook-with-args 'jabber-chat-printers msg :foreign :insert))
     (when (plist-get msg :edited)
@@ -1105,7 +1047,6 @@ mouse hover and reachable from the keyboard with \\[display-local-help]."
     (jabber-muc-print-prompt msg t /me-p)
     (if (plist-get msg :retracted)
         (jabber-chat--insert-tombstone msg)
-      (jabber-chat--insert-reply-context msg)
       (let ((jabber-chat--body-start (point)))
         (mapc (lambda (f) (funcall f msg :muc-local :insert))
               (append jabber-muc-printers jabber-chat-printers)))
@@ -1123,7 +1064,6 @@ mouse hover and reachable from the keyboard with \\[display-local-help]."
     (jabber-muc-print-prompt msg nil /me-p)
     (if (plist-get msg :retracted)
         (jabber-chat--insert-tombstone msg)
-      (jabber-chat--insert-reply-context msg)
       (let ((jabber-chat--body-start (point)))
         (mapc (lambda (f) (funcall f msg :muc-foreign :insert))
               (append jabber-muc-printers jabber-chat-printers)))

@@ -544,10 +544,11 @@ Uses `jabber-chat-pp' so status indicators are actually rendered."
       (should (search-forward "\u00b7" nil t))
       (should (eq 'warning (get-text-property (1- (point)) 'face))))))
 
-(ert-deftest jabber-test-chatbuffer-reply-context-renders-1to1 ()
-  "A 1:1 reply renders reply context before the body."
+(ert-deftest jabber-test-chatbuffer-reply-inline-quote-renders-1to1 ()
+  "A 1:1 reply renders the fallback quote inline and shows no id label."
   (jabber-test-chatbuffer-with-rendering-ewoc
-    (let* ((msg (list :id "reply-1" :body "answer"
+    (let* ((msg (list :id "reply-1"
+                      :body "> phone:\n> original\nanswer"
                       :from "alice@example.com/phone"
                       :reply-to-id "orig-1"
                       :reply-to-jid "alice@example.com/phone"
@@ -555,13 +556,14 @@ Uses `jabber-chat-pp' so status indicators are actually rendered."
            (node (jabber-chat-ewoc-enter (list :foreign msg))))
       (should node)
       (let ((text (buffer-string)))
-        (should (string-match-p "reply to phone (orig-1)" text))
-        (should (string-match-p "reply to phone (orig-1)\nanswer" text))))))
+        (should (string-match-p "> phone:\n> original\nanswer" text))
+        (should-not (string-match-p "reply to " text))))))
 
-(ert-deftest jabber-test-chatbuffer-reply-context-renders-muc ()
-  "A MUC reply renders reply context before the body."
+(ert-deftest jabber-test-chatbuffer-reply-inline-quote-renders-muc ()
+  "A MUC reply renders the fallback quote inline and shows no id label."
   (jabber-test-chatbuffer-with-rendering-ewoc
-    (let* ((msg (list :id "reply-2" :body "answer"
+    (let* ((msg (list :id "reply-2"
+                      :body "> alice:\n> original\nanswer"
                       :from "room@conf.example.com/bob"
                       :reply-to-id "server-orig-1"
                       :reply-to-jid "room@conf.example.com/alice"
@@ -569,8 +571,8 @@ Uses `jabber-chat-pp' so status indicators are actually rendered."
            (node (jabber-chat-ewoc-enter (list :muc-foreign msg))))
       (should node)
       (let ((text (buffer-string)))
-        (should (string-match-p "reply to alice (server-orig-1)" text))
-        (should (string-match-p "reply to alice (server-orig-1)\nanswer" text))))))
+        (should (string-match-p "> alice:\n> original\nanswer" text))
+        (should-not (string-match-p "reply to " text))))))
 
 (ert-deftest jabber-test-chatbuffer-status-sending-to-sent ()
   "Status :sending -> :sent updates the indicator face."

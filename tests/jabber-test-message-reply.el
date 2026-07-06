@@ -113,10 +113,47 @@
       (should (cl-some (lambda (el) (eq (car el) 'reply)) elements))
       (should-not (cl-some (lambda (el) (eq (car el) 'fallback)) elements)))))
 
+(ert-deftest jabber-test-message-reply-send-hook-omits-empty-to ()
+  "Replying to our own message (no author JID) omits the `to' attribute.
+A `to=\"\"' is an invalid JID and makes strict parsers drop the reply."
+  (with-temp-buffer
+    (setq-local jabber-message-reply--id "orig-id")
+    (setq-local jabber-message-reply--jid "")
+    (setq-local jabber-message-reply--fallback-length 0)
+    (let* ((elements (jabber-message-reply--send-hook "Just a reply" "new-msg"))
+           (reply-el (cl-find 'reply elements :key #'car))
+           (attrs (cadr reply-el)))
+      (should reply-el)
+      (should (equal "orig-id" (cdr (assq 'id attrs))))
+      (should-not (assq 'to attrs)))))
+
+(ert-deftest jabber-test-message-reply-outgoing-body-keeps-fallback ()
+  "The outgoing reply stanza body retains the quoted fallback text.
+The send hook adds <reply>/<fallback> elements but must never strip
+the quoted prefix from the body that is actually sent."
+  (with-temp-buffer
+    (let* ((fallback (jabber-message-reply--build-fallback-text "alice" "Hello"))
+           (body (concat fallback "my reply"))
+           (jabber-chat-send-hooks (list #'jabber-message-reply--send-hook)))
+      (setq-local jabber-message-reply--id "orig-1")
+      (setq-local jabber-message-reply--jid "alice@example.com")
+      (setq-local jabber-message-reply--fallback-length (length fallback))
+      (let ((stanza `(message ((to . "room@conf.example.com")
+                               (type . "groupchat")
+                               (id . "m1"))
+                              (body () ,body))))
+        (jabber-chat--run-send-hooks stanza body "m1")
+        (let ((sent-body (car (jabber-xml-node-children
+                               (car (jabber-xml-get-children stanza 'body))))))
+          (should (string-prefix-p "> alice:\n> Hello\n" sent-body))
+          (should (string-suffix-p "my reply" sent-body)))
+        (should (jabber-xml-child-with-xmlns stanza "urn:xmpp:reply:0"))
+        (should (jabber-xml-child-with-xmlns stanza "urn:xmpp:fallback:0"))))))
+
 ;;; Group 4: incoming fallback parsing
 
-(ert-deftest jabber-test-message-reply-strips-incoming-fallback ()
-  "Incoming XEP-0461 reply fallback is removed from displayed body."
+(ert-deftest jabber-test-message-reply-keeps-incoming-fallback ()
+  "Incoming XEP-0461 reply fallback is kept in the displayed body."
   (let* ((stanza '(message ((from . "alice@example.com/tablet")
                             (id . "reply-1")
                             (type . "chat"))
@@ -129,11 +166,11 @@
                                      (body ((start . "0")
                                             (end . "17"))))))
          (msg (jabber-chat--msg-plist-from-stanza stanza)))
-    (should (equal "Actual reply" (plist-get msg :body)))
+    (should (equal "> Alice:\n> Hello\nActual reply" (plist-get msg :body)))
     (should (equal "orig-1" (plist-get msg :reply-to-id)))))
 
-(ert-deftest jabber-test-message-reply-strips-whole-body-fallback ()
-  "Reply fallback with no body range strips the whole displayed body."
+(ert-deftest jabber-test-message-reply-keeps-whole-body-fallback ()
+  "Reply fallback with no body range is kept in the displayed body."
   (let* ((stanza '(message ((from . "alice@example.com/tablet")
                             (id . "reply-1")
                             (type . "chat"))
@@ -144,7 +181,7 @@
                            (fallback ((xmlns . "urn:xmpp:fallback:0")
                                       (for . "urn:xmpp:reply:0")))))
          (msg (jabber-chat--msg-plist-from-stanza stanza)))
-    (should (equal "" (plist-get msg :body)))
+    (should (equal "> Alice:\n> Hello" (plist-get msg :body)))
     (should (equal "orig-1" (plist-get msg :reply-to-id)))))
 
 (ert-deftest jabber-test-message-reply-preserves-malformed-fallback ()
@@ -189,6 +226,34 @@
                                       (for . "urn:xmpp:reply:0")))))
          (msg (jabber-chat--msg-plist-from-stanza stanza)))
     (should (equal body (plist-get msg :body)))))
+
+;;; Group 5: jabber-chat-reply input placement
+
+(ert-deftest jabber-test-message-reply-inserts-fallback-at-input-start ()
+  "`jabber-chat-reply' puts the quote at offset 0 of the input area.
+The <fallback> range is start=0, so the quote must land at
+`jabber-point-insert' even when a draft is already present, not at
+`point-max'."
+  (with-temp-buffer
+    (let ((ewoc (ewoc-create
+                 (lambda (d) (insert (format "%s\n" (plist-get (cadr d) :body)))))))
+      (setq-local jabber-chat-ewoc ewoc)
+      (let ((node (ewoc-enter-last
+                   ewoc (list :foreign (list :id "orig-1"
+                                             :from "alice@example.com/phone"
+                                             :body "Hello")))))
+        (goto-char (point-max))
+        (setq-local jabber-point-insert (point-marker))
+        (insert "my draft")
+        (goto-char (ewoc-location node))
+        (jabber-chat-reply)
+        (let ((input (buffer-substring-no-properties
+                      jabber-point-insert (point-max)))
+              (quote (jabber-message-reply--build-fallback-text "alice" "Hello")))
+          (should (string-prefix-p quote input))
+          (should (string-suffix-p "my draft" input))
+          (should (= (length quote) jabber-message-reply--fallback-length))
+          (should (equal "orig-1" jabber-message-reply--id)))))))
 
 (provide 'jabber-test-message-reply)
 
