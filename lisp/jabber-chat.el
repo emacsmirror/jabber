@@ -901,14 +901,20 @@ Returns a list of (URL . DESC) cons cells, or nil."
 (defconst jabber-chat--fallback-xmlns "urn:xmpp:fallback:0"
   "XEP-0428 fallback indication namespace.")
 
-(defun jabber-chat--stanza-id-element (xml-data)
-  "Return the first valid XEP-0359 <stanza-id/> child in XML-DATA."
+(defun jabber-chat--stanza-id-element (xml-data &optional expected-by)
+  "Return the first valid XEP-0359 <stanza-id/> child in XML-DATA.
+When EXPECTED-BY is non-nil, accept only elements whose `by'
+attribute matches it.  Occupants can inject stanza-id elements with
+arbitrary `by' values, so groupchat callers must pass the room JID."
   (seq-find
    (lambda (child)
      (and (eq (jabber-xml-node-name child) 'stanza-id)
           (string= (jabber-xml-get-xmlns child) "urn:xmpp:sid:0")
           (jabber-xml-get-attribute child 'id)
-          (jabber-xml-get-attribute child 'by)))
+          (let ((by (jabber-xml-get-attribute child 'by)))
+            (and by
+                 (or (null expected-by)
+                     (string= by expected-by))))))
    (jabber-xml-node-children xml-data)))
 
 (defun jabber-chat--build-msg-plist (xml-data delayed)
@@ -917,7 +923,15 @@ DELAYED marks the message as delayed unconditionally."
   (let* ((msg-timestamp (jabber-message-timestamp xml-data))
          (oob-entries (jabber-chat--extract-oob-entries xml-data))
          (error-node (car (jabber-xml-get-children xml-data 'error)))
-         (sid-el (jabber-chat--stanza-id-element xml-data))
+         (from (jabber-xml-get-attribute xml-data 'from))
+         (type (jabber-xml-get-attribute xml-data 'type))
+         ;; In groupchat, only the room itself may assign the stanza-id
+         ;; (XEP-0461).  Elsewhere we cannot know the archive JID here,
+         ;; so any by is accepted.
+         (sid-el (jabber-chat--stanza-id-element
+                  xml-data
+                  (and (equal type "groupchat") from
+                       (jabber-jid-user from))))
          (reply-el (jabber-xml-child-with-xmlns xml-data
                                                 jabber-chat--reply-xmlns))
          (unstyled-el (jabber-xml-child-with-xmlns xml-data "urn:xmpp:styling:0"))
@@ -926,7 +940,7 @@ DELAYED marks the message as delayed unconditionally."
     (list
      :id (jabber-xml-get-attribute xml-data 'id)
      :server-id (when sid-el (jabber-xml-get-attribute sid-el 'id))
-     :from (jabber-xml-get-attribute xml-data 'from)
+     :from from
      :body body
      :subject (car (jabber-xml-node-children
                     (car (jabber-xml-get-children xml-data 'subject))))

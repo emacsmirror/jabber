@@ -152,6 +152,42 @@
          (plist (jabber-chat--msg-plist-from-stanza stanza)))
     (should-not (plist-get plist :server-id))))
 
+(ert-deftest jabber-test-chat-plist-groupchat-stanza-id-wrong-by-rejected ()
+  "Groupchat stanza-id with a by not matching the room is rejected."
+  (let* ((stanza '(message ((from . "room@muc.example.com/alice")
+                            (type . "groupchat"))
+                           (body () "Hello")
+                           (stanza-id ((xmlns . "urn:xmpp:sid:0")
+                                       (id . "spoofed-1")
+                                       (by . "attacker@evil.example")))))
+         (plist (jabber-chat--msg-plist-from-stanza stanza)))
+    (should-not (plist-get plist :server-id))))
+
+(ert-deftest jabber-test-chat-plist-groupchat-stanza-id-skips-spoofed-by ()
+  "The room's stanza-id wins even when a spoofed one comes first."
+  (let* ((stanza '(message ((from . "room@muc.example.com/alice")
+                            (type . "groupchat"))
+                           (body () "Hello")
+                           (stanza-id ((xmlns . "urn:xmpp:sid:0")
+                                       (id . "spoofed-1")
+                                       (by . "attacker@evil.example")))
+                           (stanza-id ((xmlns . "urn:xmpp:sid:0")
+                                       (id . "server-1")
+                                       (by . "room@muc.example.com")))))
+         (plist (jabber-chat--msg-plist-from-stanza stanza)))
+    (should (equal (plist-get plist :server-id) "server-1"))))
+
+(ert-deftest jabber-test-chat-plist-chat-stanza-id-any-by-accepted ()
+  "1:1 chat messages keep accepting stanza-id from any archive."
+  (let* ((stanza '(message ((from . "alice@example.com/phone")
+                            (type . "chat"))
+                           (body () "Hello")
+                           (stanza-id ((xmlns . "urn:xmpp:sid:0")
+                                       (id . "archive-1")
+                                       (by . "me@example.com")))))
+         (plist (jabber-chat--msg-plist-from-stanza stanza)))
+    (should (equal (plist-get plist :server-id) "archive-1"))))
+
 ;;; Group 2: jabber-chat--oob-field
 
 (ert-deftest jabber-test-chat-oob-field-url ()
