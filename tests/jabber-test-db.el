@@ -1157,6 +1157,21 @@ the corrected jabber-muc-create-buffer order."
       (should (= 1 (length rows)))
       (should (string= "[OMEMO: could not decrypt]" (caar rows))))))
 
+(ert-deftest jabber-test-db-store-no-replace-placeholder-across-labels ()
+  "A placeholder with a different label does not replace an existing one."
+  (jabber-test-db-with-db
+    (jabber-db-store-message "me@x.com" "friend@x.com" "in" "chat"
+                             "[OMEMO: could not decrypt]" 1700000000
+                             "res" "stanza-7" "srv-7")
+    (jabber-db-store-message "me@x.com" "friend@x.com" "in" "chat"
+                             "[OpenPGP: could not decrypt]" 1700000000
+                             "res" "stanza-7" "srv-7")
+    (let ((rows (sqlite-select (jabber-db-ensure-open)
+                               "SELECT body FROM message WHERE stanza_id = ?"
+                               '("stanza-7"))))
+      (should (= 1 (length rows)))
+      (should (string= "[OMEMO: could not decrypt]" (caar rows))))))
+
 (ert-deftest jabber-test-db-store-no-replace-when-already-decrypted ()
   "Re-storing does not overwrite an already-decrypted message."
   (jabber-test-db-with-db

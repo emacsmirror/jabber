@@ -874,6 +874,13 @@ Uses a `display' property so the separator adjusts to window
 width on redisplay."
   (propertize " " 'display '(space :width text) 'face 'jabber-separator))
 
+(defun jabber--decrypt-failure-body-p (body)
+  "Return non-nil when BODY is a decrypt-failure placeholder.
+Matches the \"[LABEL: could not decrypt]\" bodies produced by
+`jabber-chat--try-decrypt' so callers can avoid overwriting real
+message text with a placeholder."
+  (and body (string-match-p "\\`\\[.*: could not decrypt\\]\\'" body)))
+
 ;;; Connection state primitives
 
 (defconst jabber-bind-xmlns "urn:ietf:params:xml:ns:xmpp-bind"

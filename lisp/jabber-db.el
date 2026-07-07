@@ -528,7 +528,7 @@ AND retracted_by IS NOT NULL LIMIT 1"
        (append (list timestamp) where-params (list timestamp)))
       ;; Replace failed-decrypt placeholder if new body is real text.
       (when (and body
-                 (not (string-match-p "\\`: could not decrypt\\]" body)))
+                 (not (jabber--decrypt-failure-body-p body)))
         (let ((msg-id
                (caar (sqlite-select
                       db

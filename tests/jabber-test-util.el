@@ -257,5 +257,19 @@
   (should (equal (jabber-tree-map #'1+ '(1 (2 3) 4))
                  '(2 (3 4) 5))))
 
+;;; Group: Decrypt-failure placeholder predicate
+
+(ert-deftest jabber-test-util-decrypt-failure-body-p-matches-placeholder ()
+  (should (jabber--decrypt-failure-body-p "[OMEMO: could not decrypt]"))
+  (should (jabber--decrypt-failure-body-p "[OpenPGP: could not decrypt]")))
+
+(ert-deftest jabber-test-util-decrypt-failure-body-p-rejects-real-text ()
+  (should-not (jabber--decrypt-failure-body-p nil))
+  (should-not (jabber--decrypt-failure-body-p "hello there"))
+  (should-not (jabber--decrypt-failure-body-p
+               "quoting [OMEMO: could not decrypt] in a longer message"))
+  (should-not (jabber--decrypt-failure-body-p
+               "[OMEMO: could not decrypt] trailing text")))
+
 (provide 'jabber-test-util)
 ;;; jabber-test-util.el ends here
