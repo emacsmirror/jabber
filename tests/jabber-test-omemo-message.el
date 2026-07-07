@@ -524,7 +524,11 @@ Clears OMEMO in-memory caches and tears down on exit."
               ((symbol-function 'jabber-omemo--publish-bundle)
                (lambda (&rest _) (setq publish-called t)))
               ((symbol-function 'jabber-omemo--publish-bundle-if-needed)
-               (lambda (&rest _) (setq publish-called t))))
+               (lambda (&rest _) (setq publish-called t)))
+              ;; Session recovery is exercised elsewhere; keep this
+              ;; test focused on bundle publishing.
+              ((symbol-function 'jabber-omemo--recover-prekey-failure)
+               (lambda (&rest _) nil)))
       (let ((xml-data '(message ((from . "alice@example.com/phone")
                                   (type . "chat"))))
             (detected (list :type 'omemo :parsed nil)))

@@ -719,7 +719,11 @@ with its body replaced by decrypted plaintext (or an error
 placeholder).  Skips dispatch when XML-DATA has no `from' attribute.
 An encrypted stanza reaches its handler at most once per session:
 repeated deliveries are served from `jabber-chat--decrypt-cache'
-instead of re-running the ratchet.  JC is the Jabber connection."
+instead of re-running the ratchet.  A failed decrypt leaves a
+placeholder body and is not cached, so a later delivery may
+recover; handlers may additionally schedule their own repair (see
+`jabber-omemo--recover-prekey-failure').  JC is the Jabber
+connection."
   (unless jabber-chat--crypto-loaded
     (condition-case nil (require 'jabber-omemo nil t) (error nil))
     (condition-case nil (require 'jabber-openpgp nil t) (error nil))

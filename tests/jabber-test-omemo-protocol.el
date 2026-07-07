@@ -527,6 +527,35 @@ the still-present pre-key instead."
             (should (string= key-2 decrypted))
             (should fresh-p)))))))
 
+(ert-deftest jabber-test-omemo-protocol-prekey-failure-triggers-recovery ()
+  "A pre-key decrypt failure drops the stale session and re-ensures."
+  (jabber-test-omemo-protocol-with-db
+    (let (deleted ensured)
+      (cl-letf (((symbol-function 'jabber-connection-bare-jid)
+                 (lambda (_jc) "me@example.com"))
+                ((symbol-function 'jabber-omemo--decrypt-stanza)
+                 (lambda (_jc _xml _parsed)
+                   (signal 'jabber-omemo-prekey-failed
+                           (list "alice@example.com" 7 "stale pre-key"))))
+                ((symbol-function 'jabber-omemo-store-delete-session)
+                 (lambda (account jid did)
+                   (setq deleted (list account jid did))))
+                ((symbol-function 'jabber-omemo--ensure-sessions)
+                 (lambda (_jc jid _callback) (setq ensured jid))))
+        (puthash (jabber-omemo--session-key
+                  "me@example.com" "alice@example.com" 7)
+                 'stale-session jabber-omemo--sessions)
+        (should-error (jabber-omemo--decrypt-handler
+                       'fake-jc
+                       '(message ((from . "alice@example.com/phone")))
+                       '(:type omemo :parsed fake-parsed))
+                      :type 'jabber-omemo-prekey-failed)
+        (should (equal '("me@example.com" "alice@example.com" 7) deleted))
+        (should (equal "alice@example.com" ensured))
+        (should-not (gethash (jabber-omemo--session-key
+                              "me@example.com" "alice@example.com" 7)
+                             jabber-omemo--sessions))))))
+
 (ert-deftest jabber-test-omemo-protocol-regular-message-requires-session ()
   "A non-pre-key message without an established session signals no-session."
   (jabber-test-omemo-protocol-with-db

@@ -1113,6 +1113,21 @@ then looks for <encrypted> element."
       (when-let* ((parsed (jabber-omemo--parse-encrypted xml-data)))
         (list :type 'omemo :parsed parsed))))))
 
+(defun jabber-omemo--recover-prekey-failure (jc sender-jid sender-did)
+  "Drop the stale session for SENDER-JID's device SENDER-DID and rebuild.
+Called when a pre-key message failed to decrypt on both the
+existing-session and fresh-session paths: the local session state
+is unusable, so delete it (database and cache) and re-fetch the
+peer's sessions so the next exchange re-establishes cleanly.  JC
+is the connection."
+  (let ((account (jabber-connection-bare-jid jc)))
+    (jabber-omemo-store-delete-session account sender-jid sender-did)
+    (remhash (jabber-omemo--session-key account sender-jid sender-did)
+             jabber-omemo--sessions)
+    (message "OMEMO: rebuilding session for %s device %s"
+             sender-jid sender-did)
+    (jabber-omemo--ensure-sessions jc sender-jid #'ignore)))
+
 (defun jabber-omemo--decrypt-handler (jc xml-data detected)
   "Decrypt OMEMO message on JC in XML-DATA.
 DETECTED is the plist from `jabber-omemo--detect-encrypted'.
@@ -1121,10 +1136,11 @@ Catches structured OMEMO errors:
 - `jabber-omemo-not-for-us': silently return XML-DATA unchanged
   (the stanza is for a different device on the same JID, or a
   heartbeat that doesn't concern us).
-- `jabber-omemo-prekey-failed': log and re-signal so the
-  dispatcher reports the failure to the user.  Bundle repair
-  happens via the lifecycle-driven `--publish-bundle-if-needed'
-  trigger, not from the decrypt path.
+- `jabber-omemo-prekey-failed': drop the stale session and
+  schedule a rebuild via `jabber-omemo--recover-prekey-failure',
+  then re-signal so the dispatcher reports the failure to the
+  user.  Bundle repair happens via the lifecycle-driven
+  `--publish-bundle-if-needed' trigger, not from the decrypt path.
 Other OMEMO errors propagate unchanged so the dispatcher can
 replace the body with a generic decrypt-failed placeholder."
   (pcase (plist-get detected :type)
@@ -1138,6 +1154,8 @@ replace the body with a generic decrypt-failed placeholder."
        (jabber-omemo-prekey-failed
         (message "OMEMO: pre-key decrypt failed: %s"
                  (error-message-string err))
+        (pcase-let ((`(,sender-jid ,sender-did ,_reason) (cdr err)))
+          (jabber-omemo--recover-prekey-failure jc sender-jid sender-did))
         (signal (car err) (cdr err)))))
     (_ xml-data)))
 
