@@ -497,6 +497,171 @@
           (should-not called))
       (jabber-chat-unregister-decrypt-handler 'test-nil-from))))
 
+;;; Group: decrypt dedup cache
+
+(defun jabber-test-chat--encrypted-stanza (from id &optional origin-id)
+  "Build a fresh OMEMO-shaped encrypted stanza from FROM with ID.
+Optional ORIGIN-ID adds a XEP-0359 <origin-id/> child."
+  (append
+   (list 'message (list (cons 'from from) (cons 'id id))
+         (list 'encrypted
+               (list (cons 'xmlns "eu.siacs.conversations.axolotl"))))
+   (and origin-id
+        (list (list 'origin-id
+                    (list (cons 'xmlns "urn:xmpp:sid:0")
+                          (cons 'id origin-id)))))))
+
+(defun jabber-test-chat--body-text (xml-data)
+  "Return the body text of XML-DATA, or nil."
+  (car (jabber-xml-node-children
+        (car (jabber-xml-get-children xml-data 'body)))))
+
+(defmacro jabber-test-chat--with-decrypt-cache (&rest body)
+  "Run BODY with fresh decrypt handler and dedup cache state.
+Stubs `jabber-connection-bare-jid' to a fixed account."
+  (declare (indent 0) (debug t))
+  `(let ((jabber-chat-decrypt-handlers nil)
+         (jabber-chat--sorted-decrypt-handlers-cache nil)
+         (jabber-chat--crypto-loaded t)
+         (jabber-chat--decrypt-cache (make-hash-table :test #'equal))
+         (jabber-chat--decrypt-cache-fifo nil))
+     (cl-letf (((symbol-function 'jabber-connection-bare-jid)
+                (lambda (_jc) "me@x.com")))
+       ,@body)))
+
+(ert-deftest jabber-test-chat-decrypt-dedup-serves-repeat-from-cache ()
+  "A second delivery of the same encrypted stanza skips the handler."
+  (jabber-test-chat--with-decrypt-cache
+    (let ((runs 0))
+      (jabber-chat-register-decrypt-handler
+       'test-omemo
+       :detect (lambda (xml) (jabber-xml-child-with-xmlns
+                              xml "eu.siacs.conversations.axolotl"))
+       :decrypt (lambda (_jc xml _parsed)
+                  (cl-incf runs)
+                  (jabber-chat--set-body xml "secret text"))
+       :priority 10
+       :error-label "OMEMO")
+      (let ((first (jabber-chat--decrypt-if-needed
+                    nil (jabber-test-chat--encrypted-stanza
+                         "alice@x.com/phone" "msg-1")))
+            (second (jabber-chat--decrypt-if-needed
+                     nil (jabber-test-chat--encrypted-stanza
+                          "alice@x.com/phone" "msg-1"))))
+        (should (= 1 runs))
+        (should (string= "secret text" (jabber-test-chat--body-text first)))
+        (should (string= "secret text" (jabber-test-chat--body-text second)))))))
+
+(ert-deftest jabber-test-chat-decrypt-dedup-prefers-origin-id ()
+  "Deliveries matching on origin-id dedup even when id attrs differ."
+  (jabber-test-chat--with-decrypt-cache
+    (let ((runs 0))
+      (jabber-chat-register-decrypt-handler
+       'test-omemo
+       :detect (lambda (xml) (jabber-xml-child-with-xmlns
+                              xml "eu.siacs.conversations.axolotl"))
+       :decrypt (lambda (_jc xml _parsed)
+                  (cl-incf runs)
+                  (jabber-chat--set-body xml "secret text"))
+       :priority 10
+       :error-label "OMEMO")
+      (jabber-chat--decrypt-if-needed
+       nil (jabber-test-chat--encrypted-stanza
+            "alice@x.com/phone" "id-a" "origin-1"))
+      (jabber-chat--decrypt-if-needed
+       nil (jabber-test-chat--encrypted-stanza
+            "alice@x.com/phone" "id-b" "origin-1"))
+      (should (= 1 runs)))))
+
+(ert-deftest jabber-test-chat-decrypt-dedup-no-cross-sender-collision ()
+  "Two senders using the same stanza id are decrypted independently."
+  (jabber-test-chat--with-decrypt-cache
+    (let ((runs 0))
+      (jabber-chat-register-decrypt-handler
+       'test-omemo
+       :detect (lambda (xml) (jabber-xml-child-with-xmlns
+                              xml "eu.siacs.conversations.axolotl"))
+       :decrypt (lambda (_jc xml _parsed)
+                  (cl-incf runs)
+                  (jabber-chat--set-body xml "secret text"))
+       :priority 10
+       :error-label "OMEMO")
+      (jabber-chat--decrypt-if-needed
+       nil (jabber-test-chat--encrypted-stanza "alice@x.com/phone" "1"))
+      (jabber-chat--decrypt-if-needed
+       nil (jabber-test-chat--encrypted-stanza "bob@x.com/laptop" "1"))
+      (should (= 2 runs)))))
+
+(ert-deftest jabber-test-chat-decrypt-dedup-caches-bodyless-outcome ()
+  "A successful decrypt with no body (heartbeat) is not re-decrypted."
+  (jabber-test-chat--with-decrypt-cache
+    (let ((runs 0))
+      (jabber-chat-register-decrypt-handler
+       'test-omemo
+       :detect (lambda (xml) (jabber-xml-child-with-xmlns
+                              xml "eu.siacs.conversations.axolotl"))
+       :decrypt (lambda (_jc xml _parsed) (cl-incf runs) xml)
+       :priority 10
+       :error-label "OMEMO")
+      (jabber-chat--decrypt-if-needed
+       nil (jabber-test-chat--encrypted-stanza "alice@x.com/phone" "hb-1"))
+      (let ((second (jabber-chat--decrypt-if-needed
+                     nil (jabber-test-chat--encrypted-stanza
+                          "alice@x.com/phone" "hb-1"))))
+        (should (= 1 runs))
+        (should-not (jabber-test-chat--body-text second))))))
+
+(ert-deftest jabber-test-chat-decrypt-dedup-does-not-cache-failures ()
+  "A failed decrypt stays retryable on the next delivery."
+  (jabber-test-chat--with-decrypt-cache
+    (let ((runs 0))
+      (jabber-chat-register-decrypt-handler
+       'test-omemo
+       :detect (lambda (xml) (jabber-xml-child-with-xmlns
+                              xml "eu.siacs.conversations.axolotl"))
+       :decrypt (lambda (_jc xml _parsed)
+                  (cl-incf runs)
+                  (if (= runs 1)
+                      (error "Ratchet failure")
+                    (jabber-chat--set-body xml "recovered text")))
+       :priority 10
+       :error-label "OMEMO")
+      (let ((first (jabber-chat--decrypt-if-needed
+                    nil (jabber-test-chat--encrypted-stanza
+                         "alice@x.com/phone" "msg-2")))
+            (second (jabber-chat--decrypt-if-needed
+                     nil (jabber-test-chat--encrypted-stanza
+                          "alice@x.com/phone" "msg-2"))))
+        (should (= 2 runs))
+        (should (string= "[OMEMO: could not decrypt]"
+                         (jabber-test-chat--body-text first)))
+        (should (string= "recovered text"
+                         (jabber-test-chat--body-text second)))))))
+
+(ert-deftest jabber-test-chat-decrypt-dedup-evicts-oldest ()
+  "The cache is bounded; the oldest entry is evicted first."
+  (jabber-test-chat--with-decrypt-cache
+    (let ((jabber-chat--decrypt-cache-max 2)
+          (runs 0))
+      (jabber-chat-register-decrypt-handler
+       'test-omemo
+       :detect (lambda (xml) (jabber-xml-child-with-xmlns
+                              xml "eu.siacs.conversations.axolotl"))
+       :decrypt (lambda (_jc xml _parsed)
+                  (cl-incf runs)
+                  (jabber-chat--set-body xml "secret text"))
+       :priority 10
+       :error-label "OMEMO")
+      (dolist (id '("e-1" "e-2" "e-3"))
+        (jabber-chat--decrypt-if-needed
+         nil (jabber-test-chat--encrypted-stanza "alice@x.com/phone" id)))
+      ;; "e-1" was evicted, so it decrypts again; "e-3" is cached.
+      (jabber-chat--decrypt-if-needed
+       nil (jabber-test-chat--encrypted-stanza "alice@x.com/phone" "e-1"))
+      (jabber-chat--decrypt-if-needed
+       nil (jabber-test-chat--encrypted-stanza "alice@x.com/phone" "e-3"))
+      (should (= 4 runs)))))
+
 ;;; Group 8: jabber-chat-goto-address error handling
 
 (ert-deftest jabber-test-chat-goto-address-logs-error-on-failure ()

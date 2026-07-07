@@ -660,27 +660,98 @@ body with \"[LABEL: could not decrypt]\" and return XML-DATA."
 (defvar jabber-chat--crypto-loaded nil
   "Non-nil after crypto modules have been loaded.")
 
+;;; Decrypt dedup cache
+
+(defvar jabber-chat--decrypt-cache (make-hash-table :test #'equal)
+  "Decryption outcomes for recently seen encrypted stanzas.
+Keys are (ACCOUNT BARE-FROM STANZA-ID) lists; values are the
+decrypted body string, or the symbol `no-body' for successful
+decrypts that produced no body (heartbeats, stanzas addressed to
+another device).  Ratchet decryption is stateful: a stanza
+delivered twice (offline push plus MAM catchup, MAM unwrapping,
+stream resumption replay) must not reach the ratchet a second
+time, so the cached outcome is replayed instead.  Failures are
+never cached, keeping transient failures retryable.")
+
+(defvar jabber-chat--decrypt-cache-fifo nil
+  "Keys of `jabber-chat--decrypt-cache' in insertion order, newest first.")
+
+(defconst jabber-chat--decrypt-cache-max 512
+  "Maximum number of entries kept in `jabber-chat--decrypt-cache'.")
+
+(defun jabber-chat--decrypt-cache-key (jc xml-data)
+  "Return the dedup cache key for XML-DATA received on JC, or nil.
+Prefers the XEP-0359 origin-id over the id attribute since it
+survives MAM archival unchanged.  A stanza with neither id, or
+without a from attribute, cannot be deduplicated."
+  (when-let* ((from (jabber-xml-get-attribute xml-data 'from))
+              (id (or (jabber-chat--origin-id xml-data)
+                      (jabber-xml-get-attribute xml-data 'id))))
+    (list (jabber-connection-bare-jid jc) (jabber-jid-user from) id)))
+
+(defun jabber-chat--decrypt-cache-put (key value)
+  "Store VALUE for KEY, evicting the oldest entry past the size bound."
+  (unless (gethash key jabber-chat--decrypt-cache)
+    (push key jabber-chat--decrypt-cache-fifo))
+  (puthash key value jabber-chat--decrypt-cache)
+  (when (> (hash-table-count jabber-chat--decrypt-cache)
+           jabber-chat--decrypt-cache-max)
+    (let ((oldest (car (last jabber-chat--decrypt-cache-fifo))))
+      (remhash oldest jabber-chat--decrypt-cache)
+      (setq jabber-chat--decrypt-cache-fifo
+            (nbutlast jabber-chat--decrypt-cache-fifo)))))
+
+(defun jabber-chat--decrypt-outcome (xml-data)
+  "Return the cacheable decrypt outcome for XML-DATA.
+The body string when the stanza carries text, `no-body' when it
+has none, nil when decryption failed (placeholder body)."
+  (let ((body (car (jabber-xml-node-children
+                    (car (jabber-xml-get-children xml-data 'body))))))
+    (cond ((null body) 'no-body)
+          ((jabber--decrypt-failure-body-p body) nil)
+          (t body))))
+
 (defun jabber-chat--decrypt-if-needed (jc xml-data)
   "Dispatch XML-DATA to the first matching decrypt handler.
 On first call, loads crypto modules so their handlers are registered.
 Tries handlers in :priority order.  Returns XML-DATA, possibly
 with its body replaced by decrypted plaintext (or an error
 placeholder).  Skips dispatch when XML-DATA has no `from' attribute.
-JC is the Jabber connection."
+An encrypted stanza reaches its handler at most once per session:
+repeated deliveries are served from `jabber-chat--decrypt-cache'
+instead of re-running the ratchet.  JC is the Jabber connection."
   (unless jabber-chat--crypto-loaded
     (condition-case nil (require 'jabber-omemo nil t) (error nil))
     (condition-case nil (require 'jabber-openpgp nil t) (error nil))
     (condition-case nil (require 'jabber-openpgp-legacy nil t) (error nil))
     (setq jabber-chat--crypto-loaded t))
-  ;; First-match-wins: the dispatcher stops at the first handler whose
-  ;; :detect returns non-nil, so re-entrancy guards are unnecessary.
   (if (null (jabber-xml-get-attribute xml-data 'from))
       xml-data
-    (cl-loop for (_id . props) in (jabber-chat--sorted-decrypt-handlers)
-             for parsed = (funcall (plist-get props :detect) xml-data)
-             when parsed
-             return (jabber-chat--try-decrypt jc xml-data parsed props)
-             finally return xml-data)))
+    (let* ((key (and (jabber-xml-encrypted-p xml-data)
+                     (jabber-chat--decrypt-cache-key jc xml-data)))
+           (cached (and key (gethash key jabber-chat--decrypt-cache))))
+      (cond
+       ((eq cached 'no-body) xml-data)
+       ((stringp cached) (jabber-chat--set-body xml-data cached))
+       (t (jabber-chat--dispatch-decrypt jc xml-data key))))))
+
+(defun jabber-chat--dispatch-decrypt (jc xml-data key)
+  "Run the first matching decrypt handler on XML-DATA over JC.
+When KEY is non-nil and a handler ran, record the outcome in
+`jabber-chat--decrypt-cache'.  Returns XML-DATA."
+  ;; First-match-wins: the dispatcher stops at the first handler whose
+  ;; :detect returns non-nil, so re-entrancy guards are unnecessary.
+  (cl-loop for (_id . props) in (jabber-chat--sorted-decrypt-handlers)
+           for parsed = (funcall (plist-get props :detect) xml-data)
+           when parsed
+           return (let ((result (jabber-chat--try-decrypt
+                                 jc xml-data parsed props)))
+                    (when key
+                      (when-let* ((outcome
+                                   (jabber-chat--decrypt-outcome result)))
+                        (jabber-chat--decrypt-cache-put key outcome)))
+                    result)
+           finally return xml-data))
 
 (defun jabber-chat--display-message (jc _xml-data chat-buffer
 					error-p from msg-plist)
