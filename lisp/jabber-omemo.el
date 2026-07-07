@@ -1000,6 +1000,48 @@ For MUC messages (type=groupchat), try in order:
         (or (and real-jid (jabber-jid-user real-jid))
             (jabber-omemo--match-jid-by-affiliation group nick))))))
 
+(defun jabber-omemo--decrypt-key-with-session (jc sender-jid sender-did
+                                                  store-ptr pre-key-p key-data)
+  "Decrypt KEY-DATA from SENDER-JID's device SENDER-DID via JC.
+STORE-PTR is the local OMEMO store.  For a pre-key message
+\(PRE-KEY-P non-nil) an existing session is tried first: an
+established ratchet must not re-run the pre-key handshake, or a
+repeated pre-key message (offline edit, replay) would consume the
+pre-key twice.  When that attempt fails, fall back to a fresh
+session; picomemo restores session state on a failed decrypt, so
+the retry is safe.  This also resolves a peer that reset their
+session and simultaneous initiations.  A regular message requires
+an existing session.
+
+Returns (SESSION-PTR DECRYPTED-KEY FRESH-P), FRESH-P non-nil when
+the fresh-session pre-key path was used.  Signals
+`jabber-omemo-no-session' or `jabber-omemo-prekey-failed'."
+  (let ((existing (jabber-omemo--get-session jc sender-jid sender-did)))
+    (cond
+     ((not pre-key-p)
+      (unless existing
+        (signal 'jabber-omemo-no-session (list sender-jid sender-did)))
+      (list existing
+            (jabber-omemo-decrypt-key existing store-ptr nil key-data)
+            nil))
+     (t
+      (or (and existing
+               (condition-case nil
+                   (list existing
+                         (jabber-omemo-decrypt-key
+                          existing store-ptr t key-data)
+                         nil)
+                 (jabber-omemo-error nil)))
+          (let ((fresh (jabber-omemo-make-session)))
+            (condition-case err
+                (list fresh
+                      (jabber-omemo-decrypt-key fresh store-ptr t key-data)
+                      t)
+              (jabber-omemo-error
+               (signal 'jabber-omemo-prekey-failed
+                       (list sender-jid sender-did
+                             (error-message-string err)))))))))))
+
 (defun jabber-omemo--decrypt-stanza (jc xml-data parsed)
   "Decrypt OMEMO message on JC in XML-DATA using PARSED data.
 Returns modified XML-DATA with decrypted body.
@@ -1010,7 +1052,8 @@ Signals structured errors that callers can dispatch on:
 - `jabber-omemo-no-session' for a non-prekey message when we have
   no local session with the sender's device.
 - `jabber-omemo-prekey-failed' when the C decrypt fails on a
-  pre-key message (usually a stale local pre-key).
+  pre-key message on both the existing-session and fresh-session
+  paths (usually a stale local pre-key).
 - `jabber-omemo-error' (the parent) for all other crypto failures."
   (let* ((our-did (jabber-omemo--get-device-id jc))
          (account (jabber-connection-bare-jid jc))
@@ -1024,25 +1067,13 @@ Signals structured errors that callers can dispatch on:
              (our-key-entry (cl-find our-did keys :key #'car)))
 	(unless our-key-entry
           (signal 'jabber-omemo-not-for-us (list our-did)))
-	(let* ((key-data (plist-get (cdr our-key-entry) :data))
-               (pre-key-p (plist-get (cdr our-key-entry) :pre-key-p))
-               (store-ptr (jabber-omemo--get-store jc))
-               (session-ptr (if pre-key-p
-				(jabber-omemo-make-session)
-                              (or (jabber-omemo--get-session
-                                   jc sender-jid sender-did)
-                                  (signal 'jabber-omemo-no-session
-                                          (list sender-jid sender-did)))))
-               (decrypted-key
-		(condition-case err
-                    (jabber-omemo-decrypt-key
-                     session-ptr store-ptr pre-key-p key-data)
-                  (jabber-omemo-error
-                   (if pre-key-p
-                       (signal 'jabber-omemo-prekey-failed
-                               (list sender-jid sender-did
-                                     (error-message-string err)))
-                     (signal (car err) (cdr err)))))))
+	(pcase-let* ((key-data (plist-get (cdr our-key-entry) :data))
+                     (pre-key-p (plist-get (cdr our-key-entry) :pre-key-p))
+                     (store-ptr (jabber-omemo--get-store jc))
+                     (`(,session-ptr ,decrypted-key ,_fresh-p)
+                      (jabber-omemo--decrypt-key-with-session
+                       jc sender-jid sender-did store-ptr
+                       pre-key-p key-data)))
           (jabber-omemo--save-session jc sender-jid sender-did session-ptr)
           (jabber-omemo--persist-store jc)
           (let ((trust (jabber-omemo-store-load-trust

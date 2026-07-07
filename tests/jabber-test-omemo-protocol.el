@@ -424,5 +424,119 @@ Clears OMEMO in-memory caches and tears down on exit."
       (jabber-omemo--publish-bundle-if-needed 'fake-jc)
       (should (= 2 fetch-count)))))
 
+;;; Group 7: Pre-key session selection
+
+(defun jabber-test-omemo-protocol--initiate-toward (jc)
+  "Create a peer store with a session initiated toward JC's store.
+Returns (PEER-SESSION . PK-ID) where PEER-SESSION is the sending
+side session and PK-ID the pre-key id it consumed."
+  (let* ((our-bundle (jabber-omemo-get-bundle (jabber-omemo--get-store jc)))
+         (peer-store (jabber-omemo-deserialize-store
+                      (jabber-omemo-setup-store)))
+         (pk (car (plist-get our-bundle :pre-keys))))
+    (cons (jabber-omemo-initiate-session
+           peer-store
+           (plist-get our-bundle :signature)
+           (plist-get our-bundle :signed-pre-key)
+           (plist-get our-bundle :identity-key)
+           (cdr pk)
+           (plist-get our-bundle :signed-pre-key-id)
+           (car pk))
+          (car pk))))
+
+(ert-deftest jabber-test-omemo-protocol-prekey-reuses-established-session ()
+  "A second pre-key message decrypts via the saved session, not a fresh one."
+  (jabber-test-omemo-protocol-with-db
+    (cl-letf (((symbol-function 'jabber-connection-bare-jid)
+               (lambda (_jc) "me@example.com")))
+      (let* ((jc (list :bare-jid "me@example.com"))
+             (store-ptr (jabber-omemo--get-store jc))
+             (alice (car (jabber-test-omemo-protocol--initiate-toward jc)))
+             (key-1 (make-string 32 ?A))
+             (key-2 (make-string 32 ?B))
+             (msg-1 (jabber-omemo-encrypt-key alice key-1))
+             (msg-2 (jabber-omemo-encrypt-key alice key-2)))
+        (should (plist-get msg-1 :pre-key-p))
+        (should (plist-get msg-2 :pre-key-p))
+        (pcase-let ((`(,session ,decrypted ,fresh-p)
+                     (jabber-omemo--decrypt-key-with-session
+                      jc "alice@example.com" 7 store-ptr t
+                      (plist-get msg-1 :data))))
+          (should (string= key-1 decrypted))
+          (should fresh-p)
+          (jabber-omemo--save-session jc "alice@example.com" 7 session))
+        (pcase-let ((`(,_session ,decrypted ,fresh-p)
+                     (jabber-omemo--decrypt-key-with-session
+                      jc "alice@example.com" 7 store-ptr t
+                      (plist-get msg-2 :data))))
+          (should (string= key-2 decrypted))
+          (should-not fresh-p))))))
+
+(ert-deftest jabber-test-omemo-protocol-prekey-out-of-order-falls-back ()
+  "An earlier pre-key message still decrypts after a later one.
+The C module's skipped-message-key callbacks are stubs (see
+todo.org), so the established-session path cannot serve an older
+ratchet position; the fresh-session fallback re-derives it from
+the still-present pre-key instead."
+  (jabber-test-omemo-protocol-with-db
+    (cl-letf (((symbol-function 'jabber-connection-bare-jid)
+               (lambda (_jc) "me@example.com")))
+      (let* ((jc (list :bare-jid "me@example.com"))
+             (store-ptr (jabber-omemo--get-store jc))
+             (alice (car (jabber-test-omemo-protocol--initiate-toward jc)))
+             (key-1 (make-string 32 ?A))
+             (key-2 (make-string 32 ?B))
+             (msg-1 (jabber-omemo-encrypt-key alice key-1))
+             (msg-2 (jabber-omemo-encrypt-key alice key-2)))
+        (pcase-let ((`(,session ,decrypted ,fresh-p)
+                     (jabber-omemo--decrypt-key-with-session
+                      jc "alice@example.com" 7 store-ptr t
+                      (plist-get msg-2 :data))))
+          (should (string= key-2 decrypted))
+          (should fresh-p)
+          (jabber-omemo--save-session jc "alice@example.com" 7 session))
+        (pcase-let ((`(,_session ,decrypted ,fresh-p)
+                     (jabber-omemo--decrypt-key-with-session
+                      jc "alice@example.com" 7 store-ptr t
+                      (plist-get msg-1 :data))))
+          (should (string= key-1 decrypted))
+          (should fresh-p))))))
+
+(ert-deftest jabber-test-omemo-protocol-prekey-falls-back-on-peer-reset ()
+  "A pre-key message from a re-initialized peer session decrypts fresh."
+  (jabber-test-omemo-protocol-with-db
+    (cl-letf (((symbol-function 'jabber-connection-bare-jid)
+               (lambda (_jc) "me@example.com")))
+      (let* ((jc (list :bare-jid "me@example.com"))
+             (store-ptr (jabber-omemo--get-store jc))
+             (alice-1 (car (jabber-test-omemo-protocol--initiate-toward jc)))
+             (msg-1 (jabber-omemo-encrypt-key alice-1 (make-string 32 ?A))))
+        (pcase-let ((`(,session ,_decrypted ,_fresh-p)
+                     (jabber-omemo--decrypt-key-with-session
+                      jc "alice@example.com" 7 store-ptr t
+                      (plist-get msg-1 :data))))
+          (jabber-omemo--save-session jc "alice@example.com" 7 session))
+        ;; Alice lost her state and initiates a brand new session.
+        (let* ((alice-2 (car (jabber-test-omemo-protocol--initiate-toward jc)))
+               (key-2 (make-string 32 ?B))
+               (msg-2 (jabber-omemo-encrypt-key alice-2 key-2)))
+          (pcase-let ((`(,_session ,decrypted ,fresh-p)
+                       (jabber-omemo--decrypt-key-with-session
+                        jc "alice@example.com" 7 store-ptr t
+                        (plist-get msg-2 :data))))
+            (should (string= key-2 decrypted))
+            (should fresh-p)))))))
+
+(ert-deftest jabber-test-omemo-protocol-regular-message-requires-session ()
+  "A non-pre-key message without an established session signals no-session."
+  (jabber-test-omemo-protocol-with-db
+    (cl-letf (((symbol-function 'jabber-connection-bare-jid)
+               (lambda (_jc) "me@example.com")))
+      (let* ((jc (list :bare-jid "me@example.com"))
+             (store-ptr (jabber-omemo--get-store jc)))
+        (should-error (jabber-omemo--decrypt-key-with-session
+                       jc "alice@example.com" 7 store-ptr nil "junk")
+                      :type 'jabber-omemo-no-session)))))
+
 (provide 'jabber-test-omemo-protocol)
 ;;; jabber-test-omemo-protocol.el ends here
