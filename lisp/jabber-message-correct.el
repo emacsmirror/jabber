@@ -87,6 +87,12 @@ dropped.  Returns non-nil when the correction was accepted."
                                    (jabber-db-occupant-id-by-stanza-id
                                     replace-id))))
     (cond
+     ;; A correction that failed to decrypt must never overwrite the
+     ;; original body with the placeholder (issue #134).
+     ((jabber--decrypt-failure-body-p new-body)
+      (message "XEP-0308: dropped correction %s with undecryptable body"
+               replace-id)
+      nil)
      ((null original-from)
       (message "XEP-0308: correction for unknown message %s dropped" replace-id)
       nil)

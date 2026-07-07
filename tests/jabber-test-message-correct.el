@@ -202,6 +202,28 @@ WHERE stanza_id = 'stanza-abc'"))
         (should (plist-get msg :edited))
         (should db-called)))))
 
+(ert-deftest jabber-test-message-correct-apply-drops-undecryptable-body ()
+  "A correction whose body failed to decrypt is dropped entirely (issue #134)."
+  (jabber-test-message-correct-with-ewoc
+    (let ((msg (list :id "orig-dec-1"
+                     :from "alice@example.com/phone"
+                     :body "original plaintext"
+                     :timestamp (current-time)))
+          db-called)
+      (jabber-chat-ewoc-enter (list :foreign msg))
+      (cl-letf (((symbol-function 'jabber-db-message-sender-by-stanza-id)
+                 (lambda (_id) "alice@example.com/phone"))
+                ((symbol-function 'jabber-db-correct-message)
+                 (lambda (_id _body) (setq db-called t))))
+        (should-not (jabber-message-correct--apply
+                     "orig-dec-1" "[OMEMO: could not decrypt]"
+                     "alice@example.com/phone" nil (current-buffer))))
+      (should-not db-called)
+      (let* ((node (jabber-chat-ewoc-find-by-id "orig-dec-1"))
+             (msg (cadr (ewoc-data node))))
+        (should (equal "original plaintext" (plist-get msg :body)))
+        (should-not (plist-get msg :edited))))))
+
 (ert-deftest jabber-test-message-correct-apply-rejects-wrong-sender ()
   "jabber-message-correct--apply rejects correction from wrong sender."
   (jabber-test-message-correct-with-ewoc
