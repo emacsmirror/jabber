@@ -34,9 +34,10 @@ int omemoRandom(void *p, size_t n)
     return getrandom(p, n, 0) != (ssize_t)n;
 }
 
-/* Skipped-message-key callbacks: stubbed for milestone 1.
-   Sessions are not exposed yet, so these are never hit through the
-   public Elisp API.  They satisfy the linker. */
+/* Skipped-message-key callbacks: still stubs.  The decrypt path does
+   hit these, so an out-of-order message within an established chain
+   cannot be recovered from a skipped key; pre-key messages fall back
+   to a fresh session on the Elisp side instead. */
 
 int omemoLoadMessageKey(struct omemoSession *s, struct omemoMessageKey *k)
 {
@@ -328,6 +329,49 @@ F_refill_pre_keys(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
         return Qnil_v;
     }
     return Qnil_v;
+}
+
+/*  jabber-omemo--remove-pre-key  */
+
+static emacs_value
+F_remove_pre_key(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
+                 void *data)
+{
+    (void)nargs; (void)data;
+
+    struct omemoStore *store = env->get_user_ptr(env, args[0]);
+    if (env->non_local_exit_check(env))
+        return Qnil_v;
+
+    intmax_t id = env->extract_integer(env, args[1]);
+    if (env->non_local_exit_check(env))
+        return Qnil_v;
+
+    if (id <= 0)
+        return Qnil_v;
+
+    for (int i = 0; i < OMEMO_NUMPREKEYS; i++) {
+        if (store->prekeys[i].id == (uint32_t)id) {
+            memset(&store->prekeys[i], 0, sizeof(struct omemoPreKey));
+            return Qt_v;
+        }
+    }
+    return Qnil_v;
+}
+
+/*  jabber-omemo--used-pre-key-id  */
+
+static emacs_value
+F_used_pre_key_id(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
+                  void *data)
+{
+    (void)nargs; (void)data;
+
+    struct omemoSession *session = env->get_user_ptr(env, args[0]);
+    if (env->non_local_exit_check(env))
+        return Qnil_v;
+
+    return env->make_integer(env, session->usedpk_id);
 }
 
 /*  jabber-omemo--encrypt-message  */
@@ -938,6 +982,17 @@ emacs_module_init(struct emacs_runtime *runtime)
     DEFUN("jabber-omemo--refill-pre-keys", F_refill_pre_keys, 1, 1,
           "Refill removed pre-keys in STORE-PTR.\n"
           "Mutates the store; caller must re-serialize.");
+
+    DEFUN("jabber-omemo--remove-pre-key", F_remove_pre_key, 2, 2,
+          "Remove one-time pre-key ID from STORE-PTR (XEP-0384).\n"
+          "Zeroes the matching slot; jabber-omemo--refill-pre-keys\n"
+          "regenerates zeroed slots.  Mutates the store; caller must\n"
+          "re-serialize.  Returns non-nil when a slot was removed.");
+
+    DEFUN("jabber-omemo--used-pre-key-id", F_used_pre_key_id, 1, 1,
+          "Return the one-time pre-key id consumed by SESSION-PTR.\n"
+          "Non-zero only after a fresh session decrypted a pre-key\n"
+          "message; the value persists in the serialized session.");
 
     DEFUN("jabber-omemo--encrypt-message", F_encrypt_message, 1, 1,
           "Encrypt PLAINTEXT (a unibyte string) with OMEMO 0.3.\n"

@@ -444,5 +444,63 @@
         (r2 (jabber-omemo--aesgcm-encrypt "test")))
     (should-not (string= (plist-get r1 :key) (plist-get r2 :key)))))
 
+;;; Group 10: One-time pre-key removal
+
+(ert-deftest jabber-test-omemo-module-remove-pre-key ()
+  "remove-pre-key zeroes exactly the matching slot."
+  (let* ((store (jabber-omemo--deserialize-store (jabber-omemo--setup-store)))
+         (before (plist-get (jabber-omemo--get-bundle store) :pre-keys))
+         (victim (car (nth 3 before))))
+    (should (jabber-omemo--remove-pre-key store victim))
+    (let ((after (plist-get (jabber-omemo--get-bundle store) :pre-keys)))
+      (should (= (1- (length before)) (length after)))
+      (should-not (assq victim after)))
+    ;; Removing an already-removed id is a no-op.
+    (should-not (jabber-omemo--remove-pre-key store victim))))
+
+(ert-deftest jabber-test-omemo-module-remove-pre-key-unknown-id ()
+  "remove-pre-key returns nil for an id not in the store."
+  (let ((store (jabber-omemo--deserialize-store (jabber-omemo--setup-store))))
+    (should-not (jabber-omemo--remove-pre-key store 999999))
+    (should-not (jabber-omemo--remove-pre-key store 0))))
+
+(ert-deftest jabber-test-omemo-module-remove-then-refill-uses-fresh-id ()
+  "Refilling after removal restores the count with a new id."
+  (let* ((store (jabber-omemo--deserialize-store (jabber-omemo--setup-store)))
+         (before (plist-get (jabber-omemo--get-bundle store) :pre-keys))
+         (victim (car (car before))))
+    (jabber-omemo--remove-pre-key store victim)
+    (jabber-omemo--refill-pre-keys store)
+    (let ((after (plist-get (jabber-omemo--get-bundle store) :pre-keys)))
+      (should (= (length before) (length after)))
+      (should-not (assq victim after)))))
+
+(ert-deftest jabber-test-omemo-module-used-pre-key-id-fresh-session ()
+  "A session that never consumed a pre-key reports id 0."
+  (should (zerop (jabber-omemo--used-pre-key-id
+                  (jabber-omemo--make-session)))))
+
+(ert-deftest jabber-test-omemo-module-used-pre-key-id-after-decrypt ()
+  "After a pre-key decrypt the session reports the consumed id."
+  (let* ((alice (jabber-omemo--deserialize-store (jabber-omemo--setup-store)))
+         (bob (jabber-omemo--deserialize-store (jabber-omemo--setup-store)))
+         (bundle (jabber-omemo--get-bundle bob))
+         (pk (car (plist-get bundle :pre-keys)))
+         (alice-session (jabber-omemo--initiate-session
+                         alice
+                         (plist-get bundle :signature)
+                         (plist-get bundle :signed-pre-key)
+                         (plist-get bundle :identity-key)
+                         (cdr pk)
+                         (plist-get bundle :signed-pre-key-id)
+                         (car pk)))
+         (encrypted (jabber-omemo--encrypt-key alice-session
+                                               (make-string 32 ?K)))
+         (bob-session (jabber-omemo--make-session)))
+    (jabber-omemo--decrypt-key bob-session bob
+                               (plist-get encrypted :pre-key-p)
+                               (plist-get encrypted :data))
+    (should (= (car pk) (jabber-omemo--used-pre-key-id bob-session)))))
+
 (provide 'jabber-test-omemo-module)
 ;;; jabber-test-omemo-module.el ends here

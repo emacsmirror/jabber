@@ -113,6 +113,8 @@ Signal a `user-error' otherwise."
 (declare-function jabber-omemo--get-bundle "ext:jabber-omemo-core")
 (declare-function jabber-omemo--rotate-signed-pre-key "ext:jabber-omemo-core")
 (declare-function jabber-omemo--refill-pre-keys "ext:jabber-omemo-core")
+(declare-function jabber-omemo--remove-pre-key "ext:jabber-omemo-core")
+(declare-function jabber-omemo--used-pre-key-id "ext:jabber-omemo-core")
 (declare-function jabber-omemo--encrypt-message "ext:jabber-omemo-core")
 (declare-function jabber-omemo--decrypt-message "ext:jabber-omemo-core")
 (declare-function jabber-omemo--make-session "ext:jabber-omemo-core")
@@ -173,6 +175,21 @@ Returns a plist with keys :identity-key, :signed-pre-key,
 Mutates the store; caller must re-serialize."
   (jabber-omemo--require-module)
   (jabber-omemo--rotate-signed-pre-key store-ptr))
+
+(defun jabber-omemo-remove-pre-key (store-ptr id)
+  "Remove one-time pre-key ID from STORE-PTR.
+Zeroes the matching slot per XEP-0384 one-time use;
+`jabber-omemo-refill-pre-keys' regenerates zeroed slots.  The
+store must be re-serialized afterwards.  Returns non-nil when a
+slot was removed."
+  (jabber-omemo--remove-pre-key store-ptr id))
+
+(defun jabber-omemo-used-pre-key-id (session-ptr)
+  "Return the one-time pre-key id consumed by SESSION-PTR.
+Zero when the session never consumed a pre-key.  Only meaningful
+right after a fresh session decrypted a pre-key message; the
+value persists in the serialized session."
+  (jabber-omemo--used-pre-key-id session-ptr))
 
 (defun jabber-omemo-refill-pre-keys (store-ptr)
   "Refill removed pre-keys in STORE-PTR.
