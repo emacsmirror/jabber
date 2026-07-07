@@ -775,6 +775,90 @@ Dedups concurrent calls per JC via
                  (jabber-omemo--publish-bundle jc)))
            (remhash key jabber-omemo--bundle-publishes-in-flight)))))))
 
+;;; One-time pre-key removal (XEP-0384 section 4.3)
+
+(defvar jabber-omemo--pending-prekey-removals (make-hash-table :test #'equal)
+  "Account to list of consumed one-time pre-key ids awaiting removal.
+Filled after a fresh-session pre-key decrypt.  Removal is
+deferred until MAM catchup completes so a repeated or corrected
+pre-key message from the same catchup still decrypts; the
+established session and the decrypt dedup cache cover the live
+window in the meantime.")
+
+(defvar jabber-omemo--prekey-flush-timer nil
+  "Debounce timer for `jabber-omemo--flush-prekey-removals'.")
+
+(defconst jabber-omemo--prekey-flush-delay 30
+  "Seconds to wait before removing consumed pre-keys.
+Covers accounts without MAM: long enough for an offline-push
+duplicate of the pre-key message to arrive first.")
+
+(defvar jabber-omemo--prekey-exports-warned nil
+  "Non-nil after warning once about a stale native module.")
+
+(defun jabber-omemo--prekey-exports-p ()
+  "Return non-nil when the native module has the pre-key exports.
+Warn once when it does not (stale jabber-omemo-core.so)."
+  (or (and (fboundp 'jabber-omemo--used-pre-key-id)
+           (fboundp 'jabber-omemo--remove-pre-key))
+      (prog1 nil
+        (unless jabber-omemo--prekey-exports-warned
+          (setq jabber-omemo--prekey-exports-warned t)
+          (message "OMEMO: jabber-omemo-core.so predates pre-key removal; \
+run `make module' to rebuild")))))
+
+(defun jabber-omemo--mam-syncing-p ()
+  "Return non-nil when a MAM catchup is in progress."
+  (and (fboundp 'jabber-mam-syncing-p) (jabber-mam-syncing-p)))
+
+(defun jabber-omemo--note-consumed-prekey (jc session-ptr)
+  "Record SESSION-PTR's consumed one-time pre-key for later removal.
+Called after a fresh-session pre-key decrypt on JC; the reuse
+path must not call this, since `usedpk_id' persists in serialized
+sessions.  Schedules a debounced flush."
+  (when (jabber-omemo--prekey-exports-p)
+    (let ((id (jabber-omemo-used-pre-key-id session-ptr))
+          (account (jabber-connection-bare-jid jc)))
+      (when (> id 0)
+        (cl-pushnew id (gethash account
+                                jabber-omemo--pending-prekey-removals))
+        (jabber-omemo--schedule-prekey-flush jc)))))
+
+(defun jabber-omemo--schedule-prekey-flush (jc)
+  "Restart the debounced pre-key removal flush for JC."
+  (when (timerp jabber-omemo--prekey-flush-timer)
+    (cancel-timer jabber-omemo--prekey-flush-timer))
+  (setq jabber-omemo--prekey-flush-timer
+        (run-with-timer jabber-omemo--prekey-flush-delay nil
+                        #'jabber-omemo--flush-prekey-removals jc)))
+
+(defun jabber-omemo--flush-prekey-removals (jc)
+  "Remove consumed one-time pre-keys for JC's account and republish.
+No-op while a MAM sync is running (the sync-complete hook retries)
+or when nothing is pending.  Removes each pending pre-key from the
+store, refills, persists, and republishes the bundle; the drift
+check in `jabber-omemo--bundle-needs-republish-p' cannot see an
+id-level replacement, so the publish is unconditional."
+  (let* ((account (jabber-connection-bare-jid jc))
+         (ids (gethash account jabber-omemo--pending-prekey-removals)))
+    (when (and ids
+               (not (jabber-omemo--mam-syncing-p))
+               (jabber-omemo--prekey-exports-p))
+      (remhash account jabber-omemo--pending-prekey-removals)
+      (let ((store-ptr (jabber-omemo--get-store jc)))
+        (dolist (id ids)
+          (jabber-omemo-remove-pre-key store-ptr id))
+        (jabber-omemo-refill-pre-keys store-ptr)
+        (jabber-omemo--persist-store jc)
+        (message "OMEMO: removed %d consumed pre-key(s)" (length ids))
+        (jabber-omemo--publish-bundle jc)))))
+
+(defun jabber-omemo--on-mam-sync-complete (_peers)
+  "Flush pending pre-key removals once MAM catchup has finished."
+  (unless (jabber-omemo--mam-syncing-p)
+    (dolist (jc jabber-connections)
+      (jabber-omemo--flush-prekey-removals jc))))
+
 ;;; Session establishment
 
 (defun jabber-omemo--establish-session (jc jid device-id bundle)
@@ -1087,12 +1171,14 @@ Signals structured errors that callers can dispatch on:
 	(pcase-let* ((key-data (plist-get (cdr our-key-entry) :data))
                      (pre-key-p (plist-get (cdr our-key-entry) :pre-key-p))
                      (store-ptr (jabber-omemo--get-store jc))
-                     (`(,session-ptr ,decrypted-key ,_fresh-p)
+                     (`(,session-ptr ,decrypted-key ,fresh-p)
                       (jabber-omemo--decrypt-key-with-session
                        jc sender-jid sender-did store-ptr
                        pre-key-p key-data)))
           (jabber-omemo--save-session jc sender-jid sender-did session-ptr)
           (jabber-omemo--persist-store jc)
+          (when fresh-p
+            (jabber-omemo--note-consumed-prekey jc session-ptr))
           (let ((trust (jabber-omemo-store-load-trust
 			account sender-jid sender-did)))
             (when (and trust (zerop (plist-get trust :trust)))
@@ -1545,6 +1631,8 @@ Returns non-nil if handled, nil to fall through to plaintext."
 
   (add-hook 'jabber-post-connect-hooks #'jabber-omemo-on-connect)
   (add-hook 'jabber-pre-disconnect-hook #'jabber-omemo--on-disconnect)
+  (add-hook 'jabber-mam-sync-complete-functions
+            #'jabber-omemo--on-mam-sync-complete)
 
   (setq jabber-httpupload-pre-upload-transform
         #'jabber-omemo--httpupload-transform)

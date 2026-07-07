@@ -567,5 +567,108 @@ the still-present pre-key instead."
                        jc "alice@example.com" 7 store-ptr nil "junk")
                       :type 'jabber-omemo-no-session)))))
 
+;;; Group 8: One-time pre-key removal
+
+(ert-deftest jabber-test-omemo-protocol-prekey-removal-deferred-until-flush ()
+  "Both pre-key messages decrypt before the consumed key is removed."
+  (jabber-test-omemo-protocol-with-db
+    (cl-letf (((symbol-function 'jabber-connection-bare-jid)
+               (lambda (_jc) "me@example.com"))
+              ((symbol-function 'jabber-omemo--schedule-prekey-flush)
+               #'ignore)
+              ((symbol-function 'jabber-omemo--publish-bundle) #'ignore)
+              ((symbol-function 'jabber-omemo--mam-syncing-p)
+               (lambda () nil)))
+      (let* ((jc (list :bare-jid "me@example.com"))
+             (store-ptr (jabber-omemo--get-store jc))
+             (pair (jabber-test-omemo-protocol--initiate-toward jc))
+             (alice (car pair))
+             (victim (cdr pair))
+             (key-2 (make-string 32 ?B))
+             (msg-1 (jabber-omemo-encrypt-key alice (make-string 32 ?A)))
+             (msg-2 (jabber-omemo-encrypt-key alice key-2))
+             (jabber-omemo--pending-prekey-removals
+              (make-hash-table :test #'equal)))
+        (pcase-let ((`(,session ,_key ,fresh-p)
+                     (jabber-omemo--decrypt-key-with-session
+                      jc "alice@example.com" 7 store-ptr t
+                      (plist-get msg-1 :data))))
+          (should fresh-p)
+          (jabber-omemo--save-session jc "alice@example.com" 7 session)
+          (jabber-omemo--note-consumed-prekey jc session))
+        (should (equal (list victim)
+                       (gethash "me@example.com"
+                                jabber-omemo--pending-prekey-removals)))
+        ;; Removal is deferred, so the second pre-key message on the
+        ;; same pre-key still decrypts (via the established session).
+        (pcase-let ((`(,_session ,decrypted ,fresh-p)
+                     (jabber-omemo--decrypt-key-with-session
+                      jc "alice@example.com" 7 store-ptr t
+                      (plist-get msg-2 :data))))
+          (should (string= key-2 decrypted))
+          (should-not fresh-p))
+        (jabber-omemo--flush-prekey-removals jc)
+        (let ((after (plist-get (jabber-omemo-get-bundle store-ptr)
+                                :pre-keys)))
+          (should-not (assq victim after))
+          (should (gethash "me@example.com" jabber-omemo--stores)))
+        (should-not (gethash "me@example.com"
+                             jabber-omemo--pending-prekey-removals))))))
+
+(ert-deftest jabber-test-omemo-protocol-flush-noop-while-syncing ()
+  "Pending removals survive a flush attempted during MAM catchup."
+  (jabber-test-omemo-protocol-with-db
+    (cl-letf (((symbol-function 'jabber-connection-bare-jid)
+               (lambda (_jc) "me@example.com"))
+              ((symbol-function 'jabber-omemo--mam-syncing-p)
+               (lambda () t))
+              ((symbol-function 'jabber-omemo--publish-bundle) #'ignore))
+      (let ((jc (list :bare-jid "me@example.com"))
+            (jabber-omemo--pending-prekey-removals
+             (make-hash-table :test #'equal)))
+        (puthash "me@example.com" '(42)
+                 jabber-omemo--pending-prekey-removals)
+        (jabber-omemo--flush-prekey-removals jc)
+        (should (equal '(42)
+                       (gethash "me@example.com"
+                                jabber-omemo--pending-prekey-removals)))))))
+
+(ert-deftest jabber-test-omemo-protocol-flush-republishes-bundle ()
+  "A flush republishes the bundle unconditionally."
+  (jabber-test-omemo-protocol-with-db
+    (let (published)
+      (cl-letf (((symbol-function 'jabber-connection-bare-jid)
+                 (lambda (_jc) "me@example.com"))
+                ((symbol-function 'jabber-omemo--mam-syncing-p)
+                 (lambda () nil))
+                ((symbol-function 'jabber-omemo--publish-bundle)
+                 (lambda (_jc) (setq published t))))
+        (let* ((jc (list :bare-jid "me@example.com"))
+               (store-ptr (jabber-omemo--get-store jc))
+               (victim (car (car (plist-get
+                                  (jabber-omemo-get-bundle store-ptr)
+                                  :pre-keys))))
+               (jabber-omemo--pending-prekey-removals
+                (make-hash-table :test #'equal)))
+          (puthash "me@example.com" (list victim)
+                   jabber-omemo--pending-prekey-removals)
+          (jabber-omemo--flush-prekey-removals jc)
+          (should published))))))
+
+(ert-deftest jabber-test-omemo-protocol-mam-sync-complete-flushes ()
+  "The MAM sync-complete hook flushes all connections when idle."
+  (let ((flushed nil)
+        (jabber-connections '(jc-a jc-b)))
+    (cl-letf (((symbol-function 'jabber-omemo--flush-prekey-removals)
+               (lambda (jc) (push jc flushed))))
+      (cl-letf (((symbol-function 'jabber-omemo--mam-syncing-p)
+                 (lambda () t)))
+        (jabber-omemo--on-mam-sync-complete nil)
+        (should-not flushed))
+      (cl-letf (((symbol-function 'jabber-omemo--mam-syncing-p)
+                 (lambda () nil)))
+        (jabber-omemo--on-mam-sync-complete nil)
+        (should (equal '(jc-b jc-a) flushed))))))
+
 (provide 'jabber-test-omemo-protocol)
 ;;; jabber-test-omemo-protocol.el ends here
