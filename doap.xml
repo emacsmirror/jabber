@@ -495,7 +495,7 @@
         <xmpp:status>partial</xmpp:status>
         <xmpp:version>0.2</xmpp:version>
         <xmpp:since>0.10.0</xmpp:since>
-        <xmpp:note>Implements OMEMO 0.3 (legacy eu.siacs.conversations.axolotl namespace, XEP-0384 v0.2).  1:1 chat complete.  MUC: send and receive in non-anonymous rooms; no affiliation list fetch for offline members.</xmpp:note>
+        <xmpp:note>Implements OMEMO 0.3 (legacy eu.siacs.conversations.axolotl namespace, XEP-0384 v0.2).  1:1 chat complete, including one-time pre-key removal after use and session recovery on pre-key decrypt failure.  MUC: send and receive in non-anonymous rooms; no affiliation list fetch for offline members.</xmpp:note>
       </xmpp:SupportedXep>
     </implements>
     <implements>
