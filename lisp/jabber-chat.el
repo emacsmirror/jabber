@@ -125,19 +125,20 @@ t means auto-display in every chat buffer.
 nil means never fetch automatically.
 The symbol `roster' means auto-display only in one-to-one chats
 whose peer is on the roster; in MUC buffers and chats with
-unknown peers, image URLs stay clickable.
+unknown peers, image URLs stay clickable and RET loads them.
 
 Automatic display is further limited to the image types in
 `jabber-chat-image-auto-types' and the size limit in
 `jabber-image-max-bytes'."
   :type '(choice (const :tag "All chat buffers" t)
                  (const :tag "Roster contacts only" roster)
-                 (const :tag "Never" nil)))
+                 (const :tag "Never (load with RET)" nil)))
 
 (defcustom jabber-chat-image-auto-types '(png jpeg gif webp)
   "Image types eligible for automatic inline display.
 The type is detected from the downloaded bytes, never from the
-URL.  Images of other types stay clickable URLs."
+URL.  Images of other types stay clickable URLs; loading them
+with RET bypasses this list but not `jabber-image-max-bytes'."
   :type '(repeat (symbol :tag "Image type")))
 
 (defface jabber-rare-time-face
@@ -1701,15 +1702,55 @@ When nil, use the last download directory from this session or
   (setq jabber-chat-last-download-directory
         (file-name-directory dest)))
 
-(defun jabber-chat-url-action-at-point ()
-  "Download the file or image URL at point.
-Handles aesgcm:// URLs by decrypting after download."
-  (interactive)
-  (let ((url (or (get-text-property (point) 'jabber-chat-file-url)
-                 (get-text-property (point) 'jabber-chat-image-url))))
-    (unless url
-      (user-error "No downloadable URL at point"))
-    (jabber-chat-download-url url)))
+(defun jabber-chat--image-url-bounds (&optional position)
+  "Return (BEG END URL) for the image URL at POSITION, or nil.
+POSITION defaults to point."
+  (let* ((position (or position (point)))
+         (url (get-text-property position 'jabber-chat-image-url)))
+    (when url
+      (list (or (previous-single-property-change
+                 (1+ position) 'jabber-chat-image-url)
+                (point-min))
+            (or (next-single-property-change
+                 position 'jabber-chat-image-url)
+                (point-max))
+            url))))
+
+(defun jabber-chat--load-image-at-point ()
+  "Fetch and display the image URL at point inline.
+Bypasses `jabber-chat-display-images' and
+`jabber-chat-image-auto-types' as an explicit user action, but
+not `jabber-image-max-bytes'."
+  (pcase-let ((`(,beg ,end ,url) (jabber-chat--image-url-bounds)))
+    (cond ((null url)
+           (user-error "No image URL at point"))
+          ((not (display-graphic-p))
+           (user-error "Cannot display images on a text terminal"))
+          ((equal (jabber-chat--image-fetch-state beg) url)
+           (message "Image fetch already in progress"))
+          ((jabber-chat--restore-cached-image url beg end))
+          (t
+           (let ((inhibit-read-only t))
+             (jabber-chat--start-image-fetch url beg end nil))
+           (message "Loading image...")))))
+
+(defun jabber-chat-url-action-at-point (&optional arg)
+  "Load the image URL at point inline, or download the URL at point.
+An image URL that is not yet displayed is fetched and shown
+inline.  Displayed images, file URLs, and any URL with prefix
+ARG are downloaded to a file, decrypting aesgcm:// URLs after
+download."
+  (interactive "P")
+  (let ((file-url (get-text-property (point) 'jabber-chat-file-url))
+        (image-url (get-text-property (point) 'jabber-chat-image-url)))
+    (cond (file-url
+           (jabber-chat-download-url file-url))
+          ((null image-url)
+           (user-error "No downloadable URL at point"))
+          ((or arg (get-text-property (point) 'display))
+           (jabber-chat-download-url image-url))
+          (t
+           (jabber-chat--load-image-at-point)))))
 
 (defun jabber-chat-download-url (url)
   "Prompt to download URL to a local file.
@@ -1919,7 +1960,8 @@ Must be called with BUFFER current."
 (defun jabber-chat--replace-url-with-image (image url beg end buffer)
   "Display fetched IMAGE over URL text between markers BEG and END.
 Cache IMAGE by URL.  When IMAGE is nil, mark the URL text in
-BUFFER as a failed fetch so the automatic scan does not retry it."
+BUFFER as a failed fetch so the automatic scan does not retry it;
+manual loading with RET still may."
   (when image
     (jabber-chat--cache-image url image))
   (when (buffer-live-p buffer)

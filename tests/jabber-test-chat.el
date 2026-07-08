@@ -1090,6 +1090,118 @@ calls and `url', `beg' and `end' to the URL and its bounds."
     (should (equal (cons 1 (point-max))
                    (jabber-chat--isolate-image-url 1 (point-max))))))
 
+;;; Group 16: manual image load with RET
+
+(ert-deftest jabber-test-chat-image-url-bounds-at-point ()
+  (with-temp-buffer
+    (insert "x")
+    (insert (propertize jabber-test-chat--scan-url
+                        'jabber-chat-image-url jabber-test-chat--scan-url))
+    (goto-char 3)
+    (should (equal (jabber-chat--image-url-bounds)
+                   (list 2 (point-max) jabber-test-chat--scan-url)))))
+
+(ert-deftest jabber-test-chat-image-url-bounds-nil-without-property ()
+  (with-temp-buffer
+    (insert "no url here")
+    (goto-char (point-min))
+    (should-not (jabber-chat--image-url-bounds))))
+
+(defmacro jabber-test-chat--with-manual-load-buffer (&rest body)
+  "Run BODY in a temp buffer with point on an undisplayed image URL.
+Bind `fetches' to recorded `jabber-chat--start-image-fetch' calls
+and `url' to the URL; `display-graphic-p' is stubbed to t."
+  `(with-temp-buffer
+     (let ((fetches nil)
+           (url jabber-test-chat--scan-url))
+       (insert (propertize url 'jabber-chat-image-url url))
+       (goto-char (point-min))
+       (cl-letf (((symbol-function 'jabber-chat--start-image-fetch)
+                  (lambda (&rest args) (push args fetches)))
+                 ((symbol-function 'display-graphic-p)
+                  (lambda (&optional _) t)))
+         ,@body))))
+
+(ert-deftest jabber-test-chat-manual-load-bypasses-allowlist ()
+  "Manual load passes nil ALLOWED-TYPES to the fetch."
+  (jabber-test-chat--with-manual-load-buffer
+   (jabber-chat--load-image-at-point)
+   (should (equal fetches (list (list url 1 (point-max) nil))))))
+
+(ert-deftest jabber-test-chat-manual-load-blocked-while-in-flight ()
+  (jabber-test-chat--with-manual-load-buffer
+   (put-text-property 1 (point-max) 'jabber-chat-image-fetching url)
+   (jabber-chat--load-image-at-point)
+   (should (null fetches))))
+
+(ert-deftest jabber-test-chat-manual-load-retries-after-failure ()
+  (jabber-test-chat--with-manual-load-buffer
+   (put-text-property 1 (point-max) 'jabber-chat-image-fetching 'failed)
+   (jabber-chat--load-image-at-point)
+   (should (= 1 (length fetches)))))
+
+(ert-deftest jabber-test-chat-manual-load-uses-cache ()
+  (jabber-test-chat--with-manual-load-buffer
+   (unwind-protect
+       (progn
+         (jabber-chat--cache-image url '(image :type png))
+         (jabber-chat--load-image-at-point)
+         (should (null fetches))
+         (should (get-text-property 1 'display)))
+     (remhash url jabber-chat--image-cache))))
+
+(ert-deftest jabber-test-chat-ret-loads-undisplayed-image ()
+  (jabber-test-chat--with-manual-load-buffer
+   (cl-letf (((symbol-function 'jabber-chat-download-url)
+              (lambda (_) (error "Should not download"))))
+     (jabber-chat-url-action-at-point)
+     (should (= 1 (length fetches))))))
+
+(ert-deftest jabber-test-chat-ret-downloads-displayed-image ()
+  (jabber-test-chat--with-manual-load-buffer
+   (let ((downloads nil))
+     (cl-letf (((symbol-function 'jabber-chat-download-url)
+                (lambda (u) (push u downloads))))
+       (put-text-property 1 (point-max) 'display '(image :type png))
+       (jabber-chat-url-action-at-point)
+       (should (equal downloads (list url)))
+       (should (null fetches))))))
+
+(ert-deftest jabber-test-chat-ret-prefix-downloads-undisplayed ()
+  (jabber-test-chat--with-manual-load-buffer
+   (let ((downloads nil))
+     (cl-letf (((symbol-function 'jabber-chat-download-url)
+                (lambda (u) (push u downloads))))
+       (jabber-chat-url-action-at-point '(4))
+       (should (equal downloads (list url)))
+       (should (null fetches))))))
+
+(ert-deftest jabber-test-chat-ret-prefers-file-url ()
+  (jabber-test-chat--with-manual-load-buffer
+   (let ((downloads nil))
+     (cl-letf (((symbol-function 'jabber-chat-download-url)
+                (lambda (u) (push u downloads))))
+       (put-text-property 1 (point-max) 'jabber-chat-file-url
+                          "https://example.com/doc.pdf")
+       (jabber-chat-url-action-at-point)
+       (should (equal downloads '("https://example.com/doc.pdf")))
+       (should (null fetches))))))
+
+(ert-deftest jabber-test-chat-manual-load-tty-errors ()
+  "Batch Emacs is not graphical, so the tty branch errors."
+  (with-temp-buffer
+    (let ((url jabber-test-chat--scan-url))
+      (insert (propertize url 'jabber-chat-image-url url))
+      (goto-char (point-min))
+      (should-error (jabber-chat--load-image-at-point)
+                    :type 'user-error))))
+
+(ert-deftest jabber-test-chat-ret-errors-without-url ()
+  (with-temp-buffer
+    (insert "plain text")
+    (goto-char (point-min))
+    (should-error (jabber-chat-url-action-at-point) :type 'user-error)))
+
 (provide 'jabber-test-chat)
 
 ;;; jabber-test-chat.el ends here
