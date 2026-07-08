@@ -928,6 +928,31 @@ JC is a fake connection from `jabber-test-chat--make-fake-jc'."
   (cl-letf (((symbol-function 'jabber-muc-sender-p) #'ignore))
     (should-not (jabber-chat--find-buffer "nobody@example.com/x"))))
 
+;;; Group 13: aesgcm image policy
+
+(ert-deftest jabber-test-chat-aesgcm-image-size-cap-blocks-decrypt ()
+  "Oversized ciphertext is rejected before decryption runs."
+  (let ((decrypted nil))
+    (cl-letf (((symbol-function 'jabber-omemo-aesgcm-decrypt)
+               (lambda (&rest _) (setq decrypted t) "plain")))
+      (let ((jabber-image-max-bytes 4))
+        (should-not (jabber-chat--aesgcm-image-from-body
+                     "too big ciphertext" "key" "iv" nil))
+        (should-not decrypted)))))
+
+(ert-deftest jabber-test-chat-aesgcm-image-threads-allowed-types ()
+  (cl-letf (((symbol-function 'jabber-omemo-aesgcm-decrypt)
+             (lambda (&rest _) "plaintext"))
+            ((symbol-function 'jabber-image-from-data)
+             (lambda (data types) (list data types))))
+    (let ((jabber-image-max-bytes nil))
+      (should (equal (jabber-chat--aesgcm-image-from-body
+                      "ct" "key" "iv" '(png))
+                     '("plaintext" (png)))))))
+
+(ert-deftest jabber-test-chat-aesgcm-image-nil-body-returns-nil ()
+  (should-not (jabber-chat--aesgcm-image-from-body nil "key" "iv" nil)))
+
 (provide 'jabber-test-chat)
 
 ;;; jabber-test-chat.el ends here

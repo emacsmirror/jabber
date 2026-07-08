@@ -1559,44 +1559,41 @@ not a valid aesgcm:// URL.  The fragment must be 88 hex characters
             :iv iv
             :key key))))
 
-(defun jabber-chat--fetch-aesgcm-image (url callback &rest cbargs)
+(defun jabber-chat--aesgcm-image-from-body (encrypted key iv allowed-types)
+  "Decrypt ENCRYPTED with KEY and IV and build an inline image.
+Return nil when ENCRYPTED is missing or exceeds
+`jabber-image-max-bytes', decryption fails, or the plaintext
+fails the ALLOWED-TYPES check per `jabber-image-from-data'."
+  (and encrypted
+       (jabber-image--size-ok-p encrypted)
+       (and-let* ((plaintext (condition-case err
+                                 (jabber-omemo-aesgcm-decrypt key iv encrypted)
+                               (error
+                                (message "aesgcm: decryption failed: %s"
+                                         (error-message-string err))
+                                nil))))
+         (jabber-image-from-data plaintext allowed-types))))
+
+(defun jabber-chat--fetch-aesgcm-image (url allowed-types callback &rest cbargs)
   "Fetch and decrypt an aesgcm:// image URL.
-Downloads via HTTPS, decrypts with AES-256-GCM, calls CALLBACK
-with the created image (or nil) followed by CBARGS."
+Downloads via HTTPS, decrypts with AES-256-GCM, and calls
+CALLBACK with the created image (or nil) followed by CBARGS.
+ALLOWED-TYPES and `jabber-image-max-bytes' are enforced per
+`jabber-image-from-data'."
   (let ((parsed (jabber-chat--parse-aesgcm-url url)))
     (if (null parsed)
         (apply callback nil cbargs)
       (url-queue-retrieve
        (plist-get parsed :https-url)
-       (lambda (status key iv cb args)
+       (lambda (status key iv types cb args)
          (let ((url-buffer (current-buffer))
-               (image
-                (unless (plist-get status :error)
-                  (set-buffer-multibyte nil)
-                  (goto-char (point-min))
-                  (when (re-search-forward "\r?\n\r?\n" nil t)
-                    (let* ((encrypted (buffer-substring-no-properties
-                                       (point) (point-max)))
-                           (plaintext (condition-case nil
-                                          (jabber-omemo-aesgcm-decrypt
-                                           key iv encrypted)
-					(error nil))))
-                      (when plaintext
-                        (let ((img (create-image plaintext nil t)))
-                          (if (null img)
-                              (progn
-                                (message "aesgcm: failed to create image (%d bytes decrypted)"
-                                         (length plaintext))
-                                nil)
-                            (setf (image-property img :max-width)
-                                  jabber-image-max-width)
-                            (setf (image-property img :max-height)
-                                  jabber-image-max-height)
-                            img))))))))
+               (image (unless (plist-get status :error)
+                        (jabber-chat--aesgcm-image-from-body
+                         (jabber-image--response-body) key iv types))))
            (kill-buffer url-buffer)
            (apply cb image args)))
        (list (plist-get parsed :key) (plist-get parsed :iv)
-             callback cbargs)
+             allowed-types callback cbargs)
        'silent
        'inhibit-cookies))))
 
@@ -1969,7 +1966,7 @@ Preserve URL text and restore cached images without refetching."
                         (buf (current-buffer)))
                     (if (string-prefix-p "aesgcm://" url)
                         (jabber-chat--fetch-aesgcm-image
-                         url
+                         url nil
                          #'jabber-chat--replace-url-with-image
                          url beg end buf)
                       (jabber-image-fetch
