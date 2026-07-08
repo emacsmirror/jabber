@@ -29,7 +29,6 @@
 
 ;;; Code:
 
-(require 'mm-decode)
 (require 'url-queue)
 ;; For the `image-property' setf-expander (not preloaded on emacs-nox).
 (require 'image)
@@ -45,6 +44,13 @@
 (defcustom jabber-image-max-height 300
   "Maximum height in pixels for inline images."
   :type 'integer)
+
+(defcustom jabber-image-max-bytes (* 25 1024 1024)
+  "Maximum size in bytes for downloaded inline images.
+Larger downloads are never decoded, not even when loaded
+manually.  nil means no limit."
+  :type '(choice (const :tag "No limit" nil)
+                 (natnum :tag "Bytes")))
 
 (defun jabber-image--mime-to-type (mime-type)
   "Return an image type symbol for MIME-TYPE string, or nil."
@@ -86,29 +92,58 @@ MAX-WIDTH and MAX-HEIGHT default to `jabber-image-max-width' and
           (or max-height jabber-image-max-height))
     image))
 
-(defun jabber-image-fetch (url callback &rest cbargs)
+(defun jabber-image--size-ok-p (data)
+  "Return non-nil when DATA fits within `jabber-image-max-bytes'."
+  (or (null jabber-image-max-bytes)
+      (<= (string-bytes data) jabber-image-max-bytes)))
+
+(defun jabber-image--type-ok-p (data allowed-types)
+  "Return non-nil when DATA's detected image type is permitted.
+ALLOWED-TYPES is a list of image type symbols; nil permits any."
+  (or (null allowed-types)
+      (memq (image-type-from-data data) allowed-types)))
+
+(defun jabber-image-from-data (data &optional allowed-types)
+  "Create a dynamically-sized image from raw DATA string.
+Return nil when DATA exceeds `jabber-image-max-bytes', its
+detected type is not in ALLOWED-TYPES (nil permits any), or it
+cannot be decoded."
+  (and data
+       (jabber-image--size-ok-p data)
+       (jabber-image--type-ok-p data allowed-types)
+       (condition-case err
+           (jabber-image-create data)
+         (error
+          (message "jabber-image: failed to decode image: %s"
+                   (error-message-string err))
+          nil))))
+
+(defun jabber-image--response-body ()
+  "Return the HTTP response body of the current buffer, or nil.
+The buffer is made unibyte; nil is returned when no header
+separator is found."
+  (set-buffer-multibyte nil)
+  (goto-char (point-min))
+  (when (re-search-forward "\r?\n\r?\n" nil t)
+    (buffer-substring-no-properties (point) (point-max))))
+
+(defun jabber-image-fetch (url allowed-types callback &rest cbargs)
   "Fetch image at URL asynchronously.
 When complete, call CALLBACK with the image object (or nil on
-error) followed by CBARGS.  Image is sized per
+error) followed by CBARGS.  The image must satisfy
+`jabber-image-max-bytes' and ALLOWED-TYPES per
+`jabber-image-from-data'; it is sized per
 `jabber-image-max-width' and `jabber-image-max-height'."
   (url-queue-retrieve
    url
-   (lambda (status cb args)
+   (lambda (status types cb args)
      (let ((url-buffer (current-buffer))
            (image (unless (plist-get status :error)
-                    (goto-char (point-min))
-                    (when (re-search-forward "\r?\n\r?\n" nil t)
-                      (let* ((handle (mm-dissect-buffer t))
-                             (img (mm-get-image handle)))
-                        (when img
-                          (setf (image-property img :max-width)
-                                jabber-image-max-width)
-                          (setf (image-property img :max-height)
-                                jabber-image-max-height)
-                          img))))))
+                    (jabber-image-from-data
+                     (jabber-image--response-body) types))))
        (kill-buffer url-buffer)
        (apply cb image args)))
-   (list callback cbargs)
+   (list allowed-types callback cbargs)
    'silent
    'inhibit-cookies))
 

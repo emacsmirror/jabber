@@ -37,6 +37,7 @@
 (require 'url-parse)
 (require 'url-queue)
 (require 'hex-util)
+(require 'jabber-image)
 ;; For the `image-property' setf-expander (not preloaded on emacs-nox).
 (require 'image)
 
@@ -251,7 +252,6 @@ holding state for the next composed message stay inert."
 (declare-function jabber-muc-nickname "jabber-muc.el" (group &optional jc))
 (declare-function jabber-muc-our-nick-p "jabber-muc.el" (group nick))
 (defvar jabber-muc-xmlns-user)
-(declare-function jabber-image-fetch "jabber-image" (url callback &rest cbargs))
 (declare-function jabber-omemo-aesgcm-decrypt "jabber-omemo"
                   (key iv ciphertext-with-tag))
 (defvar jabber-backlog-days)
@@ -276,8 +276,6 @@ holding state for the next composed message stay inert."
 (declare-function jabber-mam-chat-opened "jabber-mam" (jc peer))
 (declare-function jabber-chatstates--clear-typing "jabber-chatstates" ())
 (defvar jabber-oob-xmlns)              ; jabber-xml.el
-(defvar jabber-image-max-width)        ; jabber-image.el
-(defvar jabber-image-max-height)       ; jabber-image.el
 
 ;;
 
@@ -1975,7 +1973,7 @@ Preserve URL text and restore cached images without refetching."
                          #'jabber-chat--replace-url-with-image
                          url beg end buf)
                       (jabber-image-fetch
-                       url
+                       url nil
                        #'jabber-chat--replace-url-with-image
                        url beg end buf))))))))))))
 

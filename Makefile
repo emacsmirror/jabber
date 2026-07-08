@@ -31,6 +31,7 @@ TESTS ?= tests/jabber-test-activity.el \
          tests/jabber-test-db.el \
          tests/jabber-test-disco.el \
          tests/jabber-test-httpupload.el \
+         tests/jabber-test-image.el \
          tests/jabber-test-mam.el \
          tests/jabber-test-menu.el \
          tests/jabber-test-message-correct.el \
