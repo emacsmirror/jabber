@@ -83,6 +83,12 @@ INITIAL-CONTENTS, HISTORY and DEFAULT-VALUE are passed straight through."
   (read-string prompt initial-contents history default-value t))
 
 (defvar jabber-connections)
+(defun jabber-roster-contact-p (jc jid)
+  "Return non-nil when JID's bare JID is on connection JC's roster."
+  (and jc jid
+       (memq (jabber-jid-symbol jid)
+             (plist-get (fsm-get-state-data jc) :roster))))
+
 (defun jabber-concat-rosters ()
   "Concatenate the rosters of all connected accounts."
   (apply #'append

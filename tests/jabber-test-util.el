@@ -271,5 +271,32 @@
   (should-not (jabber--decrypt-failure-body-p
                "[OMEMO: could not decrypt] trailing text")))
 
+;;; Group: Roster membership predicate
+
+(defun jabber-test-util--make-jc-with-roster (&rest jids)
+  "Create a fake connection whose roster contains JIDS."
+  (let ((jc (gensym "jabber-test-util-jc-")))
+    (put jc :state-data
+         (list :roster (mapcar #'jabber-jid-symbol jids)))
+    jc))
+
+(ert-deftest jabber-test-util-roster-contact-p-bare-jid ()
+  (let ((jc (jabber-test-util--make-jc-with-roster "alice@example.com")))
+    (should (jabber-roster-contact-p jc "alice@example.com"))))
+
+(ert-deftest jabber-test-util-roster-contact-p-full-jid ()
+  "Resource is stripped before the roster lookup."
+  (let ((jc (jabber-test-util--make-jc-with-roster "alice@example.com")))
+    (should (jabber-roster-contact-p jc "alice@example.com/laptop"))))
+
+(ert-deftest jabber-test-util-roster-contact-p-stranger ()
+  (let ((jc (jabber-test-util--make-jc-with-roster "alice@example.com")))
+    (should-not (jabber-roster-contact-p jc "mallory@example.com"))))
+
+(ert-deftest jabber-test-util-roster-contact-p-nil-args ()
+  (let ((jc (jabber-test-util--make-jc-with-roster "alice@example.com")))
+    (should-not (jabber-roster-contact-p nil "alice@example.com"))
+    (should-not (jabber-roster-contact-p jc nil))))
+
 (provide 'jabber-test-util)
 ;;; jabber-test-util.el ends here
