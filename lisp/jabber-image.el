@@ -31,7 +31,6 @@
 
 (require 'mm-decode)
 (require 'url-queue)
-(require 'url-parse)
 ;; For the `image-property' setf-expander (not preloaded on emacs-nox).
 (require 'image)
 
@@ -112,57 +111,6 @@ error) followed by CBARGS.  Image is sized per
    (list callback cbargs)
    'silent
    'inhibit-cookies))
-
-(defun jabber-image--replace-placeholder (image beg end buffer)
-  "Replace placeholder between BEG and END in BUFFER with IMAGE."
-  (when (and image (buffer-live-p buffer))
-    (with-current-buffer buffer
-      (let ((inhibit-read-only t))
-        (put-text-property beg end 'display image)))))
-
-(defun jabber-image--load-at-point (url beg end buffer)
-  "Fetch URL and display the image over the placeholder in BUFFER.
-BEG and END mark the placeholder region to replace."
-  (jabber-image-fetch
-   url
-   #'jabber-image--replace-placeholder
-   beg end buffer))
-
-(defvar jabber-image-placeholder-keymap
-  (let ((map (make-sparse-keymap)))
-    (define-key map [mouse-1] #'jabber-image-placeholder-click)
-    (define-key map (kbd "RET") #'jabber-image-placeholder-click)
-    map)
-  "Keymap for clickable image placeholders.")
-
-(defun jabber-image-placeholder-click ()
-  "Load the image at the placeholder under point."
-  (interactive)
-  (let ((url (get-text-property (point) 'jabber-image-url))
-        (beg (previous-single-property-change
-              (1+ (point)) 'jabber-image-url))
-        (end (next-single-property-change
-              (point) 'jabber-image-url)))
-    (when url
-      (jabber-image--load-at-point
-       url (or beg (point-min)) (or end (point-max))
-       (current-buffer)))))
-
-(defun jabber-image-insert-placeholder (url &optional text)
-  "Insert a clickable image placeholder for URL at point.
-TEXT is the display text; defaults to \"[Image: FILENAME]\" where
-FILENAME is extracted from URL."
-  (let ((label (or text
-                   (format "[Image: %s]"
-                           (file-name-nondirectory
-                            (url-filename
-                             (url-generic-parse-url url)))))))
-    (insert (propertize label
-                        'face 'link
-                        'jabber-image-url url
-                        'keymap jabber-image-placeholder-keymap
-                        'mouse-face 'highlight
-                        'help-echo "Click to load image"))))
 
 (provide 'jabber-image)
 
