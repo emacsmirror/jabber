@@ -572,6 +572,12 @@
 
     <release>
       <Version>
+        <revision>0.12.0</revision>
+        <created>2026-07-08</created>
+      </Version>
+    </release>
+    <release>
+      <Version>
         <revision>0.11.1</revision>
         <created>2026-06-26</created>
       </Version>
