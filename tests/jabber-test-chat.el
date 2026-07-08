@@ -953,6 +953,143 @@ JC is a fake connection from `jabber-test-chat--make-fake-jc'."
 (ert-deftest jabber-test-chat-aesgcm-image-nil-body-returns-nil ()
   (should-not (jabber-chat--aesgcm-image-from-body nil "key" "iv" nil)))
 
+;;; Group 14: image display policy
+
+(defun jabber-test-chat--make-jc-with-roster (&rest jids)
+  "Create a fake connection whose roster contains JIDS."
+  (let ((jc (gensym "jabber-test-chat-jc-")))
+    (put jc :state-data (list :roster (mapcar #'jabber-jid-symbol jids)))
+    jc))
+
+(defmacro jabber-test-chat--with-policy-buffer (peer &rest body)
+  "Run BODY in a temp buffer chatting with PEER (nil for a MUC).
+The fake connection has alice@example.com on its roster."
+  (declare (indent 1))
+  `(with-temp-buffer
+     (setq-local jabber-buffer-connection
+                 (jabber-test-chat--make-jc-with-roster "alice@example.com"))
+     (let ((peer ,peer))
+       (when peer
+         (setq-local jabber-chatting-with peer)))
+     ,@body))
+
+(ert-deftest jabber-test-chat-auto-display-t-always ()
+  (jabber-test-chat--with-policy-buffer nil
+    (let ((jabber-chat-display-images t))
+      (should (jabber-chat--auto-display-images-p)))))
+
+(ert-deftest jabber-test-chat-auto-display-legacy-non-nil-value ()
+  "Any non-nil value other than `roster' behaves like t."
+  (jabber-test-chat--with-policy-buffer nil
+    (let ((jabber-chat-display-images 'always))
+      (should (jabber-chat--auto-display-images-p)))))
+
+(ert-deftest jabber-test-chat-auto-display-nil-never ()
+  (jabber-test-chat--with-policy-buffer "alice@example.com"
+    (let ((jabber-chat-display-images nil))
+      (should-not (jabber-chat--auto-display-images-p)))))
+
+(ert-deftest jabber-test-chat-auto-display-roster-contact ()
+  (jabber-test-chat--with-policy-buffer "alice@example.com"
+    (let ((jabber-chat-display-images 'roster))
+      (should (jabber-chat--auto-display-images-p)))))
+
+(ert-deftest jabber-test-chat-auto-display-roster-full-jid ()
+  (jabber-test-chat--with-policy-buffer "alice@example.com/laptop"
+    (let ((jabber-chat-display-images 'roster))
+      (should (jabber-chat--auto-display-images-p)))))
+
+(ert-deftest jabber-test-chat-auto-display-roster-stranger ()
+  (jabber-test-chat--with-policy-buffer "mallory@example.com"
+    (let ((jabber-chat-display-images 'roster))
+      (should-not (jabber-chat--auto-display-images-p)))))
+
+(ert-deftest jabber-test-chat-auto-display-roster-muc ()
+  "MUC buffers have no `jabber-chatting-with' and never auto-display."
+  (jabber-test-chat--with-policy-buffer nil
+    (let ((jabber-chat-display-images 'roster))
+      (setq-local jabber-group "room@conf.example.com")
+      (should-not (jabber-chat--auto-display-images-p)))))
+
+;;; Group 15: image URL scan behavior
+
+(defconst jabber-test-chat--scan-url "https://example.com/pic.png")
+
+(defmacro jabber-test-chat--with-scan-buffer (&rest body)
+  "Run BODY in a temp buffer containing one image URL.
+Bind `fetches' to the recorded `jabber-chat--start-image-fetch'
+calls and `url', `beg' and `end' to the URL and its bounds."
+  `(with-temp-buffer
+     (let ((fetches nil)
+           (url jabber-test-chat--scan-url))
+       (insert url)
+       (let ((beg (point-min))
+             (end (point-max)))
+         (cl-letf (((symbol-function 'jabber-chat--start-image-fetch)
+                    (lambda (&rest args) (push args fetches))))
+           ,@body)))))
+
+(ert-deftest jabber-test-chat-scan-auto-fetches-with-allowlist ()
+  (jabber-test-chat--with-scan-buffer
+   (jabber-chat--scan-image-url url beg end t)
+   (should (equal fetches
+                  (list (list url beg end jabber-chat-image-auto-types))))))
+
+(ert-deftest jabber-test-chat-scan-no-auto-still-clickable ()
+  "Without auto-display the URL is not fetched but stays actionable."
+  (jabber-test-chat--with-scan-buffer
+   (jabber-chat--scan-image-url url beg end nil)
+   (should (null fetches))
+   (should (equal (get-text-property beg 'jabber-chat-image-url) url))
+   (should (eq (get-text-property beg 'keymap) jabber-chat-url-keymap))))
+
+(ert-deftest jabber-test-chat-scan-skips-failed-fetch ()
+  (jabber-test-chat--with-scan-buffer
+   (put-text-property beg end 'jabber-chat-image-fetching 'failed)
+   (jabber-chat--scan-image-url url beg end t)
+   (should (null fetches))))
+
+(ert-deftest jabber-test-chat-scan-skips-in-flight-fetch ()
+  (jabber-test-chat--with-scan-buffer
+   (put-text-property beg end 'jabber-chat-image-fetching url)
+   (jabber-chat--scan-image-url url beg end t)
+   (should (null fetches))))
+
+(ert-deftest jabber-test-chat-scan-restores-cached-despite-policy ()
+  "A cached image is displayed even when auto-display is off."
+  (jabber-test-chat--with-scan-buffer
+   (unwind-protect
+       (progn
+         (jabber-chat--cache-image url '(image :type png))
+         (jabber-chat--scan-image-url url beg end nil)
+         (should (null fetches))
+         (should (get-text-property beg 'display)))
+     (remhash url jabber-chat--image-cache))))
+
+(ert-deftest jabber-test-chat-failed-fetch-marks-url ()
+  "A nil image from the fetcher marks the URL range as failed."
+  (with-temp-buffer
+    (insert jabber-test-chat--scan-url)
+    (let ((beg (copy-marker (point-min)))
+          (end (copy-marker (point-max))))
+      (jabber-chat--replace-url-with-image
+       nil jabber-test-chat--scan-url beg end (current-buffer))
+      (should (eq (jabber-chat--image-fetch-state (point-min)) 'failed)))))
+
+(ert-deftest jabber-test-chat-isolate-image-url-inserts-newline ()
+  (with-temp-buffer
+    (insert "text https://example.com/pic.png")
+    (let* ((end (point-max))
+           (bounds (jabber-chat--isolate-image-url 6 end)))
+      (should (equal (cons 7 (1+ end)) bounds))
+      (should (eq (char-before (car bounds)) ?\n)))))
+
+(ert-deftest jabber-test-chat-isolate-image-url-already-alone ()
+  (with-temp-buffer
+    (insert "https://example.com/pic.png")
+    (should (equal (cons 1 (point-max))
+                   (jabber-chat--isolate-image-url 1 (point-max))))))
+
 (provide 'jabber-test-chat)
 
 ;;; jabber-test-chat.el ends here

@@ -119,9 +119,26 @@ formatted according to this string, is different to the last
 rare time printed."
   :type 'string)
 
-(defcustom jabber-chat-display-images t
-  "When non-nil, fetch and display image URLs inline in chat buffers."
-  :type 'boolean)
+(defcustom jabber-chat-display-images 'roster
+  "When to automatically fetch and display image URLs inline.
+t means auto-display in every chat buffer.
+nil means never fetch automatically.
+The symbol `roster' means auto-display only in one-to-one chats
+whose peer is on the roster; in MUC buffers and chats with
+unknown peers, image URLs stay clickable.
+
+Automatic display is further limited to the image types in
+`jabber-chat-image-auto-types' and the size limit in
+`jabber-image-max-bytes'."
+  :type '(choice (const :tag "All chat buffers" t)
+                 (const :tag "Roster contacts only" roster)
+                 (const :tag "Never" nil)))
+
+(defcustom jabber-chat-image-auto-types '(png jpeg gif webp)
+  "Image types eligible for automatic inline display.
+The type is detected from the downloaded bytes, never from the
+URL.  Images of other types stay clickable URLs."
+  :type '(repeat (symbol :tag "Image type")))
 
 (defface jabber-rare-time-face
   '((t :inherit font-lock-comment-face :underline t))
@@ -1881,10 +1898,6 @@ N is passed to `self-insert-command' when point is not on an inline image."
          'keymap jabber-chat-url-keymap
          'rear-nonsticky t)))
 
-(defun jabber-chat--image-fetching-p (beg url)
-  "Return non-nil when BEG is already marked as fetching URL."
-  (equal (get-text-property beg 'jabber-chat-image-fetching) url))
-
 (defun jabber-chat--mark-image-fetching (beg end url)
   "Mark URL text from BEG to END as an image fetch attempt."
   (add-text-properties
@@ -1893,22 +1906,31 @@ N is passed to `self-insert-command' when point is not on an inline image."
          'jabber-chat-image-fetching url))
   (jabber-chat--add-url-keymap beg end))
 
+(defun jabber-chat--url-markers-valid-p (beg end url buffer)
+  "Return non-nil when markers BEG and END still delimit URL in BUFFER.
+Must be called with BUFFER current."
+  (and (markerp beg) (markerp end)
+       (eq (marker-buffer beg) buffer)
+       (eq (marker-buffer end) buffer)
+       (marker-position beg) (marker-position end)
+       (<= beg end)
+       (equal (buffer-substring-no-properties beg end) url)))
+
 (defun jabber-chat--replace-url-with-image (image url beg end buffer)
   "Display fetched IMAGE over URL text between markers BEG and END.
-Cache IMAGE by URL.  Leave URL text visible when IMAGE is nil,
-BUFFER is dead, or the marker range no longer contains URL."
+Cache IMAGE by URL.  When IMAGE is nil, mark the URL text in
+BUFFER as a failed fetch so the automatic scan does not retry it."
   (when image
-    (jabber-chat--cache-image url image)
-    (when (buffer-live-p buffer)
-      (with-current-buffer buffer
-        (when (and (markerp beg) (markerp end)
-                   (eq (marker-buffer beg) buffer)
-                   (eq (marker-buffer end) buffer)
-                   (marker-position beg) (marker-position end)
-                   (<= beg end)
-                   (equal (buffer-substring-no-properties beg end) url))
-          (let ((inhibit-read-only t))
-            (jabber-chat--apply-image-display image beg end url)))))))
+    (jabber-chat--cache-image url image))
+  (when (buffer-live-p buffer)
+    (with-current-buffer buffer
+      (when (jabber-chat--url-markers-valid-p beg end url buffer)
+        (let ((inhibit-read-only t))
+          (cond (image
+                 (jabber-chat--apply-image-display image beg end url))
+                ((not (jabber-chat--image-displayed-p beg url))
+                 (put-text-property beg end 'jabber-chat-image-fetching
+                                    'failed))))))))
 
 (defvar-local jabber-chat--image-scan-timer nil
   "Idle timer for scanning image URLs in this buffer.")
@@ -1934,45 +1956,82 @@ Added to `jabber-chat-printers' to trigger after each message."
           "\\(?:[?#][^ \t\n<>\"]*\\)?")
   "Regexp matching HTTP(S) and aesgcm:// image URLs.")
 
+(defun jabber-chat--auto-display-images-p ()
+  "Return non-nil when this buffer may auto-display inline images.
+Implements `jabber-chat-display-images': nil means never,
+`roster' means only one-to-one chats with roster contacts, any
+other non-nil value means always."
+  (pcase jabber-chat-display-images
+    ('nil nil)
+    ('roster (and jabber-chatting-with
+                  (jabber-roster-contact-p jabber-buffer-connection
+                                           jabber-chatting-with)))
+    (_ t)))
+
+(defun jabber-chat--image-fetch-state (beg)
+  "Return the image fetch state at BEG.
+nil when never attempted, the URL string while a fetch is in
+flight, or the symbol `failed' after an unsuccessful attempt."
+  (get-text-property beg 'jabber-chat-image-fetching))
+
+(defun jabber-chat--isolate-image-url (beg end)
+  "Ensure the URL between BEG and END starts on its own line.
+Return the possibly shifted bounds as a cons cell."
+  (cond ((or (= beg (point-min))
+             (eq (char-before beg) ?\n))
+         (cons beg end))
+        (t
+         (save-excursion
+           (goto-char beg)
+           (insert "\n"))
+         (cons (1+ beg) (1+ end)))))
+
+(defun jabber-chat--start-image-fetch (url beg end allowed-types)
+  "Fetch image URL and display it over BEG..END in the current buffer.
+ALLOWED-TYPES restricts decoding per `jabber-image-from-data';
+nil permits any supported type."
+  (jabber-chat--mark-image-fetching beg end url)
+  (let ((beg (copy-marker beg))
+        (end (copy-marker end))
+        (buf (current-buffer)))
+    (if (string-prefix-p "aesgcm://" url)
+        (jabber-chat--fetch-aesgcm-image
+         url allowed-types
+         #'jabber-chat--replace-url-with-image url beg end buf)
+      (jabber-image-fetch
+       url allowed-types
+       #'jabber-chat--replace-url-with-image url beg end buf))))
+
+(defun jabber-chat--scan-image-url (url beg end auto)
+  "Process one image URL between BEG and END found by the scan.
+Mark it clickable, restore a cached image when available, and
+when AUTO is non-nil start a fetch restricted to
+`jabber-chat-image-auto-types'."
+  (jabber-chat--add-url-keymap beg end)
+  (put-text-property beg end 'jabber-chat-image-url url)
+  (unless (jabber-chat--image-displayed-p beg url)
+    (unless (jabber-chat--restore-cached-image url beg end)
+      (when (and auto (null (jabber-chat--image-fetch-state beg)))
+        (jabber-chat--start-image-fetch
+         url beg end jabber-chat-image-auto-types)))))
+
 (defun jabber-chat-display-buffer-images ()
-  "Scan buffer for image URLs and display them inline.
-Preserve URL text and restore cached images without refetching."
+  "Scan buffer for image URLs and display permitted ones inline.
+URL text is preserved; images that `jabber-chat-display-images'
+does not auto-display stay clickable and load with RET."
   (interactive)
   (save-excursion
     (let ((inhibit-read-only t)
-          (limit (and (markerp jabber-point-insert) jabber-point-insert)))
-      (when (and jabber-chat-display-images (display-graphic-p))
+          (limit (and (markerp jabber-point-insert) jabber-point-insert))
+          (auto (jabber-chat--auto-display-images-p)))
+      (when (display-graphic-p)
         (goto-char (point-min))
         (while (re-search-forward jabber-chat--image-url-re limit t)
-          (let ((url (match-string-no-properties 0))
-                (url-beg (match-beginning 0))
-                (url-end (match-end 0)))
-            ;; Insert newline before URL so images appear on their
-            ;; own line.
-            (when (and (> url-beg (point-min))
-                       (not (eq (char-before url-beg) ?\n)))
-              (save-excursion
-                (goto-char url-beg)
-                (insert "\n"))
-              (setq url-beg (1+ url-beg)
-                    url-end (1+ url-end)))
-            (jabber-chat--add-url-keymap url-beg url-end)
-            (unless (jabber-chat--image-displayed-p url-beg url)
-              (unless (jabber-chat--restore-cached-image url url-beg url-end)
-                (unless (jabber-chat--image-fetching-p url-beg url)
-                  (jabber-chat--mark-image-fetching url-beg url-end url)
-                  (let ((beg (copy-marker url-beg))
-                        (end (copy-marker url-end))
-                        (buf (current-buffer)))
-                    (if (string-prefix-p "aesgcm://" url)
-                        (jabber-chat--fetch-aesgcm-image
-                         url nil
-                         #'jabber-chat--replace-url-with-image
-                         url beg end buf)
-                      (jabber-image-fetch
-                       url nil
-                       #'jabber-chat--replace-url-with-image
-                       url beg end buf))))))))))))
+          (let* ((url (match-string-no-properties 0))
+                 (bounds (jabber-chat--isolate-image-url
+                          (match-beginning 0) (match-end 0))))
+            (jabber-chat--scan-image-url
+             url (car bounds) (cdr bounds) auto)))))))
 
 (defun jabber-chat-goto-address (_msg _who mode)
   "Call function `goto-address' on the newly written text (MODE = :insert)."
