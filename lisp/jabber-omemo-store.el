@@ -311,6 +311,30 @@ DELETE FROM omemo_skipped_keys
     AND dh_key = ? AND message_number = ?"
 		    (list account jid device-id dh-key msg-number))))
 
+(defun jabber-omemo-store-all-skipped-keys (account jid device-id)
+  "Return all skipped message keys for ACCOUNT+JID+DEVICE-ID.
+Each element is (MSG-NUMBER DH-KEY MSG-KEY), the entry format of
+`jabber-omemo--session-set-skipped-keys'."
+  (when-let* ((db (jabber-db-ensure-open)))
+    (mapcar (lambda (row)
+              (list (car row)
+                    (jabber-omemo-store--as-unibyte (cadr row))
+                    (jabber-omemo-store--as-unibyte (caddr row))))
+            (sqlite-select db "\
+SELECT message_number, dh_key, message_key FROM omemo_skipped_keys
+  WHERE account = ? AND jid = ? AND device_id = ?"
+                           (list account jid device-id)))))
+
+(defun jabber-omemo-store-delete-skipped-keys (account jid device-id)
+  "Delete all skipped message keys for ACCOUNT+JID+DEVICE-ID.
+Used when a session is replaced; keys from the old ratchet can
+never match again."
+  (when-let* ((db (jabber-db-ensure-open)))
+    (sqlite-execute db "\
+DELETE FROM omemo_skipped_keys
+  WHERE account = ? AND jid = ? AND device_id = ?"
+		    (list account jid device-id))))
+
 (defun jabber-omemo-store-delete-old-skipped-keys (account max-age)
   "Delete skipped keys for ACCOUNT older than MAX-AGE seconds."
   (when-let* ((db (jabber-db-ensure-open)))

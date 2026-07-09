@@ -474,10 +474,8 @@ side session and PK-ID the pre-key id it consumed."
 
 (ert-deftest jabber-test-omemo-protocol-prekey-out-of-order-falls-back ()
   "An earlier pre-key message still decrypts after a later one.
-The C module's skipped-message-key callbacks are stubs (see
-todo.org), so the established-session path cannot serve an older
-ratchet position; the fresh-session fallback re-derives it from
-the still-present pre-key instead."
+The established session serves the older ratchet position from its
+skipped message keys, so no fresh-session fallback is needed."
   (jabber-test-omemo-protocol-with-db
     (cl-letf (((symbol-function 'jabber-connection-bare-jid)
                (lambda (_jc) "me@example.com")))
@@ -500,7 +498,7 @@ the still-present pre-key instead."
                       jc "alice@example.com" 7 store-ptr t
                       (plist-get msg-1 :data))))
           (should (string= key-1 decrypted))
-          (should fresh-p))))))
+          (should-not fresh-p))))))
 
 (ert-deftest jabber-test-omemo-protocol-prekey-falls-back-on-peer-reset ()
   "A pre-key message from a re-initialized peer session decrypts fresh."
@@ -669,6 +667,63 @@ the still-present pre-key instead."
                  (lambda () nil)))
         (jabber-omemo--on-mam-sync-complete nil)
         (should (equal '(jc-b jc-a) flushed))))))
+
+;;; Group: Skipped message keys
+
+(ert-deftest jabber-test-omemo-protocol-skipped-key-changes-diff ()
+  "Diff returns new keys and consumed keys by NR + DH identity."
+  (let* ((a (list 1 (make-string 32 ?a) (make-string 32 ?x)))
+         (b (list 2 (make-string 32 ?b) (make-string 32 ?y)))
+         (c (list 3 (make-string 32 ?c) (make-string 32 ?z))))
+    (pcase-let ((`(,new . ,consumed)
+                 (jabber-omemo--skipped-key-changes (list a b) (list b c))))
+      (should (equal (list c) new))
+      (should (equal (list a) consumed)))))
+
+(ert-deftest jabber-test-omemo-protocol-skipped-keys-recover-across-restart ()
+  "An out-of-order message decrypts after a session cache flush.
+Skipped ratchet keys persist in SQLite and reload with the session."
+  (jabber-test-omemo-protocol-with-db
+    (cl-letf (((symbol-function 'jabber-connection-bare-jid)
+               (lambda (_jc) "me@example.com")))
+      (let* ((jc (list :bare-jid "me@example.com"))
+             (store-ptr (jabber-omemo--get-store jc))
+             (my-bundle (jabber-omemo-get-bundle store-ptr))
+             (alice (jabber-omemo-deserialize-store (jabber-omemo-setup-store)))
+             (pk (car (plist-get my-bundle :pre-keys)))
+             (alice-session (jabber-omemo-initiate-session
+                             alice
+                             (plist-get my-bundle :signature)
+                             (plist-get my-bundle :signed-pre-key)
+                             (plist-get my-bundle :identity-key)
+                             (cdr pk)
+                             (plist-get my-bundle :signed-pre-key-id)
+                             (car pk)))
+             (k1 (make-string 32 ?1))
+             (k2 (make-string 32 ?2))
+             (m1 (jabber-omemo-encrypt-key alice-session k1))
+             (m2 (jabber-omemo-encrypt-key alice-session k2)))
+        ;; Deliver message 2 first; its decrypt skips message 1's key.
+        (pcase-let ((`(,session ,key ,fresh-p)
+                     (jabber-omemo--decrypt-key-with-session
+                      jc "alice@example.com" 111 store-ptr
+                      (plist-get m2 :pre-key-p) (plist-get m2 :data))))
+          (should (string= k2 key))
+          (should fresh-p)
+          (jabber-omemo--save-session jc "alice@example.com" 111 session))
+        (should (= 1 (length (jabber-omemo-store-all-skipped-keys
+                              "me@example.com" "alice@example.com" 111))))
+        ;; Simulate a restart: drop all in-memory session state.
+        (clrhash jabber-omemo--sessions)
+        ;; The late message decrypts from the reloaded skipped key.
+        (pcase-let ((`(,_session ,key ,_fresh-p)
+                     (jabber-omemo--decrypt-key-with-session
+                      jc "alice@example.com" 111 store-ptr
+                      (plist-get m1 :pre-key-p) (plist-get m1 :data))))
+          (should (string= k1 key)))
+        ;; Consumed: the persisted copy is gone.
+        (should (null (jabber-omemo-store-all-skipped-keys
+                       "me@example.com" "alice@example.com" 111)))))))
 
 (provide 'jabber-test-omemo-protocol)
 ;;; jabber-test-omemo-protocol.el ends here

@@ -35,6 +35,8 @@
   (should (fboundp 'jabber-omemo--deserialize-session))
   (should (fboundp 'jabber-omemo--encrypt-key))
   (should (fboundp 'jabber-omemo--decrypt-key))
+  (should (fboundp 'jabber-omemo--session-skipped-keys))
+  (should (fboundp 'jabber-omemo--session-set-skipped-keys))
   (should (fboundp 'jabber-omemo--heartbeat))
   (should (fboundp 'jabber-omemo--aesgcm-decrypt))
   (should (fboundp 'jabber-omemo--aesgcm-encrypt)))
@@ -501,6 +503,88 @@
                                (plist-get encrypted :pre-key-p)
                                (plist-get encrypted :data))
     (should (= (car pk) (jabber-omemo--used-pre-key-id bob-session)))))
+
+;;; Group: Skipped message keys
+
+(defmacro jabber-test-omemo-module--with-session-pair (&rest body)
+  "Run BODY with `alice', `bob', and `alice-session' bound.
+Alice has initiated a session towards Bob's bundle."
+  (declare (indent 0) (debug t))
+  `(let* ((alice (jabber-omemo--deserialize-store (jabber-omemo--setup-store)))
+          (bob (jabber-omemo--deserialize-store (jabber-omemo--setup-store)))
+          (bundle (jabber-omemo--get-bundle bob))
+          (pk (car (plist-get bundle :pre-keys)))
+          (alice-session (jabber-omemo--initiate-session
+                          alice
+                          (plist-get bundle :signature)
+                          (plist-get bundle :signed-pre-key)
+                          (plist-get bundle :identity-key)
+                          (cdr pk)
+                          (plist-get bundle :signed-pre-key-id)
+                          (car pk))))
+     (ignore alice-session)
+     ,@body))
+
+(ert-deftest jabber-test-omemo-module-skipped-keys-accessors-roundtrip ()
+  "Skipped keys set on a session read back unchanged."
+  (let* ((session (jabber-omemo--make-session))
+         (keys (list (list 3 (make-string 32 ?d) (make-string 32 ?m))
+                     (list 7 (make-string 32 ?e) (make-string 32 ?n)))))
+    (should (null (jabber-omemo--session-skipped-keys session)))
+    (jabber-omemo--session-set-skipped-keys session keys)
+    (should (equal keys (jabber-omemo--session-skipped-keys session)))
+    ;; Replacing clears the previous list.
+    (jabber-omemo--session-set-skipped-keys session nil)
+    (should (null (jabber-omemo--session-skipped-keys session)))))
+
+(ert-deftest jabber-test-omemo-module-out-of-order-decrypt ()
+  "A message skipped over in the ratchet still decrypts afterwards."
+  (jabber-test-omemo-module--with-session-pair
+    (let* ((k1 (make-string 32 ?1))
+           (k2 (make-string 32 ?2))
+           (k3 (make-string 32 ?3))
+           (m1 (jabber-omemo--encrypt-key alice-session k1))
+           (m2 (jabber-omemo--encrypt-key alice-session k2))
+           (m3 (jabber-omemo--encrypt-key alice-session k3))
+           (bob-session (jabber-omemo--make-session)))
+      ;; Deliver message 3 first: keys for 1 and 2 must be skipped.
+      (should (string= k3 (jabber-omemo--decrypt-key
+                           bob-session bob
+                           (plist-get m3 :pre-key-p) (plist-get m3 :data))))
+      (should (= 2 (length (jabber-omemo--session-skipped-keys bob-session))))
+      ;; The late arrivals decrypt from the skipped keys, single-use.
+      (should (string= k1 (jabber-omemo--decrypt-key
+                           bob-session bob
+                           (plist-get m1 :pre-key-p) (plist-get m1 :data))))
+      (should (string= k2 (jabber-omemo--decrypt-key
+                           bob-session bob
+                           (plist-get m2 :pre-key-p) (plist-get m2 :data))))
+      (should (null (jabber-omemo--session-skipped-keys bob-session))))))
+
+(ert-deftest jabber-test-omemo-module-skipped-keys-survive-reserialization ()
+  "Skipped keys carried over to a reloaded session still decrypt."
+  (jabber-test-omemo-module--with-session-pair
+    (let* ((k1 (make-string 32 ?1))
+           (k2 (make-string 32 ?2))
+           (m1 (jabber-omemo--encrypt-key alice-session k1))
+           (m2 (jabber-omemo--encrypt-key alice-session k2))
+           (bob-session (jabber-omemo--make-session)))
+      ;; Deliver message 2 first; message 1's key is skipped.
+      (should (string= k2 (jabber-omemo--decrypt-key
+                           bob-session bob
+                           (plist-get m2 :pre-key-p) (plist-get m2 :data))))
+      ;; Simulate a restart: serialize the session and its skipped
+      ;; keys, then restore both into a fresh session pointer.
+      (let* ((skipped (jabber-omemo--session-skipped-keys bob-session))
+             (blob (jabber-omemo--serialize-session bob-session))
+             (restored (jabber-omemo--deserialize-session blob)))
+        (should (= 1 (length skipped)))
+        (should (null (jabber-omemo--session-skipped-keys restored)))
+        (jabber-omemo--session-set-skipped-keys restored skipped)
+        (should (string= k1 (jabber-omemo--decrypt-key
+                             restored bob
+                             (plist-get m1 :pre-key-p)
+                             (plist-get m1 :data))))))))
 
 (provide 'jabber-test-omemo-module)
 ;;; jabber-test-omemo-module.el ends here

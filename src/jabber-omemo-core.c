@@ -34,21 +34,124 @@ int omemoRandom(void *p, size_t n)
     return getrandom(p, n, 0) != (ssize_t)n;
 }
 
-/* Skipped-message-key callbacks: still stubs.  The decrypt path does
-   hit these, so an out-of-order message within an established chain
-   cannot be recovered from a skipped key; pre-key messages fall back
-   to a fresh session on the Elisp side instead. */
+/* Skipped-message-key registry.
+
+   picomemo hands skipped ratchet keys to the embedder through
+   omemoStoreMessageKey and asks for them back in omemoLoadMessageKey.
+   Both fire synchronously inside omemoDecryptKey, where no emacs_env
+   is available, so keys live in a malloc'd per-session list here.
+   Elisp seeds and drains the list via
+   jabber-omemo--session-set-skipped-keys and
+   jabber-omemo--session-skipped-keys around each decrypt and
+   persists the result in SQLite. */
+
+struct skipped_key {
+    uint32_t nr;
+    uint8_t dh[32];
+    uint8_t mk[32];
+};
+
+struct session_skipped {
+    struct omemoSession *session;
+    struct skipped_key *keys;
+    size_t count, cap;
+};
+
+/* Upper bound on retained skipped keys per session; a peer jumping
+   further ahead than this in one ratchet aborts the decrypt with
+   OMEMO_ESTORE instead of allocating without limit. */
+#define SKIPPED_KEYS_MAX 1000
+
+static struct session_skipped *g_skipped;
+static size_t g_skipped_count, g_skipped_cap;
+
+static struct session_skipped *
+skipped_find(struct omemoSession *s, int create)
+{
+    for (size_t i = 0; i < g_skipped_count; i++)
+        if (g_skipped[i].session == s)
+            return &g_skipped[i];
+    if (!create)
+        return NULL;
+    if (g_skipped_count == g_skipped_cap) {
+        size_t ncap = g_skipped_cap ? g_skipped_cap * 2 : 8;
+        struct session_skipped *n = realloc(g_skipped, ncap * sizeof *n);
+        if (!n)
+            return NULL;
+        g_skipped = n;
+        g_skipped_cap = ncap;
+    }
+    struct session_skipped *e = &g_skipped[g_skipped_count++];
+    e->session = s;
+    e->keys = NULL;
+    e->count = e->cap = 0;
+    return e;
+}
+
+static void
+skipped_drop(struct omemoSession *s)
+{
+    for (size_t i = 0; i < g_skipped_count; i++) {
+        if (g_skipped[i].session == s) {
+            if (g_skipped[i].keys) {
+                memset(g_skipped[i].keys, 0,
+                       g_skipped[i].cap * sizeof(struct skipped_key));
+                free(g_skipped[i].keys);
+            }
+            g_skipped[i] = g_skipped[--g_skipped_count];
+            return;
+        }
+    }
+}
+
+static int
+skipped_add(struct session_skipped *e, uint32_t nr,
+            const uint8_t *dh, const uint8_t *mk)
+{
+    if (e->count >= SKIPPED_KEYS_MAX)
+        return 1;
+    if (e->count == e->cap) {
+        size_t ncap = e->cap ? e->cap * 2 : 16;
+        struct skipped_key *n = realloc(e->keys, ncap * sizeof *n);
+        if (!n)
+            return 1;
+        memset(n + e->cap, 0, (ncap - e->cap) * sizeof *n);
+        e->keys = n;
+        e->cap = ncap;
+    }
+    e->keys[e->count].nr = nr;
+    memcpy(e->keys[e->count].dh, dh, 32);
+    memcpy(e->keys[e->count].mk, mk, 32);
+    e->count++;
+    return 0;
+}
 
 int omemoLoadMessageKey(struct omemoSession *s, struct omemoMessageKey *k)
 {
-    (void)s; (void)k;
+    struct session_skipped *e = skipped_find(s, 0);
+    if (!e)
+        return 1; /* not found */
+    for (size_t i = 0; i < e->count; i++) {
+        struct skipped_key *sk = &e->keys[i];
+        if (sk->nr == k->nr && !memcmp(sk->dh, k->dh, 32)) {
+            memcpy(k->mk, sk->mk, 32);
+            /* Single use: replace with the last entry and zero it. */
+            e->keys[i] = e->keys[e->count - 1];
+            memset(&e->keys[e->count - 1], 0, sizeof(struct skipped_key));
+            e->count--;
+            return 0;
+        }
+    }
     return 1; /* not found */
 }
 
 int omemoStoreMessageKey(struct omemoSession *s,
                          const struct omemoMessageKey *k, uint64_t n)
 {
-    (void)s; (void)k; (void)n;
+    (void)n;
+    struct session_skipped *e = skipped_find(s, 1);
+    if (!e || skipped_add(e, k->nr, k->dh, k->mk))
+        return OMEMO_ESTORE;
     return 0;
 }
 
@@ -116,6 +219,7 @@ free_store(void *ptr)
 static void
 free_session(void *ptr)
 {
+    skipped_drop(ptr);
     free(ptr);
 }
 
@@ -719,6 +823,85 @@ F_decrypt_key(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
     return make_unibyte(env, key, keyn);
 }
 
+/*  jabber-omemo--session-skipped-keys  */
+
+static emacs_value
+F_session_skipped_keys(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
+                       void *data)
+{
+    (void)nargs; (void)data;
+
+    struct omemoSession *session = env->get_user_ptr(env, args[0]);
+    if (env->non_local_exit_check(env))
+        return Qnil_v;
+
+    emacs_value Qlist = env->intern(env, "list");
+    emacs_value Qcons = env->intern(env, "cons");
+    emacs_value result = Qnil_v;
+    struct session_skipped *e = skipped_find(session, 0);
+    if (!e)
+        return result;
+    for (size_t i = e->count; i > 0; i--) {
+        struct skipped_key *sk = &e->keys[i - 1];
+        emacs_value entry_args[] = {
+            env->make_integer(env, sk->nr),
+            make_unibyte(env, sk->dh, 32),
+            make_unibyte(env, sk->mk, 32),
+        };
+        emacs_value entry = env->funcall(env, Qlist, 3, entry_args);
+        emacs_value cons_args[] = { entry, result };
+        result = env->funcall(env, Qcons, 2, cons_args);
+    }
+    return result;
+}
+
+/*  jabber-omemo--session-set-skipped-keys  */
+
+static emacs_value
+F_session_set_skipped_keys(emacs_env *env, ptrdiff_t nargs,
+                           emacs_value *args, void *data)
+{
+    (void)nargs; (void)data;
+
+    struct omemoSession *session = env->get_user_ptr(env, args[0]);
+    if (env->non_local_exit_check(env))
+        return Qnil_v;
+
+    emacs_value Qcar = env->intern(env, "car");
+    emacs_value Qcdr = env->intern(env, "cdr");
+
+    skipped_drop(session);
+    for (emacs_value l = args[1]; env->is_not_nil(env, l);
+         l = env->funcall(env, Qcdr, 1, &l)) {
+        emacs_value entry = env->funcall(env, Qcar, 1, &l);
+        emacs_value v_nr = env->funcall(env, Qcar, 1, &entry);
+        emacs_value rest = env->funcall(env, Qcdr, 1, &entry);
+        emacs_value v_dh = env->funcall(env, Qcar, 1, &rest);
+        rest = env->funcall(env, Qcdr, 1, &rest);
+        emacs_value v_mk = env->funcall(env, Qcar, 1, &rest);
+
+        intmax_t nr = env->extract_integer(env, v_nr);
+        uint8_t dh[33], mk[33];
+        size_t dhn = 0, mkn = 0;
+        if (extract_unibyte(env, v_dh, dh, sizeof(dh), &dhn) ||
+            extract_unibyte(env, v_mk, mk, sizeof(mk), &mkn))
+            return Qnil_v;
+        if (env->non_local_exit_check(env))
+            return Qnil_v;
+        if (dhn != 32 || mkn != 32) {
+            signal_error(env, OMEMO_EPARAM,
+                         "skipped key entry must hold 32-byte dh and mk");
+            return Qnil_v;
+        }
+        struct session_skipped *e = skipped_find(session, 1);
+        if (!e || skipped_add(e, (uint32_t)nr, dh, mk)) {
+            signal_error(env, OMEMO_ESTORE, "cannot store skipped key");
+            return Qnil_v;
+        }
+    }
+    return Qnil_v;
+}
+
 /*  jabber-omemo--heartbeat  */
 
 static emacs_value
@@ -1038,6 +1221,17 @@ emacs_module_init(struct emacs_runtime *runtime)
           "PRE-KEY-P is non-nil if this is a pre-key message.\n"
           "MSG is the encrypted key message as a unibyte string.\n"
           "Returns the decrypted key as a unibyte string.");
+
+    DEFUN("jabber-omemo--session-skipped-keys", F_session_skipped_keys, 1, 1,
+          "Return SESSION-PTR's in-memory skipped message keys.\n"
+          "Each element is (NR DH MK) with NR an integer and DH/MK\n"
+          "32-byte unibyte strings.");
+
+    DEFUN("jabber-omemo--session-set-skipped-keys",
+          F_session_set_skipped_keys, 2, 2,
+          "Replace SESSION-PTR's in-memory skipped message keys with KEYS.\n"
+          "KEYS is a list of (NR DH MK) entries as returned by\n"
+          "jabber-omemo--session-skipped-keys.");
 
     DEFUN("jabber-omemo--heartbeat", F_heartbeat, 2, 2,
           "Check if a heartbeat message is needed after decryption.\n"
