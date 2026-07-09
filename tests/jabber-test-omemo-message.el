@@ -328,10 +328,39 @@ Clears OMEMO in-memory caches and tears down on exit."
             ((symbol-function 'jabber-connection-bare-jid)
              (lambda (_jc) "me@example.com"))
             ((symbol-function 'jabber-jid-user)
-             (lambda (jid) jid)))
+             (lambda (jid) jid))
+            ((symbol-function 'jabber-muc-joined-p)
+             (lambda (_group &optional _jc) nil))
+            ((symbol-function 'jabber-chat-create-buffer)
+             (lambda (_jc _jid) (current-buffer))))
     (should (jabber-omemo--httpupload-send-url
              'fake-jc "alice@example.com"
              "aesgcm://host/file#abc123"))))
+
+(ert-deftest jabber-test-omemo-message-httpupload-send-url-muc-from-any-buffer ()
+  "An aesgcm URL for a joined room is sent in that room's buffer.
+The upload callback fires from a process sentinel where the current
+buffer is arbitrary; the room must be derived from the JID, not from
+buffer-local `jabber-group'."
+  (let ((room "room@conference.example.com")
+        (room-buffer (generate-new-buffer " *omemo-muc-upload-test*"))
+        (sent-group nil))
+    (unwind-protect
+        (progn
+          (with-current-buffer room-buffer
+            (setq-local jabber-group room))
+          (cl-letf (((symbol-function 'jabber-muc-joined-p)
+                     (lambda (group &optional _jc) (equal group room)))
+                    ((symbol-function 'jabber-muc-create-buffer)
+                     (lambda (_jc _group) room-buffer))
+                    ((symbol-function 'jabber-omemo--send-muc)
+                     (lambda (_jc _body &optional _extra)
+                       (setq sent-group (bound-and-true-p jabber-group)))))
+            (with-temp-buffer
+              (should (jabber-omemo--httpupload-send-url
+                       'fake-jc room "aesgcm://host/file#abc123"))))
+          (should (equal sent-group room)))
+      (kill-buffer room-buffer))))
 
 (ert-deftest jabber-test-omemo-message-httpupload-send-url-skips-https ()
   "Send-url override returns nil for https:// URLs."

@@ -46,6 +46,8 @@
                   (group nickname new-plist))
 (declare-function jabber-muc-participant-plist "jabber-muc"
                   (group nickname))
+(declare-function jabber-muc-joined-p "jabber-muc" (group &optional jc))
+(declare-function jabber-muc-create-buffer "jabber-muc" (jc group))
 (declare-function jabber-disco-advertise-feature "jabber-disco")
 (declare-function jabber-send-iq "jabber-iq")
 (declare-function jabber-httpupload--upload "jabber-httpupload")
@@ -1600,13 +1602,13 @@ Returns (ENCRYPTED-PATH . WRAPPED-CALLBACK) or nil."
   "Send GET-URL (aesgcm://) as an OMEMO-encrypted message from JC to JID.
 Returns non-nil if handled, nil to fall through to plaintext."
   (when (string-prefix-p "aesgcm://" get-url)
-    (if (bound-and-true-p jabber-group)
-        (jabber-omemo--send-muc jc get-url)
-      ;; Capture the chat buffer now: the session callbacks may fire
-      ;; from IQ handlers where current buffer is something else, and
-      ;; --send-encrypted falls back to (current-buffer) for display
-      ;; and send-hook state.
-      (let ((buffer (current-buffer)))
+    ;; This runs from the upload process sentinel, where the current
+    ;; buffer is arbitrary; derive the chat buffer from JID rather
+    ;; than trusting buffer-local state.
+    (if (jabber-muc-joined-p jid)
+        (with-current-buffer (jabber-muc-create-buffer jc jid)
+          (jabber-omemo--send-muc jc get-url))
+      (let ((buffer (jabber-chat-create-buffer jc jid)))
         (jabber-omemo--ensure-sessions
          jc (jabber-jid-user jid)
          (lambda (recipient-sessions)
