@@ -1664,7 +1664,8 @@ ALLOWED-TYPES and `jabber-image-max-bytes' are enforced per
 (defun jabber-chat-copy-url ()
   "Copy the URL at point to the kill ring and display it."
   (interactive)
-  (if-let* ((url (get-text-property (point) 'jabber-chat-image-url)))
+  (if-let* ((url (or (get-text-property (point) 'jabber-chat-file-url)
+                     (get-text-property (point) 'jabber-chat-image-url))))
       (progn (kill-new url) (message "%s" url))
     (user-error "No URL at point")))
 
