@@ -1849,18 +1849,12 @@ Return non-nil when a cached image was applied."
 (defun jabber-chat--image-range-at-point (&optional position)
   "Return inline image data at POSITION as a plist, or nil.
 The plist contains :beg, :end, :url, :image, and :scale."
-  (let* ((position (or position (point)))
-         (url (get-text-property position 'jabber-chat-image-url))
-         (display (get-text-property position 'display))
-         (image (or (get-text-property position 'jabber-chat-image-base)
-                    display)))
-    (when (and url image display)
-      (let ((beg (or (previous-single-property-change
-                      (1+ position) 'jabber-chat-image-url)
-                     (point-min)))
-            (end (or (next-single-property-change
-                      position 'jabber-chat-image-url)
-                     (point-max))))
+  (let ((position (or position (point))))
+    (and-let* ((display (get-text-property position 'display))
+               (image (or (get-text-property position 'jabber-chat-image-base)
+                          display))
+               (bounds (jabber-chat--image-url-bounds position)))
+      (pcase-let ((`(,beg ,end ,url) bounds))
         (list :beg beg
               :end end
               :url url
