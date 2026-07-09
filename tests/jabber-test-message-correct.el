@@ -461,7 +461,12 @@ jabber-correct-last-message must pick up the original id."
                      :edited t
                      :timestamp (current-time))))
       (jabber-chat-ewoc-enter (list :local msg)))
-    (let (sent-replace-id)
+    ;; jabber-correct-last-message runs the full send-hook chain;
+    ;; disable storage so the DB outgoing handler cannot touch the
+    ;; user's real database.
+    (let ((jabber-db-path nil)
+          (jabber-db--connection nil)
+          sent-replace-id)
       (cl-letf (((symbol-function 'jabber-send-sexp)
                  (lambda (_jc stanza)
                    (let* ((replace (car (jabber-xml-get-children stanza 'replace))))

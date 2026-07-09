@@ -149,8 +149,11 @@ do-test: autoload do-module
 	@mkdir -p $(TEST_RESULTS)
 	@$(MAKE) --no-print-directory -j$(JOBS) -Otarget do-test-summary
 
+# jabber-db-path is preset to nil so no test can ever open the user's
+# real database; tests that need storage let-bind it to a temp file.
 $(TEST_RESULTS)/%.stamp: tests/%.el
 	@output=$$($(EMACS_CMD) $(EMACS_OPTS) -L lisp -L tests \
+	  --eval="(setq jabber-db-path nil)" \
 	  -l ert -l $< -f ert-run-tests-batch-and-exit 2>&1); \
 	rc=$$?; \
 	n=$$(echo "$$output" | grep -o 'Ran [0-9]*' | grep -o '[0-9]*'); \
@@ -172,6 +175,7 @@ test-oneshot:
 # `do-test' runs (one Emacs per file) cannot see.
 do-test-oneshot: autoload do-module
 	$(EMACS_CMD) $(EMACS_OPTS) -L lisp -L tests -l ert \
+	  --eval="(setq jabber-db-path nil)" \
 	  --eval="(require 'jabber)" \
 	  $(addprefix -l ,$(TESTS)) \
 	  --eval="(let ((bad 0)) \
