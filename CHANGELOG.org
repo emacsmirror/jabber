@@ -3,6 +3,7 @@
 * [Unreleased]
 
 ** Added
+- RET on a reply jumps to the original message and highlights it; RET elsewhere still sends
 - Replies without an inline quote now show a snippet of the original message, looked up from local history
 - Reply context survives buffer reloads: reply metadata is now stored in the message database
 - Outgoing messages carry an XEP-0359 origin-id, so replies from other clients reference a stable id

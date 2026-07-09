@@ -261,6 +261,68 @@
          (plist (jabber-chat--msg-plist-from-stanza stanza)))
     (should-not (plist-get plist :fallback-range))))
 
+(defmacro jabber-test-chat--with-reply-ewoc (&rest body)
+  "Run BODY in a temp buffer with an original and a reply node.
+The original has id \"orig-1\"; the reply references it.  Point
+starts on the reply node; `jabber-point-insert' marks the input
+area after both messages."
+  (declare (indent 0) (debug t))
+  `(with-temp-buffer
+     (let ((jabber-chat-ewoc (ewoc-create
+                              (lambda (data)
+                                (insert (plist-get (cadr data) :body) "\n"))
+                              nil nil 'nosep))
+           (jabber-chat--msg-nodes (make-hash-table :test 'equal)))
+       (jabber-chat-ewoc-enter
+        (list :foreign (list :id "orig-1" :from "alice@x.com"
+                             :body "the original"
+                             :timestamp (current-time))))
+       (let ((reply-node
+              (jabber-chat-ewoc-enter
+               (list :foreign (list :id "r-1" :from "alice@x.com"
+                                    :body "the reply"
+                                    :reply-to-id "orig-1"
+                                    :timestamp (current-time))))))
+         (setq-local jabber-point-insert (point-max-marker))
+         (goto-char (ewoc-location reply-node))
+         ,@body))))
+
+(ert-deftest jabber-test-chat-reply-target-at-point ()
+  "The reply target is found on the reply node and nowhere else."
+  (jabber-test-chat--with-reply-ewoc
+    (should (equal "orig-1" (jabber-chat--reply-target-at-point)))
+    (goto-char (point-min))
+    (should-not (jabber-chat--reply-target-at-point))
+    (goto-char (point-max))
+    (should-not (jabber-chat--reply-target-at-point))))
+
+(ert-deftest jabber-test-chat-goto-reply-target-jumps ()
+  "RET on a reply moves point to the original message."
+  (jabber-test-chat--with-reply-ewoc
+    (cl-letf (((symbol-function 'pulse-momentary-highlight-region)
+               #'ignore))
+      (jabber-chat-goto-reply-target))
+    (should (= (point) (point-min)))
+    (should (looking-at "the original"))))
+
+(ert-deftest jabber-test-chat-goto-reply-target-or-send-dispatch ()
+  "RET sends from the input area and jumps from a reply."
+  (jabber-test-chat--with-reply-ewoc
+    (let ((sent nil))
+      (cl-letf (((symbol-function 'jabber-chat-buffer-send)
+                 (lambda () (setq sent t)))
+                ((symbol-function 'pulse-momentary-highlight-region)
+                 #'ignore))
+        (goto-char (point-max))
+        (jabber-chat-goto-reply-target-or-send)
+        (should sent)
+        (setq sent nil)
+        (goto-char (point-min))
+        (ewoc-goto-next jabber-chat-ewoc 1)
+        (jabber-chat-goto-reply-target-or-send)
+        (should-not sent)
+        (should (= (point) (point-min)))))))
+
 (ert-deftest jabber-test-chat-reply-context-synthesizes-quote ()
   "A fallback-less reply quotes the original body from the database."
   (with-temp-buffer

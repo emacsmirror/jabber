@@ -1228,6 +1228,42 @@ snippet of it after the label."
                  (concat label "\n"))
                'face 'shadow)))))
 
+(defun jabber-chat--reply-target-at-point ()
+  "Return the :reply-to-id of the rendered message at point, or nil.
+Only meaningful in the message area, above the input divider."
+  (and jabber-chat-ewoc
+       (markerp jabber-point-insert)
+       (< (point) jabber-point-insert)
+       (when-let* ((node (ewoc-locate jabber-chat-ewoc (point)))
+                   (msg (cadr (ewoc-data node))))
+         (and (listp msg) (plist-get msg :reply-to-id)))))
+
+(defun jabber-chat-goto-reply-target ()
+  "Move point to the message the reply at point references."
+  (interactive)
+  (let ((target (jabber-chat--reply-target-at-point)))
+    (unless target
+      (user-error "No reply at point"))
+    (let ((node (jabber-chat-ewoc-find-by-id target)))
+      (unless node
+        (user-error "The original message is not in this buffer"))
+      (goto-char (ewoc-location node))
+      (require 'pulse)
+      (pulse-momentary-highlight-region
+       (ewoc-location node)
+       (or (and-let* ((next (ewoc-next jabber-chat-ewoc node)))
+             (ewoc-location next))
+           jabber-point-insert)))))
+
+(defun jabber-chat-goto-reply-target-or-send ()
+  "Jump to the replied-to message at point, or send the input.
+On a rendered reply, move point to the original message;
+anywhere else, behave like `jabber-chat-buffer-send'."
+  (interactive)
+  (if (jabber-chat--reply-target-at-point)
+      (jabber-chat-goto-reply-target)
+    (jabber-chat-buffer-send)))
+
 (defun jabber-chat-pp--local (data)
   "Render a locally sent message from DATA."
   (let* ((msg (cadr data))

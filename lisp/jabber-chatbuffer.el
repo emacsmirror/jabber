@@ -131,6 +131,7 @@ previous sequence detect the mismatch and stop.")
 (declare-function jabber-correct-last-message "jabber-message-correct" ())
 (declare-function jabber-chat-cancel-reply "jabber-message-reply" ())
 (declare-function jabber-reactions-react-at-point-or-insert "jabber-reactions" ())
+(declare-function jabber-chat-goto-reply-target-or-send "jabber-chat" ())
 (declare-function jabber-chat-image-enlarge-or-self-insert "jabber-chat" (n))
 (declare-function jabber-chat-image-shrink-or-self-insert "jabber-chat" (n))
 (declare-function jabber-chat-image-reset-size-or-self-insert "jabber-chat" (n))
@@ -458,7 +459,7 @@ MAM sync in this buffer.  Set via the operations menu.")
   (insert "\n"))
 
 (defvar-keymap jabber-chat-mode-map
-  "RET"     #'jabber-chat-buffer-send
+  "RET"     #'jabber-chat-goto-reply-target-or-send
   "S-<return>"   #'jabber-chat-newline
   "TAB"     #'completion-at-point
   "<backtab>" #'backward-button
@@ -727,9 +728,10 @@ or nil if the message was a duplicate."
         node))))
 
 (defun jabber-chat-ewoc--msg-matches-id-p (msg stanza-id)
-  "Return non-nil when MSG has STANZA-ID as :id or :server-id."
+  "Return non-nil when MSG has STANZA-ID as :id, :origin-id or :server-id."
   (and (listp msg)
        (or (equal stanza-id (plist-get msg :id))
+           (equal stanza-id (plist-get msg :origin-id))
            (equal stanza-id (plist-get msg :server-id)))))
 
 (defun jabber-chat-ewoc--find-by-id-scan (stanza-id)
