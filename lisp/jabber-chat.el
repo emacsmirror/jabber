@@ -1051,51 +1051,57 @@ Shares its namespace with <stanza-id/>, so match on the node name."
              (jabber-xml-node-children xml-data))))
     (and el (jabber-xml-get-attribute el 'id))))
 
-(defun jabber-chat--build-msg-plist (xml-data delayed)
-  "Build a message plist from the fields in XML-DATA.
-DELAYED marks the message as delayed unconditionally."
-  (let* ((msg-timestamp (jabber-message-timestamp xml-data))
-         (oob-entries (jabber-chat--extract-oob-entries xml-data))
-         (error-node (car (jabber-xml-get-children xml-data 'error)))
-         (from (jabber-xml-get-attribute xml-data 'from))
+(defun jabber-chat--server-id (xml-data)
+  "Return the trusted XEP-0359 stanza-id in XML-DATA, or nil.
+In groupchat, only the room itself may assign the stanza-id
+\(XEP-0461).  Elsewhere the archive JID is not known here, so any
+`by' is accepted."
+  (let* ((from (jabber-xml-get-attribute xml-data 'from))
          (type (jabber-xml-get-attribute xml-data 'type))
-         ;; In groupchat, only the room itself may assign the stanza-id
-         ;; (XEP-0461).  Elsewhere we cannot know the archive JID here,
-         ;; so any by is accepted.
          (sid-el (jabber-chat--stanza-id-element
                   xml-data
                   (and (equal type "groupchat") from
-                       (jabber-jid-user from))))
-         (reply-el (jabber-xml-child-with-xmlns xml-data
-                                                jabber-chat--reply-xmlns))
-         (unstyled-el (jabber-xml-child-with-xmlns xml-data "urn:xmpp:styling:0"))
-         (body (car (jabber-xml-node-children
-                     (car (jabber-xml-get-children xml-data 'body))))))
-    (list
-     :id (jabber-xml-get-attribute xml-data 'id)
-     :server-id (when sid-el (jabber-xml-get-attribute sid-el 'id))
-     :origin-id (jabber-chat--origin-id xml-data)
-     :from from
-     :body body
-     :subject (car (jabber-xml-node-children
-                    (car (jabber-xml-get-children xml-data 'subject))))
-     :timestamp (or msg-timestamp (current-time))
-     :delayed (or delayed (and msg-timestamp t))
-     :encrypted (and (jabber-xml-child-with-xmlns
-                      xml-data "eu.siacs.conversations.axolotl")
-                     t)
-     :oob-entries oob-entries
-     :oob-url (caar oob-entries)
-     :oob-desc (cdar oob-entries)
-     :error-text (when error-node
-                   (jabber-parse-error error-node))
-     :reply-to-id (when reply-el
-                    (jabber-xml-get-attribute reply-el 'id))
-     :reply-to-jid (when reply-el
-                     (jabber-xml-get-attribute reply-el 'to))
-     :fallback-range (when reply-el
-                       (jabber-chat--reply-fallback-range xml-data))
-     :unstyled (and unstyled-el t))))
+                       (jabber-jid-user from)))))
+    (and sid-el (jabber-xml-get-attribute sid-el 'id))))
+
+(defun jabber-chat--reply-fields (xml-data)
+  "Return XEP-0461 reply fields in XML-DATA as a plist, or nil."
+  (and-let* ((reply-el (jabber-xml-child-with-xmlns
+                        xml-data jabber-chat--reply-xmlns)))
+    (list :reply-to-id (jabber-xml-get-attribute reply-el 'id)
+          :reply-to-jid (jabber-xml-get-attribute reply-el 'to)
+          :fallback-range (jabber-chat--reply-fallback-range xml-data))))
+
+(defun jabber-chat--build-msg-plist (xml-data delayed)
+  "Build a message plist from the fields in XML-DATA.
+DELAYED marks the message as delayed unconditionally."
+  (let ((msg-timestamp (jabber-message-timestamp xml-data))
+        (oob-entries (jabber-chat--extract-oob-entries xml-data))
+        (error-node (car (jabber-xml-get-children xml-data 'error))))
+    (append
+     (list
+      :id (jabber-xml-get-attribute xml-data 'id)
+      :server-id (jabber-chat--server-id xml-data)
+      :origin-id (jabber-chat--origin-id xml-data)
+      :from (jabber-xml-get-attribute xml-data 'from)
+      :body (car (jabber-xml-node-children
+                  (car (jabber-xml-get-children xml-data 'body))))
+      :subject (car (jabber-xml-node-children
+                     (car (jabber-xml-get-children xml-data 'subject))))
+      :timestamp (or msg-timestamp (current-time))
+      :delayed (or delayed (and msg-timestamp t))
+      :encrypted (and (jabber-xml-child-with-xmlns
+                       xml-data "eu.siacs.conversations.axolotl")
+                      t)
+      :oob-entries oob-entries
+      :oob-url (caar oob-entries)
+      :oob-desc (cdar oob-entries)
+      :error-text (when error-node
+                    (jabber-parse-error error-node))
+      :unstyled (and (jabber-xml-child-with-xmlns
+                      xml-data "urn:xmpp:styling:0")
+                     t))
+     (jabber-chat--reply-fields xml-data))))
 
 (defun jabber-chat--msg-plist-from-stanza (xml-data &optional delayed)
   "Extract display fields from XML-DATA into a message plist.
