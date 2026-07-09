@@ -3,6 +3,7 @@
 * [Unreleased]
 
 ** Added
+- Reply context survives buffer reloads: reply metadata is now stored in the message database
 - Outgoing messages carry an XEP-0359 origin-id, so replies from other clients reference a stable id
 - OMEMO signed pre-keys now rotate automatically on connect (~jabber-omemo-signed-pre-key-rotation-period~, 7 days default)
 

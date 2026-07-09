@@ -261,6 +261,29 @@
          (plist (jabber-chat--msg-plist-from-stanza stanza)))
     (should-not (plist-get plist :fallback-range))))
 
+(ert-deftest jabber-test-chat-outgoing-handler-stores-reply-metadata ()
+  "The DB outgoing handler reads reply elements off the final stanza."
+  (require 'jabber-db)
+  (with-temp-buffer
+    (setq-local jabber-chatting-with "alice@x.com")
+    (setq-local jabber-buffer-connection 'fake-jc)
+    (let (stored-reply)
+      (cl-letf (((symbol-function 'jabber-connection-bare-jid)
+                 (lambda (_jc) "me@x.com"))
+                ((symbol-function 'jabber-muc-sender-p)
+                 (lambda (_jid) nil))
+                ((symbol-function 'jabber-db-store-message)
+                 (lambda (&rest args) (setq stored-reply (nth 12 args)))))
+        (let ((stanza '(message ((to . "alice@x.com")
+                                 (type . "chat")
+                                 (id . "m-9"))
+                                (body () "> q\nanswer")
+                                (reply ((xmlns . "urn:xmpp:reply:0")
+                                        (id . "orig-9")))))
+              (jabber-chat-send-hooks (list #'jabber-db--outgoing-handler)))
+          (jabber-chat--run-send-hooks stanza "> q\nanswer" "m-9")))
+      (should (equal "orig-9" (plist-get stored-reply :reply-to-id))))))
+
 (ert-deftest jabber-test-chat-send-hooks-stamp-origin-id ()
   "The default send hooks stamp an XEP-0359 origin-id on outgoing stanzas."
   (with-temp-buffer

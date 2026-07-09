@@ -232,13 +232,19 @@ added to the outgoing message.")
 Hooks holding state for the next composed message (e.g. pending
 reply data) should stay inert instead of consuming it.")
 
+(defvar jabber-chat--send-hook-stanza nil
+  "The outgoing stanza, bound while `jabber-chat-send-hooks' run.
+Lets late hooks (e.g. the DB store) read elements that earlier
+hooks attached, without changing the (BODY ID) hook signature.")
+
 (defun jabber-chat--run-send-hooks (stanza body id)
   "Run `jabber-chat-send-hooks' and nconc results onto STANZA.
 BODY and ID are passed to each hook function.
 When STANZA is an XEP-0308 correction, the hooks run with
 `jabber-chat--sending-correction' bound non-nil so that hooks
 holding state for the next composed message stay inert."
-  (let ((jabber-chat--sending-correction
+  (let ((jabber-chat--send-hook-stanza stanza)
+        (jabber-chat--sending-correction
          (and (jabber-xml-child-with-xmlns
                stanza "urn:xmpp:message-correct:0")
               t)))
@@ -282,7 +288,7 @@ holding state for the next composed message stay inert."
                   (account peer direction type body timestamp
                            &optional resource stanza-id
                            server-id occupant-id oob-entries
-                           encrypted))
+                           encrypted reply))
 (declare-function jabber-db--extract-occupant-id "jabber-db.el" (xml-data))
 (declare-function jabber-message-correct--replace-id "jabber-message-correct"
                   (xml-data))
@@ -593,7 +599,8 @@ updates the original row instead."
          (when from (jabber-jid-resource from))
          stanza-id
          nil (jabber-db--extract-occupant-id xml-data) nil
-         encrypted)))))
+         encrypted
+         (jabber-chat--reply-fields xml-data))))))
 
 (defun jabber-chat--select-buffer (jc from &optional carbon-buffer)
   "Return the chat buffer for an incoming message from FROM.

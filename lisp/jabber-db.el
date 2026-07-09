@@ -103,7 +103,11 @@ in the message history.")
   displayed_at INTEGER,
   retracted_by TEXT,
   retraction_reason TEXT,
-  edited       INTEGER DEFAULT 0)"
+  edited       INTEGER DEFAULT 0,
+  reply_to_id  TEXT,
+  reply_to_jid TEXT,
+  fallback_start INTEGER,
+  fallback_end INTEGER)"
     "CREATE INDEX IF NOT EXISTS idx_msg_peer_ts
   ON message(account, peer, timestamp)"
     "CREATE INDEX IF NOT EXISTS idx_msg_stanza_id
@@ -263,7 +267,7 @@ WHERE updated_at < (
     (jabber-db--ensure-reaction-actor-table db)
     (jabber-db--backfill-reaction-actors db)))
 
-(defconst jabber-db--schema-version 6
+(defconst jabber-db--schema-version 7
   "Current schema version.
 Bump this when adding migrations.  A database whose version
 exceeds this value is from a newer (or development) build and
@@ -353,6 +357,12 @@ CREATE INDEX IF NOT EXISTS idx_reaction_message_id
       (sqlite-execute db "PRAGMA user_version=6")
       (setq version 6))
     (when (= version 6)
+      (dolist (col '("reply_to_id TEXT" "reply_to_jid TEXT"
+                     "fallback_start INTEGER" "fallback_end INTEGER"))
+        (sqlite-execute db (concat "ALTER TABLE message ADD COLUMN " col)))
+      (sqlite-execute db "PRAGMA user_version=7")
+      (setq version 7))
+    (when (= version 7)
       (jabber-db--repair-reaction-actors db))))
 
 (defun jabber-db-ensure-open ()
@@ -445,6 +455,61 @@ SELECT identities, features FROM caps_cache
 
 ;;; Storage
 
+(defun jabber-db--extract-reply-fields (xml-data)
+  "Return XEP-0461 reply metadata in XML-DATA as a plist, or nil.
+Keys are :reply-to-id, :reply-to-jid and :fallback-range.  Mirrors
+`jabber-chat--reply-fields' in jabber-chat.el; duplicated here for
+the same layering reason as `jabber-db--stanza-id-element'."
+  (and-let* ((reply-el
+              (seq-find
+               (lambda (child)
+                 (and (eq (jabber-xml-node-name child) 'reply)
+                      (equal (jabber-xml-get-xmlns child)
+                             "urn:xmpp:reply:0")))
+               (jabber-xml-node-children xml-data))))
+    (list :reply-to-id (jabber-xml-get-attribute reply-el 'id)
+          :reply-to-jid (jabber-xml-get-attribute reply-el 'to)
+          :fallback-range (jabber-db--reply-fallback-range xml-data))))
+
+(defun jabber-db--reply-fallback-range (xml-data)
+  "Return the XEP-0428 fallback range for replies in XML-DATA.
+Same return values as `jabber-chat--reply-fallback-range': a
+\(START END) list, `all', or nil."
+  (when-let* ((fallback
+               (seq-find
+                (lambda (child)
+                  (and (eq (jabber-xml-node-name child) 'fallback)
+                       (equal (jabber-xml-get-xmlns child)
+                              "urn:xmpp:fallback:0")
+                       (equal (jabber-xml-get-attribute child 'for)
+                              "urn:xmpp:reply:0")))
+                (jabber-xml-node-children xml-data))))
+    (if-let* ((body (car (jabber-xml-get-children fallback 'body))))
+        (let ((start (jabber-xml-get-attribute body 'start))
+              (end (jabber-xml-get-attribute body 'end)))
+          (if (or start end)
+              (and start end
+                   (string-match-p "\\`[0-9]+\\'" start)
+                   (string-match-p "\\`[0-9]+\\'" end)
+                   (list (string-to-number start) (string-to-number end)))
+            'all))
+      'all)))
+
+(defun jabber-db--fallback-range-cols (range)
+  "Encode RANGE for storage as a (START . END) cons of column values.
+RANGE is nil, `all', or a (START END) list; `all' is stored
+as -1/-1, nil as NULL/NULL."
+  (pcase range
+    ('all '(-1 . -1))
+    (`(,start ,end) (cons start end))
+    (_ '(nil . nil))))
+
+(defun jabber-db--decode-fallback-range (start end)
+  "Decode fallback columns START and END back into a range value.
+Inverse of `jabber-db--fallback-range-cols'."
+  (cond ((and (eql start -1) (eql end -1)) 'all)
+        ((and start end) (list start end))))
+
 (defun jabber-db--detect-duplicate (db account peer timestamp body
                                        stanza-id server-id &optional type)
   "Check whether a message for ACCOUNT already exists in DB.
@@ -482,18 +547,26 @@ WHERE account = ? AND peer = ? AND timestamp = ? AND body = ? LIMIT 1"
 (defun jabber-db--insert-message (db account peer resource occupant-id
                                      direction type body timestamp
                                      stanza-id server-id encrypted
-                                     oob-entries)
+                                     oob-entries reply)
   "Insert a new message row into DB for ACCOUNT and attach OOB-ENTRIES.
 PEER, RESOURCE, OCCUPANT-ID, DIRECTION, TYPE, BODY, TIMESTAMP,
-STANZA-ID, SERVER-ID and ENCRYPTED fill the corresponding columns."
-  (sqlite-execute
-   db
-   "INSERT INTO message \
+STANZA-ID, SERVER-ID and ENCRYPTED fill the corresponding columns.
+REPLY is a plist from `jabber-db--extract-reply-fields', or nil."
+  (pcase-let ((`(,fb-start . ,fb-end)
+               (jabber-db--fallback-range-cols
+                (plist-get reply :fallback-range))))
+    (sqlite-execute
+     db
+     "INSERT INTO message \
 (account, peer, resource, occupant_id, direction, type, body, timestamp, \
-stanza_id, server_id, encrypted) \
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-   (list account peer resource occupant-id direction type body timestamp
-         stanza-id server-id (if encrypted 1 0)))
+stanza_id, server_id, encrypted, reply_to_id, reply_to_jid, \
+fallback_start, fallback_end) \
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+     (list account peer resource occupant-id direction type body timestamp
+           stanza-id server-id (if encrypted 1 0)
+           (plist-get reply :reply-to-id)
+           (plist-get reply :reply-to-jid)
+           fb-start fb-end)))
   (when oob-entries
     (let ((msg-id (caar (sqlite-select db "SELECT last_insert_rowid()"))))
       (dolist (entry oob-entries)
@@ -570,10 +643,26 @@ WHERE account = ? AND peer = ? AND timestamp = ? AND body = ? \
 AND stanza_id IS NULL AND server_id IS NULL"
      (list stanza-id server-id account peer timestamp body))))
 
+(defun jabber-db--backfill-reply-fields (db account peer stanza-id reply)
+  "Fill NULL reply columns for ACCOUNT/PEER's row with STANZA-ID from REPLY.
+Completes rows stored before the reply elements were attached to
+the outgoing stanza (e.g. the OMEMO pending echo)."
+  (pcase-let ((`(,fb-start . ,fb-end)
+               (jabber-db--fallback-range-cols
+                (plist-get reply :fallback-range))))
+    (sqlite-execute
+     db
+     "UPDATE message SET reply_to_id = ?, reply_to_jid = ?, \
+fallback_start = ?, fallback_end = ? \
+WHERE stanza_id = ? AND account = ? AND peer = ? AND reply_to_id IS NULL"
+     (list (plist-get reply :reply-to-id)
+           (plist-get reply :reply-to-jid)
+           fb-start fb-end stanza-id account peer))))
+
 (defun jabber-db-store-message (account peer direction type body timestamp
                                         &optional resource stanza-id
                                         server-id occupant-id oob-entries
-                                        encrypted)
+                                        encrypted reply)
   "Store a message in the database.
 ACCOUNT is the bare JID of the local account.
 PEER is the bare JID of the contact or room.
@@ -587,7 +676,9 @@ Optional SERVER-ID is the XEP-0359 server-assigned id.
 Optional OCCUPANT-ID is the XEP-0421 occupant id.
 Optional OOB-ENTRIES is a list of (URL . DESC) cons cells for
 jabber:x:oob elements.
-Optional ENCRYPTED is non-nil if the message was OMEMO-encrypted."
+Optional ENCRYPTED is non-nil if the message was OMEMO-encrypted.
+Optional REPLY is a reply metadata plist from
+`jabber-db--extract-reply-fields'."
   (when-let* ((db (jabber-db-ensure-open)))
     (let ((dup-id-col (jabber-db--detect-duplicate
                        db account peer timestamp body stanza-id server-id
@@ -596,11 +687,15 @@ Optional ENCRYPTED is non-nil if the message was OMEMO-encrypted."
         ('nil
          (jabber-db--insert-message db account peer resource occupant-id
                                     direction type body timestamp
-                                    stanza-id server-id encrypted oob-entries))
+                                    stanza-id server-id encrypted oob-entries
+                                    reply))
         ((or 'stanza_id 'server_id)
          (jabber-db--update-duplicate-ids db account peer timestamp body
                                           stanza-id server-id oob-entries
-                                          dup-id-col))
+                                          dup-id-col)
+         (when (and reply stanza-id)
+           (jabber-db--backfill-reply-fields db account peer stanza-id
+                                             reply)))
         ('content
          (jabber-db--upgrade-content-match db account peer timestamp body
                                            stanza-id server-id))))))
@@ -822,7 +917,8 @@ ROW columns match the SELECT in `jabber-db-backlog'.
 The :oob-entries key is populated later by `jabber-db--attach-oob-entries'."
   (seq-let (id account peer direction body timestamp resource type
                encrypted stanza-id delivered-at
-               displayed-at server-id retracted-by retraction-reason edited)
+               displayed-at server-id retracted-by retraction-reason edited
+               reply-to-id reply-to-jid fallback-start fallback-end)
       row
     (let ((from (cond
                  ;; Incoming: peer/resource (or just peer if no resource).
@@ -846,6 +942,10 @@ The :oob-entries key is populated later by `jabber-db--attach-oob-entries'."
             :retracted-by retracted-by
             :retraction-reason retraction-reason
             :edited (and edited (not (zerop edited)))
+            :reply-to-id reply-to-id
+            :reply-to-jid reply-to-jid
+            :fallback-range (jabber-db--decode-fallback-range
+                             fallback-start fallback-end)
             :direction direction
             :msg-type type
             :oob-entries nil
@@ -907,7 +1007,8 @@ MSG-TYPE, when non-nil, filters to messages of that type only
                     (t 0)))
            (base-cols "SELECT id, account, peer, direction, body, timestamp, \
 resource, type, encrypted, stanza_id, delivered_at, displayed_at, \
-server_id, retracted_by, retraction_reason, edited FROM message")
+server_id, retracted_by, retraction_reason, edited, \
+reply_to_id, reply_to_jid, fallback_start, fallback_end FROM message")
            (sql (cond
                  (resource
                   (concat base-cols " WHERE account = ? AND peer = ? \
@@ -1113,12 +1214,15 @@ XML-DATA is the parsed stanza."
          server-id
          (jabber-db--extract-occupant-id xml-data)
          oob-entries
-         encrypted)))))
+         encrypted
+         (jabber-db--extract-reply-fields xml-data))))))
 
 (defun jabber-db--outgoing-handler (body id)
   "Store outgoing chat message in the database.
 BODY is the message text.  ID is the stanza id for dedup.
-Called from `jabber-chat-send-hooks'."
+Called from `jabber-chat-send-hooks'.  Reply metadata is read from
+`jabber-chat--send-hook-stanza' when the hooks that emit the reply
+elements have already run."
   (when (and jabber-chatting-with jabber-buffer-connection)
     (jabber-db-store-message
      (jabber-connection-bare-jid jabber-buffer-connection)
@@ -1131,7 +1235,9 @@ Called from `jabber-chat-send-hooks'."
        (jabber-jid-resource jabber-chatting-with))
      id
      nil nil nil
-     (memq jabber-chat-encryption '(omemo openpgp openpgp-legacy))))
+     (memq jabber-chat-encryption '(omemo openpgp openpgp-legacy))
+     (and (bound-and-true-p jabber-chat--send-hook-stanza)
+          (jabber-db--extract-reply-fields jabber-chat--send-hook-stanza))))
   nil)
 
 (defun jabber-db--store-outgoing (jc to body type)
@@ -1233,7 +1339,9 @@ files, depending on the value of `jabber-use-global-history'."
 ;;; Registration
 
 (jabber-chain-add 'jabber-message-chain #'jabber-db--message-handler 90)
-(add-hook 'jabber-chat-send-hooks #'jabber-db--outgoing-handler)
+;; Depth 90: run after the hooks that attach reply/receipt elements,
+;; so the stored row sees the complete stanza.
+(add-hook 'jabber-chat-send-hooks #'jabber-db--outgoing-handler 90)
 (add-hook 'jabber-post-connect-hooks #'jabber-db--on-connect)
 (add-hook 'jabber-pre-disconnect-hook #'jabber-db--on-disconnect)
 (add-hook 'kill-emacs-hook #'jabber-db-close)

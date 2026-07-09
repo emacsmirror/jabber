@@ -379,7 +379,8 @@ JC is the Jabber connection.  XML-DATA is the stanza."
                body ts (jabber-jid-resource (plist-get fields :from))
                (plist-get fields :stanza-id) archive-id
                (jabber-db--extract-occupant-id inner-msg)
-               (plist-get fields :oob-entries) encrypted)))
+               (plist-get fields :oob-entries) encrypted
+               (jabber-db--extract-reply-fields inner-msg))))
            (jabber-mam--track-sync-ids qid archive-id
                                        (plist-get fields :stanza-id) ts)
            (jabber-mam--mark-dirty peer (plist-get fields :type))

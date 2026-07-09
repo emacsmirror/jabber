@@ -1629,8 +1629,14 @@ CREATE TABLE omemo_store (
     (unwind-protect
         (progn
           ;; Create a minimal v5 database with a store row.  The
-          ;; reaction tables satisfy the post-migration repair step.
+          ;; reaction tables satisfy the post-migration repair step;
+          ;; the message table is needed by the v6->v7 migration.
           (let ((db (sqlite-open jabber-db-path)))
+            (sqlite-execute db "\
+CREATE TABLE message (
+  id INTEGER PRIMARY KEY, account TEXT NOT NULL, peer TEXT NOT NULL,
+  direction TEXT NOT NULL, type TEXT, body TEXT,
+  timestamp INTEGER NOT NULL, stanza_id TEXT)")
             (sqlite-execute db "\
 CREATE TABLE omemo_store (
   account TEXT PRIMARY KEY,
@@ -1666,6 +1672,114 @@ CREATE TABLE message_reaction_actor (
       (jabber-db-close)
       (when (file-directory-p jabber-test-db--dir)
         (delete-directory jabber-test-db--dir t)))))
+
+(ert-deftest jabber-test-db-migration-v6-to-v7 ()
+  "Migration v6->v7 adds the reply metadata columns."
+  (let* ((jabber-test-db--dir (make-temp-file "jabber-db-test" t))
+         (jabber-db-path (expand-file-name "test.sqlite" jabber-test-db--dir))
+         (jabber-db--connection nil))
+    (unwind-protect
+        (progn
+          (let ((db (sqlite-open jabber-db-path)))
+            (sqlite-execute db "\
+CREATE TABLE message (
+  id INTEGER PRIMARY KEY, account TEXT NOT NULL, peer TEXT NOT NULL,
+  direction TEXT NOT NULL, type TEXT, body TEXT,
+  timestamp INTEGER NOT NULL, stanza_id TEXT)")
+            (sqlite-execute db "\
+CREATE TABLE message_reaction (
+  message_id INTEGER NOT NULL, sender TEXT NOT NULL,
+  reaction TEXT NOT NULL, updated_at INTEGER NOT NULL,
+  PRIMARY KEY (message_id, sender, reaction))")
+            (sqlite-execute db "\
+CREATE TABLE message_reaction_actor (
+  message_id INTEGER NOT NULL, sender TEXT NOT NULL,
+  updated_at INTEGER NOT NULL, PRIMARY KEY (message_id, sender))")
+            (sqlite-execute db "\
+CREATE TABLE omemo_store (
+  account TEXT PRIMARY KEY, store_blob BLOB NOT NULL,
+  spk_rotated_at INTEGER)")
+            (sqlite-execute db "PRAGMA user_version=6")
+            (sqlite-close db))
+          (jabber-db-ensure-open)
+          (should (= jabber-db--schema-version
+                     (caar (sqlite-select jabber-db--connection
+                                          "PRAGMA user_version"))))
+          (let ((cols (mapcar #'car
+                              (sqlite-select jabber-db--connection
+                                "SELECT name FROM pragma_table_info('message')"))))
+            (dolist (col '("reply_to_id" "reply_to_jid"
+                           "fallback_start" "fallback_end"))
+              (should (member col cols)))))
+      (jabber-db-close)
+      (when (file-directory-p jabber-test-db--dir)
+        (delete-directory jabber-test-db--dir t)))))
+
+;;; Group: Reply metadata persistence
+
+(ert-deftest jabber-test-db-reply-metadata-round-trip ()
+  "Reply metadata stored with a message comes back in the backlog."
+  (jabber-test-db-with-db
+    (jabber-db-store-message
+     "me@x.com" "alice@x.com" "in" "chat" "> quote\nanswer"
+     (floor (float-time)) "phone" "msg-1" nil nil nil nil
+     '(:reply-to-id "orig-1" :reply-to-jid "alice@x.com"
+       :fallback-range (0 8)))
+    (let ((msg (car (jabber-db-backlog "me@x.com" "alice@x.com"))))
+      (should (equal "orig-1" (plist-get msg :reply-to-id)))
+      (should (equal "alice@x.com" (plist-get msg :reply-to-jid)))
+      (should (equal '(0 8) (plist-get msg :fallback-range))))))
+
+(ert-deftest jabber-test-db-reply-metadata-all-range ()
+  "A whole-body fallback range survives the -1 encoding."
+  (jabber-test-db-with-db
+    (jabber-db-store-message
+     "me@x.com" "alice@x.com" "in" "chat" "> just a quote"
+     (floor (float-time)) "phone" "msg-2" nil nil nil nil
+     '(:reply-to-id "orig-2" :fallback-range all))
+    (let ((msg (car (jabber-db-backlog "me@x.com" "alice@x.com"))))
+      (should (eq 'all (plist-get msg :fallback-range))))))
+
+(ert-deftest jabber-test-db-reply-metadata-absent ()
+  "A message without reply metadata reads back nil fields."
+  (jabber-test-db-with-db
+    (jabber-db-store-message
+     "me@x.com" "alice@x.com" "in" "chat" "plain"
+     (floor (float-time)) "phone" "msg-3")
+    (let ((msg (car (jabber-db-backlog "me@x.com" "alice@x.com"))))
+      (should-not (plist-get msg :reply-to-id))
+      (should-not (plist-get msg :fallback-range)))))
+
+(ert-deftest jabber-test-db-reply-metadata-backfill-on-dedup ()
+  "A duplicate store with reply metadata backfills NULL reply columns."
+  (jabber-test-db-with-db
+    (let ((ts (floor (float-time))))
+      ;; First store without reply metadata (OMEMO pending echo shape).
+      (jabber-db-store-message
+       "me@x.com" "alice@x.com" "out" "chat" "answer" ts nil "msg-4")
+      ;; Same stanza-id again, now with reply metadata.
+      (jabber-db-store-message
+       "me@x.com" "alice@x.com" "out" "chat" "answer" ts nil "msg-4"
+       nil nil nil nil '(:reply-to-id "orig-4" :fallback-range all))
+      (let ((msg (car (jabber-db-backlog "me@x.com" "alice@x.com"))))
+        (should (equal "orig-4" (plist-get msg :reply-to-id)))
+        (should (eq 'all (plist-get msg :fallback-range)))))))
+
+(ert-deftest jabber-test-db-extract-reply-fields ()
+  "Reply extraction matches the chat-side parser's shape."
+  (let ((stanza '(message ((from . "alice@x.com") (type . "chat"))
+                          (body () "> q\nanswer")
+                          (reply ((xmlns . "urn:xmpp:reply:0")
+                                  (to . "alice@x.com")
+                                  (id . "orig-5")))
+                          (fallback ((xmlns . "urn:xmpp:fallback:0")
+                                     (for . "urn:xmpp:reply:0"))
+                                    (body ((start . "0") (end . "4")))))))
+    (should (equal '(:reply-to-id "orig-5" :reply-to-jid "alice@x.com"
+                     :fallback-range (0 4))
+                   (jabber-db--extract-reply-fields stanza))))
+  (should-not (jabber-db--extract-reply-fields
+               '(message ((from . "a@x.com")) (body () "plain")))))
 
 (ert-deftest jabber-test-db-oob-dedup-replacement ()
   "Failed-decrypt replacement updates OOB entries."
