@@ -2,7 +2,7 @@
 
 ;;; Commentary:
 
-;; Roster display and contact sorting.
+;; Roster display.
 
 ;;; Code:
 
@@ -17,82 +17,7 @@
 
 (require 'jabber-roster)
 
-;;; Group 1: jabber-roster-sort-by-status
-
-(ert-deftest jabber-test-roster-sort-by-status-online-vs-away ()
-  "Online user sorts before away user."
-  (let ((jabber-sort-order '("chat" "" "away" "dnd" "xa"))
-        (a (make-symbol "alice@example.com"))
-        (b (make-symbol "bob@example.com")))
-    (put a 'show "")
-    (put b 'show "away")
-    (should (< (jabber-roster-sort-by-status a b) 0))))
-
-(ert-deftest jabber-test-roster-sort-by-status-same ()
-  "Same status returns 0."
-  (let ((jabber-sort-order '("chat" "" "away" "dnd" "xa"))
-        (a (make-symbol "alice@example.com"))
-        (b (make-symbol "bob@example.com")))
-    (put a 'show "away")
-    (put b 'show "away")
-    (should (= (jabber-roster-sort-by-status a b) 0))))
-
-(ert-deftest jabber-test-roster-sort-by-status-offline-last ()
-  "Offline (nil show) sorts after online."
-  (let ((jabber-sort-order '("chat" "" "away" "dnd" "xa"))
-        (a (make-symbol "alice@example.com"))
-        (b (make-symbol "bob@example.com")))
-    (put a 'show nil)
-    (put b 'show "")
-    (should (> (jabber-roster-sort-by-status a b) 0))))
-
-;;; Group 2: jabber-roster-sort-by-displayname
-
-(ert-deftest jabber-test-roster-sort-by-displayname-order ()
-  "Alphabetical ordering by display name."
-  (let ((jabber-jid-obarray (make-vector 127 0))
-        (a (intern "alice@example.com" (make-vector 127 0)))
-        (b (intern "bob@example.com" (make-vector 127 0))))
-    (put a 'name "Alice")
-    (put b 'name "Bob")
-    (should (< (jabber-roster-sort-by-displayname a b) 0))))
-
-(ert-deftest jabber-test-roster-sort-by-displayname-equal ()
-  "Same name returns 0."
-  (let ((jabber-jid-obarray (make-vector 127 0))
-        (a (intern "alice@example.com" (make-vector 127 0)))
-        (b (intern "alice2@example.com" (make-vector 127 0))))
-    (put a 'name "Alice")
-    (put b 'name "Alice")
-    (should (= (jabber-roster-sort-by-displayname a b) 0))))
-
-;;; Group 3: jabber-roster-sort-by-group
-
-(ert-deftest jabber-test-roster-sort-by-group-different ()
-  "Different groups sort alphabetically."
-  (let ((a (make-symbol "alice@example.com"))
-        (b (make-symbol "bob@example.com")))
-    (put a 'groups '("Friends"))
-    (put b 'groups '("Work"))
-    (should (< (jabber-roster-sort-by-group a b) 0))))
-
-(ert-deftest jabber-test-roster-sort-by-group-same ()
-  "Same group returns 0."
-  (let ((a (make-symbol "alice@example.com"))
-        (b (make-symbol "bob@example.com")))
-    (put a 'groups '("Friends"))
-    (put b 'groups '("Friends"))
-    (should (= (jabber-roster-sort-by-group a b) 0))))
-
-(ert-deftest jabber-test-roster-sort-by-group-no-group ()
-  "No group falls back to empty string."
-  (let ((a (make-symbol "alice@example.com"))
-        (b (make-symbol "bob@example.com")))
-    (put a 'groups nil)
-    (put b 'groups '("Work"))
-    (should (< (jabber-roster-sort-by-group a b) 0))))
-
-;;; Group 4: jabber-fix-status
+;;; Group 1: jabber-fix-status
 
 (ert-deftest jabber-test-roster-fix-status-trailing-newlines ()
   "Trailing newlines are removed."
@@ -113,7 +38,7 @@
   "Nil input returns nil."
   (should (null (jabber-fix-status nil))))
 
-;;; Group 5: Face definitions
+;;; Group 2: Face definitions
 
 (ert-deftest jabber-test-roster-faces-use-inherit ()
   "Modernized roster faces use :inherit."

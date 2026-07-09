@@ -39,24 +39,6 @@
 (defgroup jabber-roster nil "Roster options."
   :group 'jabber)
 
-(defcustom jabber-roster-sort-functions
-  '(jabber-roster-sort-by-status jabber-roster-sort-by-displayname)
-  "Sort roster according to these criteria.
-
-These functions should take two roster items A and B, and return:
-<0 if A < B
-0  if A = B
->0 if A > B."
-  :type 'hook
-  :options '(jabber-roster-sort-by-status
-	     jabber-roster-sort-by-displayname
-	     jabber-roster-sort-by-group))
-
-(defcustom jabber-sort-order '("chat" "" "away" "dnd" "xa")
-  "Sort by status in this order.  Anything not in list goes last.
-Offline is represented as nil."
-  :type '(repeat (restricted-sexp :match-alternatives (stringp nil))))
-
 (defcustom jabber-remove-newlines t
   "Remove newlines in status messages?
 Newlines in status messages mess up the roster display.  However,
@@ -604,14 +586,6 @@ entry is offered to clear the scope."
 
 ;;; Roster data management
 
-(defun jabber-roster--accounts-for-jid (jid)
-  "Return list of connections that have JID in their roster."
-  (let ((sym (jabber-jid-symbol jid)))
-    (cl-remove-if-not
-     (lambda (jc)
-       (memq sym (plist-get (fsm-get-state-data jc) :roster)))
-     jabber-connections)))
-
 (defun jabber-roster-prepare-roster (jc)
   "Make a hash based roster.
 JC is the Jabber connection."
@@ -636,63 +610,6 @@ JC is the Jabber connection."
 	       (mapcar #'list all-groups))
     (plist-put state-data :roster-hash
 	       hash)))
-
-(defun jabber-sort-roster (jc)
-  "Sort roster according to online status.
-JC is the Jabber connection."
-  (let ((state-data (fsm-get-state-data jc)))
-    (dolist (group (plist-get state-data :roster-groups))
-      (let ((group-name (car group)))
-	(puthash group-name
-		 (sort
-		  (gethash group-name
-			   (plist-get state-data :roster-hash))
-		  #'jabber-roster-sort-items)
-		 (plist-get state-data :roster-hash))))))
-
-(defun jabber-roster-sort-items (a b)
-  "Sort roster items A and B according to `jabber-roster-sort-functions'.
-Return t if A is less than B."
-  (cl-dolist (fn jabber-roster-sort-functions)
-    (let ((comparison (funcall fn a b)))
-      (cond
-       ((< comparison 0)
-	(cl-return t))
-       ((> comparison 0)
-	(cl-return nil))))))
-
-(defun jabber-roster-sort-by-status (a b)
-  "Sort roster items A and B by online status.
-See `jabber-sort-order' for order used."
-  (cl-flet ((order (item) (length (member (get item 'show) jabber-sort-order))))
-    (let ((a-order (order a))
-	  (b-order (order b)))
-      (cond
-       ((< a-order b-order)
-	1)
-       ((> a-order b-order)
-	-1)
-       (t
-	0)))))
-
-(defun jabber-roster-sort-by-displayname (a b)
-  "Sort roster items A and B by displayed name."
-  (let ((a-name (jabber-jid-displayname a))
-	(b-name (jabber-jid-displayname b)))
-    (cond
-     ((string-lessp a-name b-name) -1)
-     ((string= a-name b-name) 0)
-     (t 1))))
-
-(defun jabber-roster-sort-by-group (a b)
-  "Sort roster items A and B by group membership."
-  (cl-flet ((first-group (item) (or (car (get item 'groups)) "")))
-    (let ((a-group (first-group a))
-	  (b-group (first-group b)))
-      (cond
-       ((string-lessp a-group b-group) -1)
-       ((string= a-group b-group) 0)
-       (t 1)))))
 
 (defun jabber-fix-status (status)
   "Make STATUS strings more readable."
