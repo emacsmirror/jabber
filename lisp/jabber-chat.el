@@ -1033,6 +1033,18 @@ mean the entire element; Dino emits bare <body/> for full quotes)."
             'all))
       'all)))
 
+(defconst jabber-chat--sid-xmlns "urn:xmpp:sid:0"
+  "XEP-0359 unique and stable stanza IDs namespace.")
+
+(defun jabber-chat--origin-id-send-hook (_body id)
+  "Return an XEP-0359 <origin-id/> element carrying ID.
+Stamps every outgoing message so peers replying to us can
+reference a stable id instead of the message id attribute."
+  (and id (list `(origin-id ((xmlns . ,jabber-chat--sid-xmlns)
+                             (id . ,id))))))
+
+(add-hook 'jabber-chat-send-hooks #'jabber-chat--origin-id-send-hook)
+
 (defun jabber-chat--stanza-id-element (xml-data &optional expected-by)
   "Return the first valid XEP-0359 <stanza-id/> child in XML-DATA.
 When EXPECTED-BY is non-nil, accept only elements whose `by'
@@ -1041,7 +1053,7 @@ arbitrary `by' values, so groupchat callers must pass the room JID."
   (seq-find
    (lambda (child)
      (and (eq (jabber-xml-node-name child) 'stanza-id)
-          (string= (jabber-xml-get-xmlns child) "urn:xmpp:sid:0")
+          (string= (jabber-xml-get-xmlns child) jabber-chat--sid-xmlns)
           (jabber-xml-get-attribute child 'id)
           (let ((by (jabber-xml-get-attribute child 'by)))
             (and by
@@ -1055,7 +1067,7 @@ Shares its namespace with <stanza-id/>, so match on the node name."
   (let ((el (seq-find
              (lambda (child)
                (and (eq (jabber-xml-node-name child) 'origin-id)
-                    (string= (jabber-xml-get-xmlns child) "urn:xmpp:sid:0")))
+                    (string= (jabber-xml-get-xmlns child) jabber-chat--sid-xmlns)))
              (jabber-xml-node-children xml-data))))
     (and el (jabber-xml-get-attribute el 'id))))
 

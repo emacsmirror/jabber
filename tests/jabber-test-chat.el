@@ -261,6 +261,32 @@
          (plist (jabber-chat--msg-plist-from-stanza stanza)))
     (should-not (plist-get plist :fallback-range))))
 
+(ert-deftest jabber-test-chat-send-hooks-stamp-origin-id ()
+  "The default send hooks stamp an XEP-0359 origin-id on outgoing stanzas."
+  (with-temp-buffer
+    (let ((stanza '(message ((to . "alice@example.com")
+                             (type . "chat")
+                             (id . "m-1"))
+                            (body () "hi"))))
+      (jabber-chat--run-send-hooks stanza "hi" "m-1")
+      (let ((el (seq-find (lambda (child)
+                            (and (consp child) (eq (car child) 'origin-id)))
+                          (jabber-xml-node-children stanza))))
+        (should el)
+        (should (equal "m-1" (jabber-xml-get-attribute el 'id)))
+        (should (equal "urn:xmpp:sid:0" (jabber-xml-get-xmlns el)))))))
+
+(ert-deftest jabber-test-chat-origin-id-round-trip ()
+  "A stanza stamped by the send hook parses back into :origin-id."
+  (with-temp-buffer
+    (let ((stanza '(message ((to . "alice@example.com")
+                             (type . "chat")
+                             (id . "m-2"))
+                            (body () "hi"))))
+      (jabber-chat--run-send-hooks stanza "hi" "m-2")
+      (should (equal "m-2" (plist-get (jabber-chat--msg-plist-from-stanza stanza)
+                                      :origin-id))))))
+
 (ert-deftest jabber-test-chat-plist-reply-fallback-not-masked ()
   "A non-reply <fallback> before the reply one must not mask it."
   (let* ((stanza '(message ((from . "alice@example.com/phone")

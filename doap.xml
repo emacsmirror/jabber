@@ -444,7 +444,7 @@
         <xmpp:status>partial</xmpp:status>
         <xmpp:version>0.7.0</xmpp:version>
         <xmpp:since>0.10.0</xmpp:since>
-        <xmpp:note>Origin-id generation on send, stanza-id parsing for MAM deduplication.</xmpp:note>
+        <xmpp:note>Origin-id stamped on all outgoing messages; stanza-id parsing for MAM deduplication and reply targets.  No disco feature announcement or referenced-stanza support.</xmpp:note>
       </xmpp:SupportedXep>
     </implements>
     <implements>
