@@ -289,6 +289,8 @@ holding state for the next composed message stay inert."
                            &optional resource stanza-id
                            server-id occupant-id oob-entries
                            encrypted reply))
+(declare-function jabber-db-reply-target-body "jabber-db.el"
+                  (account peer reply-id muc-p))
 (declare-function jabber-db--extract-occupant-id "jabber-db.el" (xml-data))
 (declare-function jabber-message-correct--replace-id "jabber-message-correct"
                   (xml-data))
@@ -1195,10 +1197,36 @@ is in the body the reply context is already visible inline."
              (format "reply to %s" who)
            "reply"))))
 
+(defun jabber-chat--first-line-snippet (text limit)
+  "Return the first line of TEXT, truncated to LIMIT characters."
+  (let ((line (car (split-string text "\n"))))
+    (if (> (length line) limit)
+        (concat (substring line 0 limit) "…")
+      line)))
+
+(defun jabber-chat--reply-context-snippet (msg)
+  "Return a snippet of the original body MSG replies to, or nil.
+Looks the referenced message up in the local database."
+  (and-let* ((reply-id (plist-get msg :reply-to-id))
+             (jabber-buffer-connection)
+             (peer (or (bound-and-true-p jabber-group)
+                       jabber-chatting-with))
+             (body (jabber-db-reply-target-body
+                    (jabber-connection-bare-jid jabber-buffer-connection)
+                    (jabber-jid-user peer) reply-id
+                    (and (bound-and-true-p jabber-group) t))))
+    (jabber-chat--first-line-snippet body 80)))
+
 (defun jabber-chat--insert-reply-context (msg)
-  "Insert reply context line for MSG when it needs one."
+  "Insert reply context line for MSG when it needs one.
+When the referenced message is in the local database, quote a
+snippet of it after the label."
   (when-let* ((label (jabber-chat--reply-context-label msg)))
-    (insert (propertize (concat label "\n") 'face 'shadow))))
+    (let ((snippet (jabber-chat--reply-context-snippet msg)))
+      (insert (propertize
+               (if snippet (format "%s: %s\n" label snippet)
+                 (concat label "\n"))
+               'face 'shadow)))))
 
 (defun jabber-chat-pp--local (data)
   "Render a locally sent message from DATA."

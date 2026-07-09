@@ -1765,6 +1765,37 @@ CREATE TABLE omemo_store (
         (should (equal "orig-4" (plist-get msg :reply-to-id)))
         (should (eq 'all (plist-get msg :fallback-range)))))))
 
+(ert-deftest jabber-test-db-reply-target-body-lookup ()
+  "Reply target lookup matches server_id in MUC, stanza_id in 1:1."
+  (jabber-test-db-with-db
+    (let ((ts (floor (float-time))))
+      (jabber-db-store-message
+       "me@x.com" "room@conf.x.com" "in" "groupchat" "the original" ts
+       "alice" "short-1" "room-uuid-1")
+      (jabber-db-store-message
+       "me@x.com" "bob@x.com" "in" "chat" "direct original" ts
+       "phone" "origin-7"))
+    (should (equal "the original"
+                   (jabber-db-reply-target-body
+                    "me@x.com" "room@conf.x.com" "room-uuid-1" t)))
+    (should-not (jabber-db-reply-target-body
+                 "me@x.com" "room@conf.x.com" "short-1" t))
+    (should (equal "direct original"
+                   (jabber-db-reply-target-body
+                    "me@x.com" "bob@x.com" "origin-7" nil)))
+    (should-not (jabber-db-reply-target-body
+                 "me@x.com" "bob@x.com" "missing" nil))))
+
+(ert-deftest jabber-test-db-reply-target-body-skips-retracted ()
+  "A retracted reply target is not quoted."
+  (jabber-test-db-with-db
+    (jabber-db-store-message
+     "me@x.com" "bob@x.com" "in" "chat" "soon gone"
+     (floor (float-time)) "phone" "orig-8" "srv-8")
+    (jabber-db-retract-message "srv-8" "bob@x.com/phone" nil)
+    (should-not (jabber-db-reply-target-body
+                 "me@x.com" "bob@x.com" "orig-8" nil))))
+
 (ert-deftest jabber-test-db-extract-reply-fields ()
   "Reply extraction matches the chat-side parser's shape."
   (let ((stanza '(message ((from . "alice@x.com") (type . "chat"))

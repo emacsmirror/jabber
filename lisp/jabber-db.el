@@ -805,6 +805,20 @@ FROM message WHERE stanza_id = ? LIMIT 1"
             (if resource (concat peer "/" resource) peer)
           account)))))
 
+(defun jabber-db-reply-target-body (account peer reply-id muc-p)
+  "Return the body of the message REPLY-ID references, or nil.
+In a MUC (MUC-P non-nil) REPLY-ID is the room-assigned stanza-id
+\(XEP-0461), so match on server_id; in 1:1 chat it is the sender's
+origin id, so match on stanza_id.  ACCOUNT and PEER scope the lookup."
+  (when-let* ((db (jabber-db-ensure-open)))
+    (caar (sqlite-select
+           db
+           (format "SELECT body FROM message \
+WHERE account = ? AND peer = ? AND %s = ? AND retracted_by IS NULL \
+LIMIT 1"
+                   (if muc-p "server_id" "stanza_id"))
+           (list account peer reply-id)))))
+
 ;;; Reactions
 
 (defun jabber-db--reaction-id-column (type)

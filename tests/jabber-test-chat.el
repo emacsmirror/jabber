@@ -261,6 +261,40 @@
          (plist (jabber-chat--msg-plist-from-stanza stanza)))
     (should-not (plist-get plist :fallback-range))))
 
+(ert-deftest jabber-test-chat-reply-context-synthesizes-quote ()
+  "A fallback-less reply quotes the original body from the database."
+  (with-temp-buffer
+    (setq-local jabber-chatting-with "alice@x.com")
+    (setq-local jabber-buffer-connection 'fake-jc)
+    (cl-letf (((symbol-function 'jabber-connection-bare-jid)
+               (lambda (_jc) "me@x.com"))
+              ((symbol-function 'jabber-muc-sender-p)
+               (lambda (_jid) nil))
+              ((symbol-function 'jabber-db-reply-target-body)
+               (lambda (_account _peer reply-id _muc-p)
+                 (and (equal reply-id "orig-1")
+                      "original text\nsecond line"))))
+      (jabber-chat--insert-reply-context
+       '(:reply-to-id "orig-1" :reply-to-jid "alice@x.com"))
+      (should (string-match-p "reply to alice@x.com: original text"
+                              (buffer-string)))
+      (should-not (string-match-p "second line" (buffer-string))))))
+
+(ert-deftest jabber-test-chat-reply-context-label-without-db-hit ()
+  "A fallback-less reply falls back to the bare label when unresolved."
+  (with-temp-buffer
+    (setq-local jabber-chatting-with "alice@x.com")
+    (setq-local jabber-buffer-connection 'fake-jc)
+    (cl-letf (((symbol-function 'jabber-connection-bare-jid)
+               (lambda (_jc) "me@x.com"))
+              ((symbol-function 'jabber-muc-sender-p)
+               (lambda (_jid) nil))
+              ((symbol-function 'jabber-db-reply-target-body)
+               (lambda (&rest _) nil)))
+      (jabber-chat--insert-reply-context
+       '(:reply-to-id "orig-2" :reply-to-jid "alice@x.com"))
+      (should (equal "reply to alice@x.com\n" (buffer-string))))))
+
 (ert-deftest jabber-test-chat-outgoing-handler-stores-reply-metadata ()
   "The DB outgoing handler reads reply elements off the final stanza."
   (require 'jabber-db)
