@@ -1749,6 +1749,10 @@ ALLOWED-TYPES and `jabber-image-max-bytes' are enforced per
 (defvar jabber-chat--image-cache (make-hash-table :test 'equal)
   "Session-local cache mapping image URLs to Emacs image objects.")
 
+(defvar jabber-chat--image-scale-cache (make-hash-table :test 'equal)
+  "Session-local cache mapping image URLs to manual resize scales.
+Lets a manual resize survive redraws that regenerate the URL text.")
+
 (defconst jabber-chat--image-scale-step 1.25
   "Multiplier used by inline image resize commands.")
 
@@ -1945,9 +1949,11 @@ SCALE defaults to 1.0 and is stored on the displayed range."
 
 (defun jabber-chat--restore-cached-image (url beg end)
   "Apply cached image for URL to text from BEG to END.
-Return non-nil when a cached image was applied."
+Reuse any remembered manual resize scale.  Return non-nil when a
+cached image was applied."
   (when-let* ((image (gethash url jabber-chat--image-cache)))
-    (jabber-chat--apply-image-display image beg end url)))
+    (jabber-chat--apply-image-display
+     image beg end url (gethash url jabber-chat--image-scale-cache))))
 
 (defun jabber-chat--image-range-at-point (&optional position)
   "Return inline image data at POSITION as a plist, or nil.
@@ -1977,6 +1983,8 @@ The plist contains :beg, :end, :url, :image, and :scale."
          (plist-get range :end)
          (plist-get range :url)
          new-scale)
+        (puthash (plist-get range :url) new-scale
+                 jabber-chat--image-scale-cache)
         (message "Image scale: %.0f%%" (* 100 new-scale)))
     (user-error "No inline image at point")))
 
