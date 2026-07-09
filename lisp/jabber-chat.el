@@ -1005,16 +1005,24 @@ Returns a list of (URL . DESC) cons cells, or nil."
        (string-match-p "\\`[0-9]+\\'" value)
        (string-to-number value)))
 
+(defun jabber-chat--reply-fallback-element (xml-data)
+  "Return the XEP-0428 <fallback/> element for replies in XML-DATA.
+A stanza may carry several fallback elements with different `for'
+attributes; a non-reply one must not mask the reply one."
+  (seq-find
+   (lambda (child)
+     (and (eq (jabber-xml-node-name child) 'fallback)
+          (equal (jabber-xml-get-xmlns child) jabber-chat--fallback-xmlns)
+          (equal (jabber-xml-get-attribute child 'for)
+                 jabber-chat--reply-xmlns)))
+   (jabber-xml-node-children xml-data)))
+
 (defun jabber-chat--reply-fallback-range (xml-data)
   "Return the XEP-0461 fallback body range in XML-DATA.
 Return `all' when the fallback applies to the whole body: no <body/>
 child, or one without offsets (XEP-0428: missing start/end attributes
 mean the entire element; Dino emits bare <body/> for full quotes)."
-  (when-let* ((fallback (jabber-xml-child-with-xmlns
-                         xml-data jabber-chat--fallback-xmlns))
-              ((eq (jabber-xml-node-name fallback) 'fallback))
-              ((string= (jabber-xml-get-attribute fallback 'for)
-                        jabber-chat--reply-xmlns)))
+  (when-let* ((fallback (jabber-chat--reply-fallback-element xml-data)))
     (if-let* ((body (car (jabber-xml-get-children fallback 'body))))
         (let ((start (jabber-xml-get-attribute body 'start))
               (end (jabber-xml-get-attribute body 'end)))

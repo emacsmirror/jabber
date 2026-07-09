@@ -261,6 +261,23 @@
          (plist (jabber-chat--msg-plist-from-stanza stanza)))
     (should-not (plist-get plist :fallback-range))))
 
+(ert-deftest jabber-test-chat-plist-reply-fallback-not-masked ()
+  "A non-reply <fallback> before the reply one must not mask it."
+  (let* ((stanza '(message ((from . "alice@example.com/phone")
+                            (type . "chat"))
+                           (body () "> Alice:\n> Hello\nanswer")
+                           (reply ((xmlns . "urn:xmpp:reply:0")
+                                   (to . "alice@example.com/phone")
+                                   (id . "orig-1")))
+                           (fallback ((xmlns . "urn:xmpp:fallback:0")
+                                      (for . "urn:xmpp:reactions:0")))
+                           (fallback ((xmlns . "urn:xmpp:fallback:0")
+                                      (for . "urn:xmpp:reply:0"))
+                                     (body ((start . "0")
+                                            (end . "17"))))))
+         (plist (jabber-chat--msg-plist-from-stanza stanza)))
+    (should (equal '(0 17) (plist-get plist :fallback-range)))))
+
 ;;; Group 2: jabber-chat--oob-field
 
 (ert-deftest jabber-test-chat-oob-field-url ()
