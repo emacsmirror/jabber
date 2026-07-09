@@ -44,6 +44,7 @@ TESTS ?= tests/jabber-test-activity.el \
          tests/jabber-test-omemo-protocol.el \
          tests/jabber-test-omemo-store.el \
          tests/jabber-test-omemo-trust.el \
+         tests/jabber-test-openpgp.el \
          tests/jabber-test-openpgp-legacy.el \
          tests/jabber-test-presence.el \
          tests/jabber-test-pubsub.el \

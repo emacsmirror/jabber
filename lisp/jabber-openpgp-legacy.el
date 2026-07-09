@@ -305,13 +305,16 @@ envelope."
                                           all-keys
                                           nil))
            (stripped (jabber-openpgp-legacy--strip-armor encrypted))
+           (id (format "emacs-msg-%d" (floor (* 1000 (float-time)))))
            (stanza `(message ((to . ,group)
-                              (type . "groupchat"))
+                              (type . "groupchat")
+                              (id . ,id))
                              (body () ,jabber-openpgp-legacy-fallback-body)
                              (x ((xmlns . ,jabber-openpgp-legacy-encrypted-xmlns))
                                 ,stripped)
                              ,(jabber-hints-store)
                              ,@extra-elements)))
+      (jabber-chat--run-send-hooks stanza body id)
       (jabber-send-sexp jc stanza))))
 
 ;;; Message decryption (receive)

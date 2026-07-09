@@ -394,18 +394,25 @@ envelope."
     (jabber-openpgp--ensure-recipient-keys
      jc all-jids
      (lambda ()
-       (with-current-buffer buffer
-         (let* ((inner-xml (jabber-openpgp--build-crypt-xml all-jids body))
-                (encrypted (jabber-openpgp--encrypt jc inner-xml all-jids))
-                (stanza `(message ((to . ,group)
-                                   (type . "groupchat"))
-                                  (openpgp ((xmlns . ,jabber-openpgp-xmlns))
-                                           ,(base64-encode-string encrypted t))
-                                  (body () ,jabber-openpgp-fallback-body)
-                                  ,(jabber-hints-store)
-                                  ,(jabber-eme-encryption jabber-openpgp-xmlns "OpenPGP")
-                                  ,@extra-elements)))
-           (jabber-send-sexp jc stanza)))))))
+       (let* ((inner-xml (jabber-openpgp--build-crypt-xml all-jids body))
+              (encrypted (jabber-openpgp--encrypt jc inner-xml all-jids))
+              (id (format "emacs-msg-%.6f" (float-time)))
+              (stanza `(message ((to . ,group)
+                                 (type . "groupchat")
+                                 (id . ,id))
+                                (openpgp ((xmlns . ,jabber-openpgp-xmlns))
+                                         ,(base64-encode-string encrypted t))
+                                (body () ,jabber-openpgp-fallback-body)
+                                ,(jabber-hints-store)
+                                ,(jabber-eme-encryption jabber-openpgp-xmlns "OpenPGP")
+                                ,@extra-elements)))
+         (when (buffer-live-p buffer)
+           (with-current-buffer buffer
+             ;; This runs from the async key-fetch callback where the
+             ;; current buffer is not the MUC buffer; the send hooks
+             ;; read buffer-local state, so restore the buffer first.
+             (jabber-chat--run-send-hooks stanza body id)))
+         (jabber-send-sexp jc stanza))))))
 
 ;;; Receive path
 
