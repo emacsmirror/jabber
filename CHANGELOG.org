@@ -3,6 +3,7 @@
 * [Unreleased]
 
 ** Added
+- OMEMO signed pre-keys now rotate automatically on connect (~jabber-omemo-signed-pre-key-rotation-period~, 7 days default)
 - Press RET on an image URL to load it inline; C-u RET still downloads it
 - Size cap for downloaded inline images (~jabber-image-max-bytes~, 25 MB default)
 - Allowlist of image types eligible for automatic display (~jabber-chat-image-auto-types~); SVG and TIFF now require an explicit RET

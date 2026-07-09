@@ -78,6 +78,24 @@ Binds `jabber-db-path' to a temp file and tears down on exit."
     (jabber-omemo-store-delete "me@example.com")
     (should (null (jabber-omemo-store-load "me@example.com")))))
 
+(ert-deftest jabber-test-omemo-store-spk-rotated-at-roundtrip ()
+  "Signed pre-key rotation timestamp round-trips; nil when unset."
+  (jabber-test-omemo-store-with-db
+    (jabber-omemo-store-save "me@example.com" (unibyte-string 1 2))
+    (should (null (jabber-omemo-store-spk-rotated-at "me@example.com")))
+    (jabber-omemo-store-set-spk-rotated-at "me@example.com" 1234567)
+    (should (= 1234567 (jabber-omemo-store-spk-rotated-at "me@example.com")))))
+
+(ert-deftest jabber-test-omemo-store-save-preserves-spk-rotated-at ()
+  "Re-saving the store blob does not clear the rotation timestamp."
+  (jabber-test-omemo-store-with-db
+    (jabber-omemo-store-save "me@example.com" (unibyte-string 1 2))
+    (jabber-omemo-store-set-spk-rotated-at "me@example.com" 1234567)
+    (jabber-omemo-store-save "me@example.com" (unibyte-string 3 4))
+    (should (= 1234567 (jabber-omemo-store-spk-rotated-at "me@example.com")))
+    (should (equal (unibyte-string 3 4)
+                   (jabber-omemo-store-load "me@example.com")))))
+
 ;;; Group 3: Trust CRUD
 
 (ert-deftest jabber-test-omemo-store-trust-save-load-roundtrip ()

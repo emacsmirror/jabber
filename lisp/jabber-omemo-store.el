@@ -40,11 +40,29 @@ for the C module which expects unibyte."
 ;;; Store blob CRUD
 
 (defun jabber-omemo-store-save (account blob)
-  "Upsert serialized OMEMO store BLOB for ACCOUNT."
+  "Upsert serialized OMEMO store BLOB for ACCOUNT.
+Preserves the spk_rotated_at column; INSERT OR REPLACE would
+delete and re-insert the row, wiping it."
   (when-let* ((db (jabber-db-ensure-open)))
     (sqlite-execute db
-		    "INSERT OR REPLACE INTO omemo_store (account, store_blob) VALUES (?, ?)"
+		    "INSERT INTO omemo_store (account, store_blob) VALUES (?, ?)
+  ON CONFLICT(account) DO UPDATE SET store_blob = excluded.store_blob"
 		    (list account blob))))
+
+(defun jabber-omemo-store-spk-rotated-at (account)
+  "Return ACCOUNT's signed pre-key rotation time as epoch seconds, or nil."
+  (when-let* ((db (jabber-db-ensure-open)))
+    (caar (sqlite-select db
+			 "SELECT spk_rotated_at FROM omemo_store WHERE account = ?"
+			 (list account)))))
+
+(defun jabber-omemo-store-set-spk-rotated-at (account time)
+  "Record TIME (epoch seconds) as ACCOUNT's signed pre-key rotation time.
+The account's store row must already exist."
+  (when-let* ((db (jabber-db-ensure-open)))
+    (sqlite-execute db
+		    "UPDATE omemo_store SET spk_rotated_at = ? WHERE account = ?"
+		    (list time account))))
 
 (defun jabber-omemo-store-load (account)
   "Load serialized OMEMO store blob for ACCOUNT, or nil."

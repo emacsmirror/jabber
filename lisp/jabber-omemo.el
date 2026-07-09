@@ -69,6 +69,14 @@ Keys older than this are deleted on connect."
   :type 'integer
   :group 'jabber)
 
+(defcustom jabber-omemo-signed-pre-key-rotation-period (* 7 86400)
+  "Seconds between OMEMO signed pre-key rotations.
+Checked on connect.  XEP-0384 recommends rotating once a week to
+once a month.  The previous signed pre-key is retained for one
+rotation, so in-flight pre-key messages still decrypt."
+  :type 'integer
+  :group 'jabber)
+
 (defvar jabber-omemo--reconfigured-nodes (make-hash-table :test 'equal)
   "Nodes already reconfigured this session to prevent retry loops.")
 
@@ -1531,14 +1539,32 @@ Opens a tabulated-list buffer with interactive trust controls."
 
 ;;; Connect/disconnect hooks
 
+(defun jabber-omemo--maybe-rotate-signed-pre-key (jc)
+  "Rotate JC's signed pre-key when the rotation period has passed.
+On the first check for an account, record the current time as a
+baseline without rotating.  After a rotation, the bundle
+republish check on connect picks up the new signed pre-key id."
+  (let* ((account (jabber-connection-bare-jid jc))
+         (rotated-at (jabber-omemo-store-spk-rotated-at account))
+         (now (time-convert nil 'integer)))
+    (cond
+     ((null rotated-at)
+      (jabber-omemo-store-set-spk-rotated-at account now))
+     ((>= (- now rotated-at) jabber-omemo-signed-pre-key-rotation-period)
+      (jabber-omemo-rotate-signed-pre-key (jabber-omemo--get-store jc))
+      (jabber-omemo--persist-store jc)
+      (jabber-omemo-store-set-spk-rotated-at account now)
+      (message "OMEMO: rotated signed pre-key for %s" account)))))
+
 ;;;###autoload
 (defun jabber-omemo-on-connect (jc)
   "Post-connect hook on JC for OMEMO initialization.
-Loads or creates the store, ensures our device is listed,
-republishes our bundle if it's out of date, and pre-fetches
-sessions for open chat buffers."
+Loads or creates the store, rotates the signed pre-key when due,
+ensures our device is listed, republishes our bundle if it's out
+of date, and pre-fetches sessions for open chat buffers."
   (jabber-omemo--get-store jc)
   (jabber-omemo--get-device-id jc)
+  (jabber-omemo--maybe-rotate-signed-pre-key jc)
   (jabber-omemo--ensure-device-listed jc)
   (jabber-omemo--publish-bundle-if-needed jc)
   (jabber-omemo--prefetch-open-chats jc)

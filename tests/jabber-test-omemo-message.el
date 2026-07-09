@@ -677,5 +677,50 @@ SENT-VAR is bound to the stanza passed to `jabber-send-sexp'."
       (should sent)
       (should-not (jabber-xml-get-children sent 'probe)))))
 
+;;; Group 12: Signed pre-key rotation
+
+(defmacro jabber-test-omemo-message--with-rotation-stubs (rotated-var &rest body)
+  "Run BODY with rotation collaborators stubbed.
+ROTATED-VAR is bound to non-nil when a rotation was performed."
+  (declare (indent 1) (debug t))
+  `(jabber-test-omemo-message-with-db
+     (let ((,rotated-var nil))
+       (cl-letf (((symbol-function 'jabber-connection-bare-jid)
+                  (lambda (_jc) "me@example.com"))
+                 ((symbol-function 'jabber-omemo--get-store)
+                  (lambda (_jc) 'fake-store))
+                 ((symbol-function 'jabber-omemo-rotate-signed-pre-key)
+                  (lambda (_store) (setq ,rotated-var t)))
+                 ((symbol-function 'jabber-omemo--persist-store)
+                  (lambda (_jc) nil)))
+         (jabber-omemo-store-save "me@example.com" (unibyte-string 1))
+         ,@body))))
+
+(ert-deftest jabber-test-omemo-message-spk-rotation-records-baseline ()
+  "First rotation check records a timestamp without rotating."
+  (jabber-test-omemo-message--with-rotation-stubs rotated
+    (jabber-omemo--maybe-rotate-signed-pre-key 'fake-jc)
+    (should-not rotated)
+    (should (jabber-omemo-store-spk-rotated-at "me@example.com"))))
+
+(ert-deftest jabber-test-omemo-message-spk-rotation-skips-when-fresh ()
+  "A recent rotation timestamp is left alone."
+  (jabber-test-omemo-message--with-rotation-stubs rotated
+    (let ((now (time-convert nil 'integer)))
+      (jabber-omemo-store-set-spk-rotated-at "me@example.com" now)
+      (jabber-omemo--maybe-rotate-signed-pre-key 'fake-jc)
+      (should-not rotated)
+      (should (= now (jabber-omemo-store-spk-rotated-at "me@example.com"))))))
+
+(ert-deftest jabber-test-omemo-message-spk-rotation-rotates-when-due ()
+  "A timestamp older than the rotation period triggers a rotation."
+  (jabber-test-omemo-message--with-rotation-stubs rotated
+    (let* ((now (time-convert nil 'integer))
+           (stale (- now jabber-omemo-signed-pre-key-rotation-period 10)))
+      (jabber-omemo-store-set-spk-rotated-at "me@example.com" stale)
+      (jabber-omemo--maybe-rotate-signed-pre-key 'fake-jc)
+      (should rotated)
+      (should (> (jabber-omemo-store-spk-rotated-at "me@example.com") stale)))))
+
 (provide 'jabber-test-omemo-message)
 ;;; jabber-test-omemo-message.el ends here

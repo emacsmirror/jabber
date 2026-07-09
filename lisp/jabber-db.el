@@ -128,7 +128,8 @@ END"
 END"
     "CREATE TABLE IF NOT EXISTS omemo_store (
   account TEXT PRIMARY KEY,
-  store_blob BLOB NOT NULL)"
+  store_blob BLOB NOT NULL,
+  spk_rotated_at INTEGER)"
     "CREATE TABLE IF NOT EXISTS omemo_sessions (
   account TEXT NOT NULL,
   jid TEXT NOT NULL,
@@ -262,7 +263,7 @@ WHERE updated_at < (
     (jabber-db--ensure-reaction-actor-table db)
     (jabber-db--backfill-reaction-actors db)))
 
-(defconst jabber-db--schema-version 5
+(defconst jabber-db--schema-version 6
   "Current schema version.
 Bump this when adding migrations.  A database whose version
 exceeds this value is from a newer (or development) build and
@@ -347,6 +348,11 @@ CREATE INDEX IF NOT EXISTS idx_reaction_message_id
       (sqlite-execute db "PRAGMA user_version=5")
       (setq version 5))
     (when (= version 5)
+      (sqlite-execute db
+                      "ALTER TABLE omemo_store ADD COLUMN spk_rotated_at INTEGER")
+      (sqlite-execute db "PRAGMA user_version=6")
+      (setq version 6))
+    (when (= version 6)
       (jabber-db--repair-reaction-actors db))))
 
 (defun jabber-db-ensure-open ()

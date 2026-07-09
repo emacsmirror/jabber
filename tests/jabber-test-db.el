@@ -1250,7 +1250,10 @@ the corrected jabber-muc-create-buffer order."
     "CREATE INDEX IF NOT EXISTS idx_msg_stanza_id
   ON message(account, stanza_id) WHERE stanza_id IS NOT NULL"
     "CREATE INDEX IF NOT EXISTS idx_msg_server_id
-  ON message(account, server_id) WHERE server_id IS NOT NULL")
+  ON message(account, server_id) WHERE server_id IS NOT NULL"
+    "CREATE TABLE IF NOT EXISTS omemo_store (
+  account TEXT PRIMARY KEY,
+  store_blob BLOB NOT NULL)")
   "V1 schema DDL for migration tests.")
 
 (defmacro jabber-test-db-with-v1-db (&rest body)
@@ -1585,6 +1588,10 @@ INSERT INTO message (account, peer, direction, type, body, timestamp,
   stanza_id)
 VALUES ('me@x.com', 'peer@x.com', 'in', 'chat', 'text', 1001,
   'sid-2')")
+            (sqlite-execute db "\
+CREATE TABLE omemo_store (
+  account TEXT PRIMARY KEY,
+  store_blob BLOB NOT NULL)")
             (sqlite-execute db "PRAGMA user_version=2")
             (sqlite-close db))
           ;; Open with migration.
@@ -1610,6 +1617,52 @@ VALUES ('me@x.com', 'peer@x.com', 'in', 'chat', 'text', 1001,
                                 "SELECT name FROM pragma_table_info('message')"))))
             (should-not (member "oob_url" cols))
             (should-not (member "oob_desc" cols))))
+      (jabber-db-close)
+      (when (file-directory-p jabber-test-db--dir)
+        (delete-directory jabber-test-db--dir t)))))
+
+(ert-deftest jabber-test-db-migration-v5-to-v6 ()
+  "Migration v5->v6 adds spk_rotated_at and preserves store blobs."
+  (let* ((jabber-test-db--dir (make-temp-file "jabber-db-test" t))
+         (jabber-db-path (expand-file-name "test.sqlite" jabber-test-db--dir))
+         (jabber-db--connection nil))
+    (unwind-protect
+        (progn
+          ;; Create a minimal v5 database with a store row.  The
+          ;; reaction tables satisfy the post-migration repair step.
+          (let ((db (sqlite-open jabber-db-path)))
+            (sqlite-execute db "\
+CREATE TABLE omemo_store (
+  account TEXT PRIMARY KEY,
+  store_blob BLOB NOT NULL)")
+            (sqlite-execute db "\
+INSERT INTO omemo_store (account, store_blob) VALUES ('me@x.com', x'0102')")
+            (sqlite-execute db "\
+CREATE TABLE message_reaction (
+  message_id INTEGER NOT NULL,
+  sender     TEXT NOT NULL,
+  reaction   TEXT NOT NULL,
+  updated_at INTEGER NOT NULL,
+  PRIMARY KEY (message_id, sender, reaction))")
+            (sqlite-execute db "\
+CREATE TABLE message_reaction_actor (
+  message_id INTEGER NOT NULL,
+  sender     TEXT NOT NULL,
+  updated_at INTEGER NOT NULL,
+  PRIMARY KEY (message_id, sender))")
+            (sqlite-execute db "PRAGMA user_version=5")
+            (sqlite-close db))
+          (jabber-db-ensure-open)
+          (should (= jabber-db--schema-version
+                     (caar (sqlite-select jabber-db--connection
+                                          "PRAGMA user_version"))))
+          (let ((cols (mapcar #'car
+                              (sqlite-select jabber-db--connection
+                                "SELECT name FROM pragma_table_info('omemo_store')"))))
+            (should (member "spk_rotated_at" cols)))
+          (should (equal "\x01\x02"
+                         (caar (sqlite-select jabber-db--connection
+                                "SELECT store_blob FROM omemo_store WHERE account = 'me@x.com'")))))
       (jabber-db-close)
       (when (file-directory-p jabber-test-db--dir)
         (delete-directory jabber-test-db--dir t)))))
@@ -1688,6 +1741,10 @@ VALUES (1, 'me@example.com', 'friend@example.com', 'in', 'chat', 'hello', 1000,
             (sqlite-execute db "\
 INSERT INTO message_reaction (message_id, sender, reaction, updated_at)
 VALUES (1, 'friend@example.com', '👍', 1001)")
+            (sqlite-execute db "\
+CREATE TABLE omemo_store (
+  account TEXT PRIMARY KEY,
+  store_blob BLOB NOT NULL)")
             (sqlite-execute db "PRAGMA user_version=5")
             (sqlite-close db))
           (jabber-db-ensure-open)
