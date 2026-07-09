@@ -153,21 +153,6 @@ TEXT is the message body used to detect personal-mention bonus."
       (mapcar #'car (sort (mapcar #'fetch-time nicks)
                           #'cmp)))))
 
-(defun jabber-muc-beginning-of-line ()
-  "Return position of line begining."
-  (save-excursion
-    (if (looking-back jabber-muc-completion-delimiter (line-beginning-position))
-        (backward-char (+ (length jabber-muc-completion-delimiter) 1)))
-    (skip-syntax-backward "^-")
-    (point)))
-
-(defun jabber-muc-active-participants (group)
-  "Return nicks for speaking participants in GROUP."
-  (let ((times (cdr (assoc group jabber-muc-participant-last-speaking))))
-    (cl-remove-if-not
-     (lambda (nick) (assoc nick times))
-     (jabber-muc-nicknames))))
-
 (defun jabber-muc-nick-completion-at-point ()
   "Nick completion function for `completion-at-point'."
   (when (bound-and-true-p jabber-group)

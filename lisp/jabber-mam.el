@@ -69,9 +69,6 @@
 (defconst jabber-mam-delay-xmlns "urn:xmpp:delay"
   "Namespace for XEP-0203 Delayed Delivery.")
 
-(defconst jabber-mam-sid-xmlns "urn:xmpp:sid:0"
-  "Namespace for XEP-0359 Stanza IDs.")
-
 ;;; Customization
 
 (defcustom jabber-mam-enable t
@@ -759,20 +756,6 @@ the server are deleted.  The buffer is refreshed in place after sync."
     (if muc-p
         (jabber-mam--query jc nil queryid nil nil peer t count)
       (jabber-mam--query jc nil queryid peer nil nil t count))))
-
-;;; On-demand history fetch
-
-(defun jabber-mam-fetch-peer-history (jc peer &optional muc-p callback)
-  "Fetch full MAM history for PEER via JC.
-When MUC-P is non-nil, query the room archive (to=PEER).
-When CALLBACK is non-nil, call it with no arguments after the
-query completes (including all pagination)."
-  (let ((queryid (jabber-mam--make-queryid)))
-    (when callback
-      (push (cons queryid callback) jabber-mam--completion-callbacks))
-    (if muc-p
-        (jabber-mam--query jc nil queryid nil nil peer)
-      (jabber-mam--query jc nil queryid peer nil nil))))
 
 ;;; Disconnect cleanup
 

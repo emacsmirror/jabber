@@ -729,45 +729,6 @@ called with JC, the remaining CALLBACK-DATA, and the obtained RESULT."
     (when (car callback-data)
       (funcall (car callback-data) jc (cdr callback-data) result))))
 
-(defun jabber-disco-get-items-immediately (jid node)
-  "Retrieve items from `jabber-disco-items-cache' using JID & NODE as key."
-  (gethash (cons jid node) jabber-disco-items-cache))
-
-(defun jabber-disco-publish (jc node item-name item-jid item-node)
-  "Publish the given item under disco node NODE.
-
-JC is the Jabber connection."
-  (jabber-send-iq jc nil
-		  "set"
-		  `(query ((xmlns . ,jabber-disco-xmlns-items)
-			   ,@(when node `((node . ,node))))
-			  (item ((action . "update")
-				 (jid . ,item-jid)
-				 ,@(when item-name
-				     `((name . ,item-name)))
-				 ,@(when item-node
-				     `((node . ,item-node))))))
-		  'jabber-report-success "Disco publish"
-		  'jabber-report-success "Disco publish"))
-
-(defun jabber-disco-publish-remove (jc node item-jid item-node)
-  "Remove the given item from published disco items.
-
-JC: Jabber Client connection.
-NODE: Disco node to remove item from.  Can be nil.
-ITEM-JID: JID (Jabber ID) of the disco item to be removed.
-ITEM-NODE: Specific node of the disco item to be removed.  Can be nil."
-  (jabber-send-iq jc nil
-		  "set"
-		  `(query ((xmlns . ,jabber-disco-xmlns-items)
-			   ,@(when node `((node . ,node))))
-			  (item ((action . "remove")
-				 (jid . ,item-jid)
-				 ,@(when item-node
-				     `((node . ,item-node))))))
-		  'jabber-report-success "Disco removal"
-		  'jabber-report-success "Disco removal"))
-
 ;;; Info and service menus
 
 (declare-function jabber-get-info "jabber-info.el" (jc to))

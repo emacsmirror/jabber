@@ -89,22 +89,6 @@
 (define-obsolete-function-alias 'avatar-width 'jabber-avatar-width "0.11.0")
 (define-obsolete-function-alias 'avatar-bytes 'jabber-avatar-bytes "0.11.0")
 
-(defun jabber-avatar-from-url (url)
-  "Construct an avatar structure from the given URL.
-Retrieves the image to find info about it."
-  (with-current-buffer (let ((coding-system-for-read 'binary))
-			 (url-retrieve-synchronously url))
-    (let* ((case-fold-search t)
-	   (mime-type (ignore-errors
-			(search-forward-regexp "^content-type:[ \t]*\\(.*\\)$")
-			(match-string 1)))
-	   (data (progn
-		   (search-forward "\n\n")
-		   (buffer-substring (point) (point-max)))))
-      (prog1
-	  (jabber-avatar-from-data data nil mime-type)
-	(kill-buffer nil)))))
-
 (defun jabber-avatar-from-file (filename)
   "Construct an avatar structure from FILENAME."
   (require 'mailcap)
@@ -132,10 +116,6 @@ If MIME-TYPE is not specified, try to find it from the image data."
                    (when-let* ((detected (ignore-errors (image-type data nil t))))
                      (symbol-name detected)))))
     (make-jabber-avatar :mime-type type :sha1-sum sha1-sum :base64-data base64-data :bytes bytes)))
-
-(defun jabber-avatar--line-height ()
-  "Return the pixel height of a line, suitable for inline avatars."
-  (frame-char-height))
 
 (defun jabber-avatar-image (avatar)
   "Create an image from AVATAR sized to fit configured avatar bounds.
@@ -214,14 +194,6 @@ AVATAR may be one of:
     (unless (string= hash (get jid-symbol 'avatar-hash))
       (put jid-symbol 'avatar (funcall image))
       (put jid-symbol 'avatar-hash hash))))
-
-(defun jabber-create-image (file-or-data &optional _type data-p)
-  "Create a line-height-sized image from FILE-OR-DATA.
-When DATA-P is non-nil, FILE-OR-DATA is the raw image bytes."
-  (let ((h (jabber-avatar--line-height)))
-    (if data-p
-        (jabber-image-create file-or-data nil h h)
-      (jabber-image-create-from-file file-or-data h h))))
 
 (provide 'jabber-avatar)
 

@@ -392,15 +392,6 @@ Show status properties from highest-priority resource."
 			(put buddy 'show (plist-get resource-plist 'show)))))))
 	  resource-alist)))
 
-(defun jabber-count-connected-resources (buddy)
-  "Return the number of connected resources for BUDDY."
-  (let ((resource-alist (get buddy 'resources))
-	(count 0))
-    (dolist (resource resource-alist)
-      (if (plist-get (cdr resource) 'connected)
-	  (setq count (1+ count))))
-    count))
-
 ;;;###autoload
 (defun jabber-send-presence (show status priority &optional jc)
   "Set presence to SHOW with STATUS message and PRIORITY.

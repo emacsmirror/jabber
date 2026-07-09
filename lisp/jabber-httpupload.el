@@ -92,14 +92,6 @@ Each element is (jabber-connection . upload-iri).")
 Each element is (jabber-connection . max-file-size), where
 max-file-size is in bytes.")
 
-(defun jabber-httpupload-test-all-connections-support ()
-  "Test all connections in `jabber-connections' for HTTP Upload support.
-Store the results in `jabber-httpupload-support'.  If the connection was
-already tested and the test was successful, do not re-test it."
-  (dolist (jc jabber-connections)
-    (unless (jabber-httpupload-server-has-support jc)
-      (jabber-httpupload-test-connection-support jc))))
-
 (defun jabber-httpupload-test-connection-support (jc)
   "Test if HTTP Upload is supported on the JC connection's server.
 If supported, store the item IRI in `jabber-httpupload-support'."

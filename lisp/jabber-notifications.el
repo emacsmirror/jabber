@@ -44,21 +44,9 @@ The default \"emacs\" is resolved by the system icon theme."
   :type 'integer
   :group 'jabber-alerts)
 
-(defcustom jabber-notifications-message-header "Jabber message"
-  "Defines the header of the pop up."
-  :type 'string
-  :group 'jabber-alerts)
-
 (defcustom jabber-notifications-app "Emacs Jabber"
   "Defines the app of the pop up."
   :type 'string
-  :group 'jabber-alerts)
-
-(defcustom jabber-notifications-urgency "low"
-  "Urgency of message."
-  :type '(choice (const :tag "Low" "low")
-                 (const :tag "Normal" "normal")
-                 (const :tag "Critical" "critical"))
   :group 'jabber-alerts)
 
 (defcustom jabber-notifications-muc 'mentions

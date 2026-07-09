@@ -514,11 +514,6 @@ When nil or 0, display all messages."
 
 (jabber-chain-add 'jabber-message-chain #'jabber-process-chat)
 
-(defun jabber-get-forwarded-message (xml-data)
-  "Extract the inner message from a carbon-forwarded stanza.
-Returns the inner message element, or nil if XML-DATA is not a carbon."
-  (cdr (jabber-chat--extract-carbon xml-data)))
-
 (defun jabber-chat--extract-carbon (xml-data)
   "Extract carbon type and inner message from XML-DATA.
 Returns (TYPE . MESSAGE) where TYPE is `sent' or `received',
