@@ -64,9 +64,6 @@ Non-nil means send states, nil means don't.")
 (defvar-local jabber-chatstates-last-state nil
   "The last seen chat state.")
 
-(defvar-local jabber-chatstates-message ""
-  "Human-readable presentation of chat state information.")
-
 (defvar-local jabber-chatstates--ewoc-node nil
   "Ewoc node for the typing indicator, or nil.")
 
@@ -80,14 +77,6 @@ It can be sent and cancelled several times.")
 ;;; INCOMING
 ;; Code for requesting chat state notifications from others and handling
 ;; them.
-
-(defun jabber-chatstates-update-message ()
-  "Refresh the mode-line indicator for the peer's last chat state."
-  (setq jabber-chatstates-message
-        (if (and jabber-chatstates-last-state
-                 (not (eq 'active jabber-chatstates-last-state)))
-            (format " (%s)" (symbol-name jabber-chatstates-last-state))
-          "")))
 
 (defun jabber-chatstates--update-ewoc (state)
   "Show or remove the typing indicator ewoc node for STATE."

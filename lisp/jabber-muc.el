@@ -299,22 +299,9 @@ These fields are about your account:
   :type 'string
   :group 'jabber-chat)
 
-
-(defcustom jabber-muc-print-names-format "	%n	%a	%j\n"
-  "The format specification for MUC list lines.
-
-Fields available:
-
-%n  Nickname in room
-%a  Affiliation status
-%j  Full JID (room@server/nick)"
-  :type 'string
-  :group 'jabber-chat)
-
 (defcustom jabber-muc-private-header-line-format
   '(" " (:eval (jabber-jid-resource jabber-chatting-with))
     " in " (:eval (jabber-jid-displayname (jabber-jid-user jabber-chatting-with)))
-    "\t" (:eval jabber-chatstates-message)
     " " (:eval jabber-chat-encryption-message))	;see jabber-chatbuffer.el
   "The specification for the header line of private MUC chat buffers.
 
