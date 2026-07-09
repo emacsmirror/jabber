@@ -1930,6 +1930,12 @@ SCALE defaults to 1.0 and is stored on the displayed range."
            'jabber-chat-image-scale scale
            'jabber-chat-image-fetching nil))
     (jabber-chat--add-url-keymap beg end)
+    ;; The goto-address overlay's link face would draw an underline
+    ;; beneath the image, and its mouse-face would highlight it.
+    (dolist (ov (overlays-in beg end))
+      (when (overlay-get ov 'goto-address)
+        (overlay-put ov 'face nil)
+        (overlay-put ov 'mouse-face nil)))
     display-image))
 
 (defun jabber-chat--cache-image (url image)
