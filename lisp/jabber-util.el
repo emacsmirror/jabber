@@ -237,12 +237,37 @@ is either a JID or display name depending on `jabber-jid-completion-display'."
                 (cons (if (and use-names name) name jid) item)))
             roster-items)))
 
+(defconst jabber--presence-sort-order '("chat" "" "away" "dnd" "xa")
+  "Presence shows from most to least available, for contact sorting.
+Offline contacts (nil show) sort last.")
+
+(defun jabber--presence-rank (sym)
+  "Return sort rank of roster symbol SYM; lower is more available."
+  (let ((tail (and sym (member (get sym 'show) jabber--presence-sort-order))))
+    (if tail
+        (- (length jabber--presence-sort-order) (length tail))
+      (length jabber--presence-sort-order))))
+
+(defun jabber--jid-candidate-lessp (a b table)
+  "Order completion candidates A and B by availability, then name.
+TABLE maps candidate strings to roster symbols."
+  (let ((rank-a (jabber--presence-rank (cdr (assoc-string a table t))))
+        (rank-b (jabber--presence-rank (cdr (assoc-string b table t)))))
+    (if (= rank-a rank-b)
+        (string-lessp (downcase a) (downcase b))
+      (< rank-a rank-b))))
+
 (defun jabber--jid-completion-with-metadata (table)
   "Wrap TABLE as a completion table matching both JIDs and names.
 Candidates follow `jabber-jid-completion-display'; the other form
-is shown as an annotation.  Both are matchable regardless of mode."
+is shown as an annotation.  Both are matchable regardless of mode.
+Candidates display sorted by availability, then name."
   (let ((alt-to-candidate (make-hash-table :test 'equal))
-        (use-names (eq jabber-jid-completion-display 'name)))
+        (use-names (eq jabber-jid-completion-display 'name))
+        (sort-candidates
+         (lambda (candidates)
+           (sort (copy-sequence candidates)
+                 (lambda (a b) (jabber--jid-candidate-lessp a b table))))))
     ;; Build reverse lookup: alternate form -> candidate string.
     (dolist (entry table)
       (let* ((candidate (car entry))
@@ -256,6 +281,8 @@ is shown as an annotation.  Both are matchable regardless of mode."
       (cond
        ((eq action 'metadata)
         `(metadata
+          (display-sort-function . ,sort-candidates)
+          (cycle-sort-function . ,sort-candidates)
           (annotation-function
            . ,(lambda (candidate)
                 (when-let* ((sym (cdr (assoc-string candidate table t))))

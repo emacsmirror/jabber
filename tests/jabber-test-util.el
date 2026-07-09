@@ -298,5 +298,58 @@
     (should-not (jabber-roster-contact-p nil "alice@example.com"))
     (should-not (jabber-roster-contact-p jc nil))))
 
+;;; Group: JID completion sorting
+
+(defun jabber-test-util--contact (jid show &optional name)
+  "Return an uninterned roster symbol JID with SHOW and NAME set."
+  (let ((sym (make-symbol jid)))
+    (put sym 'show show)
+    (when name (put sym 'name name))
+    sym))
+
+(ert-deftest jabber-test-util-presence-rank-orders-shows ()
+  "Available shows rank ahead of away shows, offline ranks last."
+  (let ((online (jabber-test-util--contact "a@x.com" ""))
+        (chatty (jabber-test-util--contact "b@x.com" "chat"))
+        (away (jabber-test-util--contact "c@x.com" "away"))
+        (offline (jabber-test-util--contact "d@x.com" nil)))
+    (should (< (jabber--presence-rank chatty)
+               (jabber--presence-rank online)))
+    (should (< (jabber--presence-rank online)
+               (jabber--presence-rank away)))
+    (should (< (jabber--presence-rank away)
+               (jabber--presence-rank offline)))))
+
+(ert-deftest jabber-test-util-jid-candidate-lessp-availability-first ()
+  "An online contact sorts before an offline one regardless of name."
+  (let* ((online (jabber-test-util--contact "zed@x.com" ""))
+         (offline (jabber-test-util--contact "ann@x.com" nil))
+         (table (list (cons "zed@x.com" online)
+                      (cons "ann@x.com" offline))))
+    (should (jabber--jid-candidate-lessp "zed@x.com" "ann@x.com" table))
+    (should-not (jabber--jid-candidate-lessp "ann@x.com" "zed@x.com" table))))
+
+(ert-deftest jabber-test-util-jid-candidate-lessp-name-tiebreak ()
+  "Same availability falls back to case-insensitive name order."
+  (let* ((a (jabber-test-util--contact "ann@x.com" ""))
+         (b (jabber-test-util--contact "Bob@x.com" ""))
+         (table (list (cons "ann@x.com" a)
+                      (cons "Bob@x.com" b))))
+    (should (jabber--jid-candidate-lessp "ann@x.com" "Bob@x.com" table))
+    (should-not (jabber--jid-candidate-lessp "Bob@x.com" "ann@x.com" table))))
+
+(ert-deftest jabber-test-util-completion-metadata-sorts-by-availability ()
+  "The completion table's display sort puts available contacts first."
+  (let* ((jabber-jid-completion-display 'jid)
+         (table (list (cons "off@x.com" (jabber-test-util--contact "off@x.com" nil))
+                      (cons "away@x.com" (jabber-test-util--contact "away@x.com" "away"))
+                      (cons "on@x.com" (jabber-test-util--contact "on@x.com" ""))))
+         (collection (jabber--jid-completion-with-metadata table))
+         (metadata (funcall collection "" nil 'metadata))
+         (sorter (cdr (assq 'display-sort-function (cdr metadata)))))
+    (should (functionp sorter))
+    (should (equal '("on@x.com" "away@x.com" "off@x.com")
+                   (funcall sorter '("off@x.com" "away@x.com" "on@x.com"))))))
+
 (provide 'jabber-test-util)
 ;;; jabber-test-util.el ends here
