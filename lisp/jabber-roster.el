@@ -522,12 +522,9 @@ entry is offered to clear the scope."
 
 (defun jabber-roster--jc-for-jid (jid)
   "Return the connection that has JID in its roster."
-  (let ((sym (jabber-jid-symbol jid)))
-    (or (cl-find-if
-         (lambda (jc)
-           (memq sym (plist-get (fsm-get-state-data jc) :roster)))
-         jabber-connections)
-        (car jabber-connections))))
+  (or (cl-find-if (lambda (jc) (jabber-roster-contact-p jc jid))
+                  jabber-connections)
+      (car jabber-connections)))
 
 (defun jabber-roster--action-chat ()
   "Open chat with the selected contact."

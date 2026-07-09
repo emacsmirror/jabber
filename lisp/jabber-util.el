@@ -442,15 +442,13 @@ that has that contact in its roster."
                    completions))
        (let* ((default
                (or
-		(and contact-hint
-		     (setq contact-hint (jabber-jid-symbol contact-hint))
-		     (let ((matching
+		(and-let* ((contact-hint)
+			   (matching
 			    (cl-find-if
 			     (lambda (jc)
-			       (memq contact-hint (plist-get (fsm-get-state-data jc) :roster)))
+			       (jabber-roster-contact-p jc contact-hint))
 			     jabber-connections)))
-		       (when matching
-			 (jabber-connection-bare-jid matching))))
+		  (jabber-connection-bare-jid matching))
                 ;; if the buffer is associated with a connection, use it
                 (when (and jabber-buffer-connection
 			   (jabber-find-active-connection jabber-buffer-connection))
