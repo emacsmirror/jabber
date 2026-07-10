@@ -980,10 +980,10 @@ DATA is any sexp."
   (when jabber-debug-log-xml
     (jabber-process-console fsm direction data)))
 
-(defun jabber-send-sexp--immediate (jc sexp)
-  "Send SEXP to JC immediately, bypassing the back-pressure gate.
-Log the XML, send it (with a proactive <r/> for countable stanzas
-when SM is enabled), and update the outbound counter."
+(defun jabber-send-sexp--raw (jc sexp)
+  "Send SEXP to JC without updating Stream Management state.
+Log the XML and append an <r/> request when SM is enabled for a
+countable stanza."
   (condition-case e
       (jabber-log-xml jc "sending" sexp)
     (error
@@ -996,7 +996,12 @@ when SM is enabled), and update the outbound counter."
                             (jabber-sm--stanza-p sexp))))
     (if sm-countable
         (jabber-send-string jc (concat xml (jabber-sm--make-request-xml)))
-      (jabber-send-string jc xml)))
+      (jabber-send-string jc xml))))
+
+(defun jabber-send-sexp--immediate (jc sexp)
+  "Send SEXP to JC immediately, bypassing the back-pressure gate.
+Update Stream Management state after transmitting the stanza."
+  (jabber-send-sexp--raw jc sexp)
   (jabber-sm--count-outbound (fsm-get-state-data jc) sexp))
 
 (defun jabber-send-sexp (jc sexp)

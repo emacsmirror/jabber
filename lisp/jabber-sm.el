@@ -40,7 +40,7 @@
 (require 'jabber-xml)
 (require 'fsm)
 
-(declare-function jabber-send-sexp--immediate "jabber-util.el" (jc sexp))
+(declare-function jabber-send-sexp--raw "jabber-util.el" (jc sexp))
 (declare-function jabber-send-string "jabber-util.el" (jc string))
 
 (defvar jabber-debug-log-xml)
@@ -232,11 +232,9 @@ Return updated STATE-DATA."
              (nconc (plist-get state-data :sm-pending-queue)
                     (list (cons (jabber-sm--stanza-priority sexp) sexp)))))
 
-(defun jabber-sm--drain-pending (jc state-data send-fn)
+(defun jabber-sm--drain-pending (jc state-data)
   "Send queued stanzas from pending queue up to the in-flight cap.
-JC is the connection.  STATE-DATA is the FSM plist.  SEND-FN is
-called with (JC SEXP) for each drained stanza and must bypass
-the back-pressure gate to avoid re-queuing.
+JC is the connection.  STATE-DATA is the FSM plist.
 The queue is stable-sorted by priority before draining so messages
 go first, then IQs, then presence.  FIFO order is preserved
 within each priority class.
@@ -248,7 +246,7 @@ Return updated STATE-DATA."
                     (< (jabber-sm--in-flight-count state-data)
                        jabber-sm-max-in-flight)))
       (let ((sexp (cdr (pop queue))))
-        (funcall send-fn jc sexp)
+        (jabber-send-sexp--raw jc sexp)
         (setq state-data (jabber-sm--count-outbound state-data sexp))))
     (plist-put state-data :sm-pending-queue queue)))
 
@@ -285,7 +283,7 @@ recovery cycle."
                (plist-get state-data :sm-outbound-count))
     (plist-put state-data :sm-outbound-queue nil)
     (plist-put state-data :sm-stall-since nil)
-    (jabber-sm--drain-pending jc state-data #'jabber-send-sexp--immediate)))
+    (jabber-sm--drain-pending jc state-data)))
 
 ;;; Ack send/receive
 

@@ -850,8 +850,7 @@ override the defaults from `jabber-account-list'."
 			 (jabber-send-sexp--immediate fsm sexp))
 		       ;; Drain any stanzas queued before disconnect.
 		       (setq new-state-data
-			     (jabber-sm--drain-pending
-			      fsm new-state-data #'jabber-send-sexp--immediate))
+			     (jabber-sm--drain-pending fsm new-state-data))
 		       (list :session-established new-state-data)))
 		    ((jabber-sm--failed-p stanza)
 		     (message "Stream Management resume failed, falling back to auth")
@@ -915,8 +914,7 @@ override the defaults from `jabber-account-list'."
 		     (list :session-established state-data :keep))
 		    ((jabber-sm--a-p stanza)
 		     (setq state-data (jabber-sm--process-ack state-data stanza))
-		     (setq state-data (jabber-sm--drain-pending
-				       fsm state-data #'jabber-send-sexp--immediate))
+		     (setq state-data (jabber-sm--drain-pending fsm state-data))
 		     (list :session-established state-data :keep))
 		    (t
 		     ;; Only message/presence/iq stanzas reach here; <r/>/<a/> are

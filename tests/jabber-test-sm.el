@@ -514,9 +514,9 @@
                                            (cons 0 msg2)
                                            (cons 0 msg3))))
          (sent nil))
-    (setq sd (jabber-sm--drain-pending
-              'fake-jc sd
-              (lambda (_jc sexp) (push sexp sent))))
+    (cl-letf (((symbol-function 'jabber-send-sexp--raw)
+               (lambda (_jc sexp) (push sexp sent))))
+      (setq sd (jabber-sm--drain-pending 'fake-jc sd)))
     ;; Should have sent exactly 2 (the cap)
     (should (= (length sent) 2))
     ;; One remains in pending queue
@@ -524,6 +524,25 @@
     (should (equal (cdar (plist-get sd :sm-pending-queue)) msg3))
     ;; Outbound count incremented for sent stanzas
     (should (= (plist-get sd :sm-outbound-count) 2))))
+
+(ert-deftest jabber-test-sm-drain-pending-counts-once ()
+  "Draining counts each transmitted stanza exactly once."
+  (let* ((jabber-sm-max-in-flight 2)
+         (msg '(message ((to . "a@b")) (body () "1")))
+         (sd (list :sm-enabled t
+                   :sm-outbound-count 10
+                   :sm-last-acked 9
+                   :sm-outbound-queue nil
+                   :sm-pending-queue (list (cons 0 msg))))
+         (sent nil))
+    (cl-letf (((symbol-function 'jabber-send-sexp--raw)
+               (lambda (_jc sexp) (push sexp sent))))
+      (setq sd (jabber-sm--drain-pending 'fake-jc sd)))
+    (should (equal sent (list msg)))
+    (should (= (plist-get sd :sm-outbound-count) 11))
+    (should (= (length (plist-get sd :sm-outbound-queue)) 1))
+    (should (= (caar (plist-get sd :sm-outbound-queue)) 11))
+    (should (null (plist-get sd :sm-pending-queue)))))
 
 (ert-deftest jabber-test-sm-drain-pending-empty ()
   "Drain with empty queue is a no-op."
@@ -534,9 +553,9 @@
                    :sm-outbound-queue nil
                    :sm-pending-queue nil))
          (sent nil))
-    (setq sd (jabber-sm--drain-pending
-              'fake-jc sd
-              (lambda (_jc sexp) (push sexp sent))))
+    (cl-letf (((symbol-function 'jabber-send-sexp--raw)
+               (lambda (_jc sexp) (push sexp sent))))
+      (setq sd (jabber-sm--drain-pending 'fake-jc sd)))
     (should (null sent))
     (should (null (plist-get sd :sm-pending-queue)))))
 
@@ -579,9 +598,9 @@
                                            (cons 1 iq1)
                                            (cons 0 msg2))))
          (sent nil))
-    (setq sd (jabber-sm--drain-pending
-              'fake-jc sd
-              (lambda (_jc sexp) (push sexp sent))))
+    (cl-letf (((symbol-function 'jabber-send-sexp--raw)
+               (lambda (_jc sexp) (push sexp sent))))
+      (setq sd (jabber-sm--drain-pending 'fake-jc sd)))
     (setq sent (nreverse sent))
     ;; Messages first (FIFO), then IQ, then presences (FIFO)
     (should (= (length sent) 5))
@@ -612,9 +631,9 @@
                                            (cons 0 msg1)
                                            (cons 2 pres2))))
          (sent nil))
-    (setq sd (jabber-sm--drain-pending
-              'fake-jc sd
-              (lambda (_jc sexp) (push sexp sent))))
+    (cl-letf (((symbol-function 'jabber-send-sexp--raw)
+               (lambda (_jc sexp) (push sexp sent))))
+      (setq sd (jabber-sm--drain-pending 'fake-jc sd)))
     (setq sent (nreverse sent))
     ;; Message sent first, then one presence
     (should (= (length sent) 2))
