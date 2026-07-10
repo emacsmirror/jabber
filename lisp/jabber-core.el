@@ -384,6 +384,11 @@ override the defaults from `jabber-account-list'."
 		      (funcall connect-function fsm server network-server port))
 		    (list state-data nil))
 
+(defun jabber-core--connected-state-data (state-data connection directtls-p)
+  "Update STATE-DATA for a new CONNECTION using DIRECTTLS-P."
+  (plist-put (plist-put state-data :connection connection)
+	     :encrypted (and directtls-p t)))
+
 (define-state jabber-connection :connecting
 	      (fsm state-data event _callback)
 	      (pcase (or (car-safe event) event)
@@ -391,10 +396,9 @@ override the defaults from `jabber-account-list'."
 		 (let ((connection (cadr event))
 		       (directtls-p (caddr event)))
 
-		   (setq state-data (plist-put state-data :connection connection))
-		   ;; Direct TLS (XEP-0368): connection is already encrypted.
-		   (when directtls-p
-		     (setq state-data (plist-put state-data :encrypted t)))
+		   (setq state-data
+			 (jabber-core--connected-state-data
+			  state-data connection directtls-p))
 
 		   (when (processp connection)
 		     ;; TLS connections leave data in the process buffer, which

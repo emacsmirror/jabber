@@ -8,9 +8,52 @@
 
 (require 'ert)
 (require 'jabber-conn)
+(require 'jabber-core)
 
 (defvar jabber-process-buffer)
 (defvar jabber-debug-keep-process-buffers)
+
+;;; Connection state
+
+(defun jabber-test-conn--state-handler (state)
+  "Return the `jabber-connection' handler for STATE."
+  (gethash state (get 'jabber-connection :fsm-event)))
+
+(ert-deftest jabber-conn-test-ordinary-reconnect-clears-encryption ()
+  "An ordinary TCP reconnect clears encryption state from the old socket."
+  (let* ((connection 'new-connection)
+	 (result (funcall (jabber-test-conn--state-handler :connecting)
+			  'fake-fsm '(:encrypted t)
+			  (list :connected connection nil) #'ignore))
+	 (state-data (cadr result)))
+    (should (eq (car result) :connected))
+    (should (eq (plist-get state-data :connection) connection))
+    (should-not (plist-get state-data :encrypted))))
+
+(ert-deftest jabber-conn-test-direct-tls-sets-encryption ()
+  "A direct TLS connection records that its socket is encrypted."
+  (let* ((connection 'new-connection)
+	 (result (funcall (jabber-test-conn--state-handler :connecting)
+			  'fake-fsm '(:encrypted nil)
+			  (list :connected connection t) #'ignore))
+	 (state-data (cadr result)))
+    (should (eq (car result) :connected))
+    (should (eq (plist-get state-data :connection) connection))
+    (should (eq (plist-get state-data :encrypted) t))))
+
+(ert-deftest jabber-conn-test-reconnect-selects-starttls ()
+  "An ordinary reconnect negotiates advertised STARTTLS."
+  (let* ((connect-result
+	  (funcall (jabber-test-conn--state-handler :connecting)
+		   'fake-fsm '(:connection-type starttls :encrypted t)
+		   '(:connected new-connection nil) #'ignore))
+	 (features
+	  `(features nil (starttls ((xmlns . ,jabber-tls-xmlns)))))
+	 (result
+	  (funcall (jabber-test-conn--state-handler :connected)
+		   'fake-fsm (cadr connect-result)
+		   (list :stanza features) #'ignore)))
+    (should (eq (car result) :starttls))))
 
 ;;; Failed async connection cleanup
 
