@@ -1,22 +1,16 @@
 #+TITLE: Changelog
 
-* [Unreleased]
+* [0.12.1]
+#+date: 2026-07-11
 
 ** Added
-- RET on a reply jumps to the original message and highlights it; RET elsewhere still sends
-- Replies without an inline quote now show a snippet of the original message, looked up from local history
-- Reply context survives buffer reloads: reply metadata is now stored in the message database
-- Outgoing messages carry an XEP-0359 origin-id, so replies from other clients reference a stable id
-- OMEMO signed pre-keys now rotate automatically on connect (~jabber-omemo-signed-pre-key-rotation-period~, 7 days default)
+- Press RET on a reply to jump to the original message
+- Replies show and preserve more context, including after reloading a chat
 
 ** Fixes
-- Out-of-order OMEMO messages now decrypt: skipped ratchet keys are kept per session and persist across restarts
-- Press RET on an image URL to load it inline; C-u RET still downloads it
-- Size cap for downloaded inline images (~jabber-image-max-bytes~, 25 MB default)
-- Allowlist of image types eligible for automatic display (~jabber-chat-image-auto-types~); SVG and TIFF now require an explicit RET
-
-** Changed
-- Images auto-display only in one-to-one chats with roster contacts by default; MUCs and unknown senders show clickable URLs instead (set ~jabber-chat-display-images~ to ~t~ for the old behavior)
+- More reliable encrypted chats after reconnects and out-of-order messages
+- Safer inline image display, with manual loading available by pressing RET on an image URL
+- Manual image sizes are preserved when chats are redrawn
 
 * [0.12.0]
 #+date: 2026-07-08

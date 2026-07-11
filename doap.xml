@@ -17,7 +17,7 @@
     </description>
     <created>2023-09-09</created>
 
-    <homepage rdf:resource="https://thanosapollo.org/projects/jabber/"/>
+    <homepage rdf:resource="https://git.thanosapollo.org/emacs-jabber/"/>
     <download-page rdf:resource="https://thanosapollo.org/projects/jabber/#installation"/>
     <developer-forum rdf:resource="xmpp:jabber-el@conference.hmm.st?join"/>
 
@@ -570,6 +570,12 @@
       </xmpp:SupportedXep>
     </implements>
 
+    <release>
+      <Version>
+        <revision>0.12.1</revision>
+        <created>2026-07-11</created>
+      </Version>
+    </release>
     <release>
       <Version>
         <revision>0.12.0</revision>
