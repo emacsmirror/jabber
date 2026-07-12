@@ -72,7 +72,9 @@ do-build: autoload compile do-module
 dev:
 	@$(ENV_MAKE) do-dev
 
-do-dev: autoload compile do-module do-lint do-test
+do-dev: autoload compile do-module do-lint
+	$(MAKE) do-test
+	$(MAKE) do-test-oneshot
 
 autoload:
 	$(EMACS_CMD) $(EMACS_OPTS) -L lisp \
@@ -248,7 +250,9 @@ prefix      ?= /usr/local
 datarootdir ?= $(prefix)/share
 lispdir     ?= $(datarootdir)/emacs/site-lisp/jabber
 
-check: test
+check:
+	$(MAKE) test
+	$(MAKE) test-oneshot
 
 install: build
 	install -d $(DESTDIR)$(lispdir)
