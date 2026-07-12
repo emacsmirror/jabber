@@ -170,8 +170,8 @@ struct ProtobufField {
 /**
  * Parse Protobuf varint.
  *
- * Only supports uint32, higher bits are skipped so it will neither
- * overflow nor clamp to UINT32_MAX.
+ * Only supports uint32.  Encodings wider than five bytes and values
+ * whose fifth byte exceeds the remaining four bits are rejected.
  *
  * @param s points to the location of the varint in the protobuf data
  * @param e points to the end of the protobuf data
@@ -182,15 +182,18 @@ struct ProtobufField {
  */
 static const uint8_t *ParseVarInt(const uint8_t *s, const uint8_t *e,
                                   uint32_t *v) {
-  int i = 0;
   *v = 0;
-  do {
+  for (unsigned int i = 0; i < 5; i++) {
     if (s >= e)
       return NULL;
-    *v |= (*s & 0x7f) << i;
-    i += 7;
-  } while (*s++ & 0x80);
-  return s;
+    uint8_t byte = *s++;
+    if (i == 4 && (byte & 0x7f) > 0x0f)
+      return NULL;
+    *v |= (uint32_t)(byte & 0x7f) << (7 * i);
+    if (!(byte & 0x80))
+      return s;
+  }
+  return NULL;
 }
 
 /**
@@ -238,6 +241,8 @@ static bool ParseProtobuf(const uint8_t *s, size_t n,
       return true;
     fields[id].v = v;
     if (type == PB_LEN) {
+      if ((size_t)(e - s) < fields[id].v)
+        return true;
       fields[id].p = s;
       s += fields[id].v;
     }
@@ -268,6 +273,8 @@ static bool ParseRepeatingField(const uint8_t *s, const uint8_t *e,
     if (id == fieldid)
       field->v = v;
     if (type == PB_LEN) {
+      if ((size_t)(e - s) < v)
+        return true;
       if (id == fieldid)
         field->p = s;
       s += v;

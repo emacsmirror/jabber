@@ -14,6 +14,7 @@
 (require 'jabber-mam)
 (require 'jabber-core)
 (require 'jabber-message-correct)
+(require 'jabber-omemo-store)
 
 ;;; Test infrastructure
 
@@ -186,6 +187,39 @@ When COMPLETE is non-nil, mark the archive as fully consumed."
             (should (= batch-count (length rows))))
           ;; Batched should be under 2 seconds for 500 messages
           (should (< batched-time 2.0)))))))
+
+(ert-deftest jabber-test-mam-encrypted-session-save-in-transaction ()
+  "An encrypted MAM message can migrate its session inside the MAM transaction."
+  (jabber-test-mam-with-db
+    (let* ((jc (jabber-test-mam--make-fake-jc "me@example.com"))
+           (jabber-mam--syncing (list (cons jc jabber-test-mam-queryid)))
+           (jabber-muc-participants nil)
+           (stanza (jabber-test-mam--make-message 1))
+           (inner (nth 2 (jabber-mam--parse-result stanza)))
+           (envelope (unibyte-string ?J ?O ?M ?E ?M ?O 0 1 0))
+           (body (car (jabber-xml-get-children inner 'body))))
+      (setcdr (last inner) '((encrypted ((xmlns . "eu.siacs.conversations.axolotl")))))
+      (sqlite-execute jabber-db--connection "\
+INSERT INTO omemo_skipped_keys
+  (account, jid, device_id, dh_key, message_number, message_key, created_at)
+  VALUES ('me@example.com', 'friend@example.com', 7, 'dh', 3, 'mk', 0)")
+      (sqlite-execute jabber-db--connection "BEGIN")
+      (cl-letf (((symbol-function 'jabber-chat--decrypt-if-needed)
+                 (lambda (_jc message)
+                   (jabber-omemo-store-save-session-and-clear-legacy-keys
+                    "me@example.com" "friend@example.com" 7 envelope)
+                   (setcdr (cdr body) '("decrypted"))
+                   message)))
+        (jabber-mam--process-message jc stanza))
+      (sqlite-execute jabber-db--connection "COMMIT")
+      (should (equal envelope
+                     (jabber-omemo-store-load-session
+                      "me@example.com" "friend@example.com" 7)))
+      (should-not (jabber-omemo-store-all-skipped-keys
+                   "me@example.com" "friend@example.com" 7))
+      (should (equal "decrypted"
+                     (caar (sqlite-select jabber-db--connection "\
+SELECT body FROM message WHERE stanza_id = 'stanza-000001'")))))))
 
 ;;; Group 4: Parse helpers
 

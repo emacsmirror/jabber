@@ -670,19 +670,46 @@ skipped message keys, so no fresh-session fallback is needed."
 
 ;;; Group: Skipped message keys
 
-(ert-deftest jabber-test-omemo-protocol-skipped-key-changes-diff ()
-  "Diff returns new keys and consumed keys by NR + DH identity."
-  (let* ((a (list 1 (make-string 32 ?a) (make-string 32 ?x)))
-         (b (list 2 (make-string 32 ?b) (make-string 32 ?y)))
-         (c (list 3 (make-string 32 ?c) (make-string 32 ?z))))
-    (pcase-let ((`(,new . ,consumed)
-                 (jabber-omemo--skipped-key-changes (list a b) (list b c))))
-      (should (equal (list c) new))
-      (should (equal (list a) consumed)))))
+(ert-deftest jabber-test-omemo-protocol-legacy-session-migrates-atomically ()
+  "A raw session imports legacy keys and saves one self-contained blob."
+  (jabber-test-omemo-protocol-with-db
+    (cl-letf (((symbol-function 'jabber-connection-bare-jid)
+               (lambda (_jc) "me@example.com")))
+      (let* ((jc 'jc)
+             (session (jabber-omemo-make-session))
+             (envelope (jabber-omemo-serialize-session session))
+             (raw-size (+ (ash (aref envelope 12) 24)
+                          (ash (aref envelope 13) 16)
+                          (ash (aref envelope 14) 8)
+                          (aref envelope 15)))
+             (raw (substring envelope 20 (+ 20 raw-size)))
+             (dh (make-string 32 ?d))
+             (mk (make-string 32 ?m)))
+        (jabber-omemo-store-save-session
+         "me@example.com" "alice@example.com" 111 raw)
+        (sqlite-execute jabber-db--connection "\
+INSERT INTO omemo_skipped_keys
+  (account, jid, device_id, dh_key, message_number, message_key, created_at)
+  VALUES (?, ?, ?, ?, ?, ?, ?)"
+                        (list "me@example.com" "alice@example.com"
+                              111 dh 7 mk 0))
+        (let ((loaded (jabber-omemo--get-session
+                       jc "alice@example.com" 111)))
+          (should (equal (list (list 7 dh mk))
+                         (jabber-omemo--session-skipped-keys loaded)))
+          (jabber-omemo--save-session jc "alice@example.com" 111 loaded))
+        (let ((blob (jabber-omemo-store-load-session
+                     "me@example.com" "alice@example.com" 111)))
+          (should-not (jabber-omemo--legacy-session-blob-p blob))
+          (should (= 1 (length
+                        (jabber-omemo--session-skipped-keys
+                         (jabber-omemo-deserialize-session blob))))))
+        (should-not (jabber-omemo-store-all-skipped-keys
+                     "me@example.com" "alice@example.com" 111))))))
 
 (ert-deftest jabber-test-omemo-protocol-skipped-keys-recover-across-restart ()
   "An out-of-order message decrypts after a session cache flush.
-Skipped ratchet keys persist in SQLite and reload with the session."
+Skipped ratchet keys persist inside the session blob."
   (jabber-test-omemo-protocol-with-db
     (cl-letf (((symbol-function 'jabber-connection-bare-jid)
                (lambda (_jc) "me@example.com")))
@@ -711,8 +738,8 @@ Skipped ratchet keys persist in SQLite and reload with the session."
           (should (string= k2 key))
           (should fresh-p)
           (jabber-omemo--save-session jc "alice@example.com" 111 session))
-        (should (= 1 (length (jabber-omemo-store-all-skipped-keys
-                              "me@example.com" "alice@example.com" 111))))
+        (should-not (jabber-omemo-store-all-skipped-keys
+                     "me@example.com" "alice@example.com" 111))
         ;; Simulate a restart: drop all in-memory session state.
         (clrhash jabber-omemo--sessions)
         ;; The late message decrypts from the reloaded skipped key.
@@ -721,7 +748,7 @@ Skipped ratchet keys persist in SQLite and reload with the session."
                       jc "alice@example.com" 111 store-ptr
                       (plist-get m1 :pre-key-p) (plist-get m1 :data))))
           (should (string= k1 key)))
-        ;; Consumed: the persisted copy is gone.
+        ;; No separate skipped-key rows are written or consumed.
         (should (null (jabber-omemo-store-all-skipped-keys
                        "me@example.com" "alice@example.com" 111)))))))
 

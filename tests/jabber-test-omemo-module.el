@@ -63,6 +63,35 @@
          (blob2 (jabber-omemo--serialize-store ptr)))
     (should (string= blob1 blob2))))
 
+(ert-deftest jabber-test-omemo-module-protobuf-rejects-bad-varints ()
+  "Deserialization rejects oversized and unterminated uint32 varints."
+  (dolist (blob (list (unibyte-string #x08 #x80 #x80 #x80 #x80 #x80 #x00)
+                      (unibyte-string #x08 #x80 #x80 #x80 #x80 #x80)
+                      (unibyte-string #x08 #x80 #x80 #x80 #x80 #x10)))
+    (should-error (jabber-omemo--deserialize-store blob)
+                  :type 'jabber-omemo-error)))
+
+(ert-deftest jabber-test-omemo-module-protobuf-rejects-truncated-field ()
+  "Deserialization rejects a length field beyond the remaining input."
+  (should-error
+   (jabber-omemo--deserialize-store (unibyte-string #x12 #x20))
+   :type 'jabber-omemo-error))
+
+(ert-deftest jabber-test-omemo-module-pointer-kinds-are-distinct ()
+  "Store and session wrappers reject the other native pointer kind."
+  (let ((store (jabber-omemo--deserialize-store (jabber-omemo--setup-store)))
+        (session (jabber-omemo--make-session)))
+    (dolist (form (list (lambda () (jabber-omemo--serialize-store session))
+                        (lambda () (jabber-omemo--get-bundle session))
+                        (lambda () (jabber-omemo--serialize-session store))
+                        (lambda () (jabber-omemo--used-pre-key-id store))
+                        (lambda () (jabber-omemo--encrypt-key store
+                                                              (make-string 32 0)))
+                        (lambda () (jabber-omemo--decrypt-key
+                                    session session nil "bad"))
+                        (lambda () (jabber-omemo--heartbeat session session))))
+      (should-error (funcall form) :type 'jabber-omemo-error))))
+
 ;;; Group 3: Bundle extraction
 
 (ert-deftest jabber-test-omemo-module-get-bundle-plist-keys ()
@@ -184,6 +213,19 @@
                (plist-get enc :ciphertext))))
     (should (string= msg dec))))
 
+(ert-deftest jabber-test-omemo-module-decrypt-requires-exact-key-and-iv ()
+  "Message decryption rejects short and oversized keys and IVs."
+  (let* ((enc (jabber-omemo--encrypt-message "payload"))
+         (key (plist-get enc :key))
+         (iv (plist-get enc :iv))
+         (ciphertext (plist-get enc :ciphertext)))
+    (dolist (bad-key (list (substring key 1) (concat key "x")))
+      (should-error (jabber-omemo--decrypt-message bad-key iv ciphertext)
+                    :type 'jabber-omemo-error))
+    (dolist (bad-iv (list (substring iv 1) (concat iv "x")))
+      (should-error (jabber-omemo--decrypt-message key bad-iv ciphertext)
+                    :type 'jabber-omemo-error))))
+
 (ert-deftest jabber-test-omemo-module-decrypt-wrong-key-signals-error ()
   "Decrypting with a wrong key signals jabber-omemo-error."
   (let* ((msg (encode-coding-string "secret" 'utf-8))
@@ -259,6 +301,49 @@
     (should (user-ptrp session2))
     (should (string= blob1 blob2))))
 
+(defun jabber-test-omemo-module--set-u32 (string offset value)
+  "Store big-endian VALUE in STRING at OFFSET."
+  (dotimes (i 4)
+    (aset string (+ offset i) (logand 255 (ash value (* -8 (- 3 i))))))
+  string)
+
+(ert-deftest jabber-test-omemo-module-session-envelope-validation ()
+  "Malformed envelopes, excess keys, and trailing data are rejected."
+  (let* ((session (jabber-omemo--make-session))
+         (blob (jabber-omemo--serialize-session session))
+         (bad-version (copy-sequence blob))
+         (too-many (copy-sequence blob)))
+    (aset bad-version 11 2)
+    (jabber-test-omemo-module--set-u32 too-many 16 1001)
+    (dolist (bad (list bad-version too-many (concat blob "x")))
+      (should-error (jabber-omemo--deserialize-session bad)
+                    :type 'jabber-omemo-error))))
+
+(ert-deftest jabber-test-omemo-module-session-legacy-blob-loads ()
+  "The raw picomemo payload remains a valid legacy session blob."
+  (let* ((session (jabber-omemo--make-session))
+         (blob (jabber-omemo--serialize-session session))
+         (raw-size (+ (ash (aref blob 12) 24)
+                      (ash (aref blob 13) 16)
+                      (ash (aref blob 14) 8)
+                      (aref blob 15)))
+         (raw (substring blob 20 (+ 20 raw-size))))
+    (should-not (jabber-omemo--legacy-session-blob-p blob))
+    (should (jabber-omemo--legacy-session-blob-p raw))
+    (should (user-ptrp (jabber-omemo--deserialize-session raw)))))
+
+(ert-deftest jabber-test-omemo-module-skipped-key-fifo-limit ()
+  "A session retains the newest 1000 imported skipped keys in FIFO order."
+  (let* ((session (jabber-omemo--make-session))
+         (dh (make-string 32 ?d))
+         (keys (cl-loop for i below 1001
+                        collect (list i dh (make-string 32 ?m)))))
+    (jabber-omemo--session-set-skipped-keys session keys)
+    (let ((stored (jabber-omemo--session-skipped-keys session)))
+      (should (= 1000 (length stored)))
+      (should (= 1 (caar stored)))
+      (should (= 1000 (car (car (last stored))))))))
+
 (ert-deftest jabber-test-omemo-module-initiate-session-bad-signature ()
   "initiate-session with a bad signature signals an error."
   (let* ((alice-blob (jabber-omemo--setup-store))
@@ -277,6 +362,28 @@
       (plist-get bundle :signed-pre-key-id)
       (car pk))
      :type 'jabber-omemo-error)))
+
+(ert-deftest jabber-test-omemo-module-initiate-requires-exact-inputs ()
+  "Session initiation rejects short and oversized cryptographic inputs."
+  (let* ((alice (jabber-omemo--deserialize-store (jabber-omemo--setup-store)))
+         (bob (jabber-omemo--deserialize-store (jabber-omemo--setup-store)))
+         (bundle (jabber-omemo--get-bundle bob))
+         (signature (plist-get bundle :signature))
+         (spk (plist-get bundle :signed-pre-key))
+         (ik (plist-get bundle :identity-key))
+         (pk (car (plist-get bundle :pre-keys)))
+         (inputs (list signature spk ik (cdr pk))))
+    (dotimes (index 4)
+      (dolist (bad (list (substring (nth index inputs) 1)
+                         (concat (nth index inputs) "x")))
+        (let ((changed (copy-sequence inputs)))
+          (setf (nth index changed) bad)
+          (should-error
+           (apply #'jabber-omemo--initiate-session
+                  alice (append changed
+                                (list (plist-get bundle :signed-pre-key-id)
+                                      (car pk))))
+           :type 'jabber-omemo-error))))))
 
 ;;; Group 7: Key encrypt/decrypt round-trip
 
@@ -348,6 +455,19 @@
          (decrypted (jabber-omemo--decrypt-key
                      bob-session bob is-prekey enc-data)))
     (should (string= original-key decrypted))))
+
+(ert-deftest jabber-test-omemo-module-decrypt-key-rejects-bad-protobuf ()
+  "Key decryption rejects hostile varints and truncated length fields."
+  (let ((store (jabber-omemo--deserialize-store (jabber-omemo--setup-store)))
+        (session (jabber-omemo--make-session)))
+    (dolist (message
+             (list (unibyte-string #x33 #x08 #x80 #x80 #x80 #x80 #x80 #x00)
+                   (unibyte-string #x33 #x08 #x80 #x80 #x80 #x80 #x80)
+                   (unibyte-string #x33 #x08 #x80 #x80 #x80 #x80 #x10)
+                   (unibyte-string #x33 #x12 #x20)))
+      (should-error
+       (jabber-omemo--decrypt-key session store t message)
+       :type 'jabber-omemo-error))))
 
 (ert-deftest jabber-test-omemo-module-consecutive-messages-are-pre-key ()
   "Consecutive messages from initiator stay pre-key until reply."
@@ -537,6 +657,33 @@ Alice has initiated a session towards Bob's bundle."
     (jabber-omemo--session-set-skipped-keys session nil)
     (should (null (jabber-omemo--session-skipped-keys session)))))
 
+(ert-deftest jabber-test-omemo-module-skipped-key-import-is-atomic ()
+  "Rejected skipped-key imports preserve the session's original keys."
+  (let* ((session (jabber-omemo--make-session))
+         (dh (make-string 32 ?d))
+         (mk (make-string 32 ?m))
+         (original (list (list 7 dh mk)))
+         (bad-lists
+          (list (cons (list 8 dh mk) 9)
+                (list 8 dh)
+                (list 8 dh mk 'extra)
+                (list (cons 8 (cons dh mk)))
+                (list (list 'bad dh mk))
+                (list (list -1 dh mk))
+                (list (list (1+ #xffffffff) dh mk))
+                (list (list 8 'bad mk))
+                (list (list 8 dh 'bad))
+                (list (list 8 (make-string 31 ?d) mk))
+                (list (list 8 (make-string 33 ?d) mk))
+                (list (list 8 dh (make-string 31 ?m)))
+                (list (list 8 dh (make-string 33 ?m))))))
+    (jabber-omemo--session-set-skipped-keys session original)
+    (dolist (bad bad-lists)
+      (should-error (jabber-omemo--session-set-skipped-keys session bad)
+                    :type 'jabber-omemo-error)
+      (should (equal original
+                     (jabber-omemo--session-skipped-keys session))))))
+
 (ert-deftest jabber-test-omemo-module-skipped-keys-survive-finalizers ()
   "Enumerating skipped keys is safe while other sessions are finalized."
   (let* ((session (jabber-omemo--make-session))
@@ -619,14 +766,11 @@ Alice has initiated a session towards Bob's bundle."
       (should (string= k2 (jabber-omemo--decrypt-key
                            bob-session bob
                            (plist-get m2 :pre-key-p) (plist-get m2 :data))))
-      ;; Simulate a restart: serialize the session and its skipped
-      ;; keys, then restore both into a fresh session pointer.
-      (let* ((skipped (jabber-omemo--session-skipped-keys bob-session))
-             (blob (jabber-omemo--serialize-session bob-session))
+      ;; Simulate a restart.  The session blob owns its skipped keys.
+      (let* ((blob (jabber-omemo--serialize-session bob-session))
              (restored (jabber-omemo--deserialize-session blob)))
-        (should (= 1 (length skipped)))
-        (should (null (jabber-omemo--session-skipped-keys restored)))
-        (jabber-omemo--session-set-skipped-keys restored skipped)
+        (should (= 1 (length
+                      (jabber-omemo--session-skipped-keys restored))))
         (should (string= k1 (jabber-omemo--decrypt-key
                              restored bob
                              (plist-get m1 :pre-key-p)

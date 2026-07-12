@@ -245,6 +245,31 @@ INSERT OR REPLACE INTO omemo_sessions (account, jid, device_id, session_blob)
   VALUES (?, ?, ?, ?)"
 		    (list account jid device-id blob))))
 
+(defun jabber-omemo-store-save-session-and-clear-legacy-keys
+    (account jid device-id blob)
+  "Save session BLOB for ACCOUNT, JID, DEVICE-ID and remove legacy keys."
+  (when-let* ((db (jabber-db-ensure-open)))
+    (sqlite-execute db "SAVEPOINT omemo_session_migration")
+    (condition-case err
+        (prog1
+            (progn
+              (jabber-omemo-store-save-session account jid device-id blob)
+              (jabber-omemo-store-delete-skipped-keys
+               account jid device-id))
+          (sqlite-execute db "RELEASE omemo_session_migration"))
+      (error
+       (condition-case cleanup-err
+           (sqlite-execute db "ROLLBACK TO omemo_session_migration")
+         (error
+          (message "OMEMO session rollback failed: %s"
+                   (error-message-string cleanup-err))))
+       (condition-case cleanup-err
+           (sqlite-execute db "RELEASE omemo_session_migration")
+         (error
+          (message "OMEMO session savepoint release failed: %s"
+                   (error-message-string cleanup-err))))
+       (signal (car err) (cdr err))))))
+
 (defun jabber-omemo-store-load-session (account jid device-id)
   "Load session blob for ACCOUNT, JID, DEVICE-ID, or nil."
   (when-let* ((db (jabber-db-ensure-open)))
@@ -274,42 +299,7 @@ SELECT device_id, session_blob FROM omemo_sessions
   WHERE account = ? AND jid = ?"
 			   (list account jid)))))
 
-;;; Skipped key CRUD
-
-(defun jabber-omemo-store-save-skipped-key (account jid device-id
-						    dh-key msg-number msg-key)
-  "Store a skipped message key for ACCOUNT, JID, DEVICE-ID.
-DH-KEY and MSG-KEY are unibyte blobs.  MSG-NUMBER is an integer."
-  (when-let* ((db (jabber-db-ensure-open)))
-    (let ((now (truncate (float-time))))
-      (sqlite-execute db "\
-INSERT OR REPLACE INTO omemo_skipped_keys
-  (account, jid, device_id, dh_key, message_number, message_key, created_at)
-  VALUES (?, ?, ?, ?, ?, ?, ?)"
-		      (list account jid device-id dh-key msg-number msg-key now)))))
-
-(defun jabber-omemo-store-load-skipped-key (account jid device-id
-						    dh-key msg-number)
-  "Load a skipped message key for ACCOUNT+JID+DEVICE-ID, or nil.
-DH-KEY identifies the ratchet step and MSG-NUMBER the message within it."
-  (when-let* ((db (jabber-db-ensure-open)))
-    (jabber-omemo-store--as-unibyte
-     (caar (sqlite-select db "\
-SELECT message_key FROM omemo_skipped_keys
-  WHERE account = ? AND jid = ? AND device_id = ?
-    AND dh_key = ? AND message_number = ?"
-			  (list account jid device-id dh-key msg-number))))))
-
-(defun jabber-omemo-store-delete-skipped-key (account jid device-id
-						      dh-key msg-number)
-  "Delete a skipped message key for ACCOUNT+JID+DEVICE-ID after use.
-DH-KEY and MSG-NUMBER identify the entry."
-  (when-let* ((db (jabber-db-ensure-open)))
-    (sqlite-execute db "\
-DELETE FROM omemo_skipped_keys
-  WHERE account = ? AND jid = ? AND device_id = ?
-    AND dh_key = ? AND message_number = ?"
-		    (list account jid device-id dh-key msg-number))))
+;;; Legacy skipped-key migration
 
 (defun jabber-omemo-store-all-skipped-keys (account jid device-id)
   "Return all skipped message keys for ACCOUNT+JID+DEVICE-ID.
@@ -322,7 +312,8 @@ Each element is (MSG-NUMBER DH-KEY MSG-KEY), the entry format of
                     (jabber-omemo-store--as-unibyte (caddr row))))
             (sqlite-select db "\
 SELECT message_number, dh_key, message_key FROM omemo_skipped_keys
-  WHERE account = ? AND jid = ? AND device_id = ?"
+  WHERE account = ? AND jid = ? AND device_id = ?
+  ORDER BY created_at ASC, rowid ASC"
                            (list account jid device-id)))))
 
 (defun jabber-omemo-store-delete-skipped-keys (account jid device-id)
@@ -334,15 +325,6 @@ never match again."
 DELETE FROM omemo_skipped_keys
   WHERE account = ? AND jid = ? AND device_id = ?"
 		    (list account jid device-id))))
-
-(defun jabber-omemo-store-delete-old-skipped-keys (account max-age)
-  "Delete skipped keys for ACCOUNT older than MAX-AGE seconds."
-  (when-let* ((db (jabber-db-ensure-open)))
-    (let ((cutoff (- (truncate (float-time)) max-age)))
-      (sqlite-execute db "\
-DELETE FROM omemo_skipped_keys
-  WHERE account = ? AND created_at < ?"
-		      (list account cutoff)))))
 
 (provide 'jabber-omemo-store)
 ;;; jabber-omemo-store.el ends here

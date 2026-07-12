@@ -40,10 +40,8 @@ int omemoRandom(void *p, size_t n)
    omemoStoreMessageKey and asks for them back in omemoLoadMessageKey.
    Both fire synchronously inside omemoDecryptKey, where no emacs_env
    is available, so keys live in a malloc'd per-session list here.
-   Elisp seeds and drains the list via
-   jabber-omemo--session-set-skipped-keys and
-   jabber-omemo--session-skipped-keys around each decrypt and
-   persists the result in SQLite. */
+   The list is serialized with the native session so skipped keys
+   survive restarts without separate database writes. */
 
 struct skipped_key {
     uint32_t nr;
@@ -51,10 +49,11 @@ struct skipped_key {
     uint8_t mk[32];
 };
 
-struct session_skipped {
-    struct omemoSession *session;
+struct native_session {
+    struct omemoSession session;
     struct skipped_key *keys;
     size_t count, cap;
+    size_t decrypt_new_count;
 };
 
 /* Upper bound on retained skipped keys per session; a peer jumping
@@ -62,8 +61,11 @@ struct session_skipped {
    OMEMO_ESTORE instead of allocating without limit. */
 #define SKIPPED_KEYS_MAX 1000
 
-static struct session_skipped *g_skipped;
-static size_t g_skipped_count, g_skipped_cap;
+#define SESSION_MAGIC "JOMEMO\0\1"
+#define SESSION_MAGIC_SIZE 8
+#define SESSION_VERSION 1
+#define SESSION_HEADER_SIZE 20
+#define SKIPPED_KEY_SIZE 68
 
 static void
 skipped_clear(void *ptr, size_t size)
@@ -73,74 +75,58 @@ skipped_clear(void *ptr, size_t size)
         *p++ = 0;
 }
 
-static struct session_skipped *
-skipped_find(struct omemoSession *s, int create)
+static struct native_session *
+native_session(struct omemoSession *session)
 {
-    for (size_t i = 0; i < g_skipped_count; i++)
-        if (g_skipped[i].session == s)
-            return &g_skipped[i];
-    if (!create)
-        return NULL;
-    if (g_skipped_count == g_skipped_cap) {
-        size_t ncap = g_skipped_cap ? g_skipped_cap * 2 : 8;
-        struct session_skipped *n = realloc(g_skipped, ncap * sizeof *n);
-        if (!n)
-            return NULL;
-        g_skipped = n;
-        g_skipped_cap = ncap;
-    }
-    struct session_skipped *e = &g_skipped[g_skipped_count++];
-    e->session = s;
-    e->keys = NULL;
-    e->count = e->cap = 0;
-    return e;
+    return (struct native_session *)session;
 }
 
 static void
-skipped_drop(struct omemoSession *s)
+skipped_drop(struct native_session *session)
 {
-    for (size_t i = 0; i < g_skipped_count; i++) {
-        if (g_skipped[i].session == s) {
-            if (g_skipped[i].keys) {
-                skipped_clear(g_skipped[i].keys,
-                              g_skipped[i].cap * sizeof(struct skipped_key));
-                free(g_skipped[i].keys);
-            }
-            g_skipped[i] = g_skipped[--g_skipped_count];
-            return;
-        }
+    if (session->keys) {
+        skipped_clear(session->keys,
+                      session->cap * sizeof(struct skipped_key));
+        free(session->keys);
     }
+    session->keys = NULL;
+    session->count = session->cap = 0;
 }
 
 static int
-skipped_add(struct session_skipped *e, uint32_t nr,
+skipped_add(struct native_session *session, uint32_t nr,
             const uint8_t *dh, const uint8_t *mk)
 {
-    if (e->count >= SKIPPED_KEYS_MAX)
-        return 1;
-    if (e->count == e->cap) {
-        size_t ncap = e->cap ? e->cap * 2 : 16;
-        struct skipped_key *n = realloc(e->keys, ncap * sizeof *n);
+    if (session->count == SKIPPED_KEYS_MAX) {
+        skipped_clear(&session->keys[0], sizeof session->keys[0]);
+        memmove(&session->keys[0], &session->keys[1],
+                (session->count - 1) * sizeof session->keys[0]);
+        session->count--;
+    }
+    if (session->count == session->cap) {
+        size_t ncap = session->cap ? session->cap * 2 : 16;
+        if (ncap > SKIPPED_KEYS_MAX)
+            ncap = SKIPPED_KEYS_MAX;
+        struct skipped_key *n = realloc(session->keys, ncap * sizeof *n);
         if (!n)
             return 1;
-        memset(n + e->cap, 0, (ncap - e->cap) * sizeof *n);
-        e->keys = n;
-        e->cap = ncap;
+        memset(n + session->cap, 0,
+               (ncap - session->cap) * sizeof *n);
+        session->keys = n;
+        session->cap = ncap;
     }
-    e->keys[e->count].nr = nr;
-    memcpy(e->keys[e->count].dh, dh, 32);
-    memcpy(e->keys[e->count].mk, mk, 32);
-    e->count++;
+    session->keys[session->count].nr = nr;
+    memcpy(session->keys[session->count].dh, dh, 32);
+    memcpy(session->keys[session->count].mk, mk, 32);
+    session->count++;
     return 0;
 }
 
 int omemoLoadMessageKey(struct omemoSession *s, struct omemoMessageKey *k)
 {
-    struct session_skipped *e = skipped_find(s, 0);
-    if (!e)
-        return 1; /* not found */
-    for (size_t i = 0; i < e->count; i++) {
-        struct skipped_key *sk = &e->keys[i];
+    struct native_session *session = native_session(s);
+    for (size_t i = 0; i < session->count; i++) {
+        struct skipped_key *sk = &session->keys[i];
         if (sk->nr == k->nr && !memcmp(sk->dh, k->dh, 32)) {
             memcpy(k->mk, sk->mk, 32);
             return 0;
@@ -152,16 +138,16 @@ int omemoLoadMessageKey(struct omemoSession *s, struct omemoMessageKey *k)
 int omemoRemoveMessageKey(struct omemoSession *s,
                           const struct omemoMessageKey *k)
 {
-    struct session_skipped *e = skipped_find(s, 0);
-    if (!e)
-        return OMEMO_ESTORE;
-    for (size_t i = 0; i < e->count; i++) {
-        struct skipped_key *sk = &e->keys[i];
+    struct native_session *session = native_session(s);
+    for (size_t i = 0; i < session->count; i++) {
+        struct skipped_key *sk = &session->keys[i];
         if (sk->nr == k->nr && !memcmp(sk->dh, k->dh, 32)) {
-            e->keys[i] = e->keys[e->count - 1];
-            skipped_clear(&e->keys[e->count - 1],
+            skipped_clear(sk, sizeof *sk);
+            memmove(sk, sk + 1,
+                    (session->count - i - 1) * sizeof *sk);
+            skipped_clear(&session->keys[session->count - 1],
                           sizeof(struct skipped_key));
-            e->count--;
+            session->count--;
             return 0;
         }
     }
@@ -172,9 +158,11 @@ int omemoStoreMessageKey(struct omemoSession *s,
                          const struct omemoMessageKey *k, uint64_t n)
 {
     (void)n;
-    struct session_skipped *e = skipped_find(s, 1);
-    if (!e || skipped_add(e, k->nr, k->dh, k->mk))
+    struct native_session *session = native_session(s);
+    if (session->decrypt_new_count >= SKIPPED_KEYS_MAX ||
+        skipped_add(session, k->nr, k->dh, k->mk))
         return OMEMO_ESTORE;
+    session->decrypt_new_count++;
     return 0;
 }
 
@@ -206,7 +194,9 @@ provide(emacs_env *env, const char *feature)
 static void
 signal_error(emacs_env *env, int code, const char *msg)
 {
-    emacs_value data = env->make_string(env, msg, strlen(msg));
+    emacs_value message = env->make_string(env, msg, strlen(msg));
+    emacs_value data = env->funcall(env, env->intern(env, "list"),
+                                    1, &message);
     emacs_value errsym = Qjabber_omemo_error;
     env->non_local_exit_signal(env, errsym, data);
     (void)code;
@@ -231,6 +221,21 @@ extract_unibyte(emacs_env *env, emacs_value arg,
     return 0;
 }
 
+static int
+extract_exact_unibyte(emacs_env *env, emacs_value arg, uint8_t *buf,
+                      size_t expected, const char *message)
+{
+    ptrdiff_t len = 0;
+    env->copy_string_contents(env, arg, NULL, &len);
+    if (env->non_local_exit_check(env))
+        return -1;
+    if (len != (ptrdiff_t)expected + 1) {
+        signal_error(env, OMEMO_ESTORE, message);
+        return -1;
+    }
+    return extract_unibyte(env, arg, buf, expected + 1, NULL);
+}
+
 /*  Finalizers for user-ptr  */
 
 static void
@@ -242,8 +247,61 @@ free_store(void *ptr)
 static void
 free_session(void *ptr)
 {
-    skipped_drop(ptr);
+    struct native_session *session = ptr;
+    skipped_drop(session);
+    skipped_clear(&session->session, sizeof session->session);
     free(ptr);
+}
+
+static void *
+checked_user_ptr(emacs_env *env, emacs_value value,
+                 void (*expected)(void *), const char *message)
+{
+    void (*finalizer)(void *) = env->get_user_finalizer(env, value);
+    if (env->non_local_exit_check(env))
+        return NULL;
+    if (finalizer != expected) {
+        signal_error(env, OMEMO_ESTORE, message);
+        return NULL;
+    }
+    return env->get_user_ptr(env, value);
+}
+
+static struct omemoStore *
+extract_store(emacs_env *env, emacs_value value)
+{
+    return checked_user_ptr(env, value, free_store,
+                            "expected an OMEMO store pointer");
+}
+
+static struct native_session *
+extract_session(emacs_env *env, emacs_value value)
+{
+    return checked_user_ptr(env, value, free_session,
+                            "expected an OMEMO session pointer");
+}
+
+static uint32_t
+read_u32(const uint8_t *p)
+{
+    return ((uint32_t)p[0] << 24) | ((uint32_t)p[1] << 16) |
+           ((uint32_t)p[2] << 8) | p[3];
+}
+
+static void
+write_u32(uint8_t *p, uint32_t value)
+{
+    p[0] = value >> 24;
+    p[1] = value >> 16;
+    p[2] = value >> 8;
+    p[3] = value;
+}
+
+static bool
+session_envelope_p(const uint8_t *blob, size_t len)
+{
+    return len >= SESSION_MAGIC_SIZE &&
+           !memcmp(blob, SESSION_MAGIC, SESSION_MAGIC_SIZE);
 }
 
 /*  jabber-omemo--setup-store  */
@@ -327,7 +385,7 @@ F_serialize_store(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
 {
     (void)nargs; (void)data;
 
-    struct omemoStore *store = env->get_user_ptr(env, args[0]);
+    struct omemoStore *store = extract_store(env, args[0]);
     if (env->non_local_exit_check(env))
         return Qnil_v;
 
@@ -352,7 +410,7 @@ F_get_bundle(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
 {
     (void)nargs; (void)data;
 
-    struct omemoStore *store = env->get_user_ptr(env, args[0]);
+    struct omemoStore *store = extract_store(env, args[0]);
     if (env->non_local_exit_check(env))
         return Qnil_v;
 
@@ -426,7 +484,7 @@ F_rotate_signed_pre_key(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
 {
     (void)nargs; (void)data;
 
-    struct omemoStore *store = env->get_user_ptr(env, args[0]);
+    struct omemoStore *store = extract_store(env, args[0]);
     if (env->non_local_exit_check(env))
         return Qnil_v;
 
@@ -446,7 +504,7 @@ F_refill_pre_keys(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
 {
     (void)nargs; (void)data;
 
-    struct omemoStore *store = env->get_user_ptr(env, args[0]);
+    struct omemoStore *store = extract_store(env, args[0]);
     if (env->non_local_exit_check(env))
         return Qnil_v;
 
@@ -466,7 +524,7 @@ F_remove_pre_key(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
 {
     (void)nargs; (void)data;
 
-    struct omemoStore *store = env->get_user_ptr(env, args[0]);
+    struct omemoStore *store = extract_store(env, args[0]);
     if (env->non_local_exit_check(env))
         return Qnil_v;
 
@@ -494,11 +552,11 @@ F_used_pre_key_id(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
 {
     (void)nargs; (void)data;
 
-    struct omemoSession *session = env->get_user_ptr(env, args[0]);
+    struct native_session *native = extract_session(env, args[0]);
     if (env->non_local_exit_check(env))
         return Qnil_v;
 
-    return env->make_integer(env, session->usedpk_id);
+    return env->make_integer(env, native->session.usedpk_id);
 }
 
 /*  jabber-omemo--encrypt-message  */
@@ -567,15 +625,15 @@ F_decrypt_message(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
     (void)nargs; (void)data;
 
     /* Extract key (32 bytes) */
-    uint8_t key[33]; /* +1 for NUL from copy_string_contents */
-    size_t keylen;
-    if (extract_unibyte(env, args[0], key, sizeof(key), &keylen))
+    uint8_t key[33];
+    if (extract_exact_unibyte(env, args[0], key, 32,
+                              "message key must be exactly 32 bytes"))
         return Qnil_v;
 
     /* Extract IV (12 bytes) */
     uint8_t iv[13];
-    size_t ivlen;
-    if (extract_unibyte(env, args[1], iv, sizeof(iv), &ivlen))
+    if (extract_exact_unibyte(env, args[1], iv, 12,
+                              "message IV must be exactly 12 bytes"))
         return Qnil_v;
 
     /* Extract ciphertext */
@@ -603,7 +661,7 @@ F_decrypt_message(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
         return Qnil_v;
     }
 
-    int rc = omemoDecryptMessage(plaintext, key, keylen, iv, ciphertext,
+    int rc = omemoDecryptMessage(plaintext, key, 32, iv, ciphertext,
                                  ctlen);
     free(ciphertext);
     if (rc) {
@@ -625,7 +683,7 @@ F_make_session(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
 {
     (void)nargs; (void)args; (void)data;
 
-    struct omemoSession *session = calloc(1, sizeof(*session));
+    struct native_session *session = calloc(1, sizeof(*session));
     if (!session) {
         signal_error(env, -1, "calloc failed");
         return Qnil_v;
@@ -642,28 +700,32 @@ F_initiate_session(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
 {
     (void)nargs; (void)data;
 
-    struct omemoStore *store = env->get_user_ptr(env, args[0]);
+    struct omemoStore *store = extract_store(env, args[0]);
     if (env->non_local_exit_check(env))
         return Qnil_v;
 
     /* Extract signature (64 bytes) */
     uint8_t sig[65];
-    if (extract_unibyte(env, args[1], sig, sizeof(sig), NULL))
+    if (extract_exact_unibyte(env, args[1], sig, 64,
+                              "signature must be exactly 64 bytes"))
         return Qnil_v;
 
     /* Extract signed pre-key (33 bytes) */
     uint8_t spk[34];
-    if (extract_unibyte(env, args[2], spk, sizeof(spk), NULL))
+    if (extract_exact_unibyte(env, args[2], spk, 33,
+                              "signed pre-key must be exactly 33 bytes"))
         return Qnil_v;
 
     /* Extract identity key (33 bytes) */
     uint8_t ik[34];
-    if (extract_unibyte(env, args[3], ik, sizeof(ik), NULL))
+    if (extract_exact_unibyte(env, args[3], ik, 33,
+                              "identity key must be exactly 33 bytes"))
         return Qnil_v;
 
     /* Extract pre-key (33 bytes) */
     uint8_t pk[34];
-    if (extract_unibyte(env, args[4], pk, sizeof(pk), NULL))
+    if (extract_exact_unibyte(env, args[4], pk, 33,
+                              "pre-key must be exactly 33 bytes"))
         return Qnil_v;
 
     uint32_t spk_id = (uint32_t)env->extract_integer(env, args[5]);
@@ -674,13 +736,13 @@ F_initiate_session(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
     if (env->non_local_exit_check(env))
         return Qnil_v;
 
-    struct omemoSession *session = calloc(1, sizeof(*session));
+    struct native_session *session = calloc(1, sizeof(*session));
     if (!session) {
         signal_error(env, -1, "calloc failed");
         return Qnil_v;
     }
 
-    int rc = omemoInitiateSession(session, store, sig, spk, ik, pk,
+    int rc = omemoInitiateSession(&session->session, store, sig, spk, ik, pk,
                                   spk_id, pk_id);
     if (rc) {
         free(session);
@@ -699,19 +761,39 @@ F_serialize_session(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
 {
     (void)nargs; (void)data;
 
-    struct omemoSession *session = env->get_user_ptr(env, args[0]);
+    struct native_session *session = extract_session(env, args[0]);
     if (env->non_local_exit_check(env))
         return Qnil_v;
 
-    size_t sz = omemoGetSerializedSessionSize(session);
+    size_t raw_size = omemoGetSerializedSessionSize(&session->session);
+    if (session->count > SKIPPED_KEYS_MAX ||
+        raw_size > UINT32_MAX ||
+        session->count > (SIZE_MAX - SESSION_HEADER_SIZE - raw_size) /
+                         SKIPPED_KEY_SIZE) {
+        signal_error(env, OMEMO_ESTORE, "session is too large to serialize");
+        return Qnil_v;
+    }
+    size_t sz = SESSION_HEADER_SIZE + raw_size +
+                session->count * SKIPPED_KEY_SIZE;
     uint8_t *buf = malloc(sz);
     if (!buf) {
         signal_error(env, -1, "malloc failed");
         return Qnil_v;
     }
-    omemoSerializeSession(buf, session);
+    memcpy(buf, SESSION_MAGIC, SESSION_MAGIC_SIZE);
+    write_u32(buf + 8, SESSION_VERSION);
+    write_u32(buf + 12, (uint32_t)raw_size);
+    write_u32(buf + 16, (uint32_t)session->count);
+    omemoSerializeSession(buf + SESSION_HEADER_SIZE, &session->session);
+    uint8_t *p = buf + SESSION_HEADER_SIZE + raw_size;
+    for (size_t i = 0; i < session->count; i++, p += SKIPPED_KEY_SIZE) {
+        write_u32(p, session->keys[i].nr);
+        memcpy(p + 4, session->keys[i].dh, 32);
+        memcpy(p + 36, session->keys[i].mk, 32);
+    }
 
     emacs_value result = make_unibyte(env, buf, sz);
+    skipped_clear(buf, sz);
     free(buf);
     return result;
 }
@@ -741,22 +823,87 @@ F_deserialize_session(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
     }
     size_t datalen = (size_t)(bloblen - 1);
 
-    struct omemoSession *session = calloc(1, sizeof(*session));
+    struct native_session *session = calloc(1, sizeof(*session));
     if (!session) {
         free(blob);
         signal_error(env, -1, "calloc failed");
         return Qnil_v;
     }
 
-    int rc = omemoDeserializeSession(blob, datalen, session);
+    const uint8_t *raw = blob;
+    size_t raw_size = datalen;
+    uint32_t key_count = 0;
+    if (session_envelope_p(blob, datalen)) {
+        if (datalen < SESSION_HEADER_SIZE || read_u32(blob + 8) != SESSION_VERSION) {
+            skipped_clear(blob, datalen);
+            free(blob);
+            free(session);
+            signal_error(env, OMEMO_ECORRUPT, "invalid session envelope");
+            return Qnil_v;
+        }
+        raw_size = read_u32(blob + 12);
+        key_count = read_u32(blob + 16);
+        if (key_count > SKIPPED_KEYS_MAX ||
+            raw_size > datalen - SESSION_HEADER_SIZE ||
+            key_count > (SIZE_MAX - SESSION_HEADER_SIZE - raw_size) /
+                        SKIPPED_KEY_SIZE ||
+            SESSION_HEADER_SIZE + raw_size +
+                (size_t)key_count * SKIPPED_KEY_SIZE != datalen) {
+            skipped_clear(blob, datalen);
+            free(blob);
+            free(session);
+            signal_error(env, OMEMO_ECORRUPT, "malformed session envelope");
+            return Qnil_v;
+        }
+        raw = blob + SESSION_HEADER_SIZE;
+    }
+    int rc = omemoDeserializeSession(raw, raw_size, &session->session);
+    if (!rc && key_count) {
+        const uint8_t *p = raw + raw_size;
+        for (uint32_t i = 0; i < key_count; i++, p += SKIPPED_KEY_SIZE)
+            if (skipped_add(session, read_u32(p), p + 4, p + 36)) {
+                rc = OMEMO_ESTORE;
+                break;
+            }
+    }
+    skipped_clear(blob, datalen);
     free(blob);
     if (rc) {
+        skipped_drop(session);
         free(session);
         signal_error(env, rc, "omemoDeserializeSession failed");
         return Qnil_v;
     }
 
     return env->make_user_ptr(env, free_session, session);
+}
+
+/*  jabber-omemo--legacy-session-blob-p  */
+
+static emacs_value
+F_legacy_session_blob_p(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
+                        void *data)
+{
+    (void)nargs; (void)data;
+
+    ptrdiff_t bloblen = 0;
+    env->copy_string_contents(env, args[0], NULL, &bloblen);
+    if (env->non_local_exit_check(env))
+        return Qnil_v;
+    uint8_t *blob = malloc((size_t)bloblen);
+    if (!blob) {
+        signal_error(env, -1, "malloc failed");
+        return Qnil_v;
+    }
+    if (!env->copy_string_contents(env, args[0], (char *)blob, &bloblen)) {
+        free(blob);
+        return Qnil_v;
+    }
+    emacs_value result = session_envelope_p(blob, (size_t)bloblen - 1)
+                         ? Qnil_v : Qt_v;
+    skipped_clear(blob, (size_t)bloblen - 1);
+    free(blob);
+    return result;
 }
 
 /*  jabber-omemo--encrypt-key  */
@@ -767,7 +914,7 @@ F_encrypt_key(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
 {
     (void)nargs; (void)data;
 
-    struct omemoSession *session = env->get_user_ptr(env, args[0]);
+    struct native_session *native = extract_session(env, args[0]);
     if (env->non_local_exit_check(env))
         return Qnil_v;
 
@@ -780,7 +927,7 @@ F_encrypt_key(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
     struct omemoKeyMessage msg;
     memset(&msg, 0, sizeof(msg));
 
-    int rc = omemoEncryptKey(session, &msg, keybuf, keylen);
+    int rc = omemoEncryptKey(&native->session, &msg, keybuf, keylen);
     if (rc) {
         signal_error(env, rc, "omemoEncryptKey failed");
         return Qnil_v;
@@ -804,11 +951,11 @@ F_decrypt_key(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
 {
     (void)nargs; (void)data;
 
-    struct omemoSession *session = env->get_user_ptr(env, args[0]);
+    struct native_session *native = extract_session(env, args[0]);
     if (env->non_local_exit_check(env))
         return Qnil_v;
 
-    struct omemoStore *store = env->get_user_ptr(env, args[1]);
+    struct omemoStore *store = extract_store(env, args[1]);
     if (env->non_local_exit_check(env))
         return Qnil_v;
 
@@ -835,12 +982,32 @@ F_decrypt_key(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
     uint8_t key[OMEMO_KEYSIZE];
     size_t keyn = sizeof(key);
 
-    int rc = omemoDecryptKey(session, store, key, &keyn,
+    size_t old_count = native->count;
+    struct skipped_key *old_keys = NULL;
+    if (old_count) {
+        old_keys = malloc(old_count * sizeof *old_keys);
+        if (!old_keys) {
+            free(msgbuf);
+            signal_error(env, OMEMO_ESTORE, "cannot snapshot skipped keys");
+            return Qnil_v;
+        }
+        memcpy(old_keys, native->keys, old_count * sizeof *old_keys);
+    }
+    native->decrypt_new_count = 0;
+    int rc = omemoDecryptKey(&native->session, store, key, &keyn,
                              isprekey, msgbuf, msglen);
+    native->decrypt_new_count = 0;
     free(msgbuf);
     if (rc) {
+        skipped_drop(native);
+        native->keys = old_keys;
+        native->count = native->cap = old_count;
         signal_error(env, rc, "omemoDecryptKey failed");
         return Qnil_v;
+    }
+    if (old_keys) {
+        skipped_clear(old_keys, old_count * sizeof *old_keys);
+        free(old_keys);
     }
 
     return make_unibyte(env, key, keyn);
@@ -854,20 +1021,19 @@ F_session_skipped_keys(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
 {
     (void)nargs; (void)data;
 
-    struct omemoSession *session = env->get_user_ptr(env, args[0]);
+    struct native_session *session = extract_session(env, args[0]);
     if (env->non_local_exit_check(env))
         return Qnil_v;
 
-    struct session_skipped *e = skipped_find(session, 0);
-    if (!e || !e->count)
+    if (!session->count)
         return Qnil_v;
-    size_t count = e->count;
+    size_t count = session->count;
     struct skipped_key *snapshot = malloc(count * sizeof *snapshot);
     if (!snapshot && count) {
         signal_error(env, OMEMO_ESTORE, "cannot snapshot skipped keys");
         return Qnil_v;
     }
-    memcpy(snapshot, e->keys, count * sizeof *snapshot);
+    memcpy(snapshot, session->keys, count * sizeof *snapshot);
 
     emacs_value Qlist = env->intern(env, "list");
     emacs_value Qcons = env->intern(env, "cons");
@@ -890,48 +1056,164 @@ F_session_skipped_keys(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
 
 /*  jabber-omemo--session-set-skipped-keys  */
 
+struct skipped_key_symbols {
+    emacs_value car, cdr, consp, integerp, stringp;
+};
+
+static int
+intern_skipped_key_symbols(emacs_env *env, struct skipped_key_symbols *symbols)
+{
+    symbols->car = env->intern(env, "car");
+    if (env->non_local_exit_check(env))
+        return -1;
+    symbols->cdr = env->intern(env, "cdr");
+    if (env->non_local_exit_check(env))
+        return -1;
+    symbols->consp = env->intern(env, "consp");
+    if (env->non_local_exit_check(env))
+        return -1;
+    symbols->integerp = env->intern(env, "integerp");
+    if (env->non_local_exit_check(env))
+        return -1;
+    symbols->stringp = env->intern(env, "stringp");
+    return env->non_local_exit_check(env) ? -1 : 0;
+}
+
+static int
+emacs_truth(emacs_env *env, emacs_value value, bool *result)
+{
+    *result = env->is_not_nil(env, value);
+    return env->non_local_exit_check(env) ? -1 : 0;
+}
+
+static int
+take_cons(emacs_env *env, const struct skipped_key_symbols *symbols,
+          emacs_value *list, emacs_value *value, const char *message)
+{
+    emacs_value proper = env->funcall(env, symbols->consp, 1, list);
+    if (env->non_local_exit_check(env))
+        return -1;
+    bool is_cons;
+    if (emacs_truth(env, proper, &is_cons))
+        return -1;
+    if (!is_cons) {
+        signal_error(env, OMEMO_EPARAM, message);
+        return -1;
+    }
+    *value = env->funcall(env, symbols->car, 1, list);
+    if (env->non_local_exit_check(env))
+        return -1;
+    *list = env->funcall(env, symbols->cdr, 1, list);
+    return env->non_local_exit_check(env) ? -1 : 0;
+}
+
+static int
+require_type(emacs_env *env, emacs_value predicate, emacs_value value,
+             const char *message)
+{
+    emacs_value valid = env->funcall(env, predicate, 1, &value);
+    if (env->non_local_exit_check(env))
+        return -1;
+    bool matches;
+    if (emacs_truth(env, valid, &matches))
+        return -1;
+    if (!matches) {
+        signal_error(env, OMEMO_EPARAM, message);
+        return -1;
+    }
+    return 0;
+}
+
+static int
+parse_skipped_key(emacs_env *env,
+                  const struct skipped_key_symbols *symbols,
+                  emacs_value entry, struct skipped_key *key)
+{
+    emacs_value nr, dh, mk;
+    if (take_cons(env, symbols, &entry, &nr,
+                  "malformed skipped key entry") ||
+        take_cons(env, symbols, &entry, &dh,
+                  "malformed skipped key entry") ||
+        take_cons(env, symbols, &entry, &mk,
+                  "malformed skipped key entry"))
+        return -1;
+    bool has_tail;
+    if (emacs_truth(env, entry, &has_tail))
+        return -1;
+    if (has_tail) {
+        signal_error(env, OMEMO_EPARAM, "malformed skipped key entry");
+        return -1;
+    }
+    if (require_type(env, symbols->integerp, nr,
+                     "skipped key message number must be an integer") ||
+        require_type(env, symbols->stringp, dh,
+                     "skipped dh key must be a string") ||
+        require_type(env, symbols->stringp, mk,
+                     "skipped message key must be a string"))
+        return -1;
+
+    intmax_t number = env->extract_integer(env, nr);
+    if (env->non_local_exit_check(env))
+        return -1;
+    if (number < 0 || number > UINT32_MAX) {
+        signal_error(env, OMEMO_EPARAM,
+                     "skipped key message number is out of range");
+        return -1;
+    }
+    uint8_t dh_buf[33], mk_buf[33];
+    if (extract_exact_unibyte(env, dh, dh_buf, 32,
+                              "skipped dh key must be exactly 32 bytes") ||
+        extract_exact_unibyte(env, mk, mk_buf, 32,
+                              "skipped message key must be exactly 32 bytes"))
+        return -1;
+    key->nr = (uint32_t)number;
+    memcpy(key->dh, dh_buf, sizeof key->dh);
+    memcpy(key->mk, mk_buf, sizeof key->mk);
+    return 0;
+}
+
 static emacs_value
 F_session_set_skipped_keys(emacs_env *env, ptrdiff_t nargs,
                            emacs_value *args, void *data)
 {
     (void)nargs; (void)data;
 
-    struct omemoSession *session = env->get_user_ptr(env, args[0]);
+    struct native_session *session = extract_session(env, args[0]);
     if (env->non_local_exit_check(env))
         return Qnil_v;
 
-    emacs_value Qcar = env->intern(env, "car");
-    emacs_value Qcdr = env->intern(env, "cdr");
+    struct skipped_key_symbols symbols;
+    if (intern_skipped_key_symbols(env, &symbols))
+        return Qnil_v;
+    struct native_session temporary = {0};
+    emacs_value l = args[1];
 
-    skipped_drop(session);
-    for (emacs_value l = args[1]; env->is_not_nil(env, l);
-         l = env->funcall(env, Qcdr, 1, &l)) {
-        emacs_value entry = env->funcall(env, Qcar, 1, &l);
-        emacs_value v_nr = env->funcall(env, Qcar, 1, &entry);
-        emacs_value rest = env->funcall(env, Qcdr, 1, &entry);
-        emacs_value v_dh = env->funcall(env, Qcar, 1, &rest);
-        rest = env->funcall(env, Qcdr, 1, &rest);
-        emacs_value v_mk = env->funcall(env, Qcar, 1, &rest);
-
-        intmax_t nr = env->extract_integer(env, v_nr);
-        uint8_t dh[33], mk[33];
-        size_t dhn = 0, mkn = 0;
-        if (extract_unibyte(env, v_dh, dh, sizeof(dh), &dhn) ||
-            extract_unibyte(env, v_mk, mk, sizeof(mk), &mkn))
-            return Qnil_v;
-        if (env->non_local_exit_check(env))
-            return Qnil_v;
-        if (dhn != 32 || mkn != 32) {
-            signal_error(env, OMEMO_EPARAM,
-                         "skipped key entry must hold 32-byte dh and mk");
-            return Qnil_v;
-        }
-        struct session_skipped *e = skipped_find(session, 1);
-        if (!e || skipped_add(e, (uint32_t)nr, dh, mk)) {
+    for (;;) {
+        bool more;
+        if (emacs_truth(env, l, &more))
+            goto fail;
+        if (!more)
+            break;
+        emacs_value entry;
+        struct skipped_key key;
+        if (take_cons(env, &symbols, &l, &entry,
+                      "skipped keys must be a proper list") ||
+            parse_skipped_key(env, &symbols, entry, &key))
+            goto fail;
+        if (skipped_add(&temporary, key.nr, key.dh, key.mk)) {
             signal_error(env, OMEMO_ESTORE, "cannot store skipped key");
-            return Qnil_v;
+            goto fail;
         }
     }
+
+    skipped_drop(session);
+    session->keys = temporary.keys;
+    session->count = temporary.count;
+    session->cap = temporary.cap;
+    return Qnil_v;
+
+fail:
+    skipped_drop(&temporary);
     return Qnil_v;
 }
 
@@ -943,18 +1225,18 @@ F_heartbeat(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
 {
     (void)nargs; (void)data;
 
-    struct omemoSession *session = env->get_user_ptr(env, args[0]);
+    struct native_session *native = extract_session(env, args[0]);
     if (env->non_local_exit_check(env))
         return Qnil_v;
 
-    struct omemoStore *store = env->get_user_ptr(env, args[1]);
+    struct omemoStore *store = extract_store(env, args[1]);
     if (env->non_local_exit_check(env))
         return Qnil_v;
 
     struct omemoKeyMessage msg;
     memset(&msg, 0, sizeof(msg));
 
-    int rc = omemoHeartbeat(session, store, &msg);
+    int rc = omemoHeartbeat(&native->session, store, &msg);
     if (rc) {
         signal_error(env, rc, "omemoHeartbeat failed");
         return Qnil_v;
@@ -1241,6 +1523,10 @@ emacs_module_init(struct emacs_runtime *runtime)
     DEFUN("jabber-omemo--deserialize-session", F_deserialize_session, 1, 1,
           "Deserialize BLOB into an OMEMO session object.\n"
           "Returns a session user-ptr; freed automatically by GC.");
+
+    DEFUN("jabber-omemo--legacy-session-blob-p",
+          F_legacy_session_blob_p, 1, 1,
+          "Return non-nil when BLOB uses the legacy raw session format.");
 
     DEFUN("jabber-omemo--encrypt-key", F_encrypt_key, 2, 2,
           "Encrypt KEY for a recipient using SESSION-PTR.\n"

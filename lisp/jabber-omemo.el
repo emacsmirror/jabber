@@ -63,12 +63,6 @@ compile jabber-omemo-core."
   :type 'boolean
   :group 'jabber)
 
-(defcustom jabber-omemo-skipped-key-max-age (* 30 86400)
-  "Maximum age in seconds for OMEMO skipped message keys.
-Keys older than this are deleted on connect."
-  :type 'integer
-  :group 'jabber)
-
 (defcustom jabber-omemo-signed-pre-key-rotation-period (* 7 86400)
   "Seconds between OMEMO signed pre-key rotations.
 Checked on connect.  XEP-0384 recommends rotating once a week to
@@ -131,6 +125,7 @@ Signal a `user-error' otherwise."
 (declare-function jabber-omemo--initiate-session "ext:jabber-omemo-core")
 (declare-function jabber-omemo--serialize-session "ext:jabber-omemo-core")
 (declare-function jabber-omemo--deserialize-session "ext:jabber-omemo-core")
+(declare-function jabber-omemo--legacy-session-blob-p "ext:jabber-omemo-core")
 (declare-function jabber-omemo--encrypt-key "ext:jabber-omemo-core")
 (declare-function jabber-omemo--decrypt-key "ext:jabber-omemo-core")
 (declare-function jabber-omemo--session-skipped-keys "ext:jabber-omemo-core")
@@ -405,6 +400,11 @@ Returns a deserialized session user-ptr, or nil."
         (when-let* ((blob (jabber-omemo-store-load-session
                            account jid device-id)))
           (let ((session-ptr (jabber-omemo-deserialize-session blob)))
+            (when (jabber-omemo--legacy-session-blob-p blob)
+              (jabber-omemo--session-set-skipped-keys
+               session-ptr
+               (jabber-omemo-store-all-skipped-keys
+                account jid device-id)))
             (puthash key session-ptr jabber-omemo--sessions)
             session-ptr)))))
 
@@ -414,7 +414,8 @@ Updates both the database and in-memory cache."
   (let* ((account (jabber-connection-bare-jid jc))
          (key (jabber-omemo--session-key account jid device-id))
          (blob (jabber-omemo-serialize-session session-ptr)))
-    (jabber-omemo-store-save-session account jid device-id blob)
+    (jabber-omemo-store-save-session-and-clear-legacy-keys
+     account jid device-id blob)
     (puthash key session-ptr jabber-omemo--sessions)))
 
 ;;; Device list XML helpers
@@ -1113,55 +1114,6 @@ For MUC messages (type=groupchat), try in order:
         (or (and real-jid (jabber-jid-user real-jid))
             (jabber-omemo--match-jid-by-affiliation group nick))))))
 
-(defun jabber-omemo--skipped-keys-supported-p ()
-  "Return non-nil when the loaded module handles skipped message keys.
-A stale jabber-omemo-core.so lacks the accessors; degrade to the
-old no-recovery behavior instead of erroring."
-  (fboundp 'jabber-omemo--session-set-skipped-keys))
-
-(defun jabber-omemo--preload-skipped-keys (jc jid device-id session-ptr)
-  "Seed SESSION-PTR with persisted skipped keys for JC/JID/DEVICE-ID.
-Also discards phantom keys left in memory by a failed decrypt.
-Return the seeded list, the before-image for
-`jabber-omemo--sync-skipped-keys'."
-  (when (jabber-omemo--skipped-keys-supported-p)
-    (let ((keys (jabber-omemo-store-all-skipped-keys
-                 (jabber-connection-bare-jid jc) jid device-id)))
-      (jabber-omemo--session-set-skipped-keys session-ptr keys)
-      keys)))
-
-(defun jabber-omemo--skipped-key-changes (before after)
-  "Return (NEW . CONSUMED) between skipped-key lists BEFORE and AFTER.
-Keys are (NR DH MK) triples; NR plus DH identifies an entry."
-  (let ((id (lambda (k) (cons (car k) (cadr k)))))
-    (cons (cl-set-difference after before :key id :test #'equal)
-          (cl-set-difference before after :key id :test #'equal))))
-
-(defun jabber-omemo--sync-skipped-keys (jc jid device-id session-ptr before)
-  "Persist SESSION-PTR's skipped-key changes since BEFORE to the database."
-  (when (jabber-omemo--skipped-keys-supported-p)
-    (pcase-let* ((account (jabber-connection-bare-jid jc))
-                 (`(,new . ,consumed)
-                  (jabber-omemo--skipped-key-changes
-                   before (jabber-omemo--session-skipped-keys session-ptr))))
-      (dolist (k new)
-        (jabber-omemo-store-save-skipped-key
-         account jid device-id (cadr k) (car k) (caddr k)))
-      (dolist (k consumed)
-        (jabber-omemo-store-delete-skipped-key
-         account jid device-id (cadr k) (car k))))))
-
-(defun jabber-omemo--reset-skipped-keys (jc jid device-id session-ptr)
-  "Replace persisted skipped keys for JC/JID/DEVICE-ID with SESSION-PTR's.
-Used when a fresh session replaces an established one; keys from
-the old ratchet can never match again."
-  (when (jabber-omemo--skipped-keys-supported-p)
-    (let ((account (jabber-connection-bare-jid jc)))
-      (jabber-omemo-store-delete-skipped-keys account jid device-id)
-      (dolist (k (jabber-omemo--session-skipped-keys session-ptr))
-        (jabber-omemo-store-save-skipped-key
-         account jid device-id (cadr k) (car k) (caddr k))))))
-
 (defun jabber-omemo--decrypt-key-with-session (jc sender-jid sender-did
                                                   store-ptr pre-key-p key-data)
   "Decrypt KEY-DATA from SENDER-JID's device SENDER-DID via JC.
@@ -1175,22 +1127,16 @@ the retry is safe.  This also resolves a peer that reset their
 session and simultaneous initiations.  A regular message requires
 an existing session.
 
-Skipped ratchet keys are seeded from the database before the
-decrypt and changes are persisted after it, so out-of-order
-messages decrypt across restarts.
+Skipped ratchet keys are owned by the native session and persisted
+inside its serialized blob, so out-of-order messages survive restarts.
 
 Returns (SESSION-PTR DECRYPTED-KEY FRESH-P), FRESH-P non-nil when
 the fresh-session pre-key path was used.  Signals
 `jabber-omemo-no-session' or `jabber-omemo-prekey-failed'."
-  (let* ((existing (jabber-omemo--get-session jc sender-jid sender-did))
-         (before (and existing
-                      (jabber-omemo--preload-skipped-keys
-                       jc sender-jid sender-did existing))))
+  (let ((existing (jabber-omemo--get-session jc sender-jid sender-did)))
     (cl-flet ((decrypt-existing (prekey)
                 (let ((key (jabber-omemo-decrypt-key
                             existing store-ptr prekey key-data)))
-                  (jabber-omemo--sync-skipped-keys
-                   jc sender-jid sender-did existing before)
                   (list existing key nil))))
       (cond
        ((not pre-key-p)
@@ -1206,8 +1152,6 @@ the fresh-session pre-key path was used.  Signals
               (condition-case err
                   (let ((key (jabber-omemo-decrypt-key
                               fresh store-ptr t key-data)))
-                    (jabber-omemo--reset-skipped-keys
-                     jc sender-jid sender-did fresh)
                     (list fresh key t))
                 (jabber-omemo-error
                  (signal 'jabber-omemo-prekey-failed
@@ -1628,10 +1572,7 @@ of date, and pre-fetches sessions for open chat buffers."
   (jabber-omemo--maybe-rotate-signed-pre-key jc)
   (jabber-omemo--ensure-device-listed jc)
   (jabber-omemo--publish-bundle-if-needed jc)
-  (jabber-omemo--prefetch-open-chats jc)
-  (jabber-omemo-store-delete-old-skipped-keys
-   (jabber-connection-bare-jid jc)
-   jabber-omemo-skipped-key-max-age))
+  (jabber-omemo--prefetch-open-chats jc))
 
 (defun jabber-omemo--prefetch-open-chats (jc)
   "Pre-fetch OMEMO sessions for all open OMEMO chat buffers on JC."

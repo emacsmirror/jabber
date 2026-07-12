@@ -276,59 +276,77 @@ Binds `jabber-db-path' to a temp file and tears down on exit."
         (should (cl-find 42 all :key (lambda (p) (plist-get p :device-id))))
         (should (cl-find 99 all :key (lambda (p) (plist-get p :device-id))))))))
 
-;;; Group 6: Skipped key CRUD
+;;; Group 6: Legacy skipped-key migration
 
-(ert-deftest jabber-test-omemo-store-skipped-key-save-load-roundtrip ()
-  "save + load round-trips a skipped key."
+(ert-deftest jabber-test-omemo-store-session-save-clears-legacy-keys ()
+  "Saving a self-contained session removes its legacy key rows."
   (jabber-test-omemo-store-with-db
     (let ((dh (encode-coding-string "dh-key-data" 'raw-text))
           (mk (encode-coding-string "msg-key-data" 'raw-text)))
-      (jabber-omemo-store-save-skipped-key "me@example.com" "alice@example.com"
-                                            42 dh 7 mk)
-      (should (equal mk (jabber-omemo-store-load-skipped-key
-                         "me@example.com" "alice@example.com" 42 dh 7))))))
-
-(ert-deftest jabber-test-omemo-store-skipped-key-load-unknown ()
-  "load returns nil for unknown skipped key."
-  (jabber-test-omemo-store-with-db
-    (should (null (jabber-omemo-store-load-skipped-key
-                   "me@example.com" "alice@example.com" 42
-                   (encode-coding-string "x" 'raw-text) 0)))))
-
-(ert-deftest jabber-test-omemo-store-skipped-key-delete ()
-  "delete removes a skipped key after use."
-  (jabber-test-omemo-store-with-db
-    (let ((dh (encode-coding-string "dh" 'raw-text))
-          (mk (encode-coding-string "mk" 'raw-text)))
-      (jabber-omemo-store-save-skipped-key "me@example.com" "alice@example.com"
-                                            42 dh 7 mk)
-      (jabber-omemo-store-delete-skipped-key "me@example.com" "alice@example.com"
-                                              42 dh 7)
-      (should (null (jabber-omemo-store-load-skipped-key
-                     "me@example.com" "alice@example.com" 42 dh 7))))))
-
-(ert-deftest jabber-test-omemo-store-skipped-key-delete-old ()
-  "delete-old-skipped-keys removes by age."
-  (jabber-test-omemo-store-with-db
-    (let ((dh (encode-coding-string "dh" 'raw-text))
-          (mk (encode-coding-string "mk" 'raw-text))
-          (now (truncate (float-time))))
-      ;; Insert an old key by directly using SQL
       (sqlite-execute jabber-db--connection "\
 INSERT INTO omemo_skipped_keys
   (account, jid, device_id, dh_key, message_number, message_key, created_at)
   VALUES (?, ?, ?, ?, ?, ?, ?)"
-        (list "me@example.com" "alice@example.com" 42 dh 1 mk (- now 7200)))
-      ;; Insert a recent key
-      (jabber-omemo-store-save-skipped-key "me@example.com" "alice@example.com"
-                                            42 dh 2 mk)
-      ;; Delete keys older than 1 hour
-      (jabber-omemo-store-delete-old-skipped-keys "me@example.com" 3600)
-      ;; Old key gone, recent key remains
-      (should (null (jabber-omemo-store-load-skipped-key
-                     "me@example.com" "alice@example.com" 42 dh 1)))
-      (should (jabber-omemo-store-load-skipped-key
-               "me@example.com" "alice@example.com" 42 dh 2)))))
+                      (list "me@example.com" "alice@example.com"
+                            42 dh 7 mk 0))
+      (jabber-omemo-store-save-session-and-clear-legacy-keys
+       "me@example.com" "alice@example.com" 42 "session")
+      (should (equal "session" (jabber-omemo-store-load-session
+                                "me@example.com" "alice@example.com" 42)))
+      (should-not (jabber-omemo-store-all-skipped-keys
+                   "me@example.com" "alice@example.com" 42)))))
+
+(ert-deftest jabber-test-omemo-store-session-save-composes-with-transaction ()
+  "Session migration succeeds inside an existing transaction."
+  (jabber-test-omemo-store-with-db
+    (sqlite-execute jabber-db--connection "\
+INSERT INTO omemo_skipped_keys
+  (account, jid, device_id, dh_key, message_number, message_key, created_at)
+  VALUES ('me@example.com', 'alice@example.com', 42, 'dh', 7, 'mk', 0)")
+    (sqlite-execute jabber-db--connection "BEGIN")
+    (jabber-omemo-store-save-session-and-clear-legacy-keys
+     "me@example.com" "alice@example.com" 42 "session")
+    (sqlite-execute jabber-db--connection "COMMIT")
+    (should (equal "session" (jabber-omemo-store-load-session
+                              "me@example.com" "alice@example.com" 42)))
+    (should-not (jabber-omemo-store-all-skipped-keys
+                 "me@example.com" "alice@example.com" 42))))
+
+(ert-deftest jabber-test-omemo-store-session-save-rolls-back-on-delete-error ()
+  "A failed legacy-key deletion restores the old session and key rows."
+  (jabber-test-omemo-store-with-db
+    (jabber-omemo-store-save-session
+     "me@example.com" "alice@example.com" 42 "old-session")
+    (sqlite-execute jabber-db--connection "\
+INSERT INTO omemo_skipped_keys
+  (account, jid, device_id, dh_key, message_number, message_key, created_at)
+  VALUES ('me@example.com', 'alice@example.com', 42, 'dh', 7, 'mk', 0)")
+    (cl-letf (((symbol-function 'jabber-omemo-store-delete-skipped-keys)
+               (lambda (&rest _) (error "injected deletion failure"))))
+      (should-error
+       (jabber-omemo-store-save-session-and-clear-legacy-keys
+        "me@example.com" "alice@example.com" 42 "new-session")
+       :type 'error))
+    (should (equal "old-session" (jabber-omemo-store-load-session
+                                  "me@example.com" "alice@example.com" 42)))
+    (should (= 1 (length (jabber-omemo-store-all-skipped-keys
+                          "me@example.com" "alice@example.com" 42))))))
+
+(ert-deftest jabber-test-omemo-store-legacy-keys-load-fifo ()
+  "Legacy keys load chronologically with insertion order as a tie-breaker."
+  (jabber-test-omemo-store-with-db
+    (dolist (row '((30 "dh-3" "mk-3" 20)
+                   (10 "dh-1" "mk-1" 10)
+                   (20 "dh-2" "mk-2" 10)))
+      (sqlite-execute jabber-db--connection "\
+INSERT INTO omemo_skipped_keys
+  (account, jid, device_id, message_number, dh_key, message_key, created_at)
+  VALUES ('me@example.com', 'alice@example.com', 42, ?, ?, ?, ?)"
+                      row))
+    (should (equal '(10 20 30)
+                   (mapcar #'car
+                           (jabber-omemo-store-all-skipped-keys
+                            "me@example.com" "alice@example.com" 42))))))
 
 (provide 'jabber-test-omemo-store)
 

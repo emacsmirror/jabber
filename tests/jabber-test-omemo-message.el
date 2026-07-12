@@ -510,8 +510,7 @@ buffer-local `jabber-group'."
         (jabber-omemo--sessions (make-hash-table :test 'equal)))
     (puthash "me@example.com" 42 jabber-omemo--device-ids)
     (puthash "me@example.com" 'fake-store-ptr jabber-omemo--stores)
-    ;; A real session pointer: the skipped-key preload hands it to the
-    ;; C module, which rejects placeholder symbols.
+    ;; Use a real session pointer because the C module rejects placeholders.
     (puthash (jabber-omemo--session-key "me@example.com" "alice@example.com" 999)
              (jabber-omemo-make-session) jabber-omemo--sessions)
     (cl-letf (((symbol-function 'jabber-connection-bare-jid)
