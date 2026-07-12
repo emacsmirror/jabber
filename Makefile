@@ -39,6 +39,7 @@ TESTS ?= tests/jabber-test-activity.el \
          tests/jabber-test-modeline.el \
          tests/jabber-test-moderation.el \
          tests/jabber-test-muc.el \
+         tests/jabber-test-notifications.el \
          tests/jabber-test-omemo-message.el \
          tests/jabber-test-omemo-module.el \
          tests/jabber-test-omemo-protocol.el \

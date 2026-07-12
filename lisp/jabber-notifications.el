@@ -67,11 +67,30 @@ nil disables MUC notifications entirely."
 
 ;;
 
-(defun jabber-message-notifications (from _buffer text title)
+(defun jabber-notifications--remove-action-callback (callback)
+  "Remove CALLBACK from the pending notification actions."
+  (setq notifications-on-action-map
+        (cl-delete callback notifications-on-action-map
+                   :key #'cadr :test #'eq))
+  (when (and (null notifications-on-action-map)
+             notifications-on-action-object)
+    (dbus-unregister-object notifications-on-action-object)
+    (setq notifications-on-action-object nil)))
+
+(defun jabber-message-notifications (from buffer text title)
   "Show a message from FROM through the notifications.el interface.
-TEXT is the message body and TITLE the notification title."
-  (let ((body (or (jabber-escape-xml text) " "))
-        (avatar-hash (get (jabber-jid-symbol from) 'avatar-hash)))
+BUFFER is the associated chat buffer, TEXT is the message body, and
+TITLE is the notification title."
+  (letrec ((body (or (jabber-escape-xml text) " "))
+           (avatar-hash (get (jabber-jid-symbol from) 'avatar-hash))
+           (action-callback
+            (lambda (&rest _)
+              (when (buffer-live-p buffer)
+                (pop-to-buffer buffer))))
+           (close-callback
+            (lambda (&rest _)
+              (jabber-notifications--remove-action-callback
+               action-callback))))
     (condition-case err
         (notifications-notify
          :title title
@@ -80,6 +99,9 @@ TEXT is the message body and TITLE the notification title."
                        jabber-notifications-icon)
          :app-name jabber-notifications-app
          :category "jabber.message"
+         :actions '("default" "Switch to buffer")
+         :on-action action-callback
+         :on-close close-callback
          :timeout jabber-notifications-timeout)
       (dbus-error
        (message "jabber-notifications: D-Bus error: %s" (error-message-string err))))))
