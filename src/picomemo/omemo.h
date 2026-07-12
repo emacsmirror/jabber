@@ -137,6 +137,9 @@ typedef int (*omemoRandomCallback)(void *p, size_t n);
 int omemoLoadMessageKey(struct omemoSession *s,
                         struct omemoMessageKey *sk);
 
+int omemoRemoveMessageKey(struct omemoSession *s,
+                          const struct omemoMessageKey *sk);
+
 int omemoStoreMessageKey(struct omemoSession *s,
                          const struct omemoMessageKey *sk,
                          uint64_t n);

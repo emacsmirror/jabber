@@ -104,6 +104,13 @@ int WEAK omemoLoadMessageKey(struct omemoSession *s,
   return 1;
 }
 
+int WEAK omemoRemoveMessageKey(struct omemoSession *s,
+                               const struct omemoMessageKey *sk) {
+  (void)s;
+  (void)sk;
+  return 0;
+}
+
 int WEAK omemoStoreMessageKey(struct omemoSession *s,
                               const struct omemoMessageKey *sk,
                               uint64_t n) {
@@ -877,11 +884,13 @@ static int DecryptKeyImpl(struct omemoSession *session,
 
   omemoKey mk;
   struct omemoMessageKey mkey = {0};
+  bool loadedmkey = false;
   memcpy(mkey.dh, headerdh, 32);
   mkey.nr = headern;
   int r;
   if (!(r = omemoLoadMessageKey(session, &mkey))) {
     memcpy(mk, mkey.mk, 32);
+    loadedmkey = true;
   } else if (r < 0) {
     return r;
   } else {
@@ -918,6 +927,8 @@ static int DecryptKeyImpl(struct omemoSession *session,
   uint8_t pad = tmp[encn - 1];
   if (pad > 16 || pad > encn || encn - pad > *keyn)
     return OMEMO_ECORRUPT;
+  if (loadedmkey && omemoRemoveMessageKey(session, &mkey))
+    return OMEMO_ESTORE;
   memcpy(key, tmp, encn - pad);
   *keyn = encn - pad;
   session->init = SESSION_READY;

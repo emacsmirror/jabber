@@ -65,6 +65,14 @@ struct session_skipped {
 static struct session_skipped *g_skipped;
 static size_t g_skipped_count, g_skipped_cap;
 
+static void
+skipped_clear(void *ptr, size_t size)
+{
+    volatile unsigned char *p = ptr;
+    while (size--)
+        *p++ = 0;
+}
+
 static struct session_skipped *
 skipped_find(struct omemoSession *s, int create)
 {
@@ -94,8 +102,8 @@ skipped_drop(struct omemoSession *s)
     for (size_t i = 0; i < g_skipped_count; i++) {
         if (g_skipped[i].session == s) {
             if (g_skipped[i].keys) {
-                memset(g_skipped[i].keys, 0,
-                       g_skipped[i].cap * sizeof(struct skipped_key));
+                skipped_clear(g_skipped[i].keys,
+                              g_skipped[i].cap * sizeof(struct skipped_key));
                 free(g_skipped[i].keys);
             }
             g_skipped[i] = g_skipped[--g_skipped_count];
@@ -135,14 +143,29 @@ int omemoLoadMessageKey(struct omemoSession *s, struct omemoMessageKey *k)
         struct skipped_key *sk = &e->keys[i];
         if (sk->nr == k->nr && !memcmp(sk->dh, k->dh, 32)) {
             memcpy(k->mk, sk->mk, 32);
-            /* Single use: replace with the last entry and zero it. */
-            e->keys[i] = e->keys[e->count - 1];
-            memset(&e->keys[e->count - 1], 0, sizeof(struct skipped_key));
-            e->count--;
             return 0;
         }
     }
     return 1; /* not found */
+}
+
+int omemoRemoveMessageKey(struct omemoSession *s,
+                          const struct omemoMessageKey *k)
+{
+    struct session_skipped *e = skipped_find(s, 0);
+    if (!e)
+        return OMEMO_ESTORE;
+    for (size_t i = 0; i < e->count; i++) {
+        struct skipped_key *sk = &e->keys[i];
+        if (sk->nr == k->nr && !memcmp(sk->dh, k->dh, 32)) {
+            e->keys[i] = e->keys[e->count - 1];
+            skipped_clear(&e->keys[e->count - 1],
+                          sizeof(struct skipped_key));
+            e->count--;
+            return 0;
+        }
+    }
+    return OMEMO_ESTORE;
 }
 
 int omemoStoreMessageKey(struct omemoSession *s,
@@ -835,14 +858,22 @@ F_session_skipped_keys(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
     if (env->non_local_exit_check(env))
         return Qnil_v;
 
+    struct session_skipped *e = skipped_find(session, 0);
+    if (!e || !e->count)
+        return Qnil_v;
+    size_t count = e->count;
+    struct skipped_key *snapshot = malloc(count * sizeof *snapshot);
+    if (!snapshot && count) {
+        signal_error(env, OMEMO_ESTORE, "cannot snapshot skipped keys");
+        return Qnil_v;
+    }
+    memcpy(snapshot, e->keys, count * sizeof *snapshot);
+
     emacs_value Qlist = env->intern(env, "list");
     emacs_value Qcons = env->intern(env, "cons");
     emacs_value result = Qnil_v;
-    struct session_skipped *e = skipped_find(session, 0);
-    if (!e)
-        return result;
-    for (size_t i = e->count; i > 0; i--) {
-        struct skipped_key *sk = &e->keys[i - 1];
+    for (size_t i = count; i > 0; i--) {
+        struct skipped_key *sk = &snapshot[i - 1];
         emacs_value entry_args[] = {
             env->make_integer(env, sk->nr),
             make_unibyte(env, sk->dh, 32),
@@ -852,6 +883,8 @@ F_session_skipped_keys(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
         emacs_value cons_args[] = { entry, result };
         result = env->funcall(env, Qcons, 2, cons_args);
     }
+    skipped_clear(snapshot, count * sizeof *snapshot);
+    free(snapshot);
     return result;
 }
 

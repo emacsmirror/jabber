@@ -537,6 +537,24 @@ Alice has initiated a session towards Bob's bundle."
     (jabber-omemo--session-set-skipped-keys session nil)
     (should (null (jabber-omemo--session-skipped-keys session)))))
 
+(ert-deftest jabber-test-omemo-module-skipped-keys-survive-finalizers ()
+  "Enumerating skipped keys is safe while other sessions are finalized."
+  (let* ((session (jabber-omemo--make-session))
+         (keys (list (list 3 (make-string 32 ?d) (make-string 32 ?m))
+                     (list 7 (make-string 32 ?e) (make-string 32 ?n)))))
+    (jabber-omemo--session-set-skipped-keys session keys)
+    (dotimes (i 200)
+      (let ((disposable (jabber-omemo--make-session)))
+        (jabber-omemo--session-set-skipped-keys
+         disposable
+         (list (list i
+                     (make-string 32 (+ ?a (% i 26)))
+                     (make-string 32 (+ ?A (% i 26))))))))
+    (let ((gc-cons-threshold 1))
+      (should (equal keys (jabber-omemo--session-skipped-keys session))))
+    (garbage-collect)
+    (should (equal keys (jabber-omemo--session-skipped-keys session)))))
+
 (ert-deftest jabber-test-omemo-module-out-of-order-decrypt ()
   "A message skipped over in the ratchet still decrypts afterwards."
   (jabber-test-omemo-module--with-session-pair
@@ -560,6 +578,34 @@ Alice has initiated a session towards Bob's bundle."
                            bob-session bob
                            (plist-get m2 :pre-key-p) (plist-get m2 :data))))
       (should (null (jabber-omemo--session-skipped-keys bob-session))))))
+
+(ert-deftest jabber-test-omemo-module-failed-decrypt-keeps-skipped-key ()
+  "A corrupted late message does not consume its skipped key."
+  (jabber-test-omemo-module--with-session-pair
+    (let* ((k1 (make-string 32 ?1))
+           (k2 (make-string 32 ?2))
+           (m1 (jabber-omemo--encrypt-key alice-session k1))
+           (m2 (jabber-omemo--encrypt-key alice-session k2))
+           (bob-session (jabber-omemo--make-session)))
+      (jabber-omemo--decrypt-key
+       bob-session bob (plist-get m2 :pre-key-p) (plist-get m2 :data))
+      (let* ((corrupt (copy-sequence (plist-get m1 :data)))
+             (last (1- (length corrupt))))
+        (aset corrupt last (logxor 1 (aref corrupt last)))
+        (should-error
+         (jabber-omemo--decrypt-key
+          bob-session bob (plist-get m1 :pre-key-p) corrupt)
+         :type 'jabber-omemo-error))
+      (should (= 1 (length (jabber-omemo--session-skipped-keys bob-session))))
+      (should (string= k1 (jabber-omemo--decrypt-key
+                           bob-session bob
+                           (plist-get m1 :pre-key-p)
+                           (plist-get m1 :data))))
+      (should (null (jabber-omemo--session-skipped-keys bob-session)))
+      (should-error
+       (jabber-omemo--decrypt-key
+        bob-session bob (plist-get m1 :pre-key-p) (plist-get m1 :data))
+       :type 'jabber-omemo-error))))
 
 (ert-deftest jabber-test-omemo-module-skipped-keys-survive-reserialization ()
   "Skipped keys carried over to a reloaded session still decrypt."
