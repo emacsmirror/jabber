@@ -38,11 +38,11 @@
 (require 'subr-x)
 (require 'jabber-util)
 (require 'jabber-xml)
+(require 'jabber-muc-state)
 (eval-when-compile
   (require 'cl-lib)
   (require 'seq))
 
-(declare-function jabber-muc-joined-p "jabber-muc" (group &optional jc))
 (declare-function jabber-muc-sender-p "jabber-muc" (jid))
 (defvar jabber-chatting-with)           ; jabber-chat.el
 (defvar jabber-chat-send-hooks)        ; jabber-chat.el

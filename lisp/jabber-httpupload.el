@@ -43,11 +43,11 @@
 (require 'mailcap)
 (require 'subr-x)
 (require 'jabber)
+(require 'jabber-muc-state)
 
 (declare-function jabber-chat-send "jabber-chat.el"
                   (jc body &optional extra-elements))
 (declare-function jabber-chat-create-buffer "jabber-chat.el" (jc chat-with))
-(declare-function jabber-muc-joined-p "jabber-muc.el" (group &optional jc))
 (defvar jabber-oob-xmlns)              ; jabber-xml.el
 
 (defconst jabber-httpupload-xmlns "urn:xmpp:http:upload:0"

@@ -301,7 +301,6 @@ Candidates display sorted by availability, then name."
        (t
         (complete-with-action action table string pred))))))
 
-(declare-function jabber-muc-joined-p "jabber-muc.el" (group &optional jc))
 (defun jabber-read-jid-completing (prompt &optional subset require-match default resource fulljids)
   "Read a JID out of the current roster from the minibuffer, with PROMPT.
 If SUBSET is non-nil, it should be a list of symbols from which

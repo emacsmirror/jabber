@@ -30,6 +30,7 @@
 (require 'cl-lib)
 (require 'jabber-util)
 (require 'jabber-xml)
+(require 'jabber-muc-state)
 
 (defgroup jabber-alerts nil
   "Auditory and visual alerts for Jabber events."
@@ -242,8 +243,6 @@ files."
 (declare-function jabber-chat-send "jabber-chat.el"
                   (jc body &optional extra-elements))
 (declare-function jabber-muc-sender-p "jabber-muc.el" (jid))
-(declare-function jabber-muc-nickname "jabber-muc.el" (group &optional jc))
-(declare-function jabber-muc-our-nick-p "jabber-muc.el" (group nick))
 (defvar jabber-presence-strings)        ; jabber.el
 (defvar jabber-xml-data)                ; jabber.el
 (defvar jabber-buffer-connection)       ; jabber-chatbuffer.el

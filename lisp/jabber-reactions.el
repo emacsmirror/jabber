@@ -32,6 +32,7 @@
 (require 'jabber-db)
 (require 'jabber-disco)
 (require 'jabber-util)
+(require 'jabber-muc-state)
 
 (defconst jabber-reactions-xmlns "urn:xmpp:reactions:0"
   "XEP-0444 Message Reactions namespace.")
@@ -71,7 +72,6 @@ are not filtered against it."
 (declare-function jabber-chat-ewoc-invalidate "jabber-chatbuffer" (node))
 (declare-function jabber-chat-find-buffer "jabber-chat" (chat-with))
 (declare-function jabber-muc-find-buffer "jabber-muc" (group))
-(declare-function jabber-muc-nickname "jabber-muc" (group &optional jc))
 
 ;;; Pure helpers
 

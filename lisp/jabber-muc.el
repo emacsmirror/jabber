@@ -33,6 +33,7 @@
 (require 'ewoc)
 (require 'jabber-widget)
 (require 'jabber-disco)
+(require 'jabber-muc-state)
 (require 'jabber-bookmarks)
 (require 'jabber-chat)
 (require 'jabber-db)
@@ -52,79 +53,6 @@
 
 (defconst jabber-muc-xmlns-direct-invite "jabber:x:conference"
   "XEP-0249 Direct MUC Invitations namespace.")
-
-(defvar jabber-muc--rooms (make-hash-table :test #'equal)
-  "Internal hash table of active MUC rooms.
-Keys are group JID strings; values are lists of (JC . NICKNAME)
-cons cells, one per connection that has joined the room.  This
-allows multiple accounts to be in the same room simultaneously.")
-
-(defvar jabber-muc--generation 0
-  "Generation counter for `jabber-muc--rooms'.
-Incremented on every join/leave, enabling cheap change detection
-without copying the room list.")
-
-(defun jabber-muc-nickname (group &optional jc)
-  "Return our nickname in GROUP, or nil.
-If JC is given, return the nickname for that specific connection.
-Otherwise return the nickname from the first entry."
-  (let ((entries (gethash group jabber-muc--rooms)))
-    (if jc
-        (alist-get jc entries)
-      (cdar entries))))
-
-(defun jabber-muc-connection (group)
-  "Return a connection object for GROUP, or nil.
-When multiple accounts are in the same room, returns the first."
-  (caar (gethash group jabber-muc--rooms)))
-
-(defun jabber-muc-joined-p (group &optional jc)
-  "Return non-nil if we are in GROUP.
-If JC is given, check whether that specific connection is in GROUP."
-  (let ((entries (gethash group jabber-muc--rooms)))
-    (if jc
-        (and (assq jc entries) t)
-      (and entries t))))
-
-(defun jabber-muc-our-nick-p (group nick)
-  "Return non-nil if NICK is our nickname in GROUP on any connection."
-  (let ((entries (gethash group jabber-muc--rooms)))
-    (cl-some (lambda (entry) (string= nick (cdr entry))) entries)))
-
-(defun jabber-muc-room-entries (group)
-  "Return list of (JC . NICKNAME) entries for GROUP."
-  (gethash group jabber-muc--rooms))
-
-(defun jabber-muc-active-rooms ()
-  "Return list of joined room JIDs."
-  (hash-table-keys jabber-muc--rooms))
-
-(defun jabber-muc-join-set (group jc nickname)
-  "Record that we joined GROUP via JC with NICKNAME."
-  (let ((entries (gethash group jabber-muc--rooms)))
-    (if-let* ((existing (assq jc entries)))
-        (setcdr existing nickname)
-      (push (cons jc nickname) entries))
-    (puthash group entries jabber-muc--rooms))
-  (cl-incf jabber-muc--generation))
-
-(defun jabber-muc-leave-remove (group &optional jc)
-  "Remove GROUP from active rooms.
-If JC is given, only remove that connection's entry; the room
-stays tracked if other connections remain in it."
-  (if jc
-      (let ((entries (gethash group jabber-muc--rooms)))
-        (setq entries (assq-delete-all jc entries))
-        (if entries
-            (puthash group entries jabber-muc--rooms)
-          (remhash group jabber-muc--rooms)))
-    (remhash group jabber-muc--rooms))
-  (cl-incf jabber-muc--generation))
-
-(defun jabber-muc-generation ()
-  "Return current generation counter for change detection."
-  jabber-muc--generation)
-
 
 (defvar jabber-pending-groupchats (make-hash-table)
   "Hash table of groupchats and nicknames.

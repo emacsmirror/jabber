@@ -39,6 +39,7 @@
 (require 'url-queue)
 (require 'hex-util)
 (require 'jabber-image)
+(require 'jabber-muc-state)
 ;; For the `image-property' setf-expander (not preloaded on emacs-nox).
 (require 'image)
 
@@ -273,8 +274,6 @@ holding state for the next composed message stay inert."
 (declare-function jabber-muc-message-p "jabber-muc.el"(message))
 (declare-function jabber-muc-sender-p "jabber-muc.el" (jid))
 (declare-function jabber-muc-private-message-p "jabber-muc.el" (message))
-(declare-function jabber-muc-nickname "jabber-muc.el" (group &optional jc))
-(declare-function jabber-muc-our-nick-p "jabber-muc.el" (group nick))
 (defvar jabber-muc-xmlns-user)
 (declare-function jabber-omemo-aesgcm-decrypt "jabber-omemo"
                   (key iv ciphertext-with-tag))

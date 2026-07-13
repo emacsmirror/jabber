@@ -34,6 +34,7 @@
 (require 'jabber-private)
 (require 'jabber-presence)
 (require 'jabber-carbons)
+(require 'jabber-muc-state)
 (require 'keymap-popup)
 
 (defgroup jabber-roster nil "Roster options."
@@ -115,8 +116,6 @@ Trailing newlines are always removed, regardless of this variable."
 (declare-function jabber-get-conference-data "jabber-bookmarks.el"
                   (jc conference-jid cont &optional key))
 (declare-function jabber-get-version "jabber-version.el" (jc to))
-(declare-function jabber-muc-active-rooms "jabber-muc.el" ())
-(declare-function jabber-muc-connection "jabber-muc.el" (group))
 (declare-function jabber-muc-join "jabber-muc.el"
                   (jc group nickname &optional popup))
 (declare-function jabber-muc-switch-to "jabber-muc.el" (group))

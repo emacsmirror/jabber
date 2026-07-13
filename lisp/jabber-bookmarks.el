@@ -31,6 +31,7 @@
 
 (require 'jabber-private)
 (require 'jabber-pubsub)
+(require 'jabber-muc-state)
 (require 'keymap-popup)
 
 (defconst jabber-bookmarks-xmlns "storage:bookmarks"
@@ -59,8 +60,6 @@
 
 (declare-function jabber-disco-get-info "jabber-disco.el"
                   (jc jid node callback closure-data &optional force))
-(declare-function jabber-muc-joined-p "jabber-muc" (group &optional jc))
-(declare-function jabber-muc-nickname "jabber-muc" (group &optional jc))
 (declare-function jabber-muc-join "jabber-muc" (jc group nickname &optional popup))
 (declare-function jabber-muc-leave "jabber-muc" (jc group))
 (declare-function jabber-muc-get-buffer "jabber-muc" (group &optional jc))

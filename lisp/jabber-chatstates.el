@@ -36,6 +36,7 @@
 (require 'jabber-chat)
 (require 'jabber-chatbuffer)
 (require 'jabber-disco)
+(require 'jabber-muc-state)
 (require 'jabber-xml)
 
 
@@ -43,7 +44,6 @@
 (defvar jabber-chatting-with)           ; jabber-chat.el
 
 (declare-function jabber-muc-find-buffer "jabber-muc" (group))
-(declare-function jabber-muc-nickname "jabber-muc" (group &optional jc))
 (declare-function jabber-reactions--reaction-only-p "jabber-reactions" (xml-data))
 
 (defgroup jabber-chatstates nil
