@@ -31,6 +31,7 @@
 (require 'cl-lib)
 (require 'jabber-iq)
 (require 'jabber-xml)
+(require 'jabber-xdata)
 
 ;; Global reference declarations
 
@@ -131,7 +132,6 @@ nil, access is always granted.")
 
 (declare-function jabber-send-current-presence "jabber-presence.el"
                   (&optional jc))
-(declare-function jabber-widget-xdata-formtype "jabber-widget.el" (x))
 (defvar jabber-presence-element-functions nil) ; jabber-presence.el
 
 ;;
@@ -337,8 +337,8 @@ Return the concatenated sorted feature entries."
 FORMS is a list of <x> XML nodes (already filtered for FORM_TYPE).
 Return the concatenated sorted form entries."
   (let ((sorted (sort forms (lambda (a b)
-                              (string< (jabber-widget-xdata-formtype a)
-                                       (jabber-widget-xdata-formtype b))))))
+                              (string< (jabber-xdata-form-type a)
+                                       (jabber-xdata-form-type b))))))
     (mapconcat
      (lambda (form)
        (let ((fields (sort (jabber-xml-get-children form 'field)
@@ -346,7 +346,7 @@ Return the concatenated sorted form entries."
                              (string< (jabber-xml-get-attribute a 'var)
                                       (jabber-xml-get-attribute b 'var))))))
          (concat
-          (jabber-widget-xdata-formtype form) "<"
+          (jabber-xdata-form-type form) "<"
           (mapconcat
            (lambda (field)
              (if (string= (jabber-xml-get-attribute field 'var) "FORM_TYPE")
@@ -370,7 +370,7 @@ Return the concatenated sorted form entries."
 	 (forms (cl-remove-if-not
 		 (lambda (x)
 		   (and (string= (jabber-xml-get-xmlns x) jabber-xdata-xmlns)
-			(jabber-widget-xdata-formtype x)))
+			(jabber-xdata-form-type x)))
 		 (jabber-xml-get-children query 'x)))
 	 (s (encode-coding-string
 	     (concat (jabber-caps--identity-string identities)

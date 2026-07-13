@@ -29,6 +29,7 @@
 
 (require 'jabber-iq)
 (require 'jabber-widget)
+(require 'jabber-xdata)
 
 ;; Global reference declarations
 
@@ -103,7 +104,7 @@ obtained from `xml-parse-region'."
 	;; for sure how to put a default username in it.
 	(jabber-widget-render-xdata-form x
 					 (if (and register-account
-						  (string= (jabber-widget-xdata-formtype x) jabber-register-xmlns))
+						  (string= (jabber-xdata-form-type x) jabber-register-xmlns))
 					     (list (cons "username" username))
 					   nil))))
     (if (not have-xdata)

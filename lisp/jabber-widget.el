@@ -31,6 +31,7 @@
 (require 'wid-edit)
 (require 'jabber-util)
 (require 'jabber-disco)
+(require 'jabber-xdata)
 
 (defvar jabber-widget-alist nil
   "Alist of widgets currently used.")
@@ -353,16 +354,6 @@ Return a list of strings, each of which to be included as cdata in a
       (insert (propertize (concat label ": ") 'face 'bold))
       (indent-to 30)
       (insert (apply #'concat values) "\n"))))
-
-(defun jabber-widget-xdata-formtype (x)
-  "Return the form type of the xdata form in X, by XEP-0068.
-Return nil if no form type is specified."
-  (catch 'found-formtype
-    (dolist (field (jabber-xml-get-children x 'field))
-      (when (and (string= (jabber-xml-get-attribute field 'var) "FORM_TYPE")
-		 (string= (jabber-xml-get-attribute field 'type) "hidden"))
-	(throw 'found-formtype (car (jabber-xml-node-children
-				     (car (jabber-xml-get-children field 'value)))))))))
 
 (provide 'jabber-widget)
 
