@@ -26,6 +26,7 @@
 ;;; Code:
 
 (require 'jabber-keymap)
+(require 'jabber-input)
 (require 'jabber-util)
 (require 'jabber-truncate)
 (require 'xml)
@@ -51,12 +52,6 @@ Not truncate if set to 0."
   :type 'integer
   :group 'jabber-debug)
 
-(defvar jabber-point-insert nil
-  "Position where the message being composed starts.")
-
-(defvar jabber-send-function nil
-  "Function for sending a message from a chat buffer.")
-
 (defvar jabber-console-mode-hook nil
   "Hook called at the end of `jabber-console-mode'.
 Note that functions in this hook have no way of knowing
@@ -68,13 +63,6 @@ what kind of chat buffer is being created.")
 (defvar-keymap jabber-console-mode-map
   :parent jabber-common-keymap
   "RET" #'jabber-chat-buffer-send)
-
-;; Global reference declarations
-
-(declare-function jabber-chat-buffer-send "jabber-chatbuffer.el"  ())
-(defvar jabber-buffer-connection)       ; jabber-chatbuffer.el
-
-;;
 
 (defun jabber-console-create-buffer (jc)
   "Get or create the XMPP console buffer for connection JC."

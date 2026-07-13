@@ -1043,6 +1043,40 @@ forced to the bottom (the only path that overwrites point)."
       (jabber-chat-mode)
       (should-not (local-variable-p 'help-at-pt-display-when-idle)))))
 
+;;; Group 14: shared input sending
+
+(ert-deftest jabber-test-input-send-extracts-body ()
+  "Send and remove input below the prompt marker."
+  (with-temp-buffer
+    (insert "Prompt: hello")
+    (let ((jabber-connections '(connection))
+          (sent nil))
+      (setq-local jabber-buffer-connection 'connection)
+      (setq-local jabber-point-insert (copy-marker 9))
+      (setq-local jabber-send-function
+                  (lambda (jc body) (setq sent (cons jc body))))
+      (jabber-chat-buffer-send)
+      (should (equal sent '(connection . "hello")))
+      (should (string= (buffer-string) "Prompt: ")))))
+
+(ert-deftest jabber-test-input-send-reuses-active-connection ()
+  "Replace a stale connection before sending input."
+  (with-temp-buffer
+    (insert "hello")
+    (let ((jabber-connections '(new))
+          (sent nil))
+      (setq-local jabber-buffer-connection 'old)
+      (setq-local jabber-point-insert (copy-marker (point-min)))
+      (setq-local jabber-send-function
+                  (lambda (jc body) (setq sent (cons jc body))))
+      (cl-letf (((symbol-function 'jabber-find-active-connection)
+                 (lambda (_jc) 'new))
+                ((symbol-function 'jabber-read-account)
+                 (lambda (&rest _) (ert-fail "Prompted for an account"))))
+        (jabber-chat-buffer-send))
+      (should (equal sent '(new . "hello")))
+      (should (eq jabber-buffer-connection 'new)))))
+
 (provide 'jabber-test-chatbuffer)
 
 ;;; jabber-test-chatbuffer.el ends here

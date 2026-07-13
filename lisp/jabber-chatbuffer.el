@@ -27,13 +27,11 @@
 ;;; Code:
 
 (require 'jabber-util)
+(require 'jabber-input)
 (require 'jabber-core)
 (require 'jabber-db)
 (require 'jabber-muc-protocol)
 (require 'help-at-pt)
-
-(defvar jabber-point-insert nil
-  "Position where the message being composed starts.")
 
 (defcustom jabber-scrolltobottom-all nil
   "Non-nil means explicit input recentering affects all chat windows.
@@ -81,9 +79,6 @@ windows."
   "Return the last of VALUES without scroll side effects."
   (car (last values)))
 
-(defvar jabber-send-function nil
-  "Function for sending a message from a chat buffer.")
-
 (defvar jabber-chat-mode-hook nil
   "Hook called at the end of `jabber-chat-mode'.
 Note that functions in this hook have no way of knowing
@@ -105,9 +100,6 @@ Incremented before each new insert sequence so stale timers from a
 previous sequence detect the mismatch and stop.")
 
 (declare-function jabber-muc-nick-completion-at-point "jabber-muc-nick-completion.el" ())
-
-(defvar-local jabber-buffer-connection nil
-  "The connection used by this buffer.")
 
 (defvar jabber-chatting-with)              ; jabber-chat.el
 (defvar jabber-chat-header-line-format)   ; jabber-chat.el
@@ -372,25 +364,6 @@ EWOC-PP is the pretty-printer function for the message EWOC."
 (declare-function jabber-chat--insert-backlog-chunked "jabber-chat"
                   (buffer entries callback &optional generation))
 (declare-function jabber-chat-display-buffer-images "jabber-chat" ())
-
-(defun jabber-chat-buffer-send ()
-  "Send the message composed below the prompt in the current chat buffer."
-  (interactive)
-  ;; If user accidentally hits RET without writing anything, just
-  ;; ignore it.
-  (when (cl-plusp (- (point-max) jabber-point-insert))
-    ;; If connection was lost...
-    (unless (memq jabber-buffer-connection jabber-connections)
-      ;; ...maybe there is a new connection to the same account.
-      (let ((new-jc (jabber-find-active-connection jabber-buffer-connection)))
-	(if new-jc
-	    ;; If so, just use it.
-	    (setq jabber-buffer-connection new-jc)
-	  ;; Otherwise, ask for a new account.
-	  (setq jabber-buffer-connection (jabber-read-account t)))))
-
-    (let ((body (delete-and-extract-region jabber-point-insert (point-max))))
-      (funcall jabber-send-function jabber-buffer-connection body))))
 
 (defun jabber-chat-buffer-switch ()
   "Switch to a specified jabber chat buffer."
