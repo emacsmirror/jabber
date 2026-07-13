@@ -28,6 +28,7 @@
 ;;; Code:
 
 (require 'jabber-core)
+(require 'jabber-disco)
 (require 'jabber-iq)
 (require 'jabber-alert)
 (require 'jabber-util)
@@ -555,6 +556,13 @@ If JC is non-nil, send only for that connection."
       (jabber-send-presence jabber-current-show jabber-current-status
 			    jabber-current-priority jc)
     (jabber-send-default-presence jc)))
+
+(defun jabber-presence--refresh-advertised-features ()
+  "Resend presence with the current advertised feature set."
+  (mapc #'jabber-send-current-presence jabber-connections))
+
+(add-hook 'jabber-disco-features-changed-hook
+          #'jabber-presence--refresh-advertised-features)
 
 (defun jabber-send-subscription-request (jc to &optional request)
   "Send a subscription request to TO.

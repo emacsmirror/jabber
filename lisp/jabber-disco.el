@@ -29,15 +29,10 @@
 ;;; Code:
 
 (require 'cl-lib)
+(require 'jabber-db)
 (require 'jabber-iq)
 (require 'jabber-xml)
 (require 'jabber-xdata)
-
-;; Global reference declarations
-
-(declare-function jabber-db-caps-store "jabber-db.el"
-                  (hash ver identities features))
-(declare-function jabber-db-caps-lookup "jabber-db.el" (hash ver))
 
 (defvar jabber-xdata-xmlns)            ; jabber-xml.el
 
@@ -128,11 +123,10 @@ Second item is access control function.  That function is passed the
 JID, and returns non-nil if access is granted.  If the second item is
 nil, access is always granted.")
 
-;; Global reference declarations
-
-(declare-function jabber-send-current-presence "jabber-presence.el"
-                  (&optional jc))
 (defvar jabber-presence-element-functions nil) ; jabber-presence.el
+
+(defvar jabber-disco-features-changed-hook nil
+  "Hook run after connected clients advertise a new feature.")
 
 ;;
 
@@ -414,9 +408,7 @@ The value should be a key in `jabber-caps-hash-names'.")
     (push feature jabber-advertised-features)
     (when jabber-caps-current-hash
       (jabber-caps-recalculate-hash)
-      ;; If we're already connected, we need to send updated presence
-      ;; for the new feature.
-      (mapc #'jabber-send-current-presence jabber-connections))))
+      (run-hooks 'jabber-disco-features-changed-hook))))
 
 (defun jabber-caps-recalculate-hash ()
   "Update `jabber-caps-current-hash' for feature list change.

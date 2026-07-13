@@ -177,5 +177,21 @@
       ;; Query should have been sent.
       (should iq-sent))))
 
+(ert-deftest jabber-test-disco-advertise-feature-runs-change-hook-once ()
+  "Advertising a new connected feature runs the change hook once."
+  (let ((jabber-advertised-features nil)
+        (jabber-caps-current-hash "old")
+        (jabber-disco-features-changed-hook nil)
+        (recalculations 0)
+        (changes 0))
+    (add-hook 'jabber-disco-features-changed-hook
+              (lambda () (cl-incf changes)))
+    (cl-letf (((symbol-function 'jabber-caps-recalculate-hash)
+               (lambda () (cl-incf recalculations))))
+      (jabber-disco-advertise-feature "urn:test:feature")
+      (jabber-disco-advertise-feature "urn:test:feature"))
+    (should (= recalculations 1))
+    (should (= changes 1))))
+
 (provide 'jabber-test-disco)
 ;;; jabber-test-disco.el ends here

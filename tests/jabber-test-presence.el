@@ -46,6 +46,15 @@
     (should (equal (jabber-presence-children nil)
                    '((c ((xmlns . "urn:xmpp:caps"))))))))
 
+(ert-deftest jabber-test-presence-refreshes-features-on-all-connections ()
+  "A discovery feature change resends presence on every connection."
+  (let ((jabber-connections '(first second))
+        (sent nil))
+    (cl-letf (((symbol-function 'jabber-send-current-presence)
+               (lambda (jc) (push jc sent))))
+      (jabber-presence--refresh-advertised-features))
+    (should (equal (nreverse sent) jabber-connections))))
+
 ;;; Group 2: jabber--roster-valid-push-p
 
 (ert-deftest jabber-test-presence-valid-push-nil-from ()
