@@ -196,6 +196,7 @@ One disabled account with a non-standard port:
 (require 'jabber-disco-menu)
 (require 'jabber-roster-menu)
 (require 'jabber-chat-commands)
+(require 'jabber-uri)
 (require 'jabber-truncate)
 (when (featurep 'dbusbind)
   (require 'jabber-notifications nil t))

@@ -46,14 +46,6 @@
 ;; Global reference declarations
 
 (declare-function auth-source-search "auth-source" (&rest spec))
-(declare-function jabber-chat-with "jabber-chat.el"
-                  (jc jid &optional other-window))
-(declare-function jabber-ahc-execute-command "jabber-ahc.el" (jc to node))
-(declare-function jabber-get-register "jabber-register.el" (jc to))
-(declare-function jabber-muc-read-my-nickname "jabber-muc.el"
-                  (jc group &optional default))
-(declare-function jabber-muc-join "jabber-muc.el"
-                  (jc group nickname &optional popup))
 (defvar jabber-delay-xmlns)            ; jabber-xml.el
 (defvar jabber-delay-legacy-xmlns)     ; jabber-xml.el
 (defvar jabber-stanzas-xmlns)          ; jabber-xml.el
@@ -775,67 +767,6 @@ See section 8.3 of XMPP Core (RFC 6120)."
 For example, \"ji%C5%99i@%C4%8Dechy.example/v%20Praze\" becomes
 \"jiři@čechy.example/v Praze\"."
   (decode-coding-string (url-unhex-string string) 'utf-8))
-
-(defun jabber-handle-uri (uri &rest _ignored-args)
-  "Handle XMPP links according to draft-saintandre-xmpp-iri-04.
-See Info node `(jabber)XMPP URIs'.
-URI is a string with the \"xmpp://\" link to handle.
-IGNORED-ARGS are ignored arguments the handler may pass."
-  (interactive "sEnter XMPP URI: ")
-
-  (when (string-match "//" uri)
-    (error "URIs with authority part are not supported"))
-
-  ;; This regexp handles three cases:
-  ;; xmpp:romeo@montague.net
-  ;; xmpp:romeo@montague.net?roster
-  ;; xmpp:romeo@montague.net?roster;name=Romeo%20Montague;group=Lovers
-  (unless (string-match "^xmpp:\\([^?]+\\)\\(\\?\\([a-z]+\\)\\(;\\(.*\\)\\)?\\)?" uri)
-    (error "Invalid XMPP URI '%s'" uri))
-
-  ;; We start by raising the Emacs frame.
-  (raise-frame)
-
-  (let ((jid (jabber-unhex (match-string 1 uri)))
-	(method (match-string 3 uri))
-	(args (let ((text (match-string 5 uri)))
-		;; If there are arguments...
-		(when text
-		  ;; ...split the pairs by ';'...
-		  (let ((pairs (split-string text ";")))
-		    (mapcar (lambda (pair)
-			      ;; ...and split keys from values by '='.
-			      (pcase-let ((`(,key ,value)
-				           (split-string pair "=")))
-				;; Values can be hex-coded.
-				(cons key (jabber-unhex value))))
-			    pairs))))))
-    ;; The full list of methods is at
-    ;; <URL:http://www.jabber.org/registrar/querytypes.html>.
-    (cond
-     ;; Join an MUC.
-     ((string= method "join")
-      (let ((account (jabber-read-account)))
-	(jabber-muc-join
-	 account jid (jabber-muc-read-my-nickname account jid) t)))
-     ;; Register with a service.
-     ((string= method "register")
-      (jabber-get-register (jabber-read-account) jid))
-     ;; Run an ad-hoc command
-     ((string= method "command")
-      ;; XXX: does the 'action' attribute make sense?
-      (jabber-ahc-execute-command
-       (jabber-read-account) jid (cdr (assoc "node" args))))
-     ;; Everything else: open a chat buffer.
-     (t
-      (jabber-chat-with (jabber-read-account) jid)))))
-
-(defun jabber-url-xmpp (url)
-  "Handle XMPP URLs from internal Emacs functions."
-  ;; URL handlers are looked up by scheme as `url-SCHEME'.
-  (jabber-handle-uri (url-recreate-url url)))
-
-(fset 'url-xmpp #'jabber-url-xmpp)
 
 (defun jabber-string>-numerical (s1 s2)
   "Return t when S1 collates after S2 in numerical order."

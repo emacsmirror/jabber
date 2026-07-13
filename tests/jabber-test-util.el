@@ -8,6 +8,7 @@
 
 (require 'ert)
 (require 'jabber-util)
+(require 'jabber-uri)
 
 (defvar jabber-jid-obarray (make-vector 127 0))
 
@@ -350,6 +351,30 @@
     (should (functionp sorter))
     (should (equal '("on@x.com" "away@x.com" "off@x.com")
                    (funcall sorter '("off@x.com" "away@x.com" "on@x.com"))))))
+
+;;; Group 7: XMPP URI parsing
+
+(ert-deftest jabber-test-uri-parse-chat ()
+  "Parse a plain chat URI without a query method."
+  (should (equal (jabber-uri-parse "xmpp:alice@example.com")
+                 '(:jid "alice@example.com" :method nil :args nil))))
+
+(ert-deftest jabber-test-uri-parse-method-and-arguments ()
+  "Parse and decode an XMPP URI method and its arguments."
+  (should (equal
+           (jabber-uri-parse
+            "xmpp:room@example.com?command;node=hello%20world;action=next")
+           '(:jid "room@example.com"
+             :method "command"
+             :args (("node" . "hello world") ("action" . "next"))))))
+
+(ert-deftest jabber-test-uri-rejects-authority ()
+  "Reject XMPP URIs containing an authority part."
+  (should-error (jabber-uri-parse "xmpp://alice@example.com")))
+
+(ert-deftest jabber-test-uri-rejects-trailing-text ()
+  "Reject text after a complete XMPP URI."
+  (should-error (jabber-uri-parse "xmpp:alice@example.com?join trailing")))
 
 (provide 'jabber-test-util)
 ;;; jabber-test-util.el ends here
