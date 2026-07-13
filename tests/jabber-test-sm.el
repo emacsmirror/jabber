@@ -9,6 +9,7 @@
 (require 'ert)
 (require 'jabber-xml)
 (require 'jabber-sm)
+(require 'jabber-sm-runtime)
 
 (defvar jabber-connections)
 

@@ -39,6 +39,7 @@
 (require 'jabber-sasl)
 (require 'jabber-console)
 (require 'jabber-sm)
+(require 'jabber-sm-runtime)
 
 
 (defvar-local jabber-namespace-prefixes nil
