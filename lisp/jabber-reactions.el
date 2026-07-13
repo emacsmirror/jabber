@@ -29,6 +29,7 @@
 (require 'cl-lib)
 (require 'ewoc)
 (require 'subr-x)
+(require 'jabber-buffer-registry)
 (require 'jabber-chatbuffer)
 (require 'jabber-db)
 (require 'jabber-disco)
@@ -69,8 +70,6 @@ are not filtered against it."
 (defvar jabber-point-insert)
 
 (declare-function jabber-chat--unwrap-carbon "jabber-chat" (jc xml-data))
-(declare-function jabber-chat-find-buffer "jabber-chat" (chat-with))
-(declare-function jabber-muc-find-buffer "jabber-muc" (group))
 
 ;;; Pure helpers
 
@@ -285,9 +284,9 @@ as XEP-0428 fallback for reactions does not count as a real body."
 (defun jabber-reactions--buffer-for-stanza (from type)
   "Return the displayed chat buffer for incoming FROM and message TYPE."
   (when from
-    (if (string= type "groupchat")
-        (jabber-muc-find-buffer (jabber-jid-user from))
-      (jabber-chat-find-buffer (jabber-jid-user from)))))
+    (jabber-buffer-registry-find
+     (if (string= type "groupchat") 'muc 'chat)
+     (jabber-jid-user from))))
 
 (defun jabber-reactions--storage-peer (jc message type)
   "Return the DB peer for reaction-bearing MESSAGE on JC with TYPE."

@@ -28,6 +28,7 @@
 ;;; Code:
 
 (require 'cl-lib)
+(require 'jabber-buffer-registry)
 (require 'jabber-presence-display)
 (require 'jabber-util)
 (require 'jabber-xml)
@@ -241,7 +242,6 @@ files."
 ;; Global reference declarations
 
 (declare-function jabber-chat-get-buffer "jabber-chat.el" (chat-with &optional jc))
-(declare-function jabber-chat-find-buffer "jabber-chat.el" (chat-with))
 (declare-function jabber-chat-send "jabber-chat.el"
                   (jc body &optional extra-elements))
 (defvar jabber-xml-data)                ; jabber.el
@@ -434,7 +434,9 @@ OLDSTATUS, NEWSTATUS and STATUSTEXT match the parent function's signature.
 
 This function is not called directly, but can be used as the value for
 `jabber-alert-presence-message-function'."
-  (when (jabber-chat-find-buffer (jabber-xml-get-attribute jabber-xml-data 'from))
+  (when (jabber-buffer-registry-find
+         'chat
+         (jabber-jid-user (jabber-xml-get-attribute jabber-xml-data 'from)))
     (jabber-presence-default-message who oldstatus newstatus statustext)))
 
 (defun jabber-presence-wave (who _oldstatus _newstatus _statustext proposed-alert)

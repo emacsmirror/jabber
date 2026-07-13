@@ -404,8 +404,8 @@ nil after the first message, breaking subsequent composing detection."
       (setq-local jabber-chatstates--ewoc-node old-node)
       (ewoc-enter-last jabber-chat-ewoc '(:muc-message "alice: hello"))
       (let ((muc-buffer (current-buffer)))
-        (cl-letf (((symbol-function 'jabber-muc-find-buffer)
-                   (lambda (_group) muc-buffer))
+        (cl-letf (((symbol-function 'jabber-buffer-registry-find)
+                   (lambda (_kind _group) muc-buffer))
                   ((symbol-function 'jabber-muc-nickname) #'ignore))
           (jabber-handle-incoming-message-chatstates
            'fake-jc
@@ -441,8 +441,8 @@ nil after the first message, breaking subsequent composing detection."
         (seen-group nil))
     (with-temp-buffer
       (let ((muc-buffer (current-buffer)))
-        (cl-letf (((symbol-function 'jabber-muc-find-buffer)
-                   (lambda (group)
+        (cl-letf (((symbol-function 'jabber-buffer-registry-find)
+                   (lambda (_kind group)
                      (setq seen-group group)
                      muc-buffer))
                   ((symbol-function 'jabber-muc-nickname) #'ignore)
@@ -467,8 +467,8 @@ nil after the first message, breaking subsequent composing detection."
       (setq-local jabber-chatstates--muc-composers '("alice"))
       (setq-local jabber-chatstates--ewoc-node node)
       (let ((muc-buffer (current-buffer)))
-        (cl-letf (((symbol-function 'jabber-muc-find-buffer)
-                   (lambda (_group) muc-buffer))
+        (cl-letf (((symbol-function 'jabber-buffer-registry-find)
+                   (lambda (_kind _group) muc-buffer))
                   ((symbol-function 'jabber-muc-nickname) #'ignore))
           (jabber-handle-incoming-message-chatstates
            'fake-jc
@@ -483,8 +483,8 @@ nil after the first message, breaking subsequent composing detection."
   (with-temp-buffer
     (let ((muc-buffer (current-buffer))
           (jabber-chat-ewoc (ewoc-create #'ignore)))
-      (cl-letf (((symbol-function 'jabber-muc-find-buffer)
-                 (lambda (_group) muc-buffer))
+      (cl-letf (((symbol-function 'jabber-buffer-registry-find)
+                 (lambda (_kind _group) muc-buffer))
                 ((symbol-function 'jabber-muc-nickname) #'ignore))
         (jabber-handle-incoming-message-chatstates
          'fake-jc
@@ -506,8 +506,8 @@ nil after the first message, breaking subsequent composing detection."
   (with-temp-buffer
     (let ((muc-buffer (current-buffer))
           (jabber-chat-ewoc (ewoc-create #'ignore)))
-      (cl-letf (((symbol-function 'jabber-muc-find-buffer)
-                 (lambda (_group) muc-buffer))
+      (cl-letf (((symbol-function 'jabber-buffer-registry-find)
+                 (lambda (_kind _group) muc-buffer))
                 ((symbol-function 'jabber-muc-nickname) #'ignore))
         (jabber-handle-incoming-message-chatstates
          'fake-jc
@@ -526,8 +526,8 @@ nil after the first message, breaking subsequent composing detection."
   (with-temp-buffer
     (let ((muc-buffer (current-buffer))
           (jabber-chat-ewoc (ewoc-create #'ignore)))
-      (cl-letf (((symbol-function 'jabber-muc-find-buffer)
-                 (lambda (_group) muc-buffer))
+      (cl-letf (((symbol-function 'jabber-buffer-registry-find)
+                 (lambda (_kind _group) muc-buffer))
                 ((symbol-function 'jabber-muc-nickname) #'ignore))
         (jabber-handle-incoming-message-chatstates
          'fake-jc
@@ -546,8 +546,8 @@ nil after the first message, breaking subsequent composing detection."
   (let ((find-called nil)
         (entered nil))
     (with-temp-buffer
-      (cl-letf (((symbol-function 'jabber-muc-find-buffer)
-                 (lambda (_group)
+      (cl-letf (((symbol-function 'jabber-buffer-registry-find)
+                 (lambda (_kind _group)
                    (setq find-called t)
                    (current-buffer)))
                 ((symbol-function 'jabber-muc-nickname)
@@ -574,8 +574,8 @@ nil after the first message, breaking subsequent composing detection."
       (setq-local jabber-chatstates--ewoc-node old-node)
       (ewoc-enter-last jabber-chat-ewoc '(:muc-message "alice: hello"))
       (let ((muc-buffer (current-buffer)))
-        (cl-letf (((symbol-function 'jabber-muc-find-buffer)
-                   (lambda (_group) muc-buffer))
+        (cl-letf (((symbol-function 'jabber-buffer-registry-find)
+                   (lambda (_kind _group) muc-buffer))
                   ((symbol-function 'jabber-muc-nickname)
                    (lambda (_group _jc) "alice")))
           (jabber-handle-incoming-message-chatstates
@@ -601,8 +601,8 @@ nil after the first message, breaking subsequent composing detection."
                    (lambda (from jc)
                      (setq direct-called (list from jc))
                      (buffer-name chat-buffer)))
-                  ((symbol-function 'jabber-muc-find-buffer)
-                   (lambda (_group)
+                  ((symbol-function 'jabber-buffer-registry-find)
+                   (lambda (_kind _group)
                      (setq muc-called t)
                      nil))
                   ((symbol-function 'jabber-chat-ewoc-enter)

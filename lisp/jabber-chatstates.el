@@ -30,6 +30,7 @@
 
 (require 'cl-lib)
 (require 'subr-x)
+(require 'jabber-buffer-registry)
 (require 'jabber-util)
 (require 'ewoc)
 (require 'jabber-core)
@@ -43,8 +44,6 @@
 
 (defvar jabber-chat-ewoc)               ; jabber-chatbuffer.el
 (defvar jabber-chatting-with)           ; jabber-chat.el
-
-(declare-function jabber-muc-find-buffer "jabber-muc" (group))
 
 (defgroup jabber-chatstates nil
   "Chat state notifications."
@@ -189,7 +188,7 @@ It can be sent and cancelled several times.")
   "Apply incoming MUC chat STATE from FROM on JC."
   (when-let* ((group (jabber-jid-user from))
               (nick (jabber-jid-resource from))
-              (buffer (jabber-muc-find-buffer group)))
+              (buffer (jabber-buffer-registry-find 'muc group)))
     (with-current-buffer buffer
       (unless (jabber-chatstates--muc-self-nick-p group nick jc)
         (setq jabber-chatstates--muc-composers
