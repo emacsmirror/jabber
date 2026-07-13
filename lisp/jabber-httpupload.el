@@ -42,13 +42,14 @@
 (require 'fsm)
 (require 'mailcap)
 (require 'subr-x)
-(require 'jabber)
+(require 'jabber-chat)
+(require 'jabber-conn)
+(require 'jabber-core)
+(require 'jabber-disco)
+(require 'jabber-iq)
 (require 'jabber-muc-state)
-
-(declare-function jabber-chat-send "jabber-chat.el"
-                  (jc body &optional extra-elements))
-(declare-function jabber-chat-create-buffer "jabber-chat.el" (jc chat-with))
-(defvar jabber-oob-xmlns)              ; jabber-xml.el
+(require 'jabber-util)
+(require 'jabber-xml)
 
 (defconst jabber-httpupload-xmlns "urn:xmpp:http:upload:0"
   "XML namespace for XEP-0363 HTTP File Upload.")
