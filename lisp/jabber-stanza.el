@@ -33,13 +33,22 @@
 (defconst jabber-streams-xmlns "http://etherx.jabber.org/streams"
   "RFC 6120 XMPP streams namespace.")
 
-(defvar jabber-debug-log-xml)           ; jabber-console.el
-(declare-function jabber-process-console "jabber-console" (jc direction xml-data))
+(defcustom jabber-debug-log-xml nil
+  "Set to non-nil to log XML input and output in a console buffer.
+Set to a string to also append XML input and output to that file."
+  :type '(choice (const :tag "Do not dump XML input or output" nil)
+                 (const :tag "Dump XML in console" t)
+                 (string :tag "Dump XML in console and this file"))
+  :group 'jabber-debug)
+
+(defvar jabber-stanza-log-function nil
+  "Function called with connection, direction, and stanza log data.")
 
 (defun jabber-log-xml (jc direction data)
   "Log DATA for JC in DIRECTION when XML debugging is enabled."
-  (when jabber-debug-log-xml
-    (jabber-process-console jc direction data)))
+  (when (and jabber-debug-log-xml
+             (functionp jabber-stanza-log-function))
+    (funcall jabber-stanza-log-function jc direction data)))
 
 (defun jabber-stanza--connection-jid (state-data)
   "Return the full JID represented by STATE-DATA."

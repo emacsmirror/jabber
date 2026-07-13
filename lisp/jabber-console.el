@@ -27,19 +27,12 @@
 
 (require 'jabber-keymap)
 (require 'jabber-input)
+(require 'jabber-stanza)
 (require 'jabber-util)
 (require 'jabber-truncate)
 (require 'xml)
 (require 'ewoc)
 (require 'sgml-mode) ;we base on this mode to hightlight XML
-
-(defcustom jabber-debug-log-xml nil
-  "Set to non-nil to log all XML i/o in *-jabber-console-JID-* buffer.
-Set to string to also dump XML i/o in specified file."
-  :type '(choice (const :tag "Do not dump XML i/o" nil)
-                 (const :tag "Dump XML i/o in console" t)
-                 (string :tag "Dump XML i/o in console and this file"))
-  :group 'jabber-debug)
 
 (defcustom jabber-console-name-format "*-jabber-console-%s-*"
   "Format for console buffer name.  %s mean connection jid."
@@ -144,6 +137,8 @@ DIRECTION is a marker string (typically \"send\", \"recv\", or \"raw\")."
 	(when (< 1  jabber-console-truncate-lines)
 	  (let ((_jabber-log-lines-to-keep jabber-console-truncate-lines))
 	    (jabber-truncate-top buffer jabber-console-ewoc)))))))
+
+(setq jabber-stanza-log-function #'jabber-process-console)
 
 (provide 'jabber-console)
 ;;; jabber-console.el ends here

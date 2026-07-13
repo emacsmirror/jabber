@@ -644,6 +644,25 @@
     (should (= (length (plist-get sd :sm-pending-queue)) 1))
     (should (equal (cdar (plist-get sd :sm-pending-queue)) pres2))))
 
+;;; Transport logging
+
+(ert-deftest jabber-test-stanza-log-calls-configured-sink ()
+  "Forward enabled XML logs to the configured sink."
+  (let ((jabber-debug-log-xml t)
+        (jabber-stanza-log-function
+         (lambda (jc direction data)
+           (list jc direction data))))
+    (should (equal (jabber-log-xml 'jc "sending" '(message))
+                   '(jc "sending" (message))))))
+
+(ert-deftest jabber-test-stanza-log-skips-disabled-sink ()
+  "Do not call the stanza log sink when XML logging is disabled."
+  (let* ((jabber-debug-log-xml nil)
+         (called nil)
+         (jabber-stanza-log-function (lambda (&rest _) (setq called t))))
+    (jabber-log-xml 'jc "sending" '(message))
+    (should-not called)))
+
 (provide 'jabber-test-sm)
 
 ;;; jabber-test-sm.el ends here
