@@ -29,6 +29,7 @@
 (require 'cl-lib)
 (require 'ewoc)
 (require 'subr-x)
+(require 'jabber-chatbuffer)
 (require 'jabber-db)
 (require 'jabber-disco)
 (require 'jabber-util)
@@ -68,8 +69,6 @@ are not filtered against it."
 (defvar jabber-point-insert)
 
 (declare-function jabber-chat--unwrap-carbon "jabber-chat" (jc xml-data))
-(declare-function jabber-chat-ewoc-find-by-id "jabber-chatbuffer" (stanza-id))
-(declare-function jabber-chat-ewoc-invalidate "jabber-chatbuffer" (node))
 (declare-function jabber-chat-find-buffer "jabber-chat" (chat-with))
 (declare-function jabber-muc-find-buffer "jabber-muc" (group))
 

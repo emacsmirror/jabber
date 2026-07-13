@@ -29,6 +29,7 @@
 (require 'cl-lib)
 (require 'fsm)
 
+(require 'jabber-disco)
 (require 'jabber-private)
 (require 'jabber-pubsub)
 (require 'jabber-muc-state)
@@ -58,8 +59,6 @@
 
 (defvar jabber-pre-disconnect-hook)       ; jabber-core.el
 
-(declare-function jabber-disco-get-info "jabber-disco.el"
-                  (jc jid node callback closure-data &optional force))
 (declare-function jabber-muc-join "jabber-muc" (jc group nickname &optional popup))
 (declare-function jabber-muc-leave "jabber-muc" (jc group))
 (declare-function jabber-muc-get-buffer "jabber-muc" (group &optional jc))

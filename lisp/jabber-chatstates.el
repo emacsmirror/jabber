@@ -37,6 +37,7 @@
 (require 'jabber-chatbuffer)
 (require 'jabber-disco)
 (require 'jabber-muc-state)
+(require 'jabber-reactions)
 (require 'jabber-xml)
 
 
@@ -44,7 +45,6 @@
 (defvar jabber-chatting-with)           ; jabber-chat.el
 
 (declare-function jabber-muc-find-buffer "jabber-muc" (group))
-(declare-function jabber-reactions--reaction-only-p "jabber-reactions" (xml-data))
 
 (defgroup jabber-chatstates nil
   "Chat state notifications."
@@ -292,8 +292,7 @@ Added to `kill-buffer-hook' in chat buffers."
 (defun jabber-chatstates--real-body-message-p (xml-data)
   "Return non-nil when XML-DATA has a body that should clear chatstates."
   (and (jabber-xml-get-children xml-data 'body)
-       (not (and (fboundp 'jabber-reactions--reaction-only-p)
-                 (jabber-reactions--reaction-only-p xml-data)))))
+       (not (jabber-reactions--reaction-only-p xml-data))))
 
 (defun jabber-chatstates--handle-direct-state (jc xml-data from)
   "Update the direct chat buffer from XML-DATA sent by FROM on JC."
