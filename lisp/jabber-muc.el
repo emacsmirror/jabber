@@ -33,6 +33,7 @@
 (require 'jabber-widget)
 (require 'jabber-buffer-registry)
 (require 'jabber-disco)
+(require 'jabber-lifecycle)
 (require 'jabber-muc-protocol)
 (require 'jabber-muc-state)
 (require 'jabber-presence-events)
@@ -460,6 +461,13 @@ entry is removed."
             (remhash room jabber-muc--room-jids)
             (remhash room jabber-muc--nonanonymous-rooms)))))
     (setq jabber-muc--rooms-before-disconnect snapshot)))
+
+(defun jabber-muc--session-reset (jc)
+  "Clear room state belonging to the lost logical session on JC."
+  (jabber-muc-connection-closed (jabber-connection-bare-jid jc)))
+
+(add-hook 'jabber-lifecycle-session-reset-functions
+          #'jabber-muc--session-reset)
 
 (defun jabber-muc--self-ping-failed (jc xml-data closure-data)
   "Handle failed MUC self-ping per XEP-0410 error classification.

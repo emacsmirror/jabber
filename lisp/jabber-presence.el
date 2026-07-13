@@ -30,6 +30,7 @@
 (require 'jabber-core)
 (require 'jabber-disco)
 (require 'jabber-iq)
+(require 'jabber-lifecycle)
 (require 'jabber-alert)
 (require 'jabber-util)
 (require 'jabber-muc-protocol)
@@ -148,6 +149,17 @@ obtained from `xml-parse-region'."
   ;; nothing exceptional about the server not returning a roster.
   (jabber-report-success jc xml-data "Initial roster retrieval")
   (run-hook-with-args 'jabber-post-connect-hooks jc))
+
+(defun jabber-presence--request-initial-roster (jc)
+  "Request the initial roster for JC."
+  (jabber-send-iq jc nil
+                  "get"
+                  `(query ((xmlns . ,jabber-roster-xmlns)))
+                  #'jabber-process-roster 'initial
+                  #'jabber-initial-roster-failure nil))
+
+(add-hook 'jabber-lifecycle-session-bootstrap-functions
+          #'jabber-presence--request-initial-roster)
 
 (defun jabber-presence--extract-metadata (xml-data)
   "Parse presence metadata from XML-DATA.

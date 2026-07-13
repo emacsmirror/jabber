@@ -36,6 +36,8 @@
 (require 'jabber-xml)
 (require 'jabber-conn)
 (require 'jabber-iq)
+(require 'jabber-lifecycle)
+(require 'jabber-presence-events)
 (require 'jabber-sasl)
 (require 'jabber-console)
 (require 'jabber-sm)
@@ -130,18 +132,6 @@ problems."
 ;; jabber-connect and jabber-connect-all should load jabber.el, not
 ;; just jabber-core.el, when autoloaded.
 
-;; Global reference declarations
-
-(declare-function jabber-muc-connection-closed "jabber-muc.el" (bare-jid))
-(declare-function jabber-roster-update "jabber-roster.el"
-                  (jc new-items changed-items deleted-items))
-(declare-function jabber-process-roster "jabber-presence.el"
-                  (jc xml-data closure-data))
-(declare-function jabber-initial-roster-failure "jabber-presence.el"
-                  (jc xml-data _closure-data))
-(declare-function jabber-get-register "jabber-register.el" (jc to))
-(declare-function jabber-mode-line-presence-update "jabber-modeline.el" (&rest _))
-(declare-function jabber-get-bookmarks "jabber-bookmarks.el" (jc cont &optional refresh))
 (defvar jabber-debug-keep-process-buffers) ; jabber.el
 (defvar jabber-silent-mode)             ; jabber.el
 (defvar jabber-account-list)            ; jabber.el
@@ -149,8 +139,6 @@ problems."
 (defvar jabber-xml-data)                ; jabber.el
 (defvar jabber-default-connection-type) ; jabber-conn.el
 (defvar jabber-connect-methods)         ; jabber-conn.el
-(defvar jabber-modeline-mode)           ; jabber-modeline.el
-(defvar jabber-roster-xmlns)           ; jabber-xml.el
 
 ;;
 
@@ -330,7 +318,7 @@ override the defaults from `jabber-account-list'."
 		      (if (and sm-resumable (not expected))
 			  (setq state-data (plist-put state-data :sm-resuming t))
 			;; Otherwise clear MUC data and SM state.
-			(jabber-muc-connection-closed (jabber-connection-bare-jid fsm))
+			(jabber-lifecycle-dispatch-session-reset fsm)
 			(setq state-data (jabber-sm--reset state-data)))
 
 		      (unless expected
@@ -350,8 +338,7 @@ override the defaults from `jabber-account-list'."
 			;; of connections.
 			(setq jabber-connections
 			      (delq fsm jabber-connections))
-			(when jabber-modeline-mode
-			  (jabber-mode-line-presence-update))
+			(jabber-lifecycle-dispatch-connection-list-changed)
 			;; And let the FSM sleep...
 			(list state-data nil))))
 
@@ -542,7 +529,7 @@ override the defaults from `jabber-account-list'."
 
 (define-enter-state jabber-connection :register-account
 		    (fsm state-data)
-		    (jabber-get-register fsm nil)
+		    (jabber-lifecycle-dispatch-registration fsm)
 		    (list state-data nil))
 
 (define-state jabber-connection :register-account
@@ -690,7 +677,7 @@ override the defaults from `jabber-account-list'."
 		       (list :sm-resume state-data))
 		      ;; SM resume was hoped for but server doesn't offer SM here.
 		      ((plist-get state-data :sm-resuming)
-		       (jabber-muc-connection-closed (jabber-connection-bare-jid fsm))
+		       (jabber-lifecycle-dispatch-session-reset fsm)
 		       (setq state-data (jabber-sm--reset state-data))
 		       (setq state-data (plist-put state-data :sm-resuming nil))
 		       ;; Fall through to normal bind.
@@ -853,7 +840,7 @@ override the defaults from `jabber-account-list'."
 		    ((jabber-sm--failed-p stanza)
 		     (message "Stream Management resume failed, falling back to auth")
 		     ;; Resume failed: clean up MUC state now, reset SM, do full auth.
-		     (jabber-muc-connection-closed (jabber-connection-bare-jid fsm))
+		     (jabber-lifecycle-dispatch-session-reset fsm)
 		     (setq state-data (jabber-sm--reset state-data))
 		     (setq state-data (plist-put state-data :sm-resuming nil))
 		     (list :sasl-auth state-data))
@@ -882,14 +869,8 @@ override the defaults from `jabber-account-list'."
 			    (setq state-data (jabber-sm--start-r-timer fsm state-data)))
 			  (setq state-data (plist-put state-data :sm-resumed nil))
 			  (run-hook-with-args 'jabber-post-resume-hooks fsm))
-		      ;; Normal connect: fetch roster (which triggers post-connect hooks
-		      ;; from the roster callback) and prefetch bookmarks.
-		      (jabber-send-iq fsm nil
-				      "get"
-				      `(query ((xmlns . ,jabber-roster-xmlns)))
-				      #'jabber-process-roster 'initial
-				      #'jabber-initial-roster-failure nil)
-		      (jabber-get-bookmarks fsm #'ignore))
+		      ;; Normal connect: feature modules fetch initial session data.
+		      (jabber-lifecycle-dispatch-session-bootstrap fsm))
 		    (list (plist-put state-data :ever-session-established t) nil))
 
 (define-state jabber-connection :session-established
@@ -946,7 +927,8 @@ override the defaults from `jabber-account-list'."
 		 ;; Update roster
 		 (let ((pending-updates (plist-get state-data :roster-pending-updates)))
 		   (setq state-data (plist-put state-data :roster-pending-updates nil))
-		   (jabber-roster-update fsm nil pending-updates nil)
+		   (jabber-presence-events-dispatch-roster-update
+		    fsm nil pending-updates nil)
 		   (list :session-established state-data)))
 
 		(:send-if-connected

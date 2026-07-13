@@ -30,6 +30,7 @@
 (require 'fsm)
 
 (require 'jabber-disco)
+(require 'jabber-lifecycle)
 (require 'jabber-private)
 (require 'jabber-pubsub)
 (require 'jabber-muc-state)
@@ -242,6 +243,10 @@ If REFRESH is non-nil, always fetch from server and re-detect protocol."
     (if (and (not refresh) bookmarks)
         (run-with-timer 0 nil cont jc (when (listp bookmarks) bookmarks))
       (jabber-bookmarks--detect-and-fetch jc cont refresh))))
+
+(defun jabber-bookmarks--prefetch (jc)
+  "Populate the bookmarks cache for a new session on JC."
+  (jabber-get-bookmarks jc #'ignore))
 
 (defun jabber-bookmarks--detect-and-fetch (jc cont &optional refresh)
   "Detect bookmark protocol on JC via disco and fetch via CONT.
@@ -714,6 +719,8 @@ NICK, if non-nil, is stored in the bookmark."
   (clrhash jabber-bookmarks--legacy-accounts))
 
 (add-hook 'jabber-pre-disconnect-hook #'jabber-bookmarks--on-disconnect)
+(add-hook 'jabber-lifecycle-session-bootstrap-functions
+          #'jabber-bookmarks--prefetch 10)
 
 (provide 'jabber-bookmarks)
 

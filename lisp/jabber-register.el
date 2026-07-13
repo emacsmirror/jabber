@@ -28,6 +28,7 @@
 ;;; Code:
 
 (require 'jabber-iq)
+(require 'jabber-lifecycle)
 (require 'jabber-widget)
 (require 'jabber-xdata)
 
@@ -59,6 +60,13 @@ JC is the Jabber connection."
 		  `(query ((xmlns . ,jabber-register-xmlns)))
 		  #'jabber-process-data #'jabber-process-register-or-search
 		  #'jabber-report-success "Registration"))
+
+(defun jabber-register--start-account-registration (jc)
+  "Start in-band account registration on JC."
+  (jabber-get-register jc nil))
+
+(add-hook 'jabber-lifecycle-registration-functions
+          #'jabber-register--start-account-registration)
 
 (defun jabber-process-register-or-search (jc xml-data)
   "Display results from jabber:iq:{register,search} query as a form.

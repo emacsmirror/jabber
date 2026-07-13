@@ -30,6 +30,7 @@
 (require 'jabber-presence-display)
 (require 'jabber-alert)
 (require 'jabber-activity)
+(require 'jabber-lifecycle)
 (eval-when-compile (require 'cl-lib))
 
 (defgroup jabber-mode-line nil
@@ -51,6 +52,7 @@ Available sections: `presence', `contacts', `activity'."
 ;; Global reference declarations
 
 (defvar jabber-current-show)          ; jabber.el
+(defvar jabber-modeline-mode)
 
 ;; Activity variables (defined in jabber-activity.el)
 
@@ -86,6 +88,14 @@ Available sections: `presence', `contacts', `activity'."
         (if (and jabber-connections (not jabber-disconnecting))
             (cdr (assoc jabber-current-show jabber-presence-strings))
           "Offline")))
+
+(defun jabber-modeline--connection-list-changed ()
+  "Refresh presence display after a live connection list update."
+  (when jabber-modeline-mode
+    (jabber-mode-line-presence-update)))
+
+(add-hook 'jabber-lifecycle-connection-list-changed-functions
+          #'jabber-modeline--connection-list-changed)
 
 (defvar jabber-mode-line--recount-timer nil
   "Pending timer for a debounced `jabber-mode-line--do-count-contacts' call.")
