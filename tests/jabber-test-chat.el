@@ -8,6 +8,7 @@
 
 (require 'ert)
 (require 'jabber-chat)
+(require 'jabber-chat-commands)
 
 (defun jabber-test-chat--make-fake-jc (account)
   "Create a fake connection symbol for ACCOUNT."

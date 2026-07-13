@@ -11,6 +11,7 @@
 (require 'ewoc)
 (require 'jabber-chatbuffer)
 (require 'jabber-chat)
+(require 'jabber-chat-commands)
 (require 'jabber-db)
 (require 'jabber-httpupload)
 

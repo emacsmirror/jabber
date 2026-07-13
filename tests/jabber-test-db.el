@@ -8,6 +8,7 @@
 
 (require 'ert)
 (require 'jabber-chat)
+(require 'jabber-chat-commands)
 (require 'jabber-db)
 (require 'jabber-reactions)
 

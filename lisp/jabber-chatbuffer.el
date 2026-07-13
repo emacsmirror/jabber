@@ -30,7 +30,6 @@
 (require 'jabber-core)
 (require 'jabber-db)
 (require 'jabber-muc-protocol)
-(require 'keymap-popup)
 (require 'help-at-pt)
 
 (defvar jabber-point-insert nil
@@ -105,38 +104,7 @@ Enables O(1) lookup for in-place updates (receipts, corrections).")
 Incremented before each new insert sequence so stale timers from a
 previous sequence detect the mismatch and stop.")
 
-;; Global reference declarations
-
-(defvar jabber-muc-menu-map)
-
 (declare-function jabber-muc-nick-completion-at-point "jabber-muc-nick-completion.el" ())
-(declare-function jabber-httpupload--upload "jabber-httpupload"
-                  (jc filepath callback))
-(declare-function jabber-omemo--prefetch-sessions "jabber-omemo"
-                  (jc jid))
-(declare-function jabber-omemo--prefetch-muc-sessions "jabber-omemo"
-                  (jc group))
-(declare-function jabber-omemo--muc-participant-jids "jabber-omemo"
-                  (group participants))
-(declare-function jabber-omemo-fingerprints "jabber-omemo-trust" ())
-(declare-function jabber-blocking-toggle-chat-peer "jabber-blocking" (jc))
-(declare-function jabber-get-info "jabber-info" (jc to))
-(declare-function jabber-roster-change "jabber-presence" (jc jid name groups))
-(declare-function jabber-roster-delete "jabber-presence" (jc jid))
-(declare-function jabber-mam-sync-buffer "jabber-mam" ())
-(declare-function jabber-muc-menu "jabber-muc" ())
-(declare-function jabber-moderation-retract "jabber-moderation" ())
-(declare-function jabber-moderation-retract-by-occupant "jabber-moderation" ())
-(declare-function jabber-chat-reply "jabber-message-reply" ())
-(declare-function jabber-correct-last-message "jabber-message-correct" ())
-(declare-function jabber-chat-cancel-reply "jabber-message-reply" ())
-(declare-function jabber-reactions-react-at-point-or-insert "jabber-reactions" ())
-(declare-function jabber-chat-goto-reply-target-or-send "jabber-chat" ())
-(declare-function jabber-chat-image-enlarge-or-self-insert "jabber-chat" (n))
-(declare-function jabber-chat-image-shrink-or-self-insert "jabber-chat" (n))
-(declare-function jabber-chat-image-reset-size-or-self-insert "jabber-chat" (n))
-
-;;
 
 (defvar-local jabber-buffer-connection nil
   "The connection used by this buffer.")
@@ -146,8 +114,6 @@ previous sequence detect the mismatch and stop.")
 (defvar jabber-chat-earliest-backlog)     ; jabber-chat.el
 (defvar jabber-group)                      ; jabber-muc.el
 (defvar jabber-muc-header-line-format)    ; jabber-muc.el
-(defvar jabber-muc-participants)          ; jabber-muc.el
-(defvar jabber-httpupload--pending-url)    ; jabber-httpupload.el
 
 ;;; Buffer lookup registry
 
@@ -185,26 +151,6 @@ KEY: bare JID for chat; group JID for muc; \"group/nick\" for muc-private.")
                jabber-chatbuffer--registry)))))
 
 (add-hook 'kill-buffer-hook #'jabber-chatbuffer--registry-remove)
-
-(defun jabber-chat-attach-file (filepath)
-  "Upload FILEPATH and insert the URL into the composition area.
-The file is uploaded via HTTP Upload.  Once the upload finishes,
-the GET URL is inserted at point so you can preview and edit
-before sending with RET."
-  (interactive "fFile to upload: ")
-  (require 'jabber-httpupload)
-  (unless jabber-buffer-connection
-    (error "No active connection in this buffer"))
-  (let ((buffer (current-buffer)))
-    (jabber-httpupload--upload
-     jabber-buffer-connection filepath
-     (lambda (get-url)
-       (when (buffer-live-p buffer)
-         (with-current-buffer buffer
-           (goto-char (point-max))
-           (insert get-url)
-           (setq jabber-httpupload--pending-url get-url)
-           (message "Uploaded: %s (send with RET)" get-url)))))))
 
 (defcustom jabber-chat-default-encryption 'omemo
   "Default encryption mode for new chat buffers."
@@ -273,80 +219,6 @@ Works for both 1:1 chat (`jabber-chatting-with') and MUC (`jabber-group')."
     (jabber-db-set-chat-encryption
      (jabber-connection-bare-jid jc) peer mode)))
 
-(defun jabber-chat-encryption-set-omemo ()
-  "Set encryption to OMEMO for this chat buffer."
-  (interactive)
-  (require 'jabber-omemo)
-  (unless (eq (bound-and-true-p jabber-omemo--available) t)
-    (user-error "OMEMO encryption requires the jabber-omemo-core native module"))
-  (setq jabber-chat-encryption 'omemo)
-  (jabber-chat-encryption--save 'omemo)
-  (jabber-chat-encryption--update-header)
-  (force-mode-line-update)
-  (when jabber-buffer-connection
-    (cond
-     ((bound-and-true-p jabber-chatting-with)
-      (jabber-omemo--prefetch-sessions
-       jabber-buffer-connection jabber-chatting-with))
-     ((bound-and-true-p jabber-group)
-      (jabber-omemo--prefetch-muc-sessions
-       jabber-buffer-connection jabber-group))))
-  (when (and (bound-and-true-p jabber-group)
-             (null (jabber-omemo--muc-participant-jids
-                    jabber-group
-                    (cdr (assoc jabber-group jabber-muc-participants)))))
-    (message "OMEMO: no participant JIDs visible — room may be anonymous")))
-
-(defun jabber-chat-encryption-set-openpgp ()
-  "Set encryption to OpenPGP for this chat buffer."
-  (interactive)
-  (require 'jabber-openpgp)
-  (setq jabber-chat-encryption 'openpgp)
-  (jabber-chat-encryption--save 'openpgp)
-  (jabber-chat-encryption--update-header)
-  (force-mode-line-update))
-
-(defun jabber-chat-encryption-set-openpgp-legacy ()
-  "Set encryption to legacy PGP (XEP-0027) for this chat buffer."
-  (interactive)
-  (require 'jabber-openpgp-legacy)
-  (setq jabber-chat-encryption 'openpgp-legacy)
-  (jabber-chat-encryption--save 'openpgp-legacy)
-  (jabber-chat-encryption--update-header)
-  (force-mode-line-update))
-
-(defun jabber-chat-encryption-set-plaintext ()
-  "Set encryption to plaintext for this chat buffer."
-  (interactive)
-  (setq jabber-chat-encryption 'plaintext)
-  (jabber-chat-encryption--save 'plaintext)
-  (jabber-chat-encryption--update-header)
-  (force-mode-line-update))
-
-(keymap-popup-define jabber-chat-encryption-menu-map
-  "Select encryption for this chat buffer."
-  :description (lambda ()
-		 (format "Encryption (current: %s)"
-			 (propertize (symbol-name jabber-chat-encryption)
-				     'face (pcase jabber-chat-encryption
-					     ('plaintext 'shadow)
-					     (_ 'success)))))
-  "o" ("OMEMO" jabber-chat-encryption-set-omemo)
-  "g" ("OpenPGP" jabber-chat-encryption-set-openpgp)
-  "l" ("PGP (legacy)" jabber-chat-encryption-set-openpgp-legacy)
-  "p" ("Plaintext" jabber-chat-encryption-set-plaintext))
-
-(defun jabber-chat-encryption-menu ()
-  "Select encryption for this chat buffer."
-  (interactive)
-  (keymap-popup jabber-chat-encryption-menu-map))
-
-(defun jabber-chat-show-fingerprints ()
-  "Display OMEMO fingerprints for the current chat peer."
-  (interactive)
-  (require 'jabber-omemo-trust)
-  (jabber-omemo-fingerprints))
-
 (defvar jabber-backlog-number)            ; jabber-db.el
 
 (defvar-local jabber-chat-buffer-msg-count nil
@@ -357,96 +229,6 @@ MAM sync in this buffer.  Set via the operations menu.")
 (defun jabber-chat-buffer-msg-count ()
   "Return the effective message count for this buffer."
   (or jabber-chat-buffer-msg-count jabber-backlog-number))
-
-(defun jabber-chat-get-info ()
-  "Show version, disco info and ping for the current chat peer."
-  (interactive)
-  (unless (bound-and-true-p jabber-chatting-with)
-    (user-error "Not in a chat buffer"))
-  (jabber-get-info jabber-buffer-connection jabber-chatting-with))
-
-(defun jabber-chat-add-contact ()
-  "Add the current chat peer to the roster."
-  (interactive)
-  (unless (bound-and-true-p jabber-chatting-with)
-    (user-error "Not in a chat buffer"))
-  (let* ((jid (jabber-jid-user jabber-chatting-with))
-         (sym (jabber-jid-symbol jid)))
-    (jabber-roster-change
-     jabber-buffer-connection sym
-     (read-string (format "Name for %s: " jid))
-     nil)))
-
-(defun jabber-chat-remove-contact ()
-  "Remove the current chat peer from the roster."
-  (interactive)
-  (unless (bound-and-true-p jabber-chatting-with)
-    (user-error "Not in a chat buffer"))
-  (let ((jid (jabber-jid-user jabber-chatting-with)))
-    (when (yes-or-no-p (format "Remove %s from roster? " jid))
-      (jabber-roster-delete jabber-buffer-connection jid))))
-
-(defun jabber-chat-muc-actions-menu ()
-  "Show MUC actions for the current chat buffer."
-  (interactive)
-  (require 'jabber-muc)
-  (keymap-popup jabber-muc-menu-map))
-
-(keymap-popup-define jabber-chat-operations-menu-map
-  :description (lambda ()
-		 (let ((peer (or (bound-and-true-p jabber-group)
-				 (bound-and-true-p jabber-chatting-with))))
-		   (if peer
-		       (format "Operations for %s"
-			       (propertize peer 'face
-					   'font-lock-constant-face))
-		     "Chat operations")))
-  :group "Encryption"
-  "e" ("Encryption" jabber-chat-encryption-menu)
-  "f" ("Fingerprints" jabber-chat-show-fingerprints)
-  :group "Files"
-  "a" ("Attach file" jabber-chat-attach-file)
-  :group "Contact"
-  "I" ("Get info" jabber-chat-get-info
-       :if (lambda () (bound-and-true-p jabber-chatting-with)))
-  "A" ("Add contact" jabber-chat-add-contact
-       :if (lambda () (bound-and-true-p jabber-chatting-with)))
-  "D" ("Remove contact" jabber-chat-remove-contact
-       :if (lambda () (bound-and-true-p jabber-chatting-with)))
-  "B" ("Block/unblock user" jabber-blocking-toggle-chat-peer
-       :if (lambda () (bound-and-true-p jabber-chatting-with)))
-  :group "Messages"
-  "E" ("Edit last message" jabber-correct-last-message)
-  "r" ("Reply to message" jabber-chat-reply)
-  :group "MUC"
-  "m" ("MUC Actions" jabber-chat-muc-actions-menu
-       :if (lambda () (bound-and-true-p jabber-group)))
-  "M" ("Retract message at point" jabber-moderation-retract
-       :if (lambda () (bound-and-true-p jabber-group)))
-  "X" ("Retract all by occupant" jabber-moderation-retract-by-occupant
-       :if (lambda () (bound-and-true-p jabber-group)))
-  :group "Buffer"
-  "n" ((lambda ()
-	 (format "Message count: %s"
-		 (propertize (number-to-string
-			      (jabber-chat-buffer-msg-count))
-			     'face 'keymap-popup-value)))
-       jabber-chat-set-msg-count :stay-open)
-  "R" ("Refresh" jabber-chat-buffer-refresh)
-  "S" ("Sync & refresh" jabber-mam-sync-buffer))
-
-(defun jabber-chat-set-msg-count (count)
-  "Set the message count for the current chat buffer to COUNT."
-  (interactive
-   (list (read-number "Message count: " (jabber-chat-buffer-msg-count))))
-  (setq jabber-chat-buffer-msg-count (and (> count 0) count))
-  (message "Buffer message count: %d" (jabber-chat-buffer-msg-count))
-  (keymap-popup jabber-chat-operations-menu-map))
-
-(defun jabber-chat-operations-menu ()
-  "Chat buffer operations."
-  (interactive)
-  (keymap-popup jabber-chat-operations-menu-map))
 
 ;; Spell check only what you're currently writing.
 (defun jabber-chat-mode-flyspell-verify ()
@@ -459,21 +241,9 @@ MAM sync in this buffer.  Set via the operations menu.")
   (insert "\n"))
 
 (defvar-keymap jabber-chat-mode-map
-  "RET"     #'jabber-chat-goto-reply-target-or-send
   "S-<return>"   #'jabber-chat-newline
   "TAB"     #'completion-at-point
-  "<backtab>" #'backward-button
-  "C-c C-a" #'jabber-chat-attach-file
-  "C-c C-o" #'jabber-chat-operations-menu
-  "C-c C-e" #'jabber-chat-encryption-menu
-  "C-c C-m" #'jabber-muc-menu
-  "C-c C-r" #'jabber-chat-reply
-  "C-c C-k" #'jabber-chat-cancel-reply
-  "+" #'jabber-chat-image-enlarge-or-self-insert
-  "=" #'jabber-chat-image-enlarge-or-self-insert
-  "-" #'jabber-chat-image-shrink-or-self-insert
-  "0" #'jabber-chat-image-reset-size-or-self-insert
-  "!" #'jabber-reactions-react-at-point-or-insert)
+  "<backtab>" #'backward-button)
 
 (defcustom jabber-chat-display-help-at-point t
   "When non-nil, show local help at point in chat buffers automatically.
@@ -597,7 +367,6 @@ EWOC-PP is the pretty-printer function for the message EWOC."
 
 (declare-function jabber-chat-find-buffer "jabber-chat" (chat-with))
 (declare-function jabber-muc-find-buffer "jabber-muc" (group))
-(declare-function jabber-chat-find-buffer "jabber-chat" (chat-with))
 (declare-function jabber-chat-insert-backlog-entry "jabber-chat"
                   (msg-plist))
 (declare-function jabber-chat--insert-backlog-chunked "jabber-chat"
