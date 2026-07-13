@@ -25,31 +25,15 @@
 
 ;;; Code:
 
+(require 'jabber-disco)
+(require 'jabber-iq)
+(require 'jabber-muc)
+(require 'jabber-ping)
+(require 'jabber-time)
 (require 'jabber-util)
-(eval-when-compile (require 'jabber-muc)) ; jabber-muc-argument-list macro
+(require 'jabber-version)
 
 ;; Global reference declarations
-
-(declare-function jabber-ping-send "jabber-ping.el"
-                  (jc to process-func on-success on-error))
-(declare-function jabber-browse--buffer "jabber-iq.el" (jid))
-(declare-function jabber-browse--insert "jabber-iq.el"
-                  (jc xml-data closure-data))
-(declare-function jabber-send-iq "jabber-iq.el"
-                  (jc to type query success-callback success-closure-data
-                      error-callback error-closure-data &optional result-id))
-(declare-function jabber-muc-read-nickname "jabber-muc.el"
-                  (group prompt))
-(declare-function jabber-process-version "jabber-version.el"
-                  (jc xml-data))
-(declare-function jabber-process-disco-info "jabber-disco.el"
-                  (jc xml-data))
-(declare-function jabber-process-ping "jabber-ping.el"
-                  (jc xml-data))
-(declare-function jabber-process-time "jabber-time.el"
-                  (jc xml-data))
-(declare-function jabber-process-last "jabber-time.el"
-                  (jc xml-data))
 
 (defvar jabber-group)                   ; jabber-muc.el
 (defvar jabber-buffer-connection)        ; jabber-chatbuffer.el

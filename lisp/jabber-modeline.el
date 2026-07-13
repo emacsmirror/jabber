@@ -28,6 +28,7 @@
 
 (require 'jabber-presence)
 (require 'jabber-alert)
+(require 'jabber-activity)
 (eval-when-compile (require 'cl-lib))
 
 (defgroup jabber-mode-line nil
@@ -53,9 +54,6 @@ Available sections: `presence', `contacts', `activity'."
 
 ;; Activity variables (defined in jabber-activity.el)
 
-(declare-function jabber-activity--init "jabber-activity")
-(declare-function jabber-activity--teardown "jabber-activity")
-(declare-function jabber-activity--on-disconnect "jabber-activity")
 (defvar jabber-activity-mode-string)
 (defvar jabber-activity-count-in-title)
 (defvar jabber-activity-count-in-title-format)

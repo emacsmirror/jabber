@@ -36,20 +36,11 @@
 (require 'jabber-util)
 (require 'jabber-db)
 (require 'jabber-chat)
+(require 'jabber-disco)
+(require 'jabber-iq)
+(require 'jabber-message-correct)
 
 (eval-when-compile (require 'cl-lib))
-
-(declare-function jabber-send-iq "jabber-iq"
-                  (jc to type query success-callback success-closure-data
-                      error-callback error-closure-data &optional result-id))
-(declare-function jabber-disco-get-info "jabber-disco"
-                  (jc jid node callback closure-data &optional force))
-(declare-function jabber-disco-advertise-feature "jabber-disco" (feature))
-(declare-function jabber-message-correct--replace-id "jabber-message-correct"
-                  (xml-data))
-(declare-function jabber-message-correct--apply "jabber-message-correct"
-                  (replace-id new-body new-from muc-p buffer
-                              &optional new-occupant-id))
 
 (defvar jabber-buffer-connection)       ; jabber-chatbuffer.el
 (defvar jabber-chatting-with)           ; jabber-chat.el

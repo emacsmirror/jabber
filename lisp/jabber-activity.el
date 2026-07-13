@@ -34,7 +34,9 @@
 (require 'seq)
 (require 'jabber-core)
 (require 'jabber-util)
+(require 'jabber-chat)
 (require 'jabber-muc)
+(require 'jabber-muc-nick-completion)
 
 (defgroup jabber-activity nil
   "Activity tracking options."
@@ -165,10 +167,6 @@ Invalidated when `jabber-activity-make-name-alist' rebuilds.")
 
 ;; Global reference declarations
 
-(declare-function jabber-chat-find-buffer "jabber-chat.el" (chat-with))
-(declare-function jabber-chat-with "jabber-chat.el" (jc jid &optional other-window))
-(declare-function jabber-muc-looks-like-personal-p
-                  "jabber-muc-nick-completion.el" (message &optional group))
 (defvar jabber-buffer-connection)       ; jabber-chatbuffer.el
 (defvar jabber-silent-mode)             ; jabber.el
 

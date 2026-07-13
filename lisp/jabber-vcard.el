@@ -69,6 +69,7 @@
 (require 'jabber-widget)
 (require 'jabber-iq)
 (require 'jabber-avatar)
+(require 'jabber-image)
 
 (defconst jabber-vcard-xmlns "vcard-temp"
   "XEP-0054 vCard namespace.")
@@ -80,8 +81,6 @@
 
 (declare-function jabber-vcard-avatars-update-current
                   "jabber-vcard-avatars.el" (jc new-hash))
-(declare-function jabber-image-create "jabber-image"
-                  (data &optional mime-type max-width max-height))
 (defvar jabber-vcard-fields)            ; jabber-vcard.el
 (defvar jabber-buffer-connection)       ; jabber-chatbuffer.el
 
