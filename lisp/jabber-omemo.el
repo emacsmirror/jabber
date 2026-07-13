@@ -40,6 +40,9 @@
 (require 'jabber-eme)
 (require 'jabber-chat)
 (require 'jabber-db)
+(require 'jabber-disco)
+(require 'jabber-httpupload)
+(require 'jabber-iq)
 (require 'jabber-muc-state)
 
 (declare-function jabber-muc-modify-participant "jabber-muc"
@@ -47,11 +50,6 @@
 (declare-function jabber-muc-participant-plist "jabber-muc"
                   (group nickname))
 (declare-function jabber-muc-create-buffer "jabber-muc" (jc group))
-(declare-function jabber-disco-advertise-feature "jabber-disco")
-(declare-function jabber-send-iq "jabber-iq")
-(declare-function jabber-httpupload--upload "jabber-httpupload")
-(declare-function jabber-httpupload--send-url "jabber-httpupload")
-
 (defvar jabber-muc--room-jids)
 
 (defcustom jabber-omemo-enable t
