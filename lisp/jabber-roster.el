@@ -29,6 +29,7 @@
 ;;; Code:
 
 (require 'cl-lib)
+(require 'jabber-presence-events)
 (require 'jabber-util)
 (require 'jabber-private)
 
@@ -225,6 +226,8 @@ obtained from `xml-parse-region'."
                                    ,roll-groups)
                           'jabber-report-success "Roster groups saved"
                           'jabber-report-success "Failed to save roster groups"))))
+
+(add-hook 'jabber-presence-roster-update-functions #'jabber-roster-update)
 
 (provide 'jabber-roster)
 

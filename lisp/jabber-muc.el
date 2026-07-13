@@ -35,6 +35,7 @@
 (require 'jabber-disco)
 (require 'jabber-muc-protocol)
 (require 'jabber-muc-state)
+(require 'jabber-presence-events)
 (require 'jabber-bookmarks)
 (require 'jabber-chat)
 (require 'jabber-db)
@@ -1905,6 +1906,8 @@ Accesses `jabber-pending-groupchats' to determine our nickname."
       (jabber-muc--process-enter jc group nickname symbol status-codes
                                  x-muc actor reason our-nickname)))))
 (jabber-disco-advertise-feature jabber-muc-xmlns-direct-invite)
+
+(add-hook 'jabber-presence-muc-functions #'jabber-muc-process-presence)
 
 (provide 'jabber-muc)
 ;;; jabber-muc.el ends here.

@@ -34,7 +34,7 @@
 (require 'jabber-util)
 (require 'jabber-muc-protocol)
 (require 'jabber-muc-state)
-(require 'ewoc)
+(require 'jabber-presence-events)
 
 (defconst jabber-presence-show-alist
   '(("Online" . "")
@@ -56,19 +56,6 @@ stanza.")
 (defvar jabber-presence-sent-hooks nil
   "List of functions called after presence messages are sent.")
 
-;; Global reference declarations
-
-(declare-function jabber-roster-update "jabber-roster.el"
-                  (jc new-items changed-items deleted-items))
-(declare-function jabber-chat-create-buffer "jabber-chat.el" (jc chat-with))
-(declare-function jabber-chat-ewoc-enter "jabber-chatbuffer.el" (data))
-(declare-function jabber-chat-ewoc-delete "jabber-chatbuffer" (node))
-(declare-function jabber-chat-get-buffer "jabber-chat.el" (chat-with &optional jc))
-(declare-function jabber-muc-get-buffer "jabber-muc.el" (group &optional jc))
-(declare-function jabber-muc-process-presence "jabber-muc.el" (jc presence))
-(defvar jabber-chatting-with)           ; jabber-chat.el
-(defvar jabber-buffer-connection)       ; jabber-chatbuffer.el
-(defvar jabber-chat-ewoc)               ; jabber-chatbuffer.el
 (defvar jabber-current-show)          ; jabber.el
 (defvar jabber-current-status)        ; jabber.el
 (defvar jabber-current-priority)      ; jabber.el
@@ -143,7 +130,8 @@ obtained from `xml-parse-region'."
           (`(new . ,sym)     (push sym new-items))
           (`(changed . ,sym) (push sym changed-items))
           (`(deleted . ,sym) (push sym deleted-items))))
-      (jabber-roster-update jc new-items changed-items deleted-items)
+      (jabber-presence-events-dispatch-roster-update
+       jc new-items changed-items deleted-items)
       (when (and id (string= type "set"))
         (jabber-send-iq jc nil "result" nil nil nil nil nil id)))
     (when initialp
@@ -262,22 +250,21 @@ Runs `jabber-presence-hooks' and `jabber-alert-presence-hooks'."
 JC is the Jabber connection.
 XML-DATA is the parsed tree data from the stream (stanzas)
 obtained from `xml-parse-region'."
-  ;; XXX: use JC argument
   (let* ((roster (plist-get (fsm-get-state-data jc) :roster))
          (from (jabber-xml-get-attribute xml-data 'from))
          (type (jabber-xml-get-attribute xml-data 'type))
          (metadata (jabber-presence--extract-metadata xml-data)))
     (cond
      ((string= type "subscribe")
-      (run-with-idle-timer 0.01 nil #'jabber-process-subscription-request
-                           jc from (plist-get metadata :status)))
+      (run-with-idle-timer
+       0.01 nil #'jabber-presence-events-dispatch-subscription-request
+       jc from (plist-get metadata :status)))
 
      ((jabber-muc-presence-p xml-data)
-      (jabber-muc-process-presence jc xml-data))
+      (jabber-presence-events-dispatch-muc jc xml-data))
 
      (t
-      ;; Clean up any stale subscription request prompts for this JID.
-      (jabber-subscription--remove-stale jc from)
+      (jabber-presence-events-dispatch-contact jc from)
       ;; XXX: Think about what to do about out-of-roster presences.
       (let ((buddy (jabber-jid-symbol from)))
         (when (memq buddy roster)
@@ -303,59 +290,6 @@ obtained from `xml-parse-region'."
             (jabber-presence--run-hooks
              buddy oldstatus newstatus
              (plist-get resource-plist 'status)))))))))
-
-(defun jabber-process-subscription-request (jc from presence-status)
-  "Process an incoming subscription request from FROM with PRESENCE-STATUS.
-JC is the Jabber connection."
-  (with-current-buffer (jabber-chat-create-buffer jc from)
-    (jabber-chat-ewoc-enter (list :subscription-request presence-status :time (current-time)))
-
-    (dolist (hook '(jabber-presence-hooks jabber-alert-presence-hooks))
-      (run-hook-with-args hook (jabber-jid-symbol from) nil "subscribe" presence-status (funcall jabber-alert-presence-message-function (jabber-jid-symbol from) nil "subscribe" presence-status)))))
-
-(defun jabber-subscription-accept-mutual (&rest _ignored)
-  "Accept the pending subscription request and request reciprocal subscription."
-  (message "Subscription accepted; reciprocal subscription request sent")
-  (jabber-subscription-reply "subscribed" "subscribe"))
-
-(defun jabber-subscription-accept-one-way (&rest _ignored)
-  "Accept the pending subscription request without reciprocating."
-  (message "Subscription accepted")
-  (jabber-subscription-reply "subscribed"))
-
-(defun jabber-subscription-decline (&rest _ignored)
-  "Decline the pending subscription request."
-  (message "Subscription declined")
-  (jabber-subscription-reply "unsubscribed"))
-
-(defun jabber-subscription--remove-prompt ()
-  "Remove the subscription request EWOC node at point."
-  (when (bound-and-true-p jabber-chat-ewoc)
-    (let ((node (ewoc-locate jabber-chat-ewoc)))
-      (when (and node (eq :subscription-request (car (ewoc-data node))))
-        (jabber-chat-ewoc-delete node)))))
-
-(defun jabber-subscription--remove-stale (jc from)
-  "Remove all subscription request nodes from FROM's chat buffer.
-JC is the Jabber connection."
-  (when-let* ((buf (get-buffer (jabber-chat-get-buffer from jc))))
-    (with-current-buffer buf
-      (when (bound-and-true-p jabber-chat-ewoc)
-        (let ((node (ewoc-nth jabber-chat-ewoc 0))
-              to-delete)
-          (while node
-            (when (eq :subscription-request (car (ewoc-data node)))
-              (push node to-delete))
-            (setq node (ewoc-next jabber-chat-ewoc node)))
-          (dolist (n to-delete)
-            (jabber-chat-ewoc-delete n)))))))
-
-(defun jabber-subscription-reply (&rest types)
-  "Send one presence stanza per TYPES (e.g. \"subscribed\") to the current peer."
-  (let ((to (jabber-jid-user jabber-chatting-with)))
-    (dolist (type types)
-      (jabber-send-sexp jabber-buffer-connection `(presence ((to . ,to) (type . ,type))))))
-  (jabber-subscription--remove-prompt))
 
 (defun jabber-prioritize-resources (buddy)
   "Set connected, show and status properties for BUDDY.

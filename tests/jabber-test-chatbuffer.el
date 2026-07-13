@@ -14,6 +14,7 @@
 (require 'jabber-chat-commands)
 (require 'jabber-db)
 (require 'jabber-httpupload)
+(require 'jabber-subscription)
 
 ;; jabber-chat requires this via jabber-muc
 (defvar jabber-muc-xmlns-user "http://jabber.org/protocol/muc#user")
@@ -509,6 +510,33 @@
         (kill-buffer old))
       (when (buffer-live-p new)
         (kill-buffer new)))))
+
+(ert-deftest jabber-test-subscription-removes-stale-prompts-from-chat ()
+  "Ordinary presence removes old subscription prompts for its sender."
+  (let ((jabber-buffer-registry--buffers (make-hash-table :test #'equal)))
+    (jabber-test-chatbuffer-with-ewoc
+      (jabber-buffer-registry-register 'chat "alice@example.com")
+      (jabber-chat-ewoc-enter '(:subscription-request "hello"))
+      (jabber-chat-ewoc-enter '(:notice "keep me"))
+      (jabber-subscription--remove-stale nil "alice@example.com/phone")
+      (should (equal (ewoc-collect jabber-chat-ewoc #'identity)
+                     '((:notice "keep me")))))))
+
+(ert-deftest jabber-test-subscription-request-enters-chat-buffer ()
+  "A subscription request is rendered in the sender's chat buffer."
+  (with-temp-buffer
+    (let ((buffer (current-buffer))
+          entered)
+      (cl-letf (((symbol-function 'jabber-chat-create-buffer)
+                 (lambda (_jc _from) buffer))
+                ((symbol-function 'jabber-chat-ewoc-enter)
+                 (lambda (data) (setq entered data))))
+        (let ((jabber-presence-hooks nil)
+              (jabber-alert-presence-hooks nil))
+          (jabber-process-subscription-request
+           'fake-jc "alice@example.com" "please")))
+      (should (equal (plist-get entered :subscription-request) "please"))
+      (should (plist-get entered :time)))))
 
 ;;; Group 9: OMEMO immediate display status transitions
 

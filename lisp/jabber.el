@@ -164,6 +164,7 @@ One disabled account with a non-standard port:
 (require 'jabber-presence)
 (require 'jabber-alert)
 (require 'jabber-chat)
+(require 'jabber-subscription)
 (require 'jabber-db)
 (require 'jabber-disco)
 (require 'jabber-iq)
