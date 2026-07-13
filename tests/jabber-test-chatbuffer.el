@@ -441,75 +441,74 @@
 ;;; Group 8: Buffer lookup registry
 
 (ert-deftest jabber-test-chatbuffer-registry-chat-find ()
-  "Register a temp buffer as a chat buffer; registry-get returns it."
-  (let ((jabber-chatbuffer--registry (make-hash-table :test #'equal)))
+  "Register a temp buffer as a chat buffer and find it."
+  (let ((jabber-buffer-registry--buffers (make-hash-table :test #'equal)))
     (with-temp-buffer
-      (setq-local jabber-chatting-with "alice@example.com")
-      (jabber-chatbuffer--registry-put 'chat "alice@example.com")
+      (jabber-buffer-registry-register 'chat "alice@example.com")
       (should (eq (current-buffer)
-                  (jabber-chatbuffer--registry-get 'chat "alice@example.com"))))))
+                  (jabber-buffer-registry-find 'chat "alice@example.com"))))))
 
 (ert-deftest jabber-test-chatbuffer-registry-kill-removes-entry ()
   "Killing the buffer removes its registry entry."
-  (let ((jabber-chatbuffer--registry (make-hash-table :test #'equal)))
+  (let ((jabber-buffer-registry--buffers (make-hash-table :test #'equal)))
     (let ((buf (generate-new-buffer " *test-chat-registry*")))
       (with-current-buffer buf
-        (setq-local jabber-chatting-with "bob@example.com")
-        (jabber-chatbuffer--registry-put 'chat "bob@example.com"))
-      (should (eq buf (jabber-chatbuffer--registry-get 'chat "bob@example.com")))
+        (jabber-buffer-registry-register 'chat "bob@example.com"))
+      (should (eq buf (jabber-buffer-registry-find 'chat "bob@example.com")))
       (kill-buffer buf)
-      ;; The kill-buffer-hook removed it; get now returns nil.
-      (should-not (jabber-chatbuffer--registry-get 'chat "bob@example.com")))))
+      (should-not (jabber-buffer-registry-find 'chat "bob@example.com")))))
 
 (ert-deftest jabber-test-chatbuffer-registry-no-collision ()
   "MUC and chat buffers with the same bare JID do not collide."
-  (let ((jabber-chatbuffer--registry (make-hash-table :test #'equal)))
+  (let ((jabber-buffer-registry--buffers (make-hash-table :test #'equal)))
     (let ((chat-buf (generate-new-buffer " *test-chat*"))
           (muc-buf  (generate-new-buffer " *test-muc*")))
       (unwind-protect
           (progn
             (with-current-buffer chat-buf
-              (setq-local jabber-chatting-with "room@conf.example.com")
-              (jabber-chatbuffer--registry-put 'chat "room@conf.example.com"))
+              (jabber-buffer-registry-register 'chat "room@conf.example.com"))
             (with-current-buffer muc-buf
-              (setq-local jabber-group "room@conf.example.com")
-              (jabber-chatbuffer--registry-put 'muc "room@conf.example.com"))
+              (jabber-buffer-registry-register 'muc "room@conf.example.com"))
             (should (eq chat-buf
-                        (jabber-chatbuffer--registry-get 'chat "room@conf.example.com")))
+                        (jabber-buffer-registry-find
+                         'chat "room@conf.example.com")))
             (should (eq muc-buf
-                        (jabber-chatbuffer--registry-get 'muc "room@conf.example.com"))))
+                        (jabber-buffer-registry-find
+                         'muc "room@conf.example.com"))))
         (kill-buffer chat-buf)
         (kill-buffer muc-buf)))))
 
 (ert-deftest jabber-test-chatbuffer-registry-muc-private ()
   "MUC-private lookup by group+nick returns correct buffer."
-  (let ((jabber-chatbuffer--registry (make-hash-table :test #'equal)))
+  (let ((jabber-buffer-registry--buffers (make-hash-table :test #'equal)))
     (let ((buf (generate-new-buffer " *test-muc-private*")))
       (unwind-protect
           (progn
             (with-current-buffer buf
-              (setq-local jabber-chatting-with "room@conf.example.com/alice")
-              (jabber-chatbuffer--registry-put
+              (jabber-buffer-registry-register
                'muc-private "room@conf.example.com/alice"))
             (should (eq buf
-                        (jabber-chatbuffer--registry-get
+                        (jabber-buffer-registry-find
                          'muc-private "room@conf.example.com/alice"))))
         (kill-buffer buf)))))
 
-(ert-deftest jabber-test-chatbuffer-registry-kill-full-jid-removes-bare-key ()
-  "kill-buffer-hook cleans up bare-JID key when chatting-with is a full JID."
-  (let ((jabber-chatbuffer--registry (make-hash-table :test #'equal)))
-    (let ((buf (generate-new-buffer " *test-chat-full-jid*")))
-      (with-current-buffer buf
-        ;; Registered with bare JID (as jabber-chat-create-buffer does).
-        (setq-local jabber-chatting-with "carol@example.com/phone")
-        (jabber-chatbuffer--registry-put 'chat "carol@example.com"))
-      ;; At this point the registry holds bare key.
-      (should (eq buf (jabber-chatbuffer--registry-get 'chat "carol@example.com")))
-      ;; jabber-chatting-with has a resource — kill-hook should still remove
-      ;; the bare-JID key because it normalises via jabber-jid-user.
-      (kill-buffer buf)
-      (should-not (jabber-chatbuffer--registry-get 'chat "carol@example.com")))))
+(ert-deftest jabber-test-chatbuffer-registry-replacement-survives-old-kill ()
+  "Killing a replaced buffer does not remove the current registration."
+  (let ((jabber-buffer-registry--buffers (make-hash-table :test #'equal))
+        (old (generate-new-buffer " *test-chat-old*"))
+        (new (generate-new-buffer " *test-chat-new*")))
+    (unwind-protect
+        (progn
+          (jabber-buffer-registry-register 'chat "carol@example.com" old)
+          (jabber-buffer-registry-register 'chat "carol@example.com" new)
+          (kill-buffer old)
+          (should (eq new
+                      (jabber-buffer-registry-find
+                       'chat "carol@example.com"))))
+      (when (buffer-live-p old)
+        (kill-buffer old))
+      (when (buffer-live-p new)
+        (kill-buffer new)))))
 
 ;;; Group 9: OMEMO immediate display status transitions
 

@@ -28,6 +28,7 @@
 
 (require 'jabber-core)
 (require 'jabber-alert)
+(require 'jabber-buffer-registry)
 (require 'jabber-chatbuffer)
 (require 'jabber-db)
 (require 'jabber-reactions)
@@ -363,7 +364,7 @@ or `get-buffer-create'."
 
 (defun jabber-chat-find-buffer (chat-with)
   "Find an existing 1:1 chat buffer for CHAT-WITH, or nil."
-  (jabber-chatbuffer--registry-get 'chat (jabber-jid-user chat-with)))
+  (jabber-buffer-registry-find 'chat (jabber-jid-user chat-with)))
 
 (defun jabber-chat-create-buffer (jc chat-with)
   "Prepare a buffer for chatting with CHAT-WITH.
@@ -374,7 +375,7 @@ JC is the Jabber connection."
       (jabber-chat-mode)
 
       (setq-local jabber-chatting-with chat-with)
-      (jabber-chatbuffer--registry-put 'chat (jabber-jid-user chat-with))
+      (jabber-buffer-registry-register 'chat (jabber-jid-user chat-with))
 
       (jabber-chat-mode-setup jc #'jabber-chat-pp)
       (setq jabber-send-function #'jabber-chat-send)

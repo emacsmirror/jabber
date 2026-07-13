@@ -27,6 +27,7 @@
 ;;; Code:
 
 (require 'jabber-util)
+(require 'jabber-buffer-registry)
 (require 'jabber-input)
 (require 'jabber-core)
 (require 'jabber-db)
@@ -106,43 +107,6 @@ previous sequence detect the mismatch and stop.")
 (defvar jabber-chat-earliest-backlog)     ; jabber-chat.el
 (defvar jabber-group)                      ; jabber-muc.el
 (defvar jabber-muc-header-line-format)    ; jabber-muc.el
-
-;;; Buffer lookup registry
-
-(defvar jabber-chatbuffer--registry (make-hash-table :test #'equal)
-  "Hash table mapping (TYPE . KEY) to a live buffer.
-TYPE is `chat', `muc', or `muc-private'.
-KEY: bare JID for chat; group JID for muc; \"group/nick\" for muc-private.")
-
-(defun jabber-chatbuffer--registry-put (type key)
-  "Register current buffer under TYPE and KEY."
-  (puthash (cons type key) (current-buffer) jabber-chatbuffer--registry))
-
-(defun jabber-chatbuffer--registry-get (type key)
-  "Return the live buffer registered under TYPE and KEY, or nil."
-  (let* ((k (cons type key))
-         (buf (gethash k jabber-chatbuffer--registry)))
-    (if (buffer-live-p buf)
-        buf
-      (remhash k jabber-chatbuffer--registry)
-      nil)))
-
-(defun jabber-chatbuffer--registry-remove ()
-  "Remove current buffer from registry.  Used as `kill-buffer-hook'."
-  (cond
-   ((and (local-variable-p 'jabber-group) jabber-group)
-    (remhash (cons 'muc jabber-group) jabber-chatbuffer--registry))
-   ((and (local-variable-p 'jabber-chatting-with) jabber-chatting-with)
-    ;; MUC-private: jabber-chatting-with is "group/nick" (has resource).
-    ;; 1:1 chat: jabber-chatting-with may be full JID or bare — always
-    ;; normalise to bare JID to match the key stored at registration time.
-    (if (jabber-jid-resource jabber-chatting-with)
-        (remhash (cons 'muc-private jabber-chatting-with)
-                 jabber-chatbuffer--registry)
-      (remhash (cons 'chat (jabber-jid-user jabber-chatting-with))
-               jabber-chatbuffer--registry)))))
-
-(add-hook 'kill-buffer-hook #'jabber-chatbuffer--registry-remove)
 
 (defcustom jabber-chat-default-encryption 'omemo
   "Default encryption mode for new chat buffers."
@@ -357,8 +321,6 @@ EWOC-PP is the pretty-printer function for the message EWOC."
         (setq jabber-chat-encryption 'plaintext))))
   (jabber-chat-encryption--update-header))
 
-(declare-function jabber-chat-find-buffer "jabber-chat" (chat-with))
-(declare-function jabber-muc-find-buffer "jabber-muc" (group))
 (declare-function jabber-chat-insert-backlog-entry "jabber-chat"
                   (msg-plist))
 (declare-function jabber-chat--insert-backlog-chunked "jabber-chat"
@@ -676,9 +638,8 @@ reload, so a reader scrolled up in history is not yanked to the top."
   "Update syncing indicator for PEER's chat buffer.
 TYPE is \"groupchat\" or \"chat\".  SYNCING-P is non-nil when
 sync starts, nil when it ends."
-  (when-let* ((buffer (if (string= type "groupchat")
-                          (jabber-muc-find-buffer peer)
-                        (jabber-chat-find-buffer peer)))
+  (when-let* ((kind (if (string= type "groupchat") 'muc 'chat))
+              (buffer (jabber-buffer-registry-find kind peer))
               ((buffer-live-p buffer)))
     (with-current-buffer buffer
       (setq jabber-chat-mam-syncing syncing-p)
@@ -692,9 +653,8 @@ PEERS is a list of (PEER . TYPE) pairs."
   (dolist (entry peers)
     (let* ((peer (car entry))
            (type (cdr entry))
-           (buffer (if (string= type "groupchat")
-                       (jabber-muc-find-buffer peer)
-                     (jabber-chat-find-buffer peer))))
+           (kind (if (string= type "groupchat") 'muc 'chat))
+           (buffer (jabber-buffer-registry-find kind peer)))
       (when (and buffer (buffer-live-p buffer))
         (with-current-buffer buffer
           (jabber-chat-buffer-refresh))))))

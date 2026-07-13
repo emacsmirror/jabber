@@ -31,6 +31,7 @@
 (require 'cl-lib)
 (require 'ewoc)
 (require 'jabber-widget)
+(require 'jabber-buffer-registry)
 (require 'jabber-disco)
 (require 'jabber-muc-protocol)
 (require 'jabber-muc-state)
@@ -280,7 +281,7 @@ or `get-buffer-create'."
 
 (defun jabber-muc-find-buffer (group)
   "Find an existing MUC buffer for GROUP, or nil."
-  (jabber-chatbuffer--registry-get 'muc group))
+  (jabber-buffer-registry-find 'muc group))
 
 (defun jabber-muc-create-buffer (jc group)
   "Prepare a buffer for chatroom GROUP.
@@ -319,7 +320,7 @@ JC is the Jabber connection."
 
     ;; Make sure the connection variable is up to date.
     (setq jabber-buffer-connection jc)
-    (jabber-chatbuffer--registry-put 'muc group)
+    (jabber-buffer-registry-register 'muc group)
 
     (current-buffer)))
 
@@ -339,7 +340,7 @@ or `get-buffer-create'."
 
 (defun jabber-muc-private-find-buffer (group nickname)
   "Find an existing MUC private buffer for GROUP/NICKNAME, or nil."
-  (jabber-chatbuffer--registry-get 'muc-private (format "%s/%s" group nickname)))
+  (jabber-buffer-registry-find 'muc-private (format "%s/%s" group nickname)))
 
 (defun jabber-muc-private-create-buffer (jc group nickname)
   "Prepare a buffer for chatting with NICKNAME in GROUP.
@@ -363,7 +364,7 @@ JC is the Jabber connection."
         (jabber-chat-encryption--update-header)))
 
     (setq-local jabber-chatting-with (concat group "/" nickname))
-    (jabber-chatbuffer--registry-put 'muc-private (format "%s/%s" group nickname))
+    (jabber-buffer-registry-register 'muc-private (format "%s/%s" group nickname))
     (setq jabber-send-function #'jabber-chat-send)
     (setq header-line-format jabber-muc-private-header-line-format)
 
