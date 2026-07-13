@@ -35,10 +35,9 @@
 (require 'jabber-hints)
 (require 'jabber-eme)
 (require 'jabber-chat)
+(require 'jabber-disco)
 
 (eval-when-compile (require 'pcase))
-
-(declare-function jabber-disco-advertise-feature "jabber-disco" (feature))
 
 (defvar jabber-chatting-with)           ; jabber-chat.el
 (defvar jabber-group)                   ; jabber-muc.el

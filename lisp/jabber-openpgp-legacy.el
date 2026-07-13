@@ -40,13 +40,10 @@
 (require 'jabber-xml)
 (require 'jabber-hints)
 (require 'jabber-chat)
+(require 'jabber-disco)
+(require 'jabber-openpgp)
 
 (eval-when-compile (require 'cl-lib))
-
-(declare-function jabber-openpgp--our-key "jabber-openpgp" (jc))
-(declare-function jabber-openpgp--our-key-safe "jabber-openpgp" (jc))
-(declare-function jabber-openpgp--recipient-key "jabber-openpgp" (jid))
-(declare-function jabber-disco-advertise-feature "jabber-disco" (feature))
 
 (defvar jabber-chatting-with)           ; jabber-chat.el
 (defvar jabber-group)                   ; jabber-muc.el

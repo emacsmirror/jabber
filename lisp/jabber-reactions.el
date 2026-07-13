@@ -66,11 +66,6 @@ are not filtered against it."
 (defvar jabber-group)
 (defvar jabber-point-insert)
 
-(declare-function jabber-db-reaction-stale-p
-                  "jabber-db" (account peer type target-id sender updated-at))
-(declare-function jabber-db-replace-reactions
-                  "jabber-db" (account peer type target-id sender reactions
-                                        &optional updated-at))
 (declare-function jabber-chat--unwrap-carbon "jabber-chat" (jc xml-data))
 (declare-function jabber-chat-ewoc-find-by-id "jabber-chatbuffer" (stanza-id))
 (declare-function jabber-chat-ewoc-invalidate "jabber-chatbuffer" (node))

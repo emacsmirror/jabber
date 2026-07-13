@@ -118,7 +118,6 @@ previous sequence detect the mismatch and stop.")
 (declare-function jabber-omemo--muc-participant-jids "jabber-omemo"
                   (group participants))
 (declare-function jabber-omemo-fingerprints "jabber-omemo" ())
-(declare-function jabber-connection-bare-jid "jabber-util" (jc))
 (declare-function jabber-blocking-toggle-chat-peer "jabber-blocking" (jc))
 (declare-function jabber-get-info "jabber-info" (jc to))
 (declare-function jabber-roster-change "jabber-presence" (jc jid name groups))

@@ -34,9 +34,10 @@
 (require 'fsm)
 (require 'jabber-util)
 (require 'jabber-xml)
+(require 'jabber-conn)
+(require 'jabber-iq)
 (require 'jabber-sasl)
 (require 'jabber-console)
-(require 'jabber-keepalive)
 (require 'jabber-sm)
 
 
@@ -130,9 +131,6 @@ problems."
 
 ;; Global reference declarations
 
-(declare-function jabber-send-iq "jabber-iq.el"
-                  (jc to type query success-callback success-closure-data
-		      error-callback error-closure-data &optional result-id))
 (declare-function jabber-muc-connection-closed "jabber-muc.el" (bare-jid))
 (declare-function jabber-roster-update "jabber-roster.el"
                   (jc new-items changed-items deleted-items))
@@ -141,11 +139,6 @@ problems."
 (declare-function jabber-initial-roster-failure "jabber-presence.el"
                   (jc xml-data _closure-data))
 (declare-function jabber-get-register "jabber-register.el" (jc to))
-(declare-function jabber-get-connect-function "jabber-conn.el" (type))
-(declare-function jabber-get-send-function "jabber-conn.el" (type))
-(declare-function jabber-starttls-process-input "jabber-conn.el"
-                  (fsm xml-data))
-(declare-function jabber-starttls-initiate "jabber-conn.el" (fsm))
 (declare-function jabber-mode-line-presence-update "jabber-modeline.el" (&rest _))
 (declare-function jabber-get-bookmarks "jabber-bookmarks.el" (jc cont &optional refresh))
 (defvar jabber-debug-keep-process-buffers) ; jabber.el

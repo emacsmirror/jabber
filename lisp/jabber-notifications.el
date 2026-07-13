@@ -30,6 +30,8 @@
 (eval-when-compile (require 'jabber-alert))
 
 (require 'notifications)
+(require 'jabber-avatar)
+(require 'jabber-muc-nick-completion)
 (require 'jabber-xml)
 (require 'jabber-util)
 
@@ -58,14 +60,6 @@ nil disables MUC notifications entirely."
                  (const :tag "Mentions only" mentions)
                  (const :tag "Disabled" nil))
   :group 'jabber-alerts)
-
-;; Global reference declarations
-
-(declare-function jabber-muc-looks-like-personal-p "jabber-muc-nick-completion.el"
-                  (message &optional group))
-(declare-function jabber-avatar-find-cached "jabber-avatar.el" (sha1-sum))
-
-;;
 
 (defun jabber-notifications--remove-action-callback (callback)
   "Remove CALLBACK from the pending notification actions."

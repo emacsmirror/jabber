@@ -31,6 +31,8 @@
 
 ;;; Code:
 
+(require 'fsm)
+(require 'jabber-core)
 (require 'jabber-ping)
 
 ;;;###autoload
@@ -59,13 +61,6 @@
   "Log keepalive traffic when non-nil.")
 
 ;; Global reference declarations
-
-(declare-function jabber-disconnect-one "jabber-core.el"
-                  (jc &optional dont-redisplay interactivep))
-(declare-function fsm-get-state-data "fsm" (fsm))
-(declare-function fsm-send "fsm" (fsm event &optional callback))
-
-;;
 
 ;;;###autoload
 (defun jabber-keepalive-start (&optional _jc)

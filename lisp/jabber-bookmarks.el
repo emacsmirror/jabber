@@ -27,6 +27,7 @@
 ;;; Code:
 
 (require 'cl-lib)
+(require 'fsm)
 
 (require 'jabber-private)
 (require 'jabber-pubsub)
@@ -63,7 +64,6 @@
 (declare-function jabber-muc-join "jabber-muc" (jc group nickname &optional popup))
 (declare-function jabber-muc-leave "jabber-muc" (jc group))
 (declare-function jabber-muc-get-buffer "jabber-muc" (group &optional jc))
-(declare-function fsm-get-state-data "fsm" (fsm))
 
 ;; Disco feature: request PubSub notifications for bookmarks
 (jabber-disco-advertise-feature (concat jabber-bookmarks2-xmlns "+notify"))

@@ -30,6 +30,7 @@
 ;;; Code:
 
 (require 'cl-lib)
+(require 'fsm)
 (require 'seq)
 (require 'jabber-core)
 (require 'jabber-util)
@@ -166,7 +167,6 @@ Invalidated when `jabber-activity-make-name-alist' rebuilds.")
 
 (declare-function jabber-chat-find-buffer "jabber-chat.el" (chat-with))
 (declare-function jabber-chat-with "jabber-chat.el" (jc jid &optional other-window))
-(declare-function fsm-get-state-data "fsm" (fsm))
 (declare-function jabber-muc-looks-like-personal-p
                   "jabber-muc-nick-completion.el" (message &optional group))
 (defvar jabber-buffer-connection)       ; jabber-chatbuffer.el

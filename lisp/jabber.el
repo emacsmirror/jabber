@@ -158,6 +158,7 @@ One disabled account with a non-standard port:
 (require 'jabber-xml)
 (require 'jabber-conn)
 (require 'jabber-core)
+(require 'jabber-keepalive)
 (require 'jabber-roster)
 (require 'jabber-presence)
 (require 'jabber-alert)

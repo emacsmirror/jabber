@@ -32,8 +32,8 @@
 ;;; Code:
 
 (eval-when-compile (require 'cl-lib))
-(require 'jabber-core)
 (require 'fsm)
+(require 'jabber-util)
 
 (require 'gnutls)
 (require 'jabber-srv)

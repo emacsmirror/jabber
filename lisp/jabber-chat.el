@@ -29,6 +29,7 @@
 (require 'jabber-core)
 (require 'jabber-alert)
 (require 'jabber-chatbuffer)
+(require 'jabber-db)
 (require 'jabber-reactions)
 (require 'ewoc)
 (require 'goto-addr)
@@ -258,7 +259,6 @@ holding state for the next composed message stay inert."
 ;; Global reference declarations
 
 (declare-function jabber-compose "jabber-compose.el" (jc &optional recipient))
-(declare-function jabber-chat-buffer-recenter-input "jabber-chatbuffer.el" ())
 (declare-function jabber-omemo--send-chat "jabber-omemo" (jc body &optional extra-elements))
 (declare-function jabber-openpgp--send-chat "jabber-openpgp" (jc body &optional extra-elements))
 (declare-function jabber-openpgp-legacy--send-chat "jabber-openpgp-legacy" (jc body &optional extra-elements))
@@ -280,18 +280,6 @@ holding state for the next composed message stay inert."
                   (key iv ciphertext-with-tag))
 (defvar jabber-backlog-days)
 (defvar jabber-backlog-number)
-(declare-function jabber-db-backlog "jabber-db.el"
-                  (account peer &optional count start-time resource msg-type))
-(declare-function jabber-db--store-outgoing "jabber-db.el"
-                  (jc to body type))
-(declare-function jabber-db-store-message "jabber-db.el"
-                  (account peer direction type body timestamp
-                           &optional resource stanza-id
-                           server-id occupant-id oob-entries
-                           encrypted reply))
-(declare-function jabber-db-reply-target-body "jabber-db.el"
-                  (account peer reply-id muc-p))
-(declare-function jabber-db--extract-occupant-id "jabber-db.el" (xml-data))
 (declare-function jabber-message-correct--replace-id "jabber-message-correct"
                   (xml-data))
 (declare-function jabber-message-correct--apply "jabber-message-correct"

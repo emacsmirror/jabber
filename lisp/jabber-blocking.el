@@ -36,11 +36,6 @@
 (defconst jabber-blocking-xmlns "urn:xmpp:blocking"
   "XML namespace for XEP-0191 Blocking Command.")
 
-(declare-function jabber-connection-bare-jid "jabber-util" (jc))
-(declare-function jabber-read-jid-completing "jabber-util"
-                  (prompt &optional subset require-match
-                          default resource fulljids))
-
 (defvar jabber-buffer-connection)       ; jabber-chatbuffer.el
 (defvar jabber-chatting-with)           ; jabber-chat.el
 
