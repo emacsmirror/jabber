@@ -154,6 +154,7 @@ One disabled account with a non-standard port:
   :group 'jabber)
 
 ;;; guess internal dependencies!
+(require 'jabber-keymap)
 (require 'jabber-util)
 (require 'jabber-xml)
 (require 'jabber-conn)

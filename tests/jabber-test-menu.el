@@ -30,7 +30,9 @@ inherited bindings from parent mode keymaps."
 
 (ert-deftest jabber-test-menu-popup-commands-defined ()
   "Every command in a jabber popup keymap must be fboundp."
-  (let ((maps (list jabber-chat-operations-menu-map
+  (let ((maps (list jabber-common-keymap
+                    jabber-global-keymap
+                    jabber-chat-operations-menu-map
                     jabber-chat-encryption-menu-map
                     jabber-roster-popup-map
                     jabber-roster-presence-map

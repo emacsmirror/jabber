@@ -25,6 +25,7 @@
 
 ;;; Code:
 
+(require 'jabber-keymap)
 (require 'jabber-util)
 (require 'jabber-truncate)
 (require 'xml)

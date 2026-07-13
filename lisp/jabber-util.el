@@ -34,7 +34,6 @@
 (require 'jabber-sm)
 (require 'fsm)
 (require 'password-cache)
-(require 'keymap-popup)
 
 (condition-case nil
     (require 'auth-source)
@@ -46,30 +45,14 @@
 ;; Global reference declarations
 
 (declare-function auth-source-search "auth-source" (&rest spec))
-(declare-function jabber-chat-buffer-switch "jabber-chatbuffer.el" ())
 (declare-function jabber-chat-with "jabber-chat.el"
                   (jc jid &optional other-window))
-(declare-function jabber-connect-all "jabber-core.el" (&optional arg))
-(declare-function jabber-disconnect "jabber-core.el"
-                  (&optional arg interactivep))
 (declare-function jabber-ahc-execute-command "jabber-ahc.el" (jc to node))
 (declare-function jabber-get-register "jabber-register.el" (jc to))
-(declare-function jabber-info-menu "jabber-disco.el" ())
-(declare-function jabber-muc-menu "jabber-muc.el" ())
 (declare-function jabber-muc-read-my-nickname "jabber-muc.el"
                   (jc group &optional default))
 (declare-function jabber-muc-join "jabber-muc.el"
                   (jc group nickname &optional popup))
-(declare-function jabber-roster-popup "jabber-roster.el" ())
-(declare-function jabber-send-away-presence "jabber-presence.el"
-                  (&optional status jc))
-(declare-function jabber-send-default-presence "jabber-presence.el"
-                  (&optional jc))
-(declare-function jabber-send-presence "jabber-presence.el"
-                  (show status priority &optional jc))
-(declare-function jabber-send-xa-presence "jabber-presence.el"
-                  (&optional status jc))
-(declare-function jabber-service-menu "jabber-disco.el" ())
 (defvar jabber-delay-xmlns)            ; jabber-xml.el
 (defvar jabber-delay-legacy-xmlns)     ; jabber-xml.el
 (defvar jabber-stanzas-xmlns)          ; jabber-xml.el
@@ -1083,36 +1066,6 @@ obtained from `xml-parse-region'."
 (defsubst jabber-have-sasl-p ()
   "Return non-nil if SASL library is available."
   (featurep 'sasl))
-
-;;; Shared keymaps
-
-(declare-function jabber-activity-switch-to "jabber-activity.el"
-                  (&optional jid-param))
-
-(keymap-popup-define jabber-common-keymap
-  "Common Jabber commands."
-  :parent special-mode-map
-  "C-c C-i" ("Info/Discovery" jabber-info-menu)
-  "C-c C-m" ("MUC" jabber-muc-menu)
-  "C-c C-s" ("Services" jabber-service-menu)
-  "TAB"     ("Next button" forward-button)
-  "<backtab>" ("Previous button" backward-button))
-
-(keymap-popup-define jabber-global-keymap
-  "Global Jabber commands."
-  "C-c" ("Connect" jabber-connect-all)
-  "C-d" ("Disconnect" jabber-disconnect)
-  "C-r" ("Roster" jabber-roster-popup)
-  "C-j" ("Chat with" jabber-chat-with)
-  "C-l" ("Next unread" jabber-activity-switch-to)
-  "C-a" ("Away" jabber-send-away-presence)
-  "C-o" ("Online" jabber-send-default-presence)
-  "C-x" ("Extended away" jabber-send-xa-presence)
-  "C-p" ("Set presence" jabber-send-presence)
-  "C-b" ("Switch buffer" jabber-chat-buffer-switch)
-  "C-m" ("Join MUC" jabber-muc-join))
-
-(define-key ctl-x-map "\C-j" jabber-global-keymap)
 
 (provide 'jabber-util)
 ;;; jabber-util.el ends here

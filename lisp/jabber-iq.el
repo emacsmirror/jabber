@@ -29,6 +29,7 @@
 
 (require 'jabber-util)
 (require 'jabber-alert)
+(require 'jabber-keymap)
 
 (define-obsolete-variable-alias '*jabber-open-info-queries*
   'jabber-open-info-queries "0.11.0")
