@@ -194,6 +194,7 @@ One disabled account with a non-standard port:
 (require 'jabber-autoaway)
 (require 'jabber-time)
 (require 'jabber-disco-menu)
+(require 'jabber-muc-menu)
 (require 'jabber-roster-menu)
 (require 'jabber-chat-commands)
 (require 'jabber-uri)

@@ -28,6 +28,7 @@
 (require 'jabber-message-reply)
 (require 'jabber-moderation)
 (require 'jabber-muc)
+(require 'jabber-muc-menu)
 (require 'jabber-presence)
 (require 'jabber-reactions)
 

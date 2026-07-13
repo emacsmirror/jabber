@@ -29,7 +29,6 @@
 ;;; Code:
 
 (require 'cl-lib)
-(require 'keymap-popup)
 (require 'ewoc)
 (require 'jabber-widget)
 (require 'jabber-disco)
@@ -39,6 +38,7 @@
 (require 'jabber-chat)
 (require 'jabber-db)
 (require 'jabber-presence)
+(require 'jabber-version)
 
 (defvar jabber-muc-participants nil
   "Alist of groupchats and participants.
@@ -231,7 +231,6 @@ The format is that of `mode-line-format' and `header-line-format'."
 (declare-function jabber-message-correct--apply "jabber-message-correct"
                   (replace-id new-body new-from muc-p buffer
                               &optional new-occupant-id))
-(declare-function jabber-get-version "jabber-version.el" (jc to))
 (declare-function jabber-reactions--reaction-only-p "jabber-reactions"
                   (xml-data))
 (declare-function jabber-vcard-get "jabber-vcard.el" (jc jid))
@@ -1905,41 +1904,6 @@ Accesses `jabber-pending-groupchats' to determine our nickname."
       (jabber-muc--process-enter jc group nickname symbol status-codes
                                  x-muc actor reason our-nickname)))))
 (jabber-disco-advertise-feature jabber-muc-xmlns-direct-invite)
-
-;;; MUC menu
-
-(declare-function jabber-muc-get-info "jabber-info.el" (jc group nickname))
-(declare-function jabber-muc-vcard-get "jabber-muc.el" (jc group nickname))
-
-(keymap-popup-define jabber-muc-menu-map
-  "Jabber MUC commands."
-  :description (lambda ()
-                 (if (bound-and-true-p jabber-group)
-                     (format "MUC actions for %s"
-                             (propertize jabber-group 'face
-                                         'font-lock-constant-face))
-                   "MUC actions"))
-  :group "Room"
-  "j" ("Join" jabber-muc-join)
-  "J" ("Create room" jabber-muc-create)
-  "l" ("Leave" jabber-muc-leave)
-  "t" ("Set topic" jabber-muc-set-topic)
-  "c" ("Configure" jabber-muc-get-config)
-  :group "Participants"
-  "n" ("Change nick" jabber-muc-nick)
-  "I" ("Get info" jabber-muc-get-info)
-  "i" ("Invite" jabber-muc-invite)
-  "w" ("List participants" jabber-muc-names)
-  "p" ("Private chat" jabber-muc-private)
-  "v" ("Request vcard" jabber-muc-vcard-get)
-  :group "Admin"
-  "r" ("Set role" jabber-muc-set-role)
-  "a" ("Set affiliation" jabber-muc-set-affiliation))
-
-(defun jabber-muc-menu ()
-  "Jabber MUC commands."
-  (interactive)
-  (keymap-popup jabber-muc-menu-map))
 
 (provide 'jabber-muc)
 ;;; jabber-muc.el ends here.
