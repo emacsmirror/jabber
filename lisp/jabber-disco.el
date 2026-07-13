@@ -31,7 +31,6 @@
 (require 'cl-lib)
 (require 'jabber-iq)
 (require 'jabber-xml)
-(require 'keymap-popup)
 
 ;; Global reference declarations
 
@@ -728,51 +727,6 @@ called with JC, the remaining CALLBACK-DATA, and the obtained RESULT."
     (puthash (cons jid node) result jabber-disco-items-cache)
     (when (car callback-data)
       (funcall (car callback-data) jc (cdr callback-data) result))))
-
-;;; Info and service menus
-
-(declare-function jabber-get-info "jabber-info.el" (jc to))
-(declare-function jabber-get-browse "jabber-browse.el" (jc to))
-(declare-function jabber-get-version "jabber-version.el" (jc to))
-(declare-function jabber-get-time "jabber-time.el" (jc to))
-(declare-function jabber-vcard-get "jabber-vcard.el" (jc jid))
-(declare-function jabber-ping "jabber-ping.el" (to))
-(declare-function jabber-get-register "jabber-register.el" (jc to))
-(declare-function jabber-get-search "jabber-search.el" (jc to))
-(declare-function jabber-ahc-execute-command "jabber-ahc.el" (jc to node))
-(declare-function jabber-ahc-get-list "jabber-ahc.el" (jc to))
-(declare-function jabber-enable-carbons "jabber-carbons.el" (jc))
-
-(keymap-popup-define jabber-info-menu-map
-  "Jabber info/discovery commands."
-  :group "Discovery"
-  "I" ("Get info" jabber-get-info)
-  "i" ("Disco items" jabber-get-disco-items)
-  "d" ("Disco info" jabber-get-disco-info)
-  "b" ("Browse" jabber-get-browse)
-  "v" ("Client version" jabber-get-version)
-  "p" ("Ping" jabber-ping)
-  "t" ("Request time" jabber-get-time)
-  "V" ("View vCard" jabber-vcard-get))
-
-(defun jabber-info-menu ()
-  "Jabber info/discovery commands."
-  (interactive)
-  (keymap-popup jabber-info-menu-map))
-
-(keymap-popup-define jabber-service-menu-map
-  "Jabber service commands."
-  :group "Services"
-  "r" ("Register" jabber-get-register)
-  "s" ("Search directory" jabber-get-search)
-  "c" ("Execute command" jabber-ahc-execute-command)
-  "l" ("Command list" jabber-ahc-get-list)
-  "C" ("Enable carbons" jabber-enable-carbons))
-
-(defun jabber-service-menu ()
-  "Jabber service commands."
-  (interactive)
-  (keymap-popup jabber-service-menu-map))
 
 (provide 'jabber-disco)
 ;;; jabber-disco.el ends here.
