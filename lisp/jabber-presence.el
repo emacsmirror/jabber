@@ -31,6 +31,7 @@
 (require 'jabber-iq)
 (require 'jabber-alert)
 (require 'jabber-util)
+(require 'jabber-muc-protocol)
 (require 'jabber-muc-state)
 (require 'ewoc)
 
@@ -64,7 +65,6 @@ stanza.")
 (declare-function jabber-chat-get-buffer "jabber-chat.el" (chat-with &optional jc))
 (declare-function jabber-muc-get-buffer "jabber-muc.el" (group &optional jc))
 (declare-function jabber-muc-process-presence "jabber-muc.el" (jc presence))
-(declare-function jabber-muc-presence-p "jabber-muc.el" (presence))
 (defvar jabber-chatting-with)           ; jabber-chat.el
 (defvar jabber-buffer-connection)       ; jabber-chatbuffer.el
 (defvar jabber-chat-ewoc)               ; jabber-chatbuffer.el

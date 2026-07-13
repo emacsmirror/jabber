@@ -29,6 +29,7 @@
 (require 'jabber-util)
 (require 'jabber-core)
 (require 'jabber-db)
+(require 'jabber-muc-protocol)
 (require 'keymap-popup)
 (require 'help-at-pt)
 
@@ -596,7 +597,6 @@ EWOC-PP is the pretty-printer function for the message EWOC."
 
 (declare-function jabber-chat-find-buffer "jabber-chat" (chat-with))
 (declare-function jabber-muc-find-buffer "jabber-muc" (group))
-(declare-function jabber-muc-sender-p "jabber-muc" (jid))
 (declare-function jabber-chat-find-buffer "jabber-chat" (chat-with))
 (declare-function jabber-chat-insert-backlog-entry "jabber-chat"
                   (msg-plist))

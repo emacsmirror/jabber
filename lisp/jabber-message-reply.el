@@ -34,6 +34,7 @@
 (require 'ewoc)
 (require 'jabber-util)
 (require 'jabber-disco)
+(require 'jabber-muc-protocol)
 (require 'jabber-xml)
 
 
@@ -43,8 +44,6 @@
 (defvar jabber-group)                   ; jabber-muc.el
 (defvar jabber-chatting-with)           ; jabber-chatbuffer.el
 (defvar jabber-buffer-connection)       ; jabber-chatbuffer.el
-
-(declare-function jabber-muc-sender-p "jabber-muc" (jid))
 
 (defconst jabber-message-reply-xmlns "urn:xmpp:reply:0"
   "XEP-0461 Message Replies namespace.")

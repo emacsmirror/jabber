@@ -30,6 +30,7 @@
 (require 'cl-lib)
 (require 'jabber-util)
 (require 'jabber-xml)
+(require 'jabber-muc-protocol)
 (require 'jabber-muc-state)
 
 (defgroup jabber-alerts nil
@@ -242,7 +243,6 @@ files."
 (declare-function jabber-chat-find-buffer "jabber-chat.el" (chat-with))
 (declare-function jabber-chat-send "jabber-chat.el"
                   (jc body &optional extra-elements))
-(declare-function jabber-muc-sender-p "jabber-muc.el" (jid))
 (defvar jabber-presence-strings)        ; jabber.el
 (defvar jabber-xml-data)                ; jabber.el
 (defvar jabber-buffer-connection)       ; jabber-chatbuffer.el

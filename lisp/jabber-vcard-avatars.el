@@ -33,10 +33,9 @@
 (require 'jabber-presence)
 (require 'jabber-iq)
 (require 'jabber-avatar)
+(require 'jabber-muc-protocol)
 
 (defvar jabber-vcard-xmlns)             ; jabber-vcard.el
-
-(declare-function jabber-muc-presence-p "jabber-muc" (xml-data))
 
 (defconst jabber-vcard-update-xmlns "vcard-temp:x:update"
   "XEP-0153 vCard-based avatars namespace.")

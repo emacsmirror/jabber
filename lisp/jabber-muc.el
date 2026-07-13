@@ -33,32 +33,12 @@
 (require 'ewoc)
 (require 'jabber-widget)
 (require 'jabber-disco)
+(require 'jabber-muc-protocol)
 (require 'jabber-muc-state)
 (require 'jabber-bookmarks)
 (require 'jabber-chat)
 (require 'jabber-db)
 (require 'jabber-presence)
-
-(defconst jabber-muc-xmlns "http://jabber.org/protocol/muc"
-  "XEP-0045 MUC namespace.")
-
-(defconst jabber-muc-xmlns-user "http://jabber.org/protocol/muc#user"
-  "XEP-0045 MUC user namespace.")
-
-(defconst jabber-muc-xmlns-owner "http://jabber.org/protocol/muc#owner"
-  "XEP-0045 MUC owner namespace.")
-
-(defconst jabber-muc-xmlns-admin "http://jabber.org/protocol/muc#admin"
-  "XEP-0045 MUC admin namespace.")
-
-(defconst jabber-muc-xmlns-direct-invite "jabber:x:conference"
-  "XEP-0249 Direct MUC Invitations namespace.")
-
-(defvar jabber-pending-groupchats (make-hash-table)
-  "Hash table of groupchats and nicknames.
-Keys are JID symbols; values are strings.
-This table records the last nickname used to join the particular
-chat room.  Items are thus never removed.")
 
 (defvar jabber-muc-participants nil
   "Alist of groupchats and participants.
@@ -1482,41 +1462,6 @@ JC is the Jabber connection."
      (jabber-muc--rejoin-snapshot jc)
      (jabber-muc--autojoin-fire-pending jc))))
 
-;;;###autoload
-(defun jabber-muc-message-p (message)
-  "Return non-nil if MESSAGE is a groupchat message.
-That does not include private messages in a groupchat, but does
-include groupchat invites."
-  ;; Public groupchat messages have type "groupchat" and are from
-  ;; room@server/nick.  Public groupchat errors have type "error" and
-  ;; are from room@server.
-  (let ((from (jabber-xml-get-attribute message 'from))
-	(type (jabber-xml-get-attribute message 'type)))
-    (or
-     (string= type "groupchat")
-     (and (string= type "error")
-	  (gethash (jabber-jid-symbol from) jabber-pending-groupchats))
-     (jabber-xml-path message `((,jabber-muc-xmlns-user . "x") invite))
-     ;; XEP-0249 direct invite
-     (jabber-xml-path message
-		      `((,jabber-muc-xmlns-direct-invite . "x"))))))
-
-;;;###autoload
-(defun jabber-muc-sender-p (jid)
-  "Return non-nil if JID is a full JID of an MUC participant."
-  (and (jabber-muc-joined-p (jabber-jid-user jid))
-       (jabber-jid-resource jid)))
-
-;;;###autoload
-(defun jabber-muc-private-message-p (message)
-  "Return non-nil if MESSAGE is a private message in a groupchat."
-  (let ((from (jabber-xml-get-attribute message 'from))
-	(type (jabber-xml-get-attribute message 'type)))
-    (and
-     (not (string= type "groupchat"))
-     (jabber-muc-sender-p from))))
-
-
 (defun jabber-muc-private (_jc group nickname)
   "Open private chat with NICKNAME in GROUP.
 
@@ -1525,20 +1470,6 @@ JC is the Jabber connection."
    (jabber-muc-argument-list
     (list (jabber-muc-read-nickname jabber-group "Nickname: "))))
   (switch-to-buffer (jabber-muc-private-create-buffer jabber-buffer-connection group nickname)))
-
-(defun jabber-muc-presence-p (presence)
-  "Return non-nil if PRESENCE is presence from groupchat."
-  (let ((from (jabber-xml-get-attribute presence 'from))
-	(type (jabber-xml-get-attribute presence 'type))
-	(muc-marker (cl-find-if
-		     (lambda (x) (equal (jabber-xml-get-attribute x 'xmlns)
-					jabber-muc-xmlns-user))
-		     (jabber-xml-get-children presence 'x))))
-    ;; This is MUC presence if it has an MUC-namespaced tag...
-    (or muc-marker
-	;; ...or if it is error presence from a room we tried to join.
-	(and (string= type "error")
-	     (gethash (jabber-jid-symbol from) jabber-pending-groupchats)))))
 
 (defun jabber-muc-parse-affiliation (x-muc)
   "Parse X-MUC in the muc#user namespace and return a plist.
