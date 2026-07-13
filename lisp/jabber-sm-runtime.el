@@ -20,7 +20,7 @@
 
 (require 'fsm)
 (require 'jabber-sm)
-(require 'jabber-util)
+(require 'jabber-stanza)
 
 (defun jabber-sm--count-inbound (jc state-data stanza)
   "Record inbound STANZA and send a periodic acknowledgement when due.
