@@ -1,5 +1,14 @@
 #+TITLE: Changelog
 
+* [0.12.2]
+#+date: 2026-07-13
+
+** Added
+- Open chats from desktop notifications
+
+** Fixes
+- More reliable encrypted chats during session migration and out-of-order delivery
+
 * [0.12.1]
 #+date: 2026-07-11
 
