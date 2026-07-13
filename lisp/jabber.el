@@ -241,27 +241,6 @@ One disabled account with a non-standard port:
   :group 'jabber)
 
 ;;;###autoload
-(defconst jabber-presence-faces
-  '(("" . jabber-roster-user-online)
-    ("away" . jabber-roster-user-away)
-    ("xa" . jabber-roster-user-xa)
-    ("dnd" . jabber-roster-user-dnd)
-    ("chat" . jabber-roster-user-chatty)
-    ("error" . jabber-roster-user-error)
-    (nil . jabber-roster-user-offline))
-  "Mapping from presence types to faces.")
-
-(defconst jabber-presence-strings
-  `(("" . ,(propertize "Online" 'face 'jabber-roster-user-online))
-    ("away" . ,(propertize "Away" 'face 'jabber-roster-user-away))
-    ("xa" . ,(propertize "Extended Away" 'face 'jabber-roster-user-xa))
-    ("dnd" . ,(propertize "Do not Disturb" 'face 'jabber-roster-user-dnd))
-    ("chat" . ,(propertize "Chatty" 'face 'jabber-roster-user-chatty))
-    ("error" . ,(propertize "Error" 'face 'jabber-roster-user-error))
-    (nil . ,(propertize "Offline" 'face 'jabber-roster-user-offline)))
-  "Mapping from presence types to readable, colorized strings.")
-
-;;;###autoload
 (defun jabber-customize ()
   "Customize Jabber options."
   (interactive)

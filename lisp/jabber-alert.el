@@ -28,6 +28,7 @@
 ;;; Code:
 
 (require 'cl-lib)
+(require 'jabber-presence-display)
 (require 'jabber-util)
 (require 'jabber-xml)
 (require 'jabber-muc-protocol)
@@ -243,7 +244,6 @@ files."
 (declare-function jabber-chat-find-buffer "jabber-chat.el" (chat-with))
 (declare-function jabber-chat-send "jabber-chat.el"
                   (jc body &optional extra-elements))
-(defvar jabber-presence-strings)        ; jabber.el
 (defvar jabber-xml-data)                ; jabber.el
 (defvar jabber-buffer-connection)       ; jabber-chatbuffer.el
 

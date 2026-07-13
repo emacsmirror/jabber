@@ -29,13 +29,13 @@
 (require 'jabber-info)
 (require 'jabber-muc)
 (require 'jabber-presence)
+(require 'jabber-presence-display)
 (require 'jabber-roster)
 (require 'jabber-version)
 
 (declare-function jabber-omemo-show-fingerprints "jabber-omemo-trust.el" (jc))
 
 (defvar jabber-current-show)             ; jabber.el
-(defvar jabber-presence-strings)         ; jabber.el
 (defvar jabber-activity-jids)            ; jabber-activity.el
 (defvar jabber-muc--rooms)               ; jabber-muc.el
 (defvar jabber-roster-account-action-map)

@@ -41,6 +41,7 @@
 (require 'jabber-image)
 (require 'jabber-muc-protocol)
 (require 'jabber-muc-state)
+(require 'jabber-presence-display)
 ;; For the `image-property' setf-expander (not preloaded on emacs-nox).
 (require 'image)
 

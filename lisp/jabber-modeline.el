@@ -27,6 +27,7 @@
 ;;; Code:
 
 (require 'jabber-presence)
+(require 'jabber-presence-display)
 (require 'jabber-alert)
 (require 'jabber-activity)
 (eval-when-compile (require 'cl-lib))
@@ -50,7 +51,6 @@ Available sections: `presence', `contacts', `activity'."
 ;; Global reference declarations
 
 (defvar jabber-current-show)          ; jabber.el
-(defvar jabber-presence-strings)        ; jabber.el
 
 ;; Activity variables (defined in jabber-activity.el)
 
