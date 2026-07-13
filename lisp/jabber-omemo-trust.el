@@ -29,24 +29,9 @@
 
 (require 'cl-lib)
 (require 'jabber-util)
+(require 'jabber-omemo)
 (require 'jabber-omemo-store)
 (require 'keymap-popup)
-
-(declare-function jabber-omemo--format-fingerprint "jabber-omemo")
-(declare-function jabber-omemo--trust-label "jabber-omemo")
-(declare-function jabber-omemo--get-device-id "jabber-omemo")
-(declare-function jabber-omemo--get-store "jabber-omemo")
-(declare-function jabber-omemo-get-bundle "jabber-omemo")
-(declare-function jabber-omemo--fetch-device-list "jabber-omemo"
-                  (jc jid callback))
-(declare-function jabber-omemo--fetch-bundle "jabber-omemo"
-                  (jc jid device-id callback))
-(declare-function jabber-omemo--remove-device "jabber-omemo"
-                  (jc device-id &optional callback))
-(declare-function jabber-omemo--device-list-key "jabber-omemo"
-                  (account jid))
-(declare-function jabber-omemo--prefetch-sessions "jabber-omemo"
-                  (jc jid))
 
 (defvar jabber-chatting-with)
 (defvar jabber-buffer-connection)
@@ -73,6 +58,9 @@ Returns the key without the first byte, or as-is if shorter than 2 bytes."
   "List of entries fetched from server bundles.")
 
 ;;; Mode
+
+(eval-when-compile
+  (defvar jabber-omemo-trust-mode-map))
 
 (keymap-popup-define jabber-omemo-trust-mode-map
   "OMEMO trust commands."
@@ -172,6 +160,16 @@ Returns the key without the first byte, or as-is if shorter than 2 bytes."
        (nreverse unique)))))
 
 ;;; Entry point
+
+(defun jabber-omemo-fingerprints ()
+  "Display OMEMO trust management for the current chat peer."
+  (interactive)
+  (unless (bound-and-true-p jabber-chatting-with)
+    (user-error "Not in a chat buffer"))
+  (jabber-omemo-show-trust jabber-buffer-connection jabber-chatting-with))
+
+(defalias 'jabber-omemo-trust-device #'jabber-omemo-fingerprints)
+(defalias 'jabber-omemo-untrust-device #'jabber-omemo-fingerprints)
 
 ;;;###autoload
 (defun jabber-omemo-show-trust (jc jid)

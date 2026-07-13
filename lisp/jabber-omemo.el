@@ -38,7 +38,6 @@
 (require 'jabber-xml)
 (require 'jabber-hints)
 (require 'jabber-eme)
-(require 'jabber-omemo-trust)
 (require 'jabber-chat)
 (require 'jabber-db)
 
@@ -1530,17 +1529,6 @@ Called when OMEMO is enabled in a MUC buffer."
     (2 "verified")
     (-1 "UNTRUSTED")
     (_ (format "unknown(%d)" level))))
-
-(defun jabber-omemo-fingerprints ()
-  "Display OMEMO trust management for the current chat peer.
-Opens a tabulated-list buffer with interactive trust controls."
-  (interactive)
-  (unless (bound-and-true-p jabber-chatting-with)
-    (user-error "Not in a chat buffer"))
-  (jabber-omemo-show-trust jabber-buffer-connection jabber-chatting-with))
-
-(defalias 'jabber-omemo-trust-device #'jabber-omemo-fingerprints)
-(defalias 'jabber-omemo-untrust-device #'jabber-omemo-fingerprints)
 
 ;;; Connect/disconnect hooks
 

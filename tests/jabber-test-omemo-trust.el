@@ -7,35 +7,6 @@
 ;;; Code:
 
 (require 'ert)
-(require 'jabber-omemo-store)
-
-;; Load the trust UI without triggering jabber-omemo's C module requirement.
-;; We mock the declare-function targets instead.
-(unless (fboundp 'jabber-omemo--format-fingerprint)
-  (defun jabber-omemo--format-fingerprint (identity-key)
-    "Test stub: format IDENTITY-KEY as hex pairs."
-    (mapconcat (lambda (byte) (format "%02X" byte))
-               identity-key " ")))
-
-(unless (fboundp 'jabber-omemo--trust-label)
-  (defun jabber-omemo--trust-label (level)
-    "Test stub: return label for trust LEVEL."
-    (pcase level
-      (0 "undecided")
-      (1 "TOFU")
-      (2 "verified")
-      (-1 "UNTRUSTED")
-      (_ (format "unknown(%d)" level)))))
-
-(unless (fboundp 'jabber-connection-bare-jid)
-  (defun jabber-connection-bare-jid (_jc) "alice@example.com"))
-
-(unless (fboundp 'jabber-jid-user)
-  (defun jabber-jid-user (jid) (car (split-string jid "/"))))
-
-(unless (fboundp 'jabber-read-account)
-  (defun jabber-read-account () 'test-jc))
-
 (require 'jabber-omemo-trust)
 
 ;;; Group 1: trust label mapping

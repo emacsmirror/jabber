@@ -9,6 +9,7 @@
 (require 'ert)
 (require 'jabber)
 (require 'jabber-autoloads)
+(require 'jabber-omemo-trust)
 (require 'keymap-popup)
 
 ;;; Helpers

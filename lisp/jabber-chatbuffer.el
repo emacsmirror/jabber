@@ -117,7 +117,7 @@ previous sequence detect the mismatch and stop.")
                   (jc group))
 (declare-function jabber-omemo--muc-participant-jids "jabber-omemo"
                   (group participants))
-(declare-function jabber-omemo-fingerprints "jabber-omemo" ())
+(declare-function jabber-omemo-fingerprints "jabber-omemo-trust" ())
 (declare-function jabber-blocking-toggle-chat-peer "jabber-blocking" (jc))
 (declare-function jabber-get-info "jabber-info" (jc to))
 (declare-function jabber-roster-change "jabber-presence" (jc jid name groups))
@@ -343,7 +343,7 @@ Works for both 1:1 chat (`jabber-chatting-with') and MUC (`jabber-group')."
 (defun jabber-chat-show-fingerprints ()
   "Display OMEMO fingerprints for the current chat peer."
   (interactive)
-  (require 'jabber-omemo)
+  (require 'jabber-omemo-trust)
   (jabber-omemo-fingerprints))
 
 (defvar jabber-backlog-number)            ; jabber-db.el
