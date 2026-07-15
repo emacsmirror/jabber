@@ -1106,12 +1106,23 @@ JC is a fake connection from `jabber-test-chat--make-fake-jc'."
 (ert-deftest jabber-test-chat-aesgcm-image-threads-allowed-types ()
   (cl-letf (((symbol-function 'jabber-omemo-aesgcm-decrypt)
              (lambda (&rest _) "plaintext"))
-            ((symbol-function 'jabber-image-from-data)
-             (lambda (data types) (list data types))))
+            ((symbol-function 'jabber-image--result-from-data)
+             (lambda (data types) (list :image (list data types)))))
     (let ((jabber-image-max-bytes nil))
       (should (equal (jabber-chat--aesgcm-image-from-body
                       "ct" "key" "iv" '(png))
                      '("plaintext" (png)))))))
+
+(ert-deftest jabber-test-chat-aesgcm-decode-failure-retains-plaintext ()
+  "An unsupported decrypted payload remains available for manual saving."
+  (cl-letf (((symbol-function 'jabber-omemo-aesgcm-decrypt)
+             (lambda (&rest _) "decrypted-heic"))
+            ((symbol-function 'jabber-image--result-from-data)
+             (lambda (data _types) (list :error 'decode :data data))))
+    (let ((result (jabber-chat--aesgcm-image-result-from-body
+                   "ciphertext" "key" "iv" nil)))
+      (should (eq (plist-get result :error) 'decode))
+      (should (equal (plist-get result :data) "decrypted-heic")))))
 
 (ert-deftest jabber-test-chat-aesgcm-image-nil-body-returns-nil ()
   (should-not (jabber-chat--aesgcm-image-from-body nil "key" "iv" nil)))
@@ -1289,7 +1300,7 @@ and `url' to the URL; `display-graphic-p' is stubbed to t."
   "Manual load passes nil ALLOWED-TYPES to the fetch."
   (jabber-test-chat--with-manual-load-buffer
    (jabber-chat--load-image-at-point)
-   (should (equal fetches (list (list url 1 (point-max) nil))))))
+   (should (equal fetches (list (list url 1 (point-max) nil t))))))
 
 (ert-deftest jabber-test-chat-manual-load-blocked-while-in-flight ()
   (jabber-test-chat--with-manual-load-buffer
@@ -1364,6 +1375,57 @@ and `url' to the URL; `display-graphic-p' is stubbed to t."
     (insert "plain text")
     (goto-char (point-min))
     (should-error (jabber-chat-url-action-at-point) :type 'user-error)))
+
+(ert-deftest jabber-test-chat-manual-decode-failure-offers-decrypted-save ()
+  "Manual aesgcm preview failure offers its decrypted bytes for saving."
+  (with-temp-buffer
+    (let* ((url (concat "aesgcm://example.org/photo.jpg#"
+                        (make-string 88 ?a)))
+           (saved nil))
+      (insert (propertize url 'jabber-chat-image-url url))
+      (cl-letf (((symbol-function 'jabber-chat--offer-image-save)
+                 (lambda (save-url data)
+                   (setq saved (list save-url data)))))
+        (jabber-chat--handle-image-result
+         (list :error 'decode :data "decrypted-heic")
+         url (copy-marker 1) (copy-marker (point-max))
+         (current-buffer) t)
+        (should (equal saved (list url "decrypted-heic")))
+        (should (eq (get-text-property 1 'jabber-chat-image-fetching)
+                    'failed))))))
+
+(ert-deftest jabber-test-chat-aesgcm-save-fallback-writes-decrypted-bytes ()
+  "The aesgcm save fallback writes retained plaintext, not ciphertext."
+  (let* ((url (concat "aesgcm://example.org/photo.jpg#"
+                      (make-string 88 ?a)))
+         (plaintext (unibyte-string 0 1 2 255))
+         (dest (make-temp-file "jabber-save-fallback-")))
+    (unwind-protect
+        (cl-letf (((symbol-function 'y-or-n-p) (lambda (&rest _) t))
+                  ((symbol-function 'jabber-chat--download-destination)
+                   (lambda (_) dest)))
+          (jabber-chat--offer-image-save url plaintext)
+          (with-temp-buffer
+            (set-buffer-multibyte nil)
+            (insert-file-contents-literally dest)
+            (should (equal (buffer-string) plaintext))))
+      (delete-file dest))))
+
+(ert-deftest jabber-test-chat-automatic-decode-failure-does-not-offer-save ()
+  "Background image fetching must never open an interactive save prompt."
+  (with-temp-buffer
+    (let ((url "https://example.org/photo.jpg")
+          (offered nil))
+      (insert (propertize url 'jabber-chat-image-url url))
+      (cl-letf (((symbol-function 'jabber-chat--offer-image-save)
+                 (lambda (&rest _) (setq offered t))))
+        (jabber-chat--handle-image-result
+         (list :error 'decode :data "unsupported-image")
+         url (copy-marker 1) (copy-marker (point-max))
+         (current-buffer) nil)
+        (should-not offered)
+        (should (eq (get-text-property 1 'jabber-chat-image-fetching)
+                    'failed))))))
 
 (provide 'jabber-test-chat)
 

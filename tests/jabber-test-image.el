@@ -88,6 +88,17 @@ Binds `calls' to the list of DATA arguments received."
     (let ((jabber-image-max-bytes nil))
       (should-not (jabber-image-from-data jabber-test-image--png-bytes)))))
 
+(ert-deftest jabber-test-image-result-retains-data-on-decode-error ()
+  "A decode failure keeps bytes available for a manual save fallback."
+  (cl-letf (((symbol-function 'jabber-image-create)
+             (lambda (&rest _) (error "Invalid image type ‘heic’"))))
+    (let* ((jabber-image-max-bytes nil)
+           (data "unsupported-image-bytes")
+           (result (jabber-image--result-from-data data nil)))
+      (should (eq (plist-get result :error) 'decode))
+      (should (equal (plist-get result :data) data))
+      (should-not (plist-get result :image)))))
+
 ;;; Response body extraction
 
 (ert-deftest jabber-test-image-response-body-extracts-bytes ()

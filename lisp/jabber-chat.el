@@ -1655,20 +1655,55 @@ not a valid aesgcm:// URL.  The fragment must be 88 hex characters
             :iv iv
             :key key))))
 
+(defun jabber-chat--aesgcm-image-result-from-body
+    (encrypted key iv allowed-types)
+  "Decrypt ENCRYPTED and return an image result.
+KEY, IV, and ALLOWED-TYPES follow
+`jabber-chat--aesgcm-image-from-body'."
+  (cond ((null encrypted) (list :error 'response))
+        ((not (jabber-image--size-ok-p encrypted)) (list :error 'size))
+        (t
+         (condition-case err
+             (jabber-image--result-from-data
+              (jabber-omemo-aesgcm-decrypt key iv encrypted)
+              allowed-types)
+           (error
+            (list :error 'decrypt
+                  :message (error-message-string err)))))))
+
 (defun jabber-chat--aesgcm-image-from-body (encrypted key iv allowed-types)
   "Decrypt ENCRYPTED with KEY and IV and build an inline image.
 Return nil when ENCRYPTED is missing or exceeds
 `jabber-image-max-bytes', decryption fails, or the plaintext
 fails the ALLOWED-TYPES check per `jabber-image-from-data'."
-  (and encrypted
-       (jabber-image--size-ok-p encrypted)
-       (and-let* ((plaintext (condition-case err
-                                 (jabber-omemo-aesgcm-decrypt key iv encrypted)
-                               (error
-                                (message "aesgcm: decryption failed: %s"
-                                         (error-message-string err))
-                                nil))))
-         (jabber-image-from-data plaintext allowed-types))))
+  (let ((result (jabber-chat--aesgcm-image-result-from-body
+                 encrypted key iv allowed-types)))
+    (when (eq (plist-get result :error) 'decrypt)
+      (message "aesgcm: decryption failed: %s" (plist-get result :message)))
+    (plist-get result :image)))
+
+(defun jabber-chat--fetch-aesgcm-image-result
+    (url allowed-types callback &rest cbargs)
+  "Fetch URL and call CALLBACK with a decrypted image result and CBARGS.
+ALLOWED-TYPES restricts the decoded image types; nil permits any."
+  (let ((parsed (jabber-chat--parse-aesgcm-url url)))
+    (if (null parsed)
+        (apply callback (list :error 'url) cbargs)
+      (url-queue-retrieve
+       (plist-get parsed :https-url)
+       (lambda (status key iv types cb args)
+         (let ((url-buffer (current-buffer))
+               (result
+                (if (plist-get status :error)
+                    (list :error 'fetch)
+                  (jabber-chat--aesgcm-image-result-from-body
+                   (jabber-image--response-body) key iv types))))
+           (kill-buffer url-buffer)
+           (apply cb result args)))
+       (list (plist-get parsed :key) (plist-get parsed :iv)
+             allowed-types callback cbargs)
+       'silent
+       'inhibit-cookies))))
 
 (defun jabber-chat--fetch-aesgcm-image (url allowed-types callback &rest cbargs)
   "Fetch and decrypt an aesgcm:// image URL.
@@ -1676,22 +1711,11 @@ Downloads via HTTPS, decrypts with AES-256-GCM, and calls
 CALLBACK with the created image (or nil) followed by CBARGS.
 ALLOWED-TYPES and `jabber-image-max-bytes' are enforced per
 `jabber-image-from-data'."
-  (let ((parsed (jabber-chat--parse-aesgcm-url url)))
-    (if (null parsed)
-        (apply callback nil cbargs)
-      (url-queue-retrieve
-       (plist-get parsed :https-url)
-       (lambda (status key iv types cb args)
-         (let ((url-buffer (current-buffer))
-               (image (unless (plist-get status :error)
-                        (jabber-chat--aesgcm-image-from-body
-                         (jabber-image--response-body) key iv types))))
-           (kill-buffer url-buffer)
-           (apply cb image args)))
-       (list (plist-get parsed :key) (plist-get parsed :iv)
-             allowed-types callback cbargs)
-       'silent
-       'inhibit-cookies))))
+  (apply #'jabber-chat--fetch-aesgcm-image-result
+         url allowed-types
+         (lambda (result cb args)
+           (apply cb (plist-get result :image) args))
+         callback cbargs))
 
 (defconst jabber-chat--image-extension-types
   '(("png"  . png)
@@ -1814,7 +1838,7 @@ not `jabber-image-max-bytes'."
           ((jabber-chat--restore-cached-image url beg end))
           (t
            (let ((inhibit-read-only t))
-             (jabber-chat--start-image-fetch url beg end nil))
+             (jabber-chat--start-image-fetch url beg end nil t))
            (message "Loading image...")))))
 
 (defun jabber-chat-url-action-at-point (&optional arg)
@@ -2061,6 +2085,33 @@ manual loading with RET still may."
                  (put-text-property beg end 'jabber-chat-image-fetching
                                     'failed))))))))
 
+(defun jabber-chat--offer-image-save (url data)
+  "Offer to save fetched DATA from URL without another download."
+  (when (y-or-n-p "Cannot display image; save it instead? ")
+    (let* ((parsed (and (string-prefix-p "aesgcm://" url)
+                        (jabber-chat--parse-aesgcm-url url)))
+           (save-url (if parsed (plist-get parsed :https-url) url))
+           (dest (jabber-chat--download-destination save-url)))
+      (jabber-chat--record-download-directory dest)
+      (with-temp-file dest
+        (set-buffer-multibyte nil)
+        (insert data))
+      (message "Downloaded %s" dest))))
+
+(defun jabber-chat--handle-image-result
+    (result url beg end buffer manual)
+  "Handle fetched image RESULT for URL between BEG and END in BUFFER.
+When MANUAL is non-nil, offer retained bytes after a decode failure."
+  (when (and (buffer-live-p buffer)
+             (with-current-buffer buffer
+               (jabber-chat--url-markers-valid-p beg end url buffer)))
+    (jabber-chat--replace-url-with-image
+     (plist-get result :image) url beg end buffer)
+    (when (and manual
+               (eq (plist-get result :error) 'decode)
+               (plist-get result :data))
+      (jabber-chat--offer-image-save url (plist-get result :data)))))
+
 (defvar-local jabber-chat--image-scan-timer nil
   "Idle timer for scanning image URLs in this buffer.")
 
@@ -2115,21 +2166,23 @@ Return the possibly shifted bounds as a cons cell."
            (insert "\n"))
          (cons (1+ beg) (1+ end)))))
 
-(defun jabber-chat--start-image-fetch (url beg end allowed-types)
+(defun jabber-chat--start-image-fetch
+    (url beg end allowed-types &optional manual)
   "Fetch image URL and display it over BEG..END in the current buffer.
 ALLOWED-TYPES restricts decoding per `jabber-image-from-data';
-nil permits any supported type."
+nil permits any supported type.  MANUAL is non-nil for a fetch
+explicitly requested by the user."
   (jabber-chat--mark-image-fetching beg end url)
   (let ((beg (copy-marker beg))
         (end (copy-marker end))
         (buf (current-buffer)))
     (if (string-prefix-p "aesgcm://" url)
-        (jabber-chat--fetch-aesgcm-image
+        (jabber-chat--fetch-aesgcm-image-result
          url allowed-types
-         #'jabber-chat--replace-url-with-image url beg end buf)
-      (jabber-image-fetch
+         #'jabber-chat--handle-image-result url beg end buf manual)
+      (jabber-image--fetch-result
        url allowed-types
-       #'jabber-chat--replace-url-with-image url beg end buf))))
+       #'jabber-chat--handle-image-result url beg end buf manual))))
 
 (defun jabber-chat--scan-image-url (url beg end auto)
   "Process one image URL between BEG and END found by the scan.

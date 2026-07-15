@@ -103,20 +103,33 @@ ALLOWED-TYPES is a list of image type symbols; nil permits any."
   (or (null allowed-types)
       (memq (image-type-from-data data) allowed-types)))
 
+(defun jabber-image--result-from-data (data allowed-types)
+  "Return an image decoding result for DATA and ALLOWED-TYPES.
+The result contains either :image, or an :error symbol.  Decode
+failures also retain DATA under :data so an explicit user action
+can offer to save the payload without fetching it again."
+  (cond ((null data) (list :error 'response))
+        ((not (jabber-image--size-ok-p data)) (list :error 'size))
+        ((not (jabber-image--type-ok-p data allowed-types))
+         (list :error 'type))
+        (t
+         (condition-case err
+             (list :image (jabber-image-create data))
+           (error
+            (list :error 'decode
+                  :message (error-message-string err)
+                  :data data))))))
+
 (defun jabber-image-from-data (data &optional allowed-types)
   "Create a dynamically-sized image from raw DATA string.
 Return nil when DATA exceeds `jabber-image-max-bytes', its
 detected type is not in ALLOWED-TYPES (nil permits any), or it
 cannot be decoded."
-  (and data
-       (jabber-image--size-ok-p data)
-       (jabber-image--type-ok-p data allowed-types)
-       (condition-case err
-           (jabber-image-create data)
-         (error
-          (message "jabber-image: failed to decode image: %s"
-                   (error-message-string err))
-          nil))))
+  (let ((result (jabber-image--result-from-data data allowed-types)))
+    (when (eq (plist-get result :error) 'decode)
+      (message "jabber-image: failed to decode image: %s"
+               (plist-get result :message)))
+    (plist-get result :image)))
 
 (defun jabber-image--response-body ()
   "Return the HTTP response body of the current buffer, or nil.
@@ -127,6 +140,25 @@ separator is found."
   (when (re-search-forward "\r?\n\r?\n" nil t)
     (buffer-substring-no-properties (point) (point-max))))
 
+(defun jabber-image--fetch-result (url allowed-types callback &rest cbargs)
+  "Fetch URL and call CALLBACK with an image result and CBARGS.
+ALLOWED-TYPES restricts decoded image types; nil permits any.
+The result follows `jabber-image--result-from-data'.  Transport
+failures use the error symbol `fetch'."
+  (url-queue-retrieve
+   url
+   (lambda (status types cb args)
+     (let ((url-buffer (current-buffer))
+           (result (if (plist-get status :error)
+                       (list :error 'fetch)
+                     (jabber-image--result-from-data
+                      (jabber-image--response-body) types))))
+       (kill-buffer url-buffer)
+       (apply cb result args)))
+   (list allowed-types callback cbargs)
+   'silent
+   'inhibit-cookies))
+
 (defun jabber-image-fetch (url allowed-types callback &rest cbargs)
   "Fetch image at URL asynchronously.
 When complete, call CALLBACK with the image object (or nil on
@@ -134,18 +166,11 @@ error) followed by CBARGS.  The image must satisfy
 `jabber-image-max-bytes' and ALLOWED-TYPES per
 `jabber-image-from-data'; it is sized per
 `jabber-image-max-width' and `jabber-image-max-height'."
-  (url-queue-retrieve
-   url
-   (lambda (status types cb args)
-     (let ((url-buffer (current-buffer))
-           (image (unless (plist-get status :error)
-                    (jabber-image-from-data
-                     (jabber-image--response-body) types))))
-       (kill-buffer url-buffer)
-       (apply cb image args)))
-   (list allowed-types callback cbargs)
-   'silent
-   'inhibit-cookies))
+  (apply #'jabber-image--fetch-result
+         url allowed-types
+         (lambda (result cb args)
+           (apply cb (plist-get result :image) args))
+         callback cbargs))
 
 (provide 'jabber-image)
 
